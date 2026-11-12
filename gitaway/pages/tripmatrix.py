@@ -351,9 +351,13 @@ def band_window(lane, windows, known):
     return min(got)[2] if got else next((w for w in windows if w.asked), windows[0])
 
 
-def lanes_el(s: State, lanes, windows, known, marks):
+def skies_of(lanes, windows):
     days = days_of(windows)
-    skies = {p.name: weather_for(p.name, days[0], days[-1]) for x in lanes for p in x.places[:1]}
+    return {p.name: weather_for(p.name, days[0], days[-1]) for x in lanes for p in x.places}
+
+
+def lanes_el(s: State, lanes, windows, known, marks, skies):
+    days = days_of(windows)
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     starts = {w.depart for w in windows}
     axis = Div(Div(Span("Each place, day by day", cls="mx-label"), cls="mx-ah"),
@@ -366,14 +370,27 @@ def lanes_el(s: State, lanes, windows, known, marks):
                    cls="mx-cal", aria_label="Every place, every start day")
 
 
-def card_el(s: State, lane, windows, known, marks):
+def sky_words(s: State, lane, skies):
+    """The card's sky line: the asked first day's sky in each of the lane's places, said as the strip says it ("Sunny 66°/50° · typical")."""
+    out = []
+    for p in lane.places:
+        wx = next((d for d in skies[p.name].days if d and d.date == s.depart), None)
+        if wx:
+            out.append(f"{p.name + ' ' if lane.combo else ''}{WORDS.get(wx.condition, '')} {wx.high_f}°/{wx.low_f}°".strip())
+    if not out:
+        return ""
+    far = all(d.kind != weather.FORECAST for p in lane.places for d in skies[p.name].days if d)
+    return P(icon("sun", 16, cls="mx-sky-i"), " · ".join(out) + (" · typical, not a forecast" if far else " · forecast"), cls="mx-c-s mx-c-sky")
+
+
+def card_el(s: State, lane, windows, known, marks, skies):
     got = [(known[tm.key(lane.key, w.key)].cents, j, w) for j, w in enumerate(windows) if tm.key(lane.key, w.key) in known and known[tm.key(lane.key, w.key)].ok]
     best = min(got) if got else None
     via = f"{s.home} → {lane.places[0].iata}" + (f" · {lane.places[-1].iata} → {s.home}" if lane.combo else "")
     return Section(Div(_arts(lane, "mx-c-art"), H2(lane.name, cls="mx-c-n"), cls="mx-c-top"),
                    Div(Div(Span(tm.dollars(best[0]) if best else "", cls="mx-c-v", data_lane_best=lane.key),
                            Span(tm.when(best[2]) + " · its cheapest" if best else "", cls="mx-c-s", data_lane_when=lane.key), cls="mx-c-best"),
-                       P(via, cls="mx-c-s"),
+                       P(via, cls="mx-c-s"), sky_words(s, lane, skies),
                        Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True) for w in windows], cls="mx-wins"), cls="mx-c-bd"),
                    cls="mx-card" + (" is-asked" if lane.asked else ""), data_lane=lane.key, aria_label=lane.name)
 
@@ -420,9 +437,10 @@ def matrix_page(s: State, family="", typed="", problems=()):
         side = panel(s, o_lane, o_w, known.get(tm.key(*opened)), known.get(tm.key(asked.key, o_w.key)))
     else:
         side = Div(P("Open a square to see the whole trip: the flight, the stay, the drive.", cls="mx-p-note"), cls="mx-p")
-    stage = Div(Div(lanes_el(s, lanes, windows, known, marks), cls="mx-main"), Aside(side, cls="mx-side", id="mx-side", aria_label="The square you opened", aria_live="polite"),
+    skies = skies_of(lanes, windows)
+    stage = Div(Div(lanes_el(s, lanes, windows, known, marks, skies), cls="mx-main"), Aside(side, cls="mx-side", id="mx-side", aria_label="The square you opened", aria_live="polite"),
                 cls="mx-stage")
-    cards = Div(*[card_el(s, x, windows, known, marks) for x in lanes], cls="mx-cards")
+    cards = Div(*[card_el(s, x, windows, known, marks, skies) for x in lanes], cls="mx-cards")
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
