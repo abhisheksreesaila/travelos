@@ -1405,7 +1405,7 @@ Needs: none · Skill: designer (Stitch project 5068253051282871529) · Compare: 
 ## F-222 The matrix across places and dates [todo]
 Needs: F-220, F-221
 - [ ] the sentence reads "or nearby" and "give or take N days" by rules
-- [ ] squares fill in as answers arrive, cheapest first; far squares are searched when scrolled to
+- [ ] squares fill in as answers arrive, cheapest first, like map tiles: only the squares in view (and a margin around them) are searched; a square not yet answered is a skeleton (the square's shape, a calm shimmer, no number), and a square scrolled past before its answer is not searched
 - [ ] each square is the whole trip: flight + stay + airport drive, with Preview and the age of the price
 - [ ] the book button says "Booking opens soon" and saves the square to the trip
 

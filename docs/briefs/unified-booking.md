@@ -52,6 +52,7 @@ Direction A, omxqua: tiles stay opaque. Translucency only where the design taste
 The arithmetic is trivial; the wait is the API (a live flight search takes seconds; 5 places × 5 date choices is 25 searches before stays). No GPU. Instead:
 - **Cache** every answer (flights a few hours, stays shorter), shared across families searching the same route and dates; say how old a price is.
 - **Fill as it arrives**: the squares appear one by one, the cheapest first.
+- **Load like a map** (the founder, 2026-11-12): the matrix is tiles; only the squares in view, plus a margin, are searched, and each waits as a skeleton (its shape and a calm shimmer, never a made-up number) until its answer lands.
 - **Search what matters**: search the nearest dates and the likeliest places first; only search a far square when the family scrolls to it or asks.
 - **If still slow**: Aviasales' cached fare calendar (one call for a whole month) picks which flight squares deserve a live search.
 - **Budget**: a daily search budget per family and in total, so a busy day cannot run up a bill or hit LiteAPI's rate limits.
