@@ -308,5 +308,5 @@ def test_the_words_are_real_text_and_the_story_is_skippable_to(client):
 def test_the_decisions_record_the_cover(client):
     decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
     assert re.search(r"^- D-383 · .*D-270", decisions, re.M)
-    for n in range(426, 432):
+    for n in (426, 427, 428, 429, 443, 444):
         assert re.search(rf"^- D-{n} · F-227", decisions, re.M), n

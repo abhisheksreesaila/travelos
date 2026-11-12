@@ -4,7 +4,7 @@
    Two ways to show the stage. The still (the rules outside the film block): each part's words with its own screen beside them (a laptop) or under
    them (under 1100px); it is what a screen under 600 px tall, ?still or a page without its script get. The film (html.cv-film, inside the block
    below): the frame is pinned with position: sticky, the parts' words scroll past, and data-part swaps the frame's three screens: the outgoing one
-   fades, the incoming one settles in on the Liquid spring (opacity and a small scale on the screen itself, D-435), and its small moments play once
+   fades, the incoming one settles in on the Liquid spring (opacity and a small scale on the screen itself, D-444), and its small moments play once
    on the same springs, on a laptop as on a phone (the cover's own exception to the calm desktop, D-401). Under reduced motion the frame still pins
    and the screens swap with a plain fade, every moment at rest. Every rule that hides something until the film reaches it lives in the film
    block, so nothing is ever hidden by a script that did not run, and nothing moves with the scroll but the scroll itself. */
@@ -211,6 +211,7 @@
     .cv-film .cv-fwrap { position: sticky; top: 0.6667rem; z-index: 2; }
     .cv-film .cv-frame { position: relative; top: 0; height: var(--fh-s); }
     .cv-film .cv-ch { min-height: 80svh; align-content: start; padding-top: 1.3333rem; position: relative; z-index: 1; margin-top: 0; }
+    .cv-film .cv-ch { scroll-margin-top: calc(var(--fh-s) + 1rem); }      /* a jump to a part lands its words below the pinned frame */
     .cv-film .cv-card { padding: 1.5rem 1.5rem 1.6667rem; border-radius: 1.8333rem; background: var(--card); box-shadow: var(--sh2); }
   }
 }

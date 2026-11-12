@@ -256,6 +256,13 @@ def later(monkeypatch, seconds):
     monkeypatch.setattr(geopack, "_now", lambda: then)
 
 
+def at_noon(monkeypatch, seconds=0):
+    """Set geopack's clock to noon UTC today plus some seconds: a daily budget's test must not cross midnight (it ran at 23:33 UTC and failed)."""
+    from datetime import datetime, timedelta, timezone
+    then = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0) + timedelta(seconds=seconds)
+    monkeypatch.setattr(geopack, "_now", lambda: then)
+
+
 def test_a_failed_build_stores_nothing_and_waits_before_trying_again(trip, monkeypatch):
     calls = []
 
@@ -443,13 +450,14 @@ def test_each_trip_has_a_daily_budget_of_builds(trip, monkeypatch):
     monkeypatch.setattr(geopack, "TRIP_BUDGET", 2)
     monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: (_ for _ in ()).throw(OSError("offline")))
     me = person("ari")
+    at_noon(monkeypatch)
     for n in range(2):
         assert geopack.ensure(me) == "waiting"
-        later(monkeypatch, (n + 1) * (geopack.RETRY + 5))
+        at_noon(monkeypatch, (n + 1) * (geopack.RETRY + 5))
     calls = []
     monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: calls.append(url) or tahoe.pack_transport(url, data, timeout))
     assert geopack.ensure(me) == "waiting" and calls == []                # the trip has used today's builds
-    later(monkeypatch, 2 * 24 * 3600)
+    at_noon(monkeypatch, 2 * 24 * 3600)
     assert geopack.ensure(me) == "ready"                                  # a new day
 
 
@@ -457,8 +465,9 @@ def test_a_family_and_the_whole_server_have_daily_budgets_too(trip, monkeypatch,
     monkeypatch.setattr(geopack, "FAMILY_BUDGET", 1)
     monkeypatch.setattr(geopack, "TRANSPORT", lambda url, data=None, timeout=0: (_ for _ in ()).throw(OSError("offline")))
     me = person("ari")
+    at_noon(monkeypatch)
     assert geopack.ensure(me) == "waiting"                  # one build tried and failed
-    later(monkeypatch, geopack.RETRY + 5)
+    at_noon(monkeypatch, geopack.RETRY + 5)
     assert geopack.ensure(me) == "waiting"                  # the family's builds for today are used
     with familydb.using(me) as db:
         assert geopack.load(db, ses_trip(me))["attempts"] == 1
