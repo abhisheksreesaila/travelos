@@ -79,6 +79,12 @@ def _keep(key, value) -> None:
         _KEPT[key] = (value, _clock())
 
 
+def kept(iata, town) -> Drive | None:
+    """The drive already known for this airport and town, without asking anyone (F-222: a page drawn before its answers land)."""
+    found = _KEPT.get((str(iata or "").strip().upper(), " ".join(str(town or "").split()).lower()))
+    return found[0] if found and _clock() - found[1] < KEEP else None
+
+
 def drive(iata, town) -> Drive | None:
     """The drive from airport `iata` to `town` ("South Lake Tahoe, California"), or None. Can wait on the network up to DEADLINE seconds:
     call it from a plain `def` handler or run_in_threadpool."""

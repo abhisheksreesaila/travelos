@@ -6,6 +6,13 @@ On the showcase the source is its invented catalog (gitaway/catalog.py), so `sam
 gitaway/liteapi.py) once LITEAPI_KEY is set and the trip says where the family flies from: every price in a square is LiteAPI's, a stay's with the fees paid at the
 hotel added (D-425). No key, or no home airport, answers None; a spent budget or a search that failed answers a Found with no offers and `problem` said in words,
 never an empty grid. The drive is not known yet (None) and nothing is booked yet (F-222). `SOURCE` is what tests replace.
+
+    square(lane, window, adults=, kid_ages=, home=, family=, peek=False)   one square of the trip matrix (F-222): a tripmatrix.Square, the whole trip for one place
+                                                                           (or two) and one start day. `peek`: only what is known without a call, else None.
+
+The matrix's squares come the same two ways: on the showcase the catalog (its places only; another place says it has no sample), its prices moved by the start
+day's weekday (SAMPLE_DAY, D-428) so the sample shows a cheapest start; off it LiteAPI: the cheapest flight, and the cheapest stay guests rate RATED or more
+(the cheapest of all when none is, D-429). `SQUARE` is what tests replace.
 """
 
 import re
@@ -14,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable
 
-from gitaway import catalog, liteapi, partners, showcase
+from gitaway import airportdrive, catalog, liteapi, partners, showcase, tripgrid, tripmatrix as tm
 from gitaway.tripgrid import Flight, Stay
 
 MAX_FLIGHTS = MAX_STAYS = 12     # the page draws up to 12 columns
@@ -107,3 +114,102 @@ SOURCE = _source
 
 def offers(trip, family=""):
     return SOURCE(trip, family)
+
+
+# ---- one square of the trip matrix (F-222) ------------------------------------------------------------------------------
+
+RATED = 8.0                  # out of 10: the stay a square shows is the cheapest guests rate this or more, when there is one
+SAMPLE_DAY = (0.98, 0.95, 0.96, 1.0, 1.06, 1.08, 1.03)      # Monday to Sunday: the sample's prices by the start day (showcase only, D-428)
+
+
+def sample_day(cents: int, day) -> int:
+    return int(round(cents * SAMPLE_DAY[day.weekday()] / 100)) * 100
+
+
+def _day_clock(when) -> str:
+    return f"{when:%a}, {when:%b} {when.day} · " if when else ""
+
+
+def _catalog_square(lane, w, adults, kid_ages, home):
+    dests = [next((d for d in catalog.DESTINATIONS if d.name == p.name), None) for p in lane.places]
+    if not all(dests):
+        return tm.Square(lane.key, w.key, tm.NO_SAMPLE, sample=True)
+    split = tm.stays_for(lane, w)
+    if split is None:
+        return tm.Square(lane.key, w.key, tm.NONE, sample=True)
+    kids = ",".join(map(str, kid_ages))
+    try:
+        trips = [catalog.parse_trip(home or catalog.ORIGIN[0], d.key, a.isoformat(), b.isoformat(), str(adults), kids) for d, (_, a, b) in zip(dests, split)]
+        first = catalog.parse_trip(home or catalog.ORIGIN[0], dests[0].key, w.depart.isoformat(), w.return_.isoformat(), str(adults), kids)
+    except catalog.TripError:
+        return tm.Square(lane.key, w.key, tm.NONE, sample=True)
+    f = min(catalog.offers("flight", first), key=lambda o: (o.price_cents, o.id))
+    back = lane.places[-1].iata
+    flight = tm.FlightPart(f.name, f"{_day_clock(w.depart)}{first.origin} {tripgrid.clock(f.depart_min)} → {f.airport} {tripgrid.clock(f.arrive_min)} · {f.stops or 'Nonstop'}",
+                           f"{_day_clock(w.return_)}{back} {tripgrid.clock(f.back_depart_min)} → {first.origin} {tripgrid.clock(f.back_arrive_min)}", _stops(f.stops),
+                           sample_day(f.price_cents, w.depart))
+    stays = []
+    for place, trip, (_, a, b) in zip(lane.places, trips, split):
+        st = min(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))
+        stays.append(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)))
+    first_stay = min(catalog.offers("stay", trips[0]), key=lambda o: (o.price_cents, o.id))
+    drive = catalog.ride_base(f.airport, catalog.ride_area(f.airport, first_stay), "arrive")[1]
+    return tm.Square(lane.key, w.key, tm.OK, flight, tuple(stays), drive, None, True)
+
+
+def _stay_part(place, a, b, s: liteapi.Stay) -> tm.StayPart:
+    board = "breakfast" if s.board == "breakfast" else s.board
+    rating = " · ".join(x for x in (f"{s.rating:g} of 10" if s.rating else "", f"{s.reviews:,} reviews" if s.reviews else "") if x)
+    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents)
+
+
+def _leg_words(leg) -> str:
+    return (f"{_day_clock(leg.depart)}{leg.origin} {tripgrid.clock(leg.depart.hour * 60 + leg.depart.minute)} → {leg.destination} "
+            f"{tripgrid.clock(leg.arrive.hour * 60 + leg.arrive.minute)}{' next day' if leg.arrive.date() > leg.depart.date() else ''} · {_stops_text(leg.stops)}")
+
+
+def _pick_stay(items):
+    return next((s for s in items if (s.rating or 0) >= RATED), items[0])
+
+
+def _liteapi_square(lane, w, adults, kid_ages, home, family, peek):
+    split = tm.stays_for(lane, w)
+    if not home or split is None:
+        return None if peek else tm.Square(lane.key, w.key, tm.FAILED if not home else tm.NONE)
+    party = {"adults": adults, "kid_ages": tuple(kid_ages), "family": family, "cached_only": peek}
+    legs = tm.legs_for(lane, w, home)
+    asks = [lambda: liteapi.flights(legs=legs, **party)] + [lambda p=p, a=a, b=b: liteapi.stays(city=p.city, country=COUNTRY, checkin=a, checkout=b, **party) for p, a, b in split]
+    if peek:
+        answers = [ask() for ask in asks]
+        if any(a is None for a in answers):
+            return None
+    else:
+        with ThreadPoolExecutor(len(asks)) as pool:       # side by side: a flight takes up to 16 s, a stay 2
+            answers = [f.result() for f in [pool.submit(ask) for ask in asks]]
+    fetched = min((a.fetched for a in answers if a.fetched), default=None)
+    if any(a.status == liteapi.OVER for a in answers):
+        return tm.Square(lane.key, w.key, tm.OVER, fetched=fetched)
+    if not all(a.ok for a in answers):
+        return tm.Square(lane.key, w.key, tm.FAILED, fetched=fetched)
+    fl, *st = answers
+    if not fl.items or not all(a.items for a in st):
+        return tm.Square(lane.key, w.key, tm.NONE, fetched=fetched)
+    f = fl.items[0]
+    flight = tm.FlightPart(f.airline, _leg_words(f.legs[0]), _leg_words(f.legs[-1]) if len(f.legs) > 1 else "", f.stops, f.cents)
+    stays = tuple(_stay_part(p, a, b, _pick_stay(ans.items)) for (p, a, b), ans in zip(split, st))
+    first = lane.places[0]
+    drive = airportdrive.kept(first.iata, first.town) if peek else airportdrive.drive(first.iata, first.town)
+    return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive.minutes if drive else None, fetched)
+
+
+def _square(lane, w, adults=2, kid_ages=(), home="", family="", peek=False):
+    if showcase.on():
+        return _catalog_square(lane, w, adults, kid_ages, home)
+    return _liteapi_square(lane, w, adults, kid_ages, home, family, peek)
+
+
+SQUARE = _square
+
+
+def square(lane, window, adults=2, kid_ages=(), home="", family="", peek=False):
+    return SQUARE(lane, window, adults=adults, kid_ages=tuple(kid_ages), home=home, family=family, peek=peek)

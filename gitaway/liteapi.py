@@ -373,12 +373,12 @@ def _ask(what: str, path: str, body: dict | None, timeout: float):
         return None
 
 
-def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read) -> Answer:
+def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False) -> Answer | None:
     if not key():
         return Answer(OFF)
     cache_key = (path, mode(), json.dumps(body, sort_keys=True))
     kept = _kept(cache_key, keep)
-    if kept is not None:
+    if kept is not None or cached_only:      # cached_only (F-222): what is kept, or None; never a call and never a search counted
         return kept
     if not _spend(family):
         return Answer(OVER)
@@ -401,8 +401,8 @@ def _party(adults: int, kid_ages) -> tuple:
 
 
 def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str = "", country: str = "", lat: float | None = None, lng: float | None = None,
-          radius_m: int | None = None, family: str = "") -> Answer:
-    """Hotel rates for one room for the party, by a city and its country code or by a point and a radius in metres."""
+          radius_m: int | None = None, family: str = "", cached_only: bool = False) -> Answer | None:
+    """Hotel rates for one room for the party, by a city and its country code or by a point and a radius in metres. `cached_only`: the kept answer or None, no call."""
     adults, ages = _party(adults, kid_ages)
     if checkout <= checkin:
         raise ValueError("checkout is after checkin")
@@ -414,11 +414,11 @@ def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str 
         raise ValueError("a city and country, or a point and a radius")
     body = {**where, "checkin": checkin.isoformat(), "checkout": checkout.isoformat(), "currency": "USD", "guestNationality": "US",
             "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_TIMEOUT - 5}
-    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays)
+    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only)
 
 
-def flights(*, legs, adults: int, kid_ages=(), family: str = "") -> Answer:
-    """Flight offers for the legs in order (one: one way; two back and forth: a round trip), for the party. Kids under 2 fly as infants."""
+def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bool = False) -> Answer | None:
+    """Flight offers for the legs in order (one: one way; two back and forth: a round trip), for the party. Kids under 2 fly as infants. `cached_only` as for stays."""
     adults, ages = _party(adults, kid_ages)
     legs = tuple(legs)
     if not legs:
@@ -428,7 +428,7 @@ def flights(*, legs, adults: int, kid_ages=(), family: str = "") -> Answer:
                      for i, (o, d, day) in enumerate(legs)],
             "adults": adults, "children": len([a for a in ages if a >= 2]), "childrenAges": [a for a in ages if a >= 2],
             "infants": len([a for a in ages if a < 2]), "infantAges": [a for a in ages if a < 2], "currency": "USD", "country": "US"}
-    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights)
+    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only)
 
 
 def about(hotel_id: str, family: str = "") -> str:
