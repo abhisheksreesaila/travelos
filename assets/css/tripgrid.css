@@ -72,8 +72,7 @@
 .tg-sh { background: var(--k-stay-t); color: var(--k-stay-i); }
 .tg-sh.is-on { background: var(--k-stay); color: var(--k-on); }
 .tg-sh .tg-sh-top { display: flex; justify-content: space-between; gap: 0.75rem; }
-.tg-sh-top > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tg-sh > .tg-h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.tg-sh-top > :first-child { min-width: 0; overflow-wrap: anywhere; line-height: 1.15; }
 .tg-h1 { font-size: 1.25rem; font-weight: 750; letter-spacing: -0.01em; }
 .tg-h2, .tg-h3 { font-size: 1rem; line-height: 1.3; }
 .tg-b { font-weight: 700; }
@@ -136,7 +135,7 @@
   .tg-scroll::-webkit-scrollbar { display: none; }
   /* as wide as its columns need, and never narrower than the stage: a small grid fills the room beside the panel, a big one scrolls under it */
   .tg-pad { box-sizing: border-box; width: calc(20rem + var(--tg-n, 5) * 13.5rem + var(--tg-sidew) + 0.5rem); min-width: 100%; padding: var(--tg-open) calc(var(--tg-sidew) + 0.5rem) 2rem 0; }
-  .tg-grid { grid-template-columns: 20rem repeat(var(--tg-n, 5), minmax(0, 1fr)); grid-template-rows: 10rem; grid-auto-rows: 8rem; gap: 0.5rem; }
+  .tg-grid { grid-template-columns: 20rem repeat(var(--tg-n, 5), minmax(0, 1fr)); grid-template-rows: 10rem; grid-auto-rows: minmax(8rem, auto); gap: 0.5rem; }   /* a long stay name wraps and its row grows: nothing is cut short */
   .tg-pad[data-n="1"] { --tg-n: 1; } .tg-pad[data-n="2"] { --tg-n: 2; } .tg-pad[data-n="3"] { --tg-n: 3; } .tg-pad[data-n="4"] { --tg-n: 4; } .tg-pad[data-n="5"] { --tg-n: 5; } .tg-pad[data-n="6"] { --tg-n: 6; }
   .tg-pad[data-n="7"] { --tg-n: 7; } .tg-pad[data-n="8"] { --tg-n: 8; } .tg-pad[data-n="9"] { --tg-n: 9; } .tg-pad[data-n="10"] { --tg-n: 10; } .tg-pad[data-n="11"] { --tg-n: 11; } .tg-pad[data-n="12"] { --tg-n: 12; }
   .tg-row, .tg-row.tg-head, .tg-cells { display: contents; }
@@ -163,8 +162,8 @@
   .tg-top, .tg-dates { flex-wrap: nowrap; }
   .tg-days { order: 0; flex: 1 1 0; }
   .tg-nights { margin-left: 0; }
-  .tg-sent { flex-wrap: nowrap; white-space: nowrap; height: 4.5rem; padding-block: 0; border-radius: var(--r-pill, 2.25rem); }
-  .tg-w { overflow: hidden; text-overflow: ellipsis; }
+  .tg-sent { align-content: center; height: 4.5rem; padding-block: 0; line-height: 1.2; border-radius: var(--r-pill, 2.25rem); }   /* a long search wraps to a second line inside the pill */
+  .tg-sent .tg-tok { min-height: 1.75rem; }
   .tg-pop { position: absolute; top: calc(100% + 0.5rem); left: 0; z-index: 30; margin: 0; min-width: 25rem; white-space: normal; background: var(--card); box-shadow: var(--sh3); }
   .tg-pop-edit { left: auto; right: 0; min-width: 40rem; }
   .tg-seg { height: 4.5rem; box-sizing: border-box; align-items: center; }
