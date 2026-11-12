@@ -35,7 +35,7 @@ a.ss-credit { color: var(--ink-2); text-decoration: underline; text-underline-of
 @media (max-width: 720px) {
   .ss-strip { padding: 0.875rem 0.875rem 1rem; border-radius: var(--r-lg); }
   .ss-tag { margin-left: 0; }
-  .ss-days { overflow-x: auto; scrollbar-width: none; margin: 0 -0.875rem; padding: 0 0.875rem 0.25rem; scroll-snap-type: x proximity; }
+  .ss-days { overflow-x: auto; scrollbar-width: none; margin: 0 -0.875rem; padding: 0 0.875rem 0.25rem; scroll-padding-inline: 0.875rem; scroll-snap-type: x proximity; }
   .ss-day { flex: 0 0 4.5rem; scroll-snap-align: start; }
   a.ss-credit { min-height: var(--target); display: flex; align-items: center; }
 }
