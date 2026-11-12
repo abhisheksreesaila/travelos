@@ -137,7 +137,7 @@ def _heart_face(pid, k):
 
 
 def _bar(ico, words, tag):
-    return Div(icon(ico, 14), Span(words), Span(cls="cv-sp"), Span(tag, cls="cv-sample"), cls="cv-fbar")
+    return Div(icon(ico, 14), Small(words), Span(cls="cv-sp"), Span(tag, cls="cv-sample"), cls="cv-fbar")
 
 
 # ---------- the frame's three screens (the F-222 seam: SCREENS) ----------
@@ -228,7 +228,7 @@ def _part(n, name, two, text, anchor):
     ink, soft = two
     extra = ()
     if n == "1":
-        extra = (P(DISCLOSURE, cls="cv-note"),)
+        extra = (P(DISCLOSURE, cls="cv-note ga-fine"),)
     if n == "3":
         extra = (A("For creators", icon("arrow-right", stroke=2), href="/for-creators", cls="cv-btn tonal cv-small"),)
     return Div(Div(P(f"0{n} · {name}", cls="cv-n"), H2(ink, *((Em(soft),) if soft else ())),
@@ -265,7 +265,7 @@ def _footer(links):
         Nav(*[A(label, href=href) for label, href in [*links, ("Privacy", "/privacy"), ("Terms", "/terms")]], aria_label="More"),
         mode_switch(),
         P("Early preview · the families, prices and trips on this page are made up, to show how it works; the places are real and so is their "
-          "typical weather (NOAA climate normals, 1991 to 2020). The drawings are GitAway’s own.", cls="cv-fine"),
+          "typical weather (NOAA climate normals, 1991 to 2020). The drawings are GitAway’s own.", cls="cv-fine ga-fine"),
         cls="cv-foot",
     )
 

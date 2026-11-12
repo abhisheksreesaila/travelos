@@ -20,6 +20,7 @@
 .cv-root :focus-visible { outline: 0.1667rem solid var(--ink); outline-offset: 0.1667rem; }
 .cv-root .ga-skip { z-index: 30; left: max(1rem, env(safe-area-inset-left)); }
 .cv-root h1 em, .cv-root h2 em { font-style: normal; color: var(--ink-2); }
+.cv-root small { font-size: var(--t-fine); }      /* fine print: 13px on a laptop, 14px on a phone */
 
 /* ---------- the header: the logo, the honest label, sign in (it scrolls away: nothing is fixed over the frame) ---------- */
 .cv-top { display: flex; align-items: center; gap: 1rem; max-width: 110rem; margin: 0 auto; min-height: 5.6667rem; padding: max(0.8333rem, env(safe-area-inset-top)) var(--cv-gut) 0.8333rem; box-sizing: border-box; }
@@ -176,6 +177,10 @@
   .cv-film .cv-ch { min-height: 100svh; display: grid; align-content: center; }
   .cv-film .cv-L { position: absolute; inset: 0; border-radius: 0; box-shadow: none; opacity: 0; transition: opacity var(--motion-dur) var(--motion-ease); }
   .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    /* reduced motion keeps a plain, short fade between the screens (base.css stops every other transition) */
+    .cv-film .cv-stage .cv-L { transition: opacity var(--motion-fade) linear !important; }
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     /* the incoming screen settles in on the spring (the outgoing one fades under it on the transition above) */
@@ -289,6 +294,10 @@
   .cv-soon { min-height: 3.25rem; justify-content: center; font-size: 1.0625rem; }
   .cv-close .cv-pf { margin-top: 3rem; }
   .cv-foot { padding: 3rem var(--cv-gut) max(3rem, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 389px) {
+  .cv-top { flex-wrap: wrap; row-gap: 0.25rem; }
+  .cv-tag { order: 3; flex-basis: 100%; }      /* the narrowest phones: the honest label takes a short second row under the logo (D-61: the logo stays whole) */
 }
 @media (max-width: 720px) and (max-height: 760px) {
   .cv-film .cv-L1 .cv-stripw { display: none; }      /* a short phone: the calendar waits for the matrix itself */
