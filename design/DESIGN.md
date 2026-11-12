@@ -1,32 +1,29 @@
-# GitAway design system (for Stitch)
+# GitAway design system (for Stitch): Direction A
 
-GitAway is a family trip planner: one shared trip (days, plans, bookings, family chat, an Ask box you speak or type into). Feel: joyful, trustworthy, alive, calm. Warm and colourful like a kid's site, with Apple-level spacing and restraint. Light mode only.
+GitAway is a family trip planner: compare the whole trip (flight + stay + drive) across places and dates, then choose it together. Feel: joyful, trustworthy, alive, calm; Apple-level spacing and restraint; dense and useful, never crowded. Light first; dark exists too.
 
 ## Colour (keep exactly)
-- Ink `#1E1A2E` (text, booked items, strongest surfaces). Secondary text `#4A4460`, captions `#5A5470`.
-- Page ground: warm paper `#FFF8EE`. Surfaces: white `#FFFFFF`; a step darker `#FAF7F2`.
-- Hairline `rgba(30,26,46,0.10)`; control edge `rgba(30,26,46,0.16)`.
-- Primary action: coral `#FF7352` with ink text; coral-deep `#C9431F` for accent text on white/paper only. Coral tint `#FFE6DA`.
-- Day and kind colours (fill / tint / deep ink for text on the tint):
-  - sun `#FFC93C` / `#FFF1C2` / `#8A6200` (food, kid friendly)
-  - mint `#48D1A0` / `#D4F7EA` / `#16865F` (outdoors, nature)
-  - grape `#C3B2FF` / `#ECE4FF` / `#6A4FD6` (hotel, culture)
-  - sky `#5AB0FF` / `#DDEEFF` / `#1B6FC9` (flights, travel, map)
-  - bubble `#FF8CC6` / `#FFE3F1` / `#C23B82` (fun, going home)
-  Days cycle sun, mint, grape, sky, bubble. Ink text sits on every fill; white text only on ink.
+- Canvas: neutral grey `#F2F2F5`. Cards and tiles: opaque white `#FFFFFF`. Quiet fill on a card (pills, hover): `#EDEDF1`.
+- Ink `#0B0B0D` (text, the one accent). Secondary text `#5C5C66`, captions `#62626B`. Hairlines `#E3E3E8`, stronger `#D7D7DE`.
+- The accent is ink: the primary button is a black pill with white text. No other accent colour.
+- Kind colours, solid fills with white text, used ONLY to mark a kind of thing (never a day, never decoration): flight `#4338CA`, stay `#8B2FC9`, car/drive `#15803D`, tickets `#C2410C`, weather `#0369A1`, food `#C92A5E`, see and do `#0F766E`, ride `#FFD43B` (dark text). Each kind has a calm tint for backgrounds: flight `#E4E3FB`, stay `#F1E3FA`, car `#DDF3E4`, weather `#DBEFFA`, tickets `#FCE6DA`, see `#D9F2EF`.
+- Good/ok `#1F9D50` on tint `#DDF3E4`; warning text `#6B4A00` on `#FFF1C9`.
+- Dark mode: canvas `#000000`, cards `#1C1C1F`, raised `#2A2A2E`, ink `#F5F5F7`, secondary `#A1A1AA`; the accent pill turns white with black text. Kind fills stay the same.
 
 ## Type
-- Display: Bricolage Grotesque 700–800, tight tracking (−0.02 to −0.04em): page and day titles, big numbers.
-- Body: Figtree 400–800: everything else.
-- Hand: Caveat 700, only for traveller notes and photo captions, never UI.
+- Geist for everything (headings 700-800 with tight tracking -0.02 to -0.04em; body 400-500). Geist Mono for prices, times and small codes.
+- Phone: body 17, secondary 16, fine print 14, all-caps labels 13; titles 34/24/20. Desktop: body 16, secondary 14, fine 13, labels 12; titles 42/22/18.
+- Two-tone headings are welcome: the first clause ink, the continuation in secondary grey.
 
-## Shape
-- Pills (radius 999) for every button, chip and tab.
-- Cards radius 14–20; big panels 28.
-- Icons: thin rounded stroke icons in ink. Never emoji.
+## Shape and depth
+- Pills (radius 999) for every button, chip and tab. Fields 14, cards 20, widgets and panels 26.
+- Surfaces are opaque. One soft shadow scale: cards a hairline and a 2px shadow; focal cards and menus a soft 24px shadow; sheets and the tab bar a deeper 48px shadow.
+- Translucency only on floating islands (the top nav pill, a folded search island) and the phone's bottom tab bar: ~80% card colour with a background blur, always readable. Nothing else is glass.
+- Icons: thin rounded stroke icons in ink, 1.75px stroke. Never emoji.
 
 ## Rules
-- Bookings (flights, hotels, cars) read as confirmed: a quiet "BOOKED" label.
-- One accent block per screen at most (e.g. the "Up next" card in ink).
-- Phone: floating glass tab bar at the bottom (Today, a centre Ask button with a mic, Trip), big thumb targets (48px), bottom sheets instead of dialogs.
-- Laptop: fits 1440×900 at 100% with no page scroll; calm, no heavy shadows.
+- Colour means a kind, never a day. Day chips are neutral; the selected one is ink.
+- One strong focal card per screen (an ink card, e.g. "Up next" or the lit discovery).
+- Prices are sample/preview and say their age ("Preview · 4 min ago"). The book button says "Booking opens soon".
+- Phone: one floating opaque tab bar at the bottom (Trip, Plan, a centre ink Ask button, Book, Family); 48px targets; bottom sheets, never dialogs.
+- Laptop: top islands (brand left; a centred nav pill Trip, Book, Family, Ask; a live Beacon pill and avatar right); fits 1440x900 with no page scroll where possible.
