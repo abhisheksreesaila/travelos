@@ -88,6 +88,8 @@ def test_the_frame_stays_pinned_while_the_parts_pass_and_swaps_its_screen(cover,
         page.wait_for_timeout(700)
         tops.append(_box(page, ".cv-frame")[1])
         assert _opacity(page, ".cv-L") == ["1" if k == n else "0" for k in (1, 2, 3)], n
+        assert page.evaluate("[...document.querySelectorAll('.cv-L')].map((l) => getComputedStyle(l).visibility)") == [
+            "visible" if k == n else "hidden" for k in (1, 2, 3)], n                    # a faded screen is not read, pointed at or tabbed to
         frame = _box(page, ".cv-frame")
         words = _box(page, f".cv-ch{n} h2")
         vh = SIZES[size]["height"]
@@ -109,7 +111,7 @@ def test_the_incoming_screen_settles_in_on_the_spring_and_the_outgoing_one_fades
     _show(page, 2)
     styles = page.evaluate("""() => { const s = (q) => getComputedStyle(document.querySelector(q));
       return [s('.cv-L2').animationName, s('.cv-L2').animationDuration, s('.cv-L2').animationTimingFunction, s('.cv-L1').transitionProperty, s('.cv-L1').transitionDuration]; }""")
-    assert styles == ["cv-settle", "0.38s", SPRING, "opacity", "0.24s"], styles
+    assert styles == ["cv-settle", "0.38s", SPRING, "opacity, visibility", "0.24s, 0s"], styles
     page.wait_for_timeout(600)
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-L2')).transform") in ("none", "matrix(1, 0, 0, 1, 0, 0)")      # settled, at rest
 
@@ -148,7 +150,7 @@ def test_reduced_motion_pins_the_frame_and_swaps_with_a_plain_fade(cover, size):
     assert max(tops) - min(tops) <= 1
     names = page.evaluate("[...document.querySelectorAll('.cv-L, .cv-L *')].map((e) => getComputedStyle(e).animationName).filter((n) => n !== 'none')")
     assert names == []                                                                  # no spring, no moment: a plain fade
-    assert page.evaluate("(() => { const s = getComputedStyle(document.querySelector('.cv-L1')); return [s.transitionProperty, s.transitionDuration, s.transitionTimingFunction]; })()") == ["opacity", "0.12s", "linear"]
+    assert page.evaluate("(() => { const s = getComputedStyle(document.querySelector('.cv-L1')); return [s.transitionProperty, s.transitionDuration, s.transitionTimingFunction]; })()") == ["opacity, visibility", "0.12s, 0s", "linear, linear"]
     at_rest = ".cv-L1 :is(.cv-w, .cv-c, .cv-disc), .cv-L2 :is(.cv-hf, .cv-bub), .cv-L3 :is(.cv-ig, .cv-creator)"
     assert set(_opacity(page, at_rest)) == {"1"}
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-c.lit')).backgroundColor") == "rgb(11, 11, 13)"
@@ -285,3 +287,16 @@ def test_the_doors_open_their_pages(cover, base_url, size):
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/start**")
+
+
+@pytest.mark.parametrize("size", [(390, 700), (390, 844), (800, 800), (900, 1000), (1100, 700), (1280, 800), (1440, 900)],
+                         ids=["390x700", "390x844", "800x800", "900x1000", "1100x700", "1280x800", "1440x900"])
+def test_each_screen_fits_its_frame(cover, size):
+    """Nothing in a screen is cut off by the frame, on a short phone, a tablet or a laptop (the sweep found the tablet's calendar cut off)."""
+    w, h = size
+    page = cover({"width": w, "height": h})
+    for n in (1, 2, 3):
+        _show(page, n)
+        over = page.evaluate("""n => { const f = document.querySelector('.cv-frame').getBoundingClientRect();
+          return Math.max(...[...document.querySelectorAll(`.cv-L${n} *`)].filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect().bottom)) - f.bottom; }""", n)
+        assert over <= 0, (size, n, over)

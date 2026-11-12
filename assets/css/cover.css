@@ -12,7 +12,7 @@
 .cv-root {
   --cv-gut: max(2.3333rem, env(safe-area-inset-left), env(safe-area-inset-right));
   --fh: min(51.6667rem, calc(100svh - 4rem));                /* the pinned frame's height: a laptop */
-  --fh-s: min(44rem, calc(100svh - 20rem));                  /* stacked (under 1100px) */
+  --fh-s: min(51.6667rem, calc(100svh - 20rem));             /* stacked (under 1100px): a tablet's frame holds the laptop's screens */
 }
 @media (max-width: 720px) { .cv-root { --cv-gut: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)); --fh-s: min(33rem, 64svh); } }
 .cv-root body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--t-body)/1.5 var(--font-body); overflow-x: hidden; overflow-x: clip; }
@@ -175,11 +175,14 @@
   .cv-film .cv-frame { display: block; position: sticky; top: calc(50svh - var(--fh) / 2); height: var(--fh); border-radius: 2.5rem; background: var(--card); box-shadow: var(--sh3); overflow: hidden; }
   .cv-film .cv-chs { display: block; grid-area: 1 / 1; }
   .cv-film .cv-ch { min-height: 100svh; display: grid; align-content: center; }
-  .cv-film .cv-L { position: absolute; inset: 0; border-radius: 0; box-shadow: none; opacity: 0; transition: opacity var(--motion-dur) var(--motion-ease); }
-  .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { opacity: 1; }
+  /* a screen that has faded out is also hidden (after its fade), so nothing under the shown one is read, pointed at or tabbed to */
+  .cv-film .cv-L { position: absolute; inset: 0; border-radius: 0; box-shadow: none; opacity: 0; visibility: hidden;
+    transition: opacity var(--motion-dur) var(--motion-ease), visibility 0s linear var(--motion-dur); }
+  .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { opacity: 1; visibility: visible; transition-delay: 0s; }
   @media (prefers-reduced-motion: reduce) {
     /* reduced motion keeps a plain, short fade between the screens (base.css stops every other transition) */
-    .cv-film .cv-stage .cv-L { transition: opacity var(--motion-fade) linear !important; }
+    .cv-film .cv-stage .cv-L { transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade) !important; }
+    .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { transition-delay: 0s !important; }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -204,7 +207,7 @@
 
   /* stacked (under 1100px): the frame pins at the top and each part's card passes under it */
   @media (max-width: 1099px) {
-    .cv-film .cv-stage { display: block; max-width: 46rem; padding-top: 2rem; }
+    .cv-film .cv-stage { display: block; max-width: 56rem; padding-top: 2rem; }      /* a tablet's frame as wide as the laptop's, so its screens fit */
     .cv-film .cv-fwrap { position: sticky; top: 0.6667rem; z-index: 2; }
     .cv-film .cv-frame { position: relative; top: 0; height: var(--fh-s); }
     .cv-film .cv-ch { min-height: 80svh; align-content: start; padding-top: 1.3333rem; position: relative; z-index: 1; margin-top: 0; }
@@ -241,7 +244,7 @@
   .cv-ch .cv-btn { margin-top: 1rem; }
   .cv-film .cv-card { padding: 1.125rem 1.125rem 1.25rem; border-radius: 1.375rem; }
 
-  .cv-L { padding: 1rem; gap: 0.75rem; border-radius: 1.625rem; }
+  .cv-L { padding: 0.875rem 1rem; gap: 0.625rem; border-radius: 1.625rem; }
   .cv-film .cv-frame { border-radius: 1.625rem; }
   .cv-fbar { gap: 0.375rem; }
   .cv-sample { font-size: max(var(--label-min), 0.8125rem); padding: 0.3125rem 0.5rem; }
@@ -299,8 +302,11 @@
   .cv-top { flex-wrap: wrap; row-gap: 0.25rem; }
   .cv-tag { order: 3; flex-basis: 100%; }      /* the narrowest phones: the honest label takes a short second row under the logo (D-61: the logo stays whole) */
 }
+@media (max-width: 720px) and (max-height: 760px), (min-width: 721px) and (max-width: 1099px) and (max-height: 859px) {
+  .cv-film .cv-L1 .cv-stripw { display: none; }      /* a short phone or tablet: the calendar waits for the matrix itself, rather than be cut off */
+}
 @media (max-width: 720px) and (max-height: 760px) {
-  .cv-film .cv-L1 .cv-stripw { display: none; }      /* a short phone: the calendar waits for the matrix itself */
+  .cv-film .cv-L2 .cv-bub:nth-child(3) { display: none; }      /* and the thread keeps two messages */
 }
 
 /* ---------- the place art's palettes, light and dark (generated) ---------- */
