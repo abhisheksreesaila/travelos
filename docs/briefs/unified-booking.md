@@ -26,13 +26,12 @@ GitAway's core stays sharing, creators and the family trip. The matrix is the mo
 8. **Ready to post**: a trip card made for Instagram (the place's art, dates, the route, a link back to the trip), so sharing GitAway is one tap.
 
 ## The cover tells this story (draft, 2026-11-12)
-Headline: **"Find the trip you didn't know you needed. Plan it together."** (draft; the founder rejected "See the trip you didn't know to ask for" as open to misreading.)
-Five beats, replacing the eight stages of cover v5:
-1. **Say it**: one sentence types itself ("A family of 4, from SFO, somewhere warm, Dec 12 to 16").
-2. **See what you didn't know**: the matrix fills in; one square lights up: "LA + San Diego, $50 more than San Diego alone."
-3. **Feel the place**: the calendar wears the weather, the place wears its art.
-4. **Decide together**: family votes land on squares, a creator's pick beside them.
-5. **Share it**: the trip becomes the Instagram-ready card. Close: "Plan it together. Booking opens soon."
+Headline (the founder's pick, 2026-11-12): **"The whole trip, compared. With the people you're going with."** Lines about a trip "you didn't know you needed" or "to ask for" were dropped as easy to misread.
+Three parts, each with its own beats, replacing the eight stages of cover v5:
+1. **Compare.** One sentence types itself ("A family of 4, from SFO, somewhere warm, Dec 12 to 16"); the matrix fills in and one square lights up ("LA + San Diego, $50 more than San Diego alone"); the calendar wears the weather, the place wears its art.
+2. **Plan it together.** Family votes land on squares, the chat beside them; the chosen square becomes the family's trip.
+3. **Leave a trail.** The trip becomes the Instagram-ready card; creators (travel bloggers, vloggers) welcome: their trips open into a matrix of their own for their readers.
+Close: the headline again, "Booking opens soon" said plainly.
 The cockpit and the creator tools leave the cover for their own pages. Fewer, calmer moves (cover v5 felt jittery to the founder); drafted in the designer before any code.
 
 ## Look
