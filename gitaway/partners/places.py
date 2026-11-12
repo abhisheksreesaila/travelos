@@ -66,6 +66,7 @@ _TABLE = (
     (("yosemite", "yosemite national park"), Place("Yosemite", "Yosemite National Park", "California", "FAT")),
     (("palm springs",), Place("Palm Springs", "Palm Springs", "California", "PSP")),
     (("santa barbara",), Place("Santa Barbara", "Santa Barbara", "California", "SBA")),
+    (("orange county", "newport beach", "huntington beach", "laguna beach"), Place("Orange County", "Newport Beach", "California", "SNA")),
     (("napa", "napa valley", "sonoma"), Place("Napa", "Napa", "California", "SFO")),
     (("monterey", "carmel", "carmel-by-the-sea"), Place("Monterey", "Monterey", "California", "MRY")),
     (("las vegas", "vegas"), Place("Las Vegas", "Las Vegas", "Nevada", "LAS", klook=True)),

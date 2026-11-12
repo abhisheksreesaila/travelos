@@ -1,0 +1,8 @@
+/* F-223: the showcase-only /dev/placeart preview (gitaway/pages/devart.py). */
+.da-place { margin: 2rem 0; }
+.da-place h2, .da-strips h2 { font: 700 max(var(--text-min), 1.5rem)/1.2 var(--font-body); margin-bottom: 0.75rem; }
+.da-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
+.da-tile { background: var(--card); border-radius: var(--r-md); box-shadow: var(--sh1); overflow: hidden; }
+.da-art { aspect-ratio: 2 / 1; }
+.da-cap { display: block; padding: 0.5rem 0.75rem; font-size: max(var(--text-min), 1rem); color: var(--ink-2); }
+.da-strips { display: grid; gap: 1rem; margin: 2rem 0; }

@@ -1410,10 +1410,11 @@ Needs: F-220, F-221
 - [ ] each square is the whole trip: flight + stay + airport drive, with Preview and the age of the price
 - [ ] the book button says "Booking opens soon" and saves the square to the trip
 
-## F-223 Weather in the calendar and the place's art [todo]
+## F-223 Weather in the calendar and the place's art [review]
 Needs: F-221
-- [ ] each day of the strip wears its sky (forecast near, typical labelled far); rain said plainly
-- [ ] the first 10 places wear their art on the matrix and the trip
+- [x] each day of the strip wears its sky (forecast near, typical labelled far); rain said plainly (`gitaway/pages/skystrip.py` `sky_strip`, `weather_for`)
+- [x] the first 10 places' art (`gitaway/placeart.py` `art`, `kind`) and their sourced fun facts (`gitaway/placefacts.py`, docs/research/place-facts.md); preview at /dev/placeart (showcase only)
+- [ ] the matrix and the trip wear them (F-222's page calls the three modules)
 
 ## F-224 Choose it together [todo]
 Needs: F-222 · Decisions: the owner decides; friends heart without an account (brief)

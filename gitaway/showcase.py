@@ -24,7 +24,8 @@ HIDDEN = ("/share",  # the old one-tap demo share (F-022); real trips are publis
           "/rides",  # the simulated Uber (rides)
           "/sandbox",  # the stand-in partner checkout (M3): partners keep real bookings, there is nothing to stand in for
           "/creators/draft", "/creators/finish", "/creators/done",  # the paste-a-link import is simulated (F-023)
-          "/plan/quote", "/plan/explore")  # the invented catalog's prices and stay explorer (F-198: production shows only the honest lanes at /plan; /plan/pay already says booking is not open)
+          "/plan/quote", "/plan/explore",  # the invented catalog's prices and stay explorer (F-198: production shows only the honest lanes at /plan; /plan/pay already says booking is not open)
+          "/dev")  # F-223: the designer's previews (/dev/placeart)
 LITEAPI_PAGES = ("/plan/grid", "/plan/matrix")   # the trip grid and the trip matrix (F-217, F-222): off the showcase they exist only with LITEAPI_KEY, the one real source of their prices
 # These exist off the showcase only once a real trip is published (F-181); then they list and fork real content alone.
 REAL = ("/community", "/discover", "/creators", "/forks", "/save", "/unsave", "/fork")
