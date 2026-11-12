@@ -10,6 +10,10 @@ from tests.test_signin import person
 from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_topbar import SAMPLE
 
+# The pages that keep the liquid motion on a laptop, each by name and decision (the cover's and the trip grid's islands, D-401 and D-420, move by their own
+# scroll-linked code and never ask GA.motion): a page joins only by setting data-liquid on <html> in its own script, and this list is the only place that allows it.
+LIQUID_EXCEPTIONS = {"tripmatrix.js": "D-431: the trip matrix, /plan/matrix (the founder: \"experience is the key … it has to be liquidy\")"}
+
 MOVING = ("transform", "scale", "translate", "rotate", "filter", "clipPath", "clip-path", "offsetPath")
 
 # Every frame: the properties of every running animation that is not a loop (a pulse or a shimmer is decoration, not a move), and whether the outline of a level that has not arrived is on the screen.
@@ -186,3 +190,14 @@ def test_a_second_quick_escape_during_the_menus_fold_reaches_the_canvas(lively):
     page.keyboard.press("Escape")
     expect(page.locator(".cz-view[data-level=week]")).to_be_visible()
     assert page.evaluate("!document.querySelector('.ga-tb-account').open")
+
+
+def test_only_the_named_exceptions_keep_the_liquid_motion_on_a_laptop():
+    """GA.motion.calm() is false only where <html> carries data-liquid, and only the scripts in LIQUID_EXCEPTIONS set it (tests_browser/test_tripmatrix.py checks the matrix
+    opens liquid at 1440 and /plan stays calm)."""
+    import re
+    from pathlib import Path
+    js = Path(__file__).resolve().parent.parent / "assets" / "js"
+    setters = sorted(p.name for p in js.glob("*.js") if re.search(r"setAttribute\(\s*['\"]data-liquid", p.read_text(encoding="utf-8")))
+    assert setters == sorted(LIQUID_EXCEPTIONS)
+    assert "hasAttribute('data-liquid')" in (js / "motion.js").read_text(encoding="utf-8")
