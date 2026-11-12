@@ -53,7 +53,7 @@ Brief: `docs/briefs/unified-booking.md` (approved 2026-11-12). Builds: F-222 (ma
 | Cover C (phone) | Swipe the postcards | Next part; dots follow | Dots are buttons | scroll-snap |
 
 ## States to build
-- **Loading:** the sentence and the empty grid appear at once; squares fill cheapest first; a square still searching shows "Searching" over a calm shimmer (no shimmer under reduced motion); the count says "28 of 30 in". Like map tiles, only the squares in view plus a margin are searched; scrolling reveals skeletons that fill as their answers land.
+- **Loading:** the sentence and the empty grid appear at once; squares fill cheapest first; a square still searching shows "Searching" over a calm shimmer (no shimmer under reduced motion); the count says "28 of 30 in". Like map tiles, only the squares in view plus a margin are searched; scrolling reveals skeletons that fill as their answers land. While it fills, one fun fact about the place sits in the waiting space (sourced, hand-written per place), and fades when the squares land.
 - **Empty:** no answers for a place: its lane says "No flights for these dates" in words, never a blank; a place with no weather says "No weather for this place yet".
 - **Error:** a search that failed says so on its square ("Couldn't search · try again"), the rest stay; over the daily budget says "Today's searches are used up · back tomorrow" (F-220).
 - **Long content:** 10+ places scroll inside the grid card with its header pinned; long place names wrap to two lines, never cut (no ellipsis, no line clamp: `tests/test_polish.py`).
