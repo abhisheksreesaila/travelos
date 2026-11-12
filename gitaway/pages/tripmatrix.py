@@ -440,7 +440,10 @@ def matrix_page(s: State, family="", typed="", problems=()):
     skies = skies_of(lanes, windows)
     stage = Div(Div(lanes_el(s, lanes, windows, known, marks, skies), cls="mx-main"), Aside(side, cls="mx-side", id="mx-side", aria_label="The square you opened", aria_live="polite"),
                 cls="mx-stage")
-    cards = Div(*[card_el(s, x, windows, known, marks, skies) for x in lanes], cls="mx-cards")
+    notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
+    cards = Div(*[card_el(s, x, windows, known, marks, skies) for x in lanes],
+                Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
+                cls="mx-cards")      # the cards say a sky, so they carry its credit and labels too (the calendar's own are hidden on a phone)
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),

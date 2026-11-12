@@ -299,6 +299,7 @@
       btn.disabled = true;
       fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'X-Matrix': '1' }, credentials: 'same-origin' })
         .then(function (r) {
+          if (r.status === 403) { return { saved: 'Only an editor in your family can save to the trip.', refused: true }; }   // a viewer: say so here, never a GET of the POST route
           if (r.redirected || (r.headers.get('content-type') || '').indexOf('json') < 0) { location.href = r.url; return null; }
           return r.json();
         })
@@ -308,6 +309,7 @@
           p.className = 'mx-saved';
           p.setAttribute('role', 'status');
           p.textContent = j.saved + ' ';
+          if (j.refused) { btn.disabled = false; form.parentNode.insertBefore(p, form.nextSibling); return; }
           var link = document.createElement('a');
           link.href = j.trip;
           link.textContent = 'Open the trip';

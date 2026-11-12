@@ -182,6 +182,12 @@ def test_each_place_wears_its_art_and_its_days_their_sky_with_the_credit(sample,
     assert "not a forecast" in unescape(html)                                                 # the normals' line, said once under the calendar
 
 
+def test_the_phone_cards_carry_the_weathers_credit_since_they_say_a_sky(sample, client):
+    html = client.get(MATRIX).text
+    cards = html.split('class="mx-cards"', 1)[1]
+    assert "mx-c-sky" in cards and 'class="mx-wx"' in cards                   # AGENTS.md: a page showing weather shows weather.notes
+
+
 def test_while_squares_wait_a_sourced_fact_about_the_place_sits_in_the_waiting_space(real, client):
     from gitaway import placefacts
     html = unescape(client.get(MATRIX).text)
