@@ -236,6 +236,17 @@ def test_a_200_with_an_error_or_too_big_is_a_failure(monkeypatch):
     assert stays().status == liteapi.FAILED
 
 
+def test_an_answer_in_a_shape_we_never_saw_is_a_failure_not_a_crash(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    odd = {"data": [{"hotelId": "x", "roomTypes": ["not an object"],
+                     "journeys": [{"segments": [{"direction": "out"}], "offers": [{"offerId": "o"}]}]}], "hotels": [{"id": "x"}]}
+    f = Fake(body=json.dumps(odd).encode())
+    monkeypatch.setattr(liteapi, "TRANSPORT", f)
+    assert stays().status == liteapi.FAILED
+    assert flights().status == liteapi.FAILED
+    assert stays().status == liteapi.FAILED and len(f.asked) == 2      # kept briefly: a retry spends no budget
+
+
 def test_the_hotels_own_words_come_stripped_and_kept(fake):
     got = liteapi.about("lp1f5cb")
     assert got.startswith("Beachfront Luxury at Pacific Terrace Hotel") and "<" not in got

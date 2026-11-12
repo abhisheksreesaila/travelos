@@ -42,7 +42,7 @@ HOTEL_LIMIT = 30
 MAX_BYTES = 32 * 1024 * 1024             # a round trip's answer was 9 MB (386 journeys, 1,647 offers)
 MAX_CENTS = 10_000_000
 _CACHE: dict = {}                        # key -> Answer (or about text), oldest first
-_CACHE_MAX = 512
+_CACHE_MAX = 128                         # a round-trip answer holds hundreds of journeys with long offer ids
 _LOCK = threading.Lock()
 log = logging.getLogger(__name__)
 
@@ -386,8 +386,8 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
     answer = _ask(what, path, body, timeout)
     try:
         found = Answer(OK, read(answer, at), at) if answer is not None else Answer(FAILED, (), at)
-    except Unreadable as e:
-        log.warning("LiteAPI %s not read (%s)", what, e)
+    except Exception as e:      # a shape we never saw (a missing field, a string for a number): a failure, never a crash
+        log.warning("LiteAPI %s not read (%s: %s)", what, type(e).__name__, e)
         found = Answer(FAILED, (), at)
     _keep(cache_key, found)
     return found
