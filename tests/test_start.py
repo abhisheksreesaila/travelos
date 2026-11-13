@@ -139,11 +139,11 @@ def test_sign_in_with_a_specific_next_still_goes_there(client):
     assert sign_in(client, next="/").headers["location"] == "/"
 
 
-def test_header_and_landing_doors_lead_to_start(client):
-    for path in ["/community", "/start"]:  # the landing's header is only the brand and Sign in (F-060): its door is the form below
+def test_header_and_landing_doors_lead_to_the_matrix(client):
+    for path in ["/community", "/start"]:  # the showcase has the matrix's samples, so "Plan a trip" opens it (off it, without LITEAPI_KEY, the form: tests/test_tripmatrix_page.py)
         h = client.get(path).text
-        assert re.search(r'<nav[^>]*>.*?href="/start"[^>]*>Plan a trip', h, re.S), path
-    assert re.search(r'<a [^>]*href="/start"[^>]*>Start a trip', client.get("/").text)    # the cover's door (F-227)
+        assert re.search(r'<nav[^>]*>.*?href="/plan/matrix"[^>]*>Plan a trip', h, re.S), path
+    assert re.search(r'<a [^>]*href="/plan/matrix"[^>]*>Start a trip', client.get("/").text)    # the cover's door (F-227)
     sign_in(client)
     assert 'action="/start"' in client.get("/").text                                      # the signed-in landing keeps its form
 

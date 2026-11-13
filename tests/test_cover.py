@@ -177,8 +177,9 @@ def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
     html = _cover(client)
     hero = _el(html, "section", "cv-hero")
-    assert _links(hero) == ["/start", "#compare"] and 'id="compare"' in html
-    assert _links(_el(html, "section", "cv-close"))[0] == "/start"
+    door = "/plan/matrix" if mode == "1" else "/start"      # the matrix tells the cover's story where it has prices (the samples, or LITEAPI_KEY); else the form
+    assert _links(hero) == [door, "#compare"] and 'id="compare"' in html
+    assert _links(_el(html, "section", "cv-close"))[0] == door
     assert _links(_el(html, "header", "cv-top")) == ["/", "/signin"]
     for href in sorted(set(_links(html))):
         if href.startswith(("#", "http", "mailto:")):

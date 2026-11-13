@@ -29,7 +29,7 @@ from fasthtml.common import A, B, Div, Em, Figure, Footer, H1, H2, Header, Link,
 
 from gitaway import session, weather
 from gitaway.icons import icon
-from gitaway.layout import brand, mode_switch, preview, seo_meta, styles
+from gitaway.layout import brand, mode_switch, plan_href, preview, seo_meta, styles
 
 ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
 TITLE = "Compare the whole trip. Choose it together."
@@ -239,7 +239,7 @@ def _part(n, name, two, text, anchor):
 def _hero():
     return Section(
         H1(LINE[0], Em(LINE[1])), P(LEDE, cls="cv-lede"),
-        Div(A("Start a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"),
+        Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"),
             A("See how it works", href="#compare", cls="cv-btn tonal big"), cls="cv-ctas"),
         Div(*[art(p, wx) for p, wx in BAND], cls="cv-band", aria_hidden="true"),
         cls="cv-hero")
@@ -253,7 +253,7 @@ def _close(card):
     return Section(
         H2(LINE[0], Em(LINE[1])),
         P("Search and compare today. ", B(f"{SOON},"), " after our first families have tried it."),
-        Div(A("Start a trip", icon("arrow-right", stroke=2), href="/start", cls="cv-btn fill big"), Span(SOON, cls="cv-soon"), cls="cv-ctas"),
+        Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"), Span(SOON, cls="cv-soon"), cls="cv-ctas"),
         *((card,) if card else ()),
         cls="cv-close", id="your-turn")
 

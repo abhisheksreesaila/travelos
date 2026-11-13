@@ -111,6 +111,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .ga-header { height: auto; padding: calc(1rem + env(safe-area-inset-top)) 0 1rem; flex-wrap: wrap; }
   .ga-nav { gap: 1.125rem; order: 3; width: 100%; }
   .ga-footer { flex-direction: column; align-items: flex-start; }
+  .ga-footer > .ga-fine { flex: none; }      /* in a column, the laptop's 18rem basis would be 18rem of height */
+  .ga-footer > .ga-mode { display: none; }   /* Auto follows the phone's own setting; the choice stays on a laptop */
   .ga-brand { min-height: var(--target); }
   .ga-nav a { display: inline-flex; align-items: center; min-height: var(--target); }
 }

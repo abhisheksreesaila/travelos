@@ -14,6 +14,7 @@
   --fh: min(51.6667rem, calc(100svh - 4rem));                /* the pinned frame's height: a laptop */
   --fh-s: min(51.6667rem, calc(100svh - 20rem));             /* stacked (under 1100px): a tablet's frame holds the laptop's screens */
 }
+@media (max-width: 720px) { .cv-foot .ga-mode { display: none; } }      /* as the site footer: Auto follows the phone */
 @media (max-width: 720px) { .cv-root { --cv-gut: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)); --fh-s: min(33rem, 64svh); } }
 .cv-root body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--t-body)/1.5 var(--font-body); overflow-x: hidden; overflow-x: clip; }
 .cv-root :where(a:not(.btn)) { color: inherit; }

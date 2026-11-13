@@ -421,7 +421,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     meta_sample = showcase.on()
     if s.problems or not windows:
         body = Div(Div(sentence(s, typed, problems or s.problems or [MISSING["dates"]]), cls="mx-lead"), cls="mx mx-blank")
-        return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan", head=HEAD, noindex=True)
+        return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan/matrix", head=HEAD, noindex=True)
     known = peek_all(s, lanes, windows, family)
     totals = totals_of(known)
     marks, found = tm.marks(lanes, windows, totals, s.budget_cents), tm.find(lanes, windows, totals)
@@ -452,7 +452,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
-    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan", head=HEAD, noindex=True)
+    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True)
 
 
 def _square_of(s, lane_key, w_key, family="", peek=False):
@@ -470,7 +470,7 @@ def square_page(s: State, lane, w, sq, asked_sq, saved="", can_save=True):
     body = Div(A(icon("chev-left", 18, 2.4), "Back to the matrix", href=href(s), cls="btn mx-back"),
                H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="mx-side mx-alone"),
                Div(P(SAMPLE_FINE if sq is not None and sq.sample else FINE, cls="mx-foot-n"), cls="mx-foot"), cls="mx mx-one")
-    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan", head=HEAD, noindex=True)
+    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True)
 
 
 def _save_id(trip_id, sq) -> str:

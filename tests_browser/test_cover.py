@@ -290,7 +290,7 @@ def test_the_doors_open_their_pages(cover, base_url, size):
     page.goto(f"{base_url}/")
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/start**")
+    page.wait_for_url("**/plan/matrix**")
 
 
 @pytest.mark.parametrize("size", [(390, 700), (390, 844), (800, 800), (900, 1000), (1100, 700), (1280, 800), (1440, 900)],

@@ -112,3 +112,14 @@ def test_dark_follows_the_system_and_a_choice_on_the_switch_is_remembered_on_thi
         assert page.evaluate(CANVAS) == "rgb(0, 0, 0)"
     finally:
         ctx.close()
+
+
+def test_on_a_phone_the_footer_is_short_and_leaves_the_switch_to_the_phones_own_setting(browser, base_url):
+    ctx = context(browser, PHONE, "light")
+    try:
+        page = ctx.new_page()
+        page.goto(f"{base_url}/start")
+        assert not page.locator(".ga-footer .ga-mode").is_visible()                       # Auto follows the phone; the choice is still on a laptop
+        assert page.locator(".ga-footer > .ga-fine").bounding_box()["height"] < 80       # the fine print is its own lines, not 18rem of empty column
+    finally:
+        ctx.close()

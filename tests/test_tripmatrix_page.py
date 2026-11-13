@@ -194,3 +194,24 @@ def test_while_squares_wait_a_sourced_fact_about_the_place_sits_in_the_waiting_s
     facts = placefacts.facts("sandiego")
     shown = next(f for f in facts if f.text in html)
     assert f'href="{shown.source}"' in html and 'class="mx-fact"' in html and page.SLOW in html
+
+
+def nav_plan(html):
+    return re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S).group(0)
+
+
+def test_plan_a_trip_opens_the_matrix_once_it_has_prices_and_the_old_form_until_then(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.delenv("LITEAPI_KEY", raising=False)
+    assert re.search(r'href="/start"[^>]*>Plan a trip<', nav_plan(client.get("/start").text))       # no key: the matrix is not there, so the form is the way in
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    assert re.search(r'href="/plan/matrix"[^>]*>Plan a trip<', nav_plan(client.get("/start").text))
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    monkeypatch.delenv("LITEAPI_KEY", raising=False)
+    nav = nav_plan(client.get("/plan/matrix").text)
+    assert re.search(r'href="/plan/matrix"[^>]*aria-current="page"[^>]*>Plan a trip<|aria-current="page"[^>]*href="/plan/matrix"[^>]*>Plan a trip<', nav)
+
+
+def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):
+    html = unescape(client.get("/plan/matrix").text)
+    assert "Say where you fly from" in html and "data-sq" not in html and real.asked == []
