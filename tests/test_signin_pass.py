@@ -94,10 +94,13 @@ def test_the_half_beside_the_card_is_decorative_and_has_the_route_codes(client):
     assert 'class="si-sky"' in html and 'aria-hidden="true"' in html and html.count('class="si-code"') == 2
 
 
-def test_the_google_letter_is_hidden_from_the_accessible_name(client, monkeypatch):
+def test_the_google_button_wears_googles_own_g_hidden_from_the_accessible_name(client, monkeypatch):
+    """The founder (2026-11-13): the button had a plain letter, not Google's mark, so it did not read as Google. Its four colours are Google's
+    (the brand guidelines' G, the same in light and dark), and the accessible name stays "Continue with Google"."""
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
-    assert re.search(r'<span(?=[^>]*aria-hidden="true")(?=[^>]*class="si-g")[^>]*>G</span>', get(client, "/start"))
+    g = re.search(r'<span(?=[^>]*aria-hidden="true")(?=[^>]*class="si-g")[^>]*>(.*?)</span>', get(client, "/start"), re.S).group(1)
+    assert "<svg" in g and all(c in g for c in ("#4285F4", "#34A853", "#FBBC05", "#EA4335")), g
 
 
 def test_fork_stickers_are_the_first_two_day_titles(client):
