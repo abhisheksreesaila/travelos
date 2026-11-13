@@ -140,7 +140,7 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page = signed_in(viewport)
     page.goto(f"{base_url}/start")
     expect(page.locator("#st-import")).to_be_visible()
-    expect(page.locator("#st-import")).to_have_text("Import a booked trip")
+    expect(page.locator("#st-import")).to_have_text("Already booked? Bring your trip in.")
     page.click("#st-import")
     page.wait_for_url("**/trips/import")
     page.fill("#ti-text", TEMPLATE)

@@ -102,8 +102,8 @@
 .st-field .ga-step-btn { width: 2.25rem; height: 2.25rem; }
 @media (max-width: 720px) { .st-field .ga-pick-btn { min-height: var(--target); } .st-field .ga-step-btn { width: var(--target); height: var(--target); } }
 
-/* "Import a booked trip" (F-058): a visible button under the intro, where trips start. */
-.st-import { align-self: flex-start; margin-top: 0.5rem; }
+/* "Already booked? Bring your trip in." (F-058): a quiet link under the form; planning a new trip comes first. */
+.st-import { align-self: center; display: inline-flex; align-items: center; min-height: var(--target); font-size: max(var(--text-min), 0.9375rem); font-weight: 600; color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.2em; }
 
 /* F-146: "Where to?" in the web look. From 1020px up it is two columns (the intro, the way back to your trip and the import on the left; the form as a white card on the right) so the whole
    page fits a laptop screen; below that the wrapper vanishes and the page is the single column it was. */

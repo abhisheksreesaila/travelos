@@ -116,6 +116,7 @@ def _form(vals, errors):
             cls="st-actions"),
         P("Find my trip shows where to book. Make this a trip keeps it as your family's trip, with a plan for each day.", cls="st-note") if vals.get("place") is not None
         else P("Sample prices for Los Angeles. More places are on the way.", cls="st-note"),
+        A("Already booked? Bring your trip in.", href=firstrun.IMPORT, cls="st-import", id="st-import"),   # a quiet link under the form: planning comes first
         action="/start", method="get", cls="st-card", id="st-form", novalidate=True, aria_label="Plan a trip",
     )
 
@@ -180,8 +181,7 @@ def start_page(session, vals, errors=None, status=200, phone=False):
         Div(
             Div(
                 Div(Span("PLAN A TRIP", cls="eyebrow"), H1("Where to?"), Span("Plan it together.", cls="ga-h-two"),
-                    P("Pick a place, your dates and who is coming. We line up where to book flights, a stay and a car, with your dates and party filled in."),
-                    A(icon("ledger", 16, 2.4), "Import a booked trip", href=firstrun.IMPORT, cls="btn btn-sm st-import", id="st-import"),
+                    P("Pick a place, your dates and who is coming. Plan it with your family, with your dates and party filled in wherever you book."),
                     cls="st-hero"),
                 continue_card(session, phone),
                 firstrun.welcome("Welcome aboard", "Your family has no trips yet, so this is the fun part. Start one below, bring in a trip you already booked" + (", or see what other travelers shared." if showcase.on() else "."), "#st-form") if firstrun.is_new(session) else "",
