@@ -206,11 +206,27 @@ def label(lane, w, sq) -> str:
     return f"{head}: {tm.dollars(sq.cents)} for the whole trip" if sq.ok else f"{head}: {tm.SAID[sq.status]}"
 
 
-def square_el(s: State, lane, w, sq, marks, day=False, style=None):
+def sky_of(skies, lane, w):
+    """The weather of the square's start day where the trip starts (the lane's first place), or None."""
+    return next((d for d in skies[lane.places[0].name].days if d and d.date == w.depart), None) if skies else None
+
+
+def sky_line(wx):
+    """F-230: the square's second line, under its total: a small sky and the high, typical weather marked as such (the notes under the matrix say what
+    typical means and whose numbers they are). The square's label says the total; the panel's sky strip says the weather in words."""
+    if wx is None:
+        return ""
+    typ = wx.kind != weather.FORECAST
+    return Span(icon(wx.condition if wx.condition in WORDS else "cloud", 14, cls="mx-sqw-i"), Span(f"{wx.high_f}°", cls="mx-sqw-t"),
+                Span("typ.", cls="mx-sqw-k") if typ else "", cls="mx-sqw " + ("is-typ" if typ else "is-fc") + (" is-wet" if wx.condition in WET else ""),
+                title=weather_ui.describe(wx), aria_hidden="true")
+
+
+def square_el(s: State, lane, w, sq, marks, day=False, style=None, wx=None):
     k = tm.key(lane.key, w.key)
     cls = " ".join(["mx-sq", state_cls(sq), *[f"is-{m}" for m in marks], "is-asked" if w.asked and lane.asked else ""]).strip()
-    head = [Span(f"{w.depart:%a}", Span(f" {w.depart:%b} {w.depart.day}", cls="mx-dd"), cls="mx-d")] if day else []
-    return A(*head, Span(NotStr(inner(sq)), cls="mx-in"), href=href(s, SQUARE, lane=lane.key, w=w.key), cls=cls, data_sq=k, aria_label=label(lane, w, sq),
+    head = [Span(f"{w.depart:%a}", Span(f" {w.depart:%b}", cls="mx-dd"), f" {w.depart.day}", cls="mx-d")] if day else []
+    return A(*head, Span(NotStr(inner(sq)), cls="mx-in"), sky_line(wx), href=href(s, SQUARE, lane=lane.key, w=w.key), cls=cls, data_sq=k, aria_label=label(lane, w, sq),
              **({"style": style} if style else {}))
 
 
@@ -292,15 +308,18 @@ def sentence(s: State, typed="", problems=()):
     return Div(*out, edit, cls="mx-sent", id="mx-sent")
 
 
-def fact_el(s: State, hidden):
+def fact_el(s: State):
+    """F-230: while the first squares load, a small floating note (an island) says a sourced fact about the place. Drawn hidden: the script shows it when it
+    starts loading squares and lets it go once the first ones land (without the script nothing loads, so there is nothing to wait for)."""
     found = placefacts.facts(s.place.slug)
     if not found:
         return ""
     fact = found[catalog.today().toordinal() % len(found)]
     source = getattr(fact, "source", "")
     cite = A("Source", href=source, cls="mx-fact-src", rel="noopener", target="_blank") if str(source).startswith("https://") else Span(source, cls="mx-fact-src")
-    return Div(Span(f"While we search · {s.place.name}", cls="mx-fact-k"), P(fact.text, cls="mx-fact-t"), cite, cls="mx-fact" + (" is-gone" if hidden else ""), id="mx-fact",
-               aria_hidden="true" if hidden else None)
+    return Aside(Span(icon("spark", 16, 2.2, cls="mx-isle-i"), cls="mx-isle-ic", aria_hidden="true"),
+                 Div(P(Span(f"While we search · {s.place.name}", cls="mx-fact-k")), P(fact.text, cls="mx-fact-t"), cite, cls="mx-isle-b"),
+                 cls="mx-isle is-gone", id="mx-fact", aria_hidden="true", aria_label=f"A fact about {s.place.name} while the prices load")
 
 
 def find_el(s: State, found):
@@ -310,23 +329,6 @@ def find_el(s: State, found):
                A(Span(found.words, cls="mx-find-w", id="mx-find-w"), Span(f" · {found.when}", cls="mx-find-d", id="mx-find-d"),
                  href=href(s, SQUARE, lane=found.lane, w=found.window), cls="mx-find-a", id="mx-find-a", data_open=found.key),
                cls="mx-find", id="mx-find", aria_live="polite", data_key=found.key)
-
-
-def sky_cells(tw, days, col):
-    """A lane's row of days, each wearing its sky (a compact sky strip: gitaway/pages/skystrip.py draws the full one in the panel). Typical days are dotted,
-    forecast days solid, rain and snow said in a word; a day with no weather is left plain."""
-    by = {d.date: d for d in tw.days if d}
-    out = []
-    for d in days:
-        wx = by.get(d)
-        if wx is None:
-            continue
-        wet = wx.condition in WET
-        out.append(Div(icon(wx.condition if wx.condition in WORDS else "cloud", 16, cls="mx-sky-i"), Span(f"{wx.high_f}°", cls="mx-sky-t"),
-                       Span(WORDS[wx.condition], cls="mx-sky-w") if wet else "",
-                       cls="mx-sky" + (" is-fc" if wx.kind == weather.FORECAST else " is-typ") + (" is-wet" if wet else ""), style=f"grid-column: {col[d]}",
-                       aria_label=weather_ui.describe(wx), title=wx.word))
-    return out
 
 
 def lane_el(s: State, lane, windows, days, known, marks, home, skies):
@@ -339,10 +341,9 @@ def lane_el(s: State, lane, windows, days, known, marks, home, skies):
                                                  P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key, data_from=lane.places[0].iata),
                                                  P(f"from {tm.dollars(min(totals))}" if totals else "", cls="mx-l-best", data_lane_best=lane.key)), cls="mx-lh"),
             Div(cls="mx-band", data_band=lane.key, data_l=f"{band_w.nights} nights", style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
-    kids += sky_cells(skies[lane.places[0].name], days, col)
     for w in windows:
         k = tm.key(lane.key, w.key)
-        kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}"))
+        kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}", wx=sky_of(skies, lane, w)))
     found = any("find" in marks.get(tm.key(lane.key, w.key), ()) for w in windows)
     return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else "") + (" is-found" if found else ""), data_lane=lane.key)
 
@@ -367,22 +368,9 @@ def lanes_el(s: State, lanes, windows, known, marks, skies):
                      cls="mx-ad" + (" is-ask" if d == s.depart else "") + (" is-start" if d in starts else "")) for d in days], cls="mx-axis")
     return Section(Div(axis, *[lane_el(s, x, windows, days, known, marks, s.home, skies) for x in lanes], cls="mx-lanes", style=f"--mx-days: {len(days)}"),
                    P(Span(cls="mx-key-band"), "The nights of the cheapest start (or the one you opened). Under each start day: the flight and the stay for "
-                     f"{s.travelers}, all in.", cls="mx-legend"),
+                     f"{s.travelers}, all in, and that day’s weather where the trip starts.", cls="mx-legend"),
                    Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
                    cls="mx-cal", aria_label="Every place, every start day")
-
-
-def sky_words(s: State, lane, skies):
-    """The card's sky line: the asked first day's sky in each of the lane's places, said as the strip says it ("Sunny 66°/50° · typical")."""
-    out = []
-    for p in lane.places:
-        wx = next((d for d in skies[p.name].days if d and d.date == s.depart), None)
-        if wx:
-            out.append(f"{p.name + ' ' if lane.combo else ''}{WORDS.get(wx.condition, '')} {wx.high_f}°/{wx.low_f}°".strip())
-    if not out:
-        return ""
-    far = all(d.kind != weather.FORECAST for p in lane.places for d in skies[p.name].days if d)
-    return P(icon("sun", 16, cls="mx-sky-i"), " · ".join(out) + (" · typical, not a forecast" if far else " · forecast"), cls="mx-c-s mx-c-sky")
 
 
 def card_el(s: State, lane, windows, known, marks, skies):
@@ -392,8 +380,9 @@ def card_el(s: State, lane, windows, known, marks, skies):
     return Section(Div(_arts(lane, "mx-c-art"), H2(lane.name, cls="mx-c-n"), cls="mx-c-top"),
                    Div(Div(Span(tm.dollars(best[0]) if best else "", cls="mx-c-v", data_lane_best=lane.key),
                            Span(tm.when(best[2]) + " · its cheapest" if best else "", cls="mx-c-s", data_lane_when=lane.key), cls="mx-c-best"),
-                       P(via, cls="mx-c-s"), sky_words(s, lane, skies),
-                       Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True) for w in windows], cls="mx-wins"), cls="mx-c-bd"),
+                       P(via, cls="mx-c-s"),
+                       Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True, wx=sky_of(skies, lane, w))
+                             for w in windows], cls="mx-wins"), cls="mx-c-bd"),
                    cls="mx-card" + (" is-asked" if lane.asked else ""), data_lane=lane.key, aria_label=lane.name)
 
 
@@ -426,14 +415,14 @@ def matrix_page(s: State, family="", typed="", problems=()):
         return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan/matrix", head=HEAD, noindex=True)
     known = peek_all(s, lanes, windows, family)
     if not showcase.on():      # the head start (F-229): the first squares start searching now, on worker threads; the page never waits for them
-        matrixwarm.warm([(x, w) for x, w in tm.head_start(lanes, windows) if tm.key(x.key, w.key) not in known], s.adults, s.kid_ages, s.home, family)
+        matrixwarm.warm([(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows)) if tm.key(x.key, w.key) not in known], s.adults, s.kid_ages, s.home, family)
     totals = totals_of(known)
     marks, found = tm.marks(lanes, windows, totals, s.budget_cents), tm.find(lanes, windows, totals)
     total = len(lanes) * len(windows)
     ages = [sq.fetched for sq in known.values() if sq.fetched]
     meta = Div(Span(Span(str(len(known)), id="mx-count-n"), f" of {total} in", cls="mx-count", id="mx-count", aria_live="polite"),
                Span(f"Preview · {age_words(min(ages))}" if ages else "Preview", cls="mx-preview", id="mx-age"),
-               Span(SAMPLE, cls="mx-sample") if meta_sample else "", cls="mx-meta")
+               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), cls="mx-meta", id="mx-meta")
     opened = default_open(lanes, windows, known, found)
     if opened:
         o_lane, o_w = next(x for x in lanes if x.key == opened[0]), next(w for w in windows if w.key == opened[1])
@@ -451,8 +440,8 @@ def matrix_page(s: State, family="", typed="", problems=()):
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
-               Div(find_el(s, found), fact_el(s, hidden=not waiting), P(SLOW, cls="mx-slow", role="status"), cls="mx-news", id="mx-news"),
-               stage, cards,
+               Div(find_el(s, found), cls="mx-news", id="mx-news"),
+               stage, cards, fact_el(s),
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
@@ -464,7 +453,8 @@ def _square_of(s, lane_key, w_key, family="", peek=False):
     w = tm.window(s.depart, s.return_, s.flex, catalog.today(), w_key)
     if lane is None or w is None:
         return None, None, None, None
-    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek)
+    rank = tm.rank(lanes_of(s), windows_of(s)).get(tm.key(lane.key, w.key), 0)
+    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek, rank=rank)
     asked = next(x for x in lanes_of(s) if x.asked)
     asked_sq = sq if lane.asked else gridsource.square(asked, w, s.adults, s.kid_ages, s.home, family, peek=True)
     return lane, w, sq, asked_sq

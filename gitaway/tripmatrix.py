@@ -7,6 +7,7 @@
     find(lanes, windows, totals)    the discovery: a nearby trip that beats or nearly matches the asked place on the same dates, said in words
     order(lanes, windows)           which squares to ask for first: the asked square, then the nearest dates and the likeliest places
     head_start(lanes, windows)      which squares the server starts searching as the page is drawn (F-229): the asked square, its day, its place
+    rank(lanes, windows)            each square's turn at LiteAPI's gate (F-229): the head start first, then `order`
 
 Nothing here fetches or invents: a total is a source's (gitaway/gridsource.py `square`), a square still waiting has none and gets no mark. assets/js/tripmatrix.js
 marks the squares with the same rules as answers land (`marks`, `find`): change one, change the other (tests_browser/test_tripmatrix.py compares them).
@@ -181,6 +182,13 @@ def head_start(lanes_, windows_) -> list:
     j0 = next((j for j, w in enumerate(windows_) if w.asked), 0)
     days = sorted((j for j in range(len(windows_)) if j != j0), key=lambda j: (abs(j - j0), j))
     return [(x, windows_[j0]) for x in sorted(lanes_, key=lambda x: not x.asked)] + [(asked_l, windows_[j]) for j in days]
+
+
+def rank(lanes_, windows_) -> dict:
+    """{square key: its turn at LiteAPI's gate}: the head start's order, then the page's (`order`) for the rest."""
+    first = [key(x.key, w.key) for x, w in head_start(lanes_, windows_)]
+    rest = [k for k in order(lanes_, windows_) if k not in set(first)]
+    return {k: i for i, k in enumerate(first + rest)}
 
 
 # ---- marks ----------------------------------------------------------------------------------------------------------

@@ -28,7 +28,7 @@ class Stand:
     def __init__(self):
         self.peek_all, self.asked, self.lock = False, [], threading.Lock()
 
-    def __call__(self, lane, w, adults=2, kid_ages=(), home="", family="", peek=False):
+    def __call__(self, lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0):
         if peek and not self.peek_all:
             return None
         if not peek:

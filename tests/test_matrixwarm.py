@@ -64,7 +64,7 @@ def test_nothing_is_queued_on_the_showcase_or_for_a_family_over_its_budget(real,
 def test_the_queue_is_bounded(real, monkeypatch):
     monkeypatch.setattr(matrixwarm, "_Q", matrixwarm.queue.Queue(3))
     lanes, windows = tm.lanes(SD), tm.windows(date(2026, 12, 12), date(2026, 12, 16), 2, date(2026, 9, 30))
-    assert matrixwarm.warm(tm.head_start(lanes, windows), home="SFO") == 3 and len(matrixwarm.pending()) == 3
+    assert matrixwarm.warm([(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows))], home="SFO") == 3 and len(matrixwarm.pending()) == 3
 
 
 def test_the_page_never_waits_and_a_tile_joins_the_search_in_flight(real, client, monkeypatch):
@@ -83,3 +83,20 @@ def test_the_page_never_waits_and_a_tile_joins_the_search_in_flight(real, client
     assert not matrixwarm._Q.unfinished_tasks and slow.most <= liteapi.AT_ONCE
     # 9 squares: 9 flight searches and 10 distinct stay searches (the two combos share San Diego's second half), each asked once, the tile's included
     assert slow.calls == 19, slow.calls
+
+
+def test_the_tile_and_the_head_start_ask_with_the_squares_rank(real, client, monkeypatch):
+    """The asked square is rank 0, its day and its place next (the head start's order), then the page's own order: the gate serves them in that order."""
+    from gitaway import gridsource
+    seen = []
+    real_square = gridsource.SQUARE
+    monkeypatch.setattr(gridsource, "SQUARE", lambda lane, w, rank=0, **kw: seen.append((tm.key(lane.key, w.key), rank, kw["peek"])) or real_square(lane, w, **kw))
+    client.get(MATRIX)
+    matrixwarm.run_pending()
+    asked = [(k, r) for k, r, peek in seen if not peek]
+    assert asked == [(k, i) for i, k in enumerate(HEAD)]
+    seen.clear()
+    client.get(TILE + "&lane=orangecounty%2Bsandiego&w=2026-12-14")
+    s = [(k, r) for k, r, peek in seen if not peek]
+    lanes, windows = tm.lanes(SD), tm.windows(date(2026, 12, 12), date(2026, 12, 16), 2, date(2026, 9, 30))
+    assert s == [("orangecounty+sandiego|2026-12-14", tm.rank(lanes, windows)["orangecounty+sandiego|2026-12-14"])] and s[0][1] >= len(HEAD)

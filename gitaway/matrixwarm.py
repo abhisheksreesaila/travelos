@@ -2,7 +2,7 @@
 once, on worker threads, so they are under way before the page's script asks for them; /plan/matrix/tile then joins the search in flight (liteapi's
 single flight) or reads the answer it left in the cache.
 
-    warm(squares, adults=, kid_ages=, home=, family=)   queue squares ((Lane, Window), ...) in the order given; returns how many were queued. Never waits.
+    warm(squares, adults=, kid_ages=, home=, family=)   queue squares ((Lane, Window, rank), ...) in the order given; returns how many were queued. Never waits.
     run_pending()                                       do every queued square now, on this thread (tests; the workers do it otherwise)
     stop()                                              stop the workers (tests)
 
@@ -37,13 +37,13 @@ def warm(squares, adults=2, kid_ages=(), home="", family="") -> int:
     if not liteapi.key() or not home or not liteapi.can_search(family):
         return 0
     n = 0
-    for lane, w in squares:
+    for lane, w, rank in squares:
         k = _job_key(lane, w, adults, kid_ages, home, family)
         with _lock:
             if k in _queued:
                 continue
             try:
-                _Q.put_nowait((lane, w, adults, tuple(kid_ages), home, family))
+                _Q.put_nowait((lane, w, adults, tuple(kid_ages), home, family, rank))
             except queue.Full:
                 break
             _queued.add(k)
@@ -54,11 +54,11 @@ def warm(squares, adults=2, kid_ages=(), home="", family="") -> int:
 
 
 def _one(job) -> None:
-    lane, w, adults, kid_ages, home, family = job
+    lane, w, adults, kid_ages, home, family, rank = job
     try:
         if not liteapi.can_search(family) or gridsource.square(lane, w, adults, kid_ages, home, family, peek=True) is not None:
             return
-        gridsource.square(lane, w, adults, kid_ages, home, family)
+        gridsource.square(lane, w, adults, kid_ages, home, family, rank=rank)
     except Exception:      # noqa: BLE001 (a head start that fails leaves the square to its tile)
         log.exception("matrix head start failed for %s|%s", lane.key, w.key)
     finally:

@@ -552,3 +552,56 @@ def test_the_budget_says_whether_a_family_can_still_search(fake, monkeypatch):
     assert liteapi.can_search("t1")
     stays(family="t1")
     assert not liteapi.can_search("t1") and liteapi.can_search("t2")
+
+
+def test_the_gate_lets_the_most_wanted_call_through_first(monkeypatch):
+    """A call carries its square's rank (0: the asked square): when a place comes free, the lowest rank waiting goes next, whatever came first."""
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    order, lock = [], threading.Lock()
+
+    def note(url, headers, body, timeout):
+        with lock:
+            order.append(json.loads(body)["occupancies"][0]["adults"])
+        time.sleep(0.15)
+        return 200, "application/json", raw("hotel_rates.json")
+    monkeypatch.setattr(liteapi, "TRANSPORT", note)
+    threads = []
+    for adults, rank in ((1, 50), (2, 50), (3, 50), (4, 40), (5, 30), (6, 0), (7, 20)):      # the first three take the gate; the rest wait
+        threads.append(threading.Thread(target=lambda a=adults, r=rank: stays(adults=a, rank=r)))
+        threads[-1].start()
+        time.sleep(0.02)
+    for t in threads:
+        t.join(10)
+    assert order[:3] == [1, 2, 3] and order[3:] == [6, 7, 5, 4]
+
+
+def test_a_joiner_lends_its_rank_to_the_search_it_joined(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    order, lock = [], threading.Lock()
+
+    def note(url, headers, body, timeout):
+        with lock:
+            order.append(json.loads(body)["occupancies"][0]["adults"])
+        time.sleep(0.15)
+        return 200, "application/json", raw("hotel_rates.json")
+    monkeypatch.setattr(liteapi, "TRANSPORT", note)
+    plan = ((1, 50), (2, 50), (3, 50), (4, 40), (5, 90), (5, 0))      # 5 is queued last, then the asked square wants it too
+    threads = []
+    for adults, rank in plan:
+        threads.append(threading.Thread(target=lambda a=adults, r=rank: stays(adults=a, rank=r)))
+        threads[-1].start()
+        time.sleep(0.02)
+    for t in threads:
+        t.join(10)
+    assert order == [1, 2, 3, 5, 4]
+
+
+def test_no_turn_at_the_gate_is_a_failure_that_is_not_kept(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "GATE_WAIT", 0.1)
+    slow = Slow(0.5)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = together(*[lambda a=a: stays(adults=a) for a in range(1, 5)])
+    assert sorted(g.status for g in got) == [liteapi.FAILED] + [liteapi.OK] * 3 and liteapi.searches_today() == 3
+    late = next(a for a, g in zip(range(1, 5), got) if g.status == liteapi.FAILED)
+    assert stays(adults=late).ok                                                 # asked again, it searches: the wait was not the answer

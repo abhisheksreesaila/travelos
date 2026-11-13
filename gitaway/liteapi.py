@@ -14,7 +14,9 @@ counts against the daily budgets (PER_FAMILY_A_DAY, A_DAY), which are counted in
 that touches the network; tests replace it. A failure is one WARNING line with no key in it.
 
 Every call goes through one gate (F-229, D-445): at most AT_ONCE in flight across the site (the sandbox answered 429 when a page sent more), and a search
-already in flight is joined, never asked twice: the second asker waits for the first one's Answer, and no second search is counted. Flights are read from
+already in flight is joined, never asked twice: the second asker waits for the first one's Answer, and no second search is counted. A call carries a
+`rank` (its square's place in the page's order, 0 the asked square): when a place at the gate comes free the lowest rank waiting goes, and a joiner lends
+its rank to the search it joined. Flights are read from
 the stream (`Accept: text/event-stream`, D-446): `rates-chunk` messages shaped like the plain answer, then `rates-complete`, which the sandbox does not
 always send. The reader keeps each journey's cheapest offer seen and stops at `rates-complete`, STREAM_GRACE seconds after the first chunk of at least
 BULK journeys, or at STREAM_CAP whatever happens (a watchdog cuts a line that hangs); an Answer cut short says `complete=False`, the cheapest found.
@@ -46,19 +48,19 @@ FAIL_KEEP = timedelta(minutes=5)
 DATA_KEEP = timedelta(hours=24)          # a hotel's own words
 PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together, everyone signed out) may make in a day
 A_DAY = 2000                             # and the whole site
-STAY_TIMEOUT, FLIGHT_TIMEOUT = 15, 40    # seconds: the sandbox took 2 s for stays and up to 16 s for flights
+STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
+STAY_ASK = 10                            # seconds LiteAPI is asked to answer a stay search in (its `timeout`; the sandbox does not always keep it)
 HOTEL_LIMIT = 30
 MAX_BYTES = 32 * 1024 * 1024             # a round trip's answer was 9 MB (386 journeys, 1,647 offers)
 MAX_CENTS = 10_000_000
 AT_ONCE = 3                              # calls in flight across the site (F-229): the sandbox answered 429 to a page's 6
-GATE_WAIT = 45                           # seconds a call waits for its turn at the gate before it fails
+GATE_WAIT = 60                           # seconds a call waits for its turn at the gate before it fails (not kept: asked again, it searches)
 STREAM_CAP = 14.0                        # seconds: the flight stream is read this long at most (complete answers came at 10.5 and 13.9 s; some never)
 STREAM_GRACE = 4.0                       # and this long after the first chunk of BULK journeys (those came at 4.7 to 5.7 s; later chunks to 14.5 s)
 BULK = 20                                # a chunk this big is the search answering; the lone first chunk is the sandbox's test airline
 _CACHE: dict = {}                        # key -> Answer (or about text), oldest first
 _CACHE_MAX = 128                         # a round-trip answer holds hundreds of journeys with long offer ids
 _LOCK = threading.Lock()
-_GATE = threading.BoundedSemaphore(AT_ONCE)
 _FLYING: dict = {}                       # cache key -> _Flight: a search in flight, for a second asker to join
 log = logging.getLogger(__name__)
 
@@ -195,9 +197,11 @@ TRANSPORT = _send
 
 
 def clear() -> None:
+    global _TURNS
     with _LOCK:
         _CACHE.clear()
         _FLYING.clear()
+    _TURNS = _Turns(AT_ONCE)
 
 
 # --- reading
@@ -536,25 +540,68 @@ def _stream(path: str, body: dict, at: datetime):
 
 
 class _Flight:
-    """A search in flight: the first asker sets `answer`, then `done`."""
+    """A search in flight: the first asker sets `answer`, then `done`. `rank` is the most wanted asker's (a joiner can lower it while it waits at the gate)."""
 
-    def __init__(self):
-        self.done, self.answer = threading.Event(), None
+    def __init__(self, rank=0):
+        self.done, self.answer, self.rank = threading.Event(), None, rank
+
+
+class _Turns:
+    """The gate's AT_ONCE places. A waiting call goes in rank order (lowest first), then by arrival; its rank is read each time a place comes free."""
+
+    def __init__(self, places):
+        self.free, self.waiting, self.cond, self.seq = places, [], threading.Condition(), 0
+
+    def take(self, rank_of, timeout) -> bool:
+        with self.cond:
+            self.seq += 1
+            me = (self.seq, rank_of)
+            self.waiting.append(me)
+            end = time.monotonic() + timeout
+            try:
+                while True:
+                    if self.free > 0 and min(self.waiting, key=lambda w: (w[1](), w[0])) is me:
+                        self.free -= 1
+                        return True
+                    left = end - time.monotonic()
+                    if left <= 0:
+                        return False
+                    self.cond.wait(left)
+            finally:
+                self.waiting.remove(me)
+                self.cond.notify_all()
+
+    def give(self) -> None:
+        with self.cond:
+            self.free += 1
+            self.cond.notify_all()
+
+    def nudge(self) -> None:
+        with self.cond:
+            self.cond.notify_all()
+
+
+_TURNS = _Turns(AT_ONCE)
 
 
 class _Gate:
-    """One of the AT_ONCE places in flight; False when none came free within GATE_WAIT."""
+    """One of the AT_ONCE places in flight, in rank order; False when none came free within GATE_WAIT."""
+
+    def __init__(self, rank_of=lambda: 0):
+        self.rank_of = rank_of
 
     def __enter__(self):
-        self.ok = _GATE.acquire(timeout=GATE_WAIT)
+        self.turns = _TURNS
+        self.ok = self.turns.take(self.rank_of, GATE_WAIT)
         return self.ok
 
     def __exit__(self, *exc):
         if self.ok:
-            _GATE.release()
+            self.turns.give()
 
 
-def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False, stream: bool = False) -> Answer | None:
+def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False, stream: bool = False,
+            rank: int = 0) -> Answer | None:
     if not key():
         return Answer(OFF)
     cache_key = (path, mode(), json.dumps(body, sort_keys=True))
@@ -566,9 +613,12 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
             flying = _FLYING.get(cache_key)
             first = flying is None
             if first:
-                flying = _FLYING[cache_key] = _Flight()
+                flying = _FLYING[cache_key] = _Flight(rank)
+            elif rank < flying.rank:
+                flying.rank = rank
         if first:
             break
+        _TURNS.nudge()      # a lower rank lent to a search still waiting at the gate
         flying.done.wait(GATE_WAIT + max(timeout, STREAM_CAP) + 5)      # the same search is on its way: its answer is ours, and no second search is counted
         if flying.answer is None:
             return Answer(FAILED, (), now())
@@ -577,9 +627,10 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
         # the first asker's budget was spent, not ours: ask on our own
     found = Answer(FAILED, (), now())
     try:
-        found = _call(what, path, body, timeout, family, read, stream)
-        if found.status != OVER:
-            _keep(cache_key, found)
+        called = _call(what, path, body, timeout, family, read, stream, flying)
+        if called is not None and called.status != OVER:      # no turn at the gate, or a spent budget, is not the answer: asked again, it searches
+            _keep(cache_key, called)
+        found = called or found
     finally:
         flying.answer = found
         with _LOCK:
@@ -589,11 +640,12 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
     return found
 
 
-def _call(what, path, body, timeout, family, read, stream) -> Answer:
-    with _Gate() as through:
+def _call(what, path, body, timeout, family, read, stream, flying) -> Answer | None:
+    """The Answer, or None when no place at the gate came free in time."""
+    with _Gate(lambda: flying.rank) as through:
         if not through:
             _say(what, "no turn at the gate")
-            return Answer(FAILED, (), now())
+            return None
         if not _spend(family):
             return Answer(OVER)
         at = now()
@@ -616,7 +668,7 @@ def _party(adults: int, kid_ages) -> tuple:
 
 
 def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str = "", country: str = "", lat: float | None = None, lng: float | None = None,
-          radius_m: int | None = None, family: str = "", cached_only: bool = False) -> Answer | None:
+          radius_m: int | None = None, family: str = "", cached_only: bool = False, rank: int = 0) -> Answer | None:
     """Hotel rates for one room for the party, by a city and its country code or by a point and a radius in metres. `cached_only`: the kept answer or None, no call."""
     adults, ages = _party(adults, kid_ages)
     if checkout <= checkin:
@@ -628,11 +680,11 @@ def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str 
     else:
         raise ValueError("a city and country, or a point and a radius")
     body = {**where, "checkin": checkin.isoformat(), "checkout": checkout.isoformat(), "currency": "USD", "guestNationality": "US",
-            "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_TIMEOUT - 5}
-    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only)
+            "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_ASK}
+    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only, rank=rank)
 
 
-def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bool = False) -> Answer | None:
+def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bool = False, rank: int = 0) -> Answer | None:
     """Flight offers for the legs in order (one: one way; two back and forth: a round trip), for the party. Kids under 2 fly as infants. `cached_only` as for stays."""
     adults, ages = _party(adults, kid_ages)
     legs = tuple(legs)
@@ -644,7 +696,7 @@ def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bo
             "adults": adults, "children": len([a for a in ages if a >= 2]), "childrenAges": [a for a in ages if a >= 2],
             "infants": len([a for a in ages if a < 2]), "infantAges": [a for a in ages if a < 2], "currency": "USD", "country": "US",
             "filters": {"showCheapestOfferOnly": True}}      # 11.6 MB down to 4.4 MB; the time is LiteAPI's either way
-    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True)
+    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True, rank=rank)
 
 
 def about(hotel_id: str, family: str = "") -> str:

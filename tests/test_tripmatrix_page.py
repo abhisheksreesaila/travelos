@@ -24,7 +24,7 @@ def squares(html):
     for attrs, body in re.findall(r'<a ([^>]*data-sq="[^"]+"[^>]*)>(.*?)</a>', html, re.S):
         k = re.search(r'data-sq="([^"]+)"', attrs).group(1)
         cls = set(re.search(r'class="([^"]+)"', attrs).group(1).split())
-        inner = re.sub(r"<[^>]+>", "", re.search(r'<span class="mx-in">(.*?)</span>\s*$', body, re.S).group(1)).strip()
+        inner = re.sub(r"<[^>]+>", "", re.search(r'<span class="mx-in">(.*?)</span>\s*(?:<span [^>]*class="mx-sqw[^"]*"[^>]*>.*</span>\s*)?$', body, re.S).group(1)).strip()
         assert found.get(k, (cls, inner)) == (cls, inner), k
         found[k] = (cls, unescape(inner))
     return found
@@ -172,28 +172,48 @@ def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sam
     assert j["saved"].startswith("Saved to your trip")
 
 
-def test_each_place_wears_its_art_and_its_days_their_sky_with_the_credit(sample, client):
+def test_each_place_wears_its_art_and_each_square_its_start_days_weather_under_the_total(sample, client):
+    """F-230: the total is the square's big number; that start day's weather is one small line under it (a sky and degrees), typical still marked."""
     from gitaway import placeart
+    from gitaway.pages.skystrip import weather_for
     html = client.get(MATRIX).text
     assert html.count(placeart.art("sandiego")[:60]) >= 2                                     # the lane's thumb and the phone's card
     assert 'class="mx-art-i is-plain"' not in html.split('data-lane="sandiego"')[1].split("data-lane=")[0]
-    skies = re.findall(r'class="mx-sky (?:is-fc|is-typ)[^"]*"', html)
-    assert skies and all("is-typ" in c for c in skies)                                         # December is far: typical, dotted, never a forecast
-    assert "not a forecast" in unescape(html)                                                 # the normals' line, said once under the calendar
+    assert 'class="mx-sky ' not in html and "mx-c-sky" not in html                             # no weather row above the prices, no separate sky line on a card
+    tw = {p: weather_for(p, date(2026, 12, 10), date(2026, 12, 18)) for p in ("San Diego", "Los Angeles", "Orange County")}
+    for attrs, body in re.findall(r'<a ([^>]*data-sq="[^"]+"[^>]*)>(.*?)</a>', html, re.S):
+        k = re.search(r'data-sq="([^"]+)"', attrs).group(1)
+        lane, start = k.split("|")
+        first = {"sandiego": "San Diego", "losangeles": "Los Angeles", "orangecounty": "Orange County"}[lane.split("+")[0]]
+        day = next((d for d in tw[first].days if d and d.date.isoformat() == start), None)
+        wx = re.search(r'<span [^>]*class="mx-sqw (is-typ|is-fc)[^"]*"[^>]*>(.*)</span>\s*$', body, re.S)
+        if day is None:                                                                       # no weather known for the place (Orange County has no normals): none drawn
+            assert wx is None and "mx-sqw" not in body, k
+            continue
+        assert wx, k
+        assert wx.group(1) == "is-typ" and f"{day.high_f}°" in re.sub(r"<[^>]+>", "", wx.group(2))     # December is far: typical, marked, never a forecast
+        assert body.index('class="mx-in"') < body.index('class="mx-sqw')                         # the number first, the weather under it
+    assert "not a forecast" in unescape(html)                                                 # the normals' line, said under the calendar and the cards
 
 
 def test_the_phone_cards_carry_the_weathers_credit_since_they_say_a_sky(sample, client):
     html = client.get(MATRIX).text
     cards = html.split('class="mx-cards"', 1)[1]
-    assert "mx-c-sky" in cards and 'class="mx-wx"' in cards                   # AGENTS.md: a page showing weather shows weather.notes
+    assert "mx-sqw" in cards and 'class="mx-wx"' in cards                     # AGENTS.md: a page showing weather shows weather.notes
 
 
-def test_while_squares_wait_a_sourced_fact_about_the_place_sits_in_the_waiting_space(real, client):
+def test_while_squares_wait_a_sourced_fact_floats_in_a_small_note_not_a_band(real, client):
+    """F-230: the fact is a floating island the script shows while the first squares load (drawn hidden: without the script nothing loads)."""
     from gitaway import placefacts
     html = unescape(client.get(MATRIX).text)
     facts = placefacts.facts("sandiego")
     shown = next(f for f in facts if f.text in html)
-    assert f'href="{shown.source}"' in html and 'class="mx-fact"' in html and page.SLOW in html
+    isle = re.search(r'<aside [^>]*id="mx-fact"[^>]*>.*?</aside>', html, re.S).group(0)
+    assert shown.text in isle and f'href="{shown.source}"' in isle and "While we search" in isle
+    assert 'class="mx-isle is-gone"' in isle and 'aria-hidden="true"' in isle
+    news = re.search(r'<div [^>]*id="mx-news"[^>]*>.*?</div>\s*<div class="mx-stage', html, re.S)
+    assert news is None or shown.text not in news.group(0)                                  # no longer a band across the page
+    assert page.SLOW in html
 
 
 def nav_plan(html):
