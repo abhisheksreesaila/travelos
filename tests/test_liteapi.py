@@ -350,3 +350,205 @@ def test_nothing_found_is_said_too(monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", Fake(body=json.dumps({"data": [], "hotels": []}).encode()))
     found = gridsource.offers(grid_trip())
     assert found.flights == () and found.stays == () and found.problem == gridsource.NONE
+
+
+# --- F-229: one gate, one call for the same search, flights through the stream
+
+import threading      # noqa: E402
+import time           # noqa: E402
+
+STREAM = raw("flight_rates_stream.sse")
+TIMES = json.loads(raw("flight_rates_stream.times.json"))
+
+
+def messages(sse: bytes) -> list:
+    """The recorded stream as its messages, each a list of byte lines ending in the blank line."""
+    out, msg = [], []
+    for line in sse.split(b"\n"):
+        msg.append(line + b"\n")
+        if not line and len(msg) > 1:
+            out.append(msg)
+            msg = []
+    return out
+
+
+class Streamer:
+    """A TRANSPORT that plays the recorded stream back, each message at `scale` times its recorded arrival time (no `rates-complete` when `complete` is False)."""
+
+    def __init__(self, scale=0.0, complete=True, head_s=0.0, sse=STREAM):
+        self.scale, self.complete, self.head_s, self.sse, self.asked, self.cut = scale, complete, head_s, sse, [], threading.Event()
+
+    def __call__(self, url, headers, body, timeout):
+        self.asked.append((url, headers, json.loads(body) if body else None))
+        if "/hotels/rates" in url:
+            return 200, "application/json", raw("hotel_rates.json")
+        time.sleep(self.head_s)
+        return 200, "text/event-stream", Lines(self)
+
+
+class Lines:
+    def __init__(self, s):
+        self.s, self.t0 = s, time.monotonic()
+
+    def __iter__(self):
+        for msg, t in zip(messages(self.s.sse), TIMES):
+            if t["event"] == "rates-complete" and not self.s.complete:
+                break
+            while time.monotonic() - self.t0 < t["at"] * self.s.scale:
+                if self.s.cut.is_set():
+                    return
+                time.sleep(0.005)
+            yield from msg
+        while not self.s.complete and not self.s.cut.is_set():      # the sandbox sometimes never says rates-complete: the line stays open
+            time.sleep(0.005)
+
+    def cut(self):
+        self.s.cut.set()
+
+
+def test_the_stream_was_recorded_from_the_sandbox_with_chunks_then_complete():
+    events = [m[0].decode().strip() for m in messages(STREAM)]
+    assert events == ["event: rates-chunk"] * 6 + ["event: rates-complete"] and [t["event"] for t in TIMES] == [e[7:] for e in events]
+    first = json.loads(messages(STREAM)[1][1][6:])
+    assert set(first["data"][0]) >= {"journeys", "searchId"}                  # a chunk is shaped like the plain answer
+
+
+def test_flights_ask_for_the_stream_and_only_the_cheapest_offer(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    s = Streamer()
+    monkeypatch.setattr(liteapi, "TRANSPORT", s)
+    got = flights()
+    url, headers, body = s.asked[0]
+    assert headers["Accept"] == "text/event-stream" and body["filters"] == {"showCheapestOfferOnly": True}
+    assert got.ok and got.complete
+    assert got.items[0].cents == 7660 and got.items[0].airline == "Alaska Airlines"   # the cheapest seen in any chunk
+    ids = [f.id for f in got.items]
+    assert len(ids) == len(set(ids))                                             # a journey sent in several chunks is one flight, at its cheapest
+    assert next(f for f in got.items if f.id == "0066a9a93554c975").cents == 13484
+
+
+def test_a_stream_that_never_completes_stops_a_while_after_the_first_real_chunk(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_GRACE", 0.3)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 3.0)
+    monkeypatch.setattr(liteapi, "BULK", 2)          # the recording keeps 2 or 3 journeys of each chunk's hundreds; the lone test-airline chunk has 1
+    s = Streamer(scale=0.1, complete=False)          # the bulk at 0.57 s, the cheapest at 0.99 s: past the grace
+    monkeypatch.setattr(liteapi, "TRANSPORT", s)
+    t0 = time.monotonic()
+    got = flights()
+    took = time.monotonic() - t0
+    assert got.ok and not got.complete and 0.8 <= took < 1.5, took
+    assert got.items[0].cents == 13484                                           # what came by then: the cheapest found, said as such
+    assert s.cut.is_set()                                                        # the line is cut, not left open
+
+
+def test_a_lone_test_airline_chunk_does_not_start_the_grace(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_GRACE", 0.3)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 3.0)
+    monkeypatch.setattr(liteapi, "BULK", 2)
+    head = b"".join(messages(STREAM)[0])          # the one Nuitee Air journey the sandbox sends at once
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer(scale=0.1, complete=False, sse=head))
+    t0 = time.monotonic()
+    got = flights()
+    assert time.monotonic() - t0 >= 2.9 and got.ok and got.items[0].airline == "Nuitée Air"      # the cap, then the one found
+
+
+def test_a_stream_with_nothing_by_the_cap_fails_honestly(monkeypatch, caplog):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 0.4)
+    s = Streamer(head_s=0.0, complete=False, sse=b"")
+    monkeypatch.setattr(liteapi, "TRANSPORT", s)
+    t0 = time.monotonic()
+    with caplog.at_level(logging.WARNING, logger="gitaway.liteapi"):
+        got = flights()
+    assert got.status == liteapi.FAILED and time.monotonic() - t0 < 1.0 and KEY not in caplog.text and s.cut.is_set()
+
+
+def test_a_transport_that_hangs_before_answering_is_cut_at_the_cap(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 0.3)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer(head_s=2.0))
+    t0 = time.monotonic()
+    assert flights().status == liteapi.FAILED and time.monotonic() - t0 < 1.0
+
+
+@pytest.mark.parametrize("bad", [b"event: rates-chunk\ndata: {not json\n\n", b'event: rates-chunk\ndata: {"data": "x"}\n\n',
+                                 b'event: error\ndata: {"error": {"code": 51099}}\n\n',
+                                 b'event: rates-chunk\ndata: {"data": [{"journeys": [{"segments": [{"direction": 1}], "offers": "x"}]}]}\n\n'])
+def test_a_stream_in_a_shape_we_never_saw_is_a_failure_not_a_crash(monkeypatch, bad):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 0.5)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer(sse=bad, complete=False))
+    assert flights().status == liteapi.FAILED
+
+
+def test_a_stream_too_big_is_a_failure(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "MAX_BYTES", 20_000)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer())
+    assert flights().status == liteapi.FAILED
+
+
+class Slow:
+    """A TRANSPORT that takes `s` seconds and counts how many calls are in flight at once."""
+
+    def __init__(self, s=0.2):
+        self.s, self.now, self.most, self.calls, self.lock = s, 0, 0, 0, threading.Lock()
+
+    def __call__(self, url, headers, body, timeout):
+        with self.lock:
+            self.now += 1
+            self.calls += 1
+            self.most = max(self.most, self.now)
+        time.sleep(self.s)
+        with self.lock:
+            self.now -= 1
+        return 200, "application/json", raw("hotel_rates.json" if "/hotels/" in url else "flight_rates.json")
+
+
+def together(*calls):
+    out = [None] * len(calls)
+    threads = [threading.Thread(target=lambda i=i, c=c: out.__setitem__(i, c())) for i, c in enumerate(calls)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(10)
+    return out
+
+
+def test_at_most_three_calls_are_in_flight_site_wide(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    slow = Slow()
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = together(*[lambda a=a: stays(adults=a) for a in range(1, 8)], lambda: flights(), lambda: liteapi.about("lp1f5cb"))
+    assert liteapi.AT_ONCE == 3 and slow.most == 3 and slow.calls == 9
+    assert all(g.ok for g in got[:8])
+
+
+def test_the_same_search_in_flight_is_joined_not_asked_twice(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    slow = Slow(0.3)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = together(*[lambda: stays(family="t1")] * 4, lambda: stays(family="t2"))
+    assert slow.calls == 1 and all(g.ok for g in got) and len({g.items for g in got}) == 1
+    assert liteapi.searches_today() == 1                                         # one call, one search counted
+
+
+def test_a_joiner_whose_first_asker_was_over_budget_asks_on_its_own(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)
+    slow = Slow(0.2)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    real_spend = liteapi._spend
+    monkeypatch.setattr(liteapi, "_spend", lambda family: (time.sleep(0.1), family != "broke")[1])      # the first asker is still deciding when the second joins
+    got = together(lambda: stays(family="broke"), lambda: (time.sleep(0.02), stays(family="rich"))[1])
+    assert got[0].status == liteapi.OVER and got[1].ok and slow.calls == 1
+    monkeypatch.setattr(liteapi, "_spend", real_spend)
+
+
+def test_the_budget_says_whether_a_family_can_still_search(fake, monkeypatch):
+    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 1)
+    assert liteapi.can_search("t1")
+    stays(family="t1")
+    assert not liteapi.can_search("t1") and liteapi.can_search("t2")

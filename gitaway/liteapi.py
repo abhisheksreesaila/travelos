@@ -12,12 +12,21 @@ Every total is for the whole stay or trip and the whole party, in integer cents,
 never a silent empty list. Answers are kept in the process (stays STAY_KEEP, flights FLIGHT_KEEP, failures FAIL_KEEP) and know when they were fetched; only an uncached call
 counts against the daily budgets (PER_FAMILY_A_DAY, A_DAY), which are counted in the community database so a restart does not reset them. `TRANSPORT` is the one function
 that touches the network; tests replace it. A failure is one WARNING line with no key in it.
+
+Every call goes through one gate (F-229, D-445): at most AT_ONCE in flight across the site (the sandbox answered 429 when a page sent more), and a search
+already in flight is joined, never asked twice: the second asker waits for the first one's Answer, and no second search is counted. Flights are read from
+the stream (`Accept: text/event-stream`, D-446): `rates-chunk` messages shaped like the plain answer, then `rates-complete`, which the sandbox does not
+always send. The reader keeps each journey's cheapest offer seen and stops at `rates-complete`, STREAM_GRACE seconds after the first chunk of at least
+BULK journeys, or at STREAM_CAP whatever happens (a watchdog cuts a line that hangs); an Answer cut short says `complete=False`, the cheapest found.
 """
 
 import json
 import logging
 import os
+import queue
+import socket
 import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -41,9 +50,16 @@ STAY_TIMEOUT, FLIGHT_TIMEOUT = 15, 40    # seconds: the sandbox took 2 s for sta
 HOTEL_LIMIT = 30
 MAX_BYTES = 32 * 1024 * 1024             # a round trip's answer was 9 MB (386 journeys, 1,647 offers)
 MAX_CENTS = 10_000_000
+AT_ONCE = 3                              # calls in flight across the site (F-229): the sandbox answered 429 to a page's 6
+GATE_WAIT = 45                           # seconds a call waits for its turn at the gate before it fails
+STREAM_CAP = 14.0                        # seconds: the flight stream is read this long at most (complete answers came at 10.5 and 13.9 s; some never)
+STREAM_GRACE = 4.0                       # and this long after the first chunk of BULK journeys (those came at 4.7 to 5.7 s; later chunks to 14.5 s)
+BULK = 20                                # a chunk this big is the search answering; the lone first chunk is the sandbox's test airline
 _CACHE: dict = {}                        # key -> Answer (or about text), oldest first
 _CACHE_MAX = 128                         # a round-trip answer holds hundreds of journeys with long offer ids
 _LOCK = threading.Lock()
+_GATE = threading.BoundedSemaphore(AT_ONCE)
+_FLYING: dict = {}                       # cache key -> _Flight: a search in flight, for a second asker to join
 log = logging.getLogger(__name__)
 
 
@@ -108,6 +124,7 @@ class Answer:
     status: str
     items: tuple = ()
     fetched: datetime | None = None
+    complete: bool = True    # False: a stream stopped at its deadline, so the items are the cheapest found by then
 
     @property
     def ok(self) -> bool:
@@ -130,14 +147,42 @@ def mode() -> str:
     return "off" if not k else ("sandbox" if k.startswith("sand_") else "live")
 
 
+class _Lines:
+    """A streamed answer's lines as they arrive. `cut()` shuts the socket down from another thread (the reader closes it), so a line that hangs ends."""
+
+    def __init__(self, resp):
+        self.resp = resp
+
+    def __iter__(self):
+        try:
+            while True:
+                line = self.resp.readline(MAX_BYTES + 1)
+                if not line:
+                    return
+                yield line
+        finally:
+            self.resp.close()
+
+    def cut(self):
+        try:
+            self.resp.fp.raw._sock.shutdown(socket.SHUT_RDWR)
+        except (AttributeError, OSError):
+            pass
+
+
 def _send(url: str, headers: dict, body: bytes | None, timeout: float):
-    """(status, content type, the body, at most MAX_BYTES + 1 of it). An HTTP error is an answer, not an exception; a redirect is refused (it would carry the key)."""
+    """(status, content type, the body, at most MAX_BYTES + 1 of it; or a stream's lines, `_Lines`). An HTTP error is an answer, not an exception; a redirect
+    is refused (it would carry the key)."""
     req = urllib.request.Request(url, data=body, headers=headers, method="POST" if body is not None else "GET")
     try:
-        with _opener.open(req, timeout=timeout) as r:      # noqa: S310 (a fixed https URL)
-            return r.status, r.headers.get("Content-Type", ""), r.read(MAX_BYTES + 1)
+        r = _opener.open(req, timeout=timeout)      # noqa: S310 (a fixed https URL)
     except urllib.error.HTTPError as e:
         return e.code, e.headers.get("Content-Type", "") if e.headers else "", e.read(MAX_BYTES + 1)
+    ctype = r.headers.get("Content-Type", "")
+    if "event-stream" in ctype:
+        return r.status, ctype, _Lines(r)
+    with r:
+        return r.status, ctype, r.read(MAX_BYTES + 1)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -152,6 +197,7 @@ TRANSPORT = _send
 def clear() -> None:
     with _LOCK:
         _CACHE.clear()
+        _FLYING.clear()
 
 
 # --- reading
@@ -251,7 +297,16 @@ def read_flights(answer, fetched: datetime) -> tuple:
                                 bags.get("hasCarryOnBag") is True, bags.get("hasCheckedBag") is True,
                                 tuple(str(b.get("description")) for b in bags.get("included") or () if isinstance(b, dict) and b.get("description")),
                                 (offer.get("terms") or {}).get("refundable") is True, offer["offerId"], _when(offer.get("expiration")), fetched))
-    return tuple(sorted(found, key=lambda f: (f.cents, f.id)))
+    return tuple(sorted(cheapest(found), key=lambda f: (f.cents, f.id)))
+
+
+def cheapest(flights) -> list:
+    """One flight per journey, at its cheapest (a stream sends a journey in several chunks, at prices a few cents apart)."""
+    best = {}
+    for f in flights:
+        if f.id not in best or f.cents < best[f.id].cents:
+            best[f.id] = f
+    return list(best.values())
 
 
 def read_body(content_type: str, body: bytes):
@@ -334,6 +389,15 @@ def _spend(family: str) -> bool:
     return True
 
 
+def can_search(family: str) -> bool:
+    """Whether `family` (and the site) still has searches left today: background work asks before it starts (F-229)."""
+    day, who = _day(), family or "guest"
+    with community.connect() as db:
+        mine = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
+        everyone = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d"), {"d": day}).scalar()
+    return mine < PER_FAMILY_A_DAY and everyone < A_DAY
+
+
 def searches_today() -> int:
     with community.connect() as db:
         return int(db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d"), {"d": _day()}).scalar())
@@ -357,40 +421,191 @@ def _keep(cache_key, value) -> None:
         _CACHE[cache_key] = (value, now())
 
 
-def _ask(what: str, path: str, body: dict | None, timeout: float):
-    """The parsed JSON answer, or None after saying once what went wrong (never the key)."""
+def _say(what, e) -> None:
     k = key()
-    headers = {"X-API-Key": k, "Accept": "application/json", **({"Content-Type": "application/json"} if body is not None else {})}
+    log.warning("LiteAPI %s not read (%s)", what, str(e).replace(k, "[key]") if k else e)
+
+
+def _headers(body, accept="application/json") -> dict:
+    return {"X-API-Key": key(), "Accept": accept, **({"Content-Type": "application/json"} if body is not None else {})}
+
+
+def _ask(what: str, path: str, body: dict | None, timeout: float):
+    """The parsed JSON answer, or None after saying once what went wrong (never the key). The caller holds the gate."""
     try:
-        status, ctype, raw = TRANSPORT(API + path, headers, json.dumps(body).encode() if body is not None else None, timeout)
+        status, ctype, raw = TRANSPORT(API + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
         if len(raw) > MAX_BYTES:
             raise Unreadable(f"over {MAX_BYTES} bytes")
         if status != 200:
             raise Unreadable(f"HTTP {status}")
         return read_body(ctype, raw)
     except Exception as e:      # a timeout, a 401, an error body: say so once
-        log.warning("LiteAPI %s not read (%s)", what, str(e).replace(k, "[key]") if k else e)
+        _say(what, e)
         return None
 
 
-def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False) -> Answer | None:
+def _stream(path: str, body: dict, at: datetime):
+    """Flights read from the stream: (each journey's cheapest offer, whether the stream said it was complete). Raises on a failure or a shape we never saw.
+    The transport and its lines run on their own thread, so the deadlines hold even while a read hangs; at the end the line is cut."""
+    started = time.monotonic()
+    got: queue.Queue = queue.Queue()
+    stop = threading.Event()
+    held = {}
+
+    def pump():
+        try:
+            status, ctype, lines = TRANSPORT(API + path, _headers(body, "text/event-stream"), json.dumps(body).encode(), STREAM_CAP)
+            held["lines"] = lines
+            got.put(("head", status, ctype))
+            if isinstance(lines, (bytes, bytearray)):
+                got.put(("body", ctype, bytes(lines)))
+                return
+            for line in lines:
+                if stop.is_set():
+                    break
+                got.put(("line", line))
+            got.put(("end",))
+        except Exception as e:      # noqa: BLE001 (said by the reader)
+            got.put(("error", e))
+
+    threading.Thread(target=pump, daemon=True, name="liteapi-stream").start()
+    flights, size, msg, bulk_at, complete = {}, 0, [], None, False
+
+    def take(event, payload):
+        nonlocal complete
+        if event == "error":
+            raise Unreadable("the stream said error")
+        if event not in ("rates-chunk", "rates-complete") or not payload:
+            return 0
+        try:
+            doc = json.loads(payload)
+        except ValueError as e:
+            raise Unreadable("a message that is not JSON") from e
+        found = read_flights(doc, at)
+        for f in found:
+            if f.id not in flights or f.cents < flights[f.id].cents:
+                flights[f.id] = f
+        complete = complete or event == "rates-complete"
+        return sum(len(d.get("journeys") or ()) for d in _data(doc) if isinstance(d, dict))
+
+    try:
+        while not complete:
+            now_ = time.monotonic()
+            until = started + STREAM_CAP if bulk_at is None else min(started + STREAM_CAP, bulk_at + STREAM_GRACE)
+            if now_ >= until:
+                break
+            try:
+                item = got.get(timeout=until - now_)
+            except queue.Empty:
+                break
+            if item[0] == "error":
+                raise item[1]
+            if item[0] == "head":
+                if item[1] != 200:
+                    raise Unreadable(f"HTTP {item[1]}")
+                continue
+            if item[0] == "body":      # a plain answer after all (JSON, or a whole stream at once)
+                if len(item[2]) > MAX_BYTES:
+                    raise Unreadable(f"over {MAX_BYTES} bytes")
+                return read_flights(read_body(item[1], item[2]), at), True
+            if item[0] == "end":
+                break
+            line = item[1]
+            size += len(line)
+            if size > MAX_BYTES:
+                raise Unreadable(f"over {MAX_BYTES} bytes")
+            text_ = line.decode("utf-8", "replace").rstrip("\r\n")
+            if text_:
+                msg.append(text_)
+                continue
+            if not msg:
+                continue
+            event = next((ln[6:].strip() for ln in msg if ln.startswith("event:")), "")
+            payload = "\n".join(ln[5:].lstrip() for ln in msg if ln.startswith("data:"))
+            msg = []
+            if take(event, payload) >= BULK and bulk_at is None:
+                bulk_at = time.monotonic()
+    finally:
+        stop.set()
+        cut = getattr(held.get("lines"), "cut", None)
+        if cut:
+            cut()
+    if not flights:
+        raise Unreadable(f"no flights in the stream after {time.monotonic() - started:.1f} s")
+    return tuple(sorted(flights.values(), key=lambda f: (f.cents, f.id))), complete
+
+
+class _Flight:
+    """A search in flight: the first asker sets `answer`, then `done`."""
+
+    def __init__(self):
+        self.done, self.answer = threading.Event(), None
+
+
+class _Gate:
+    """One of the AT_ONCE places in flight; False when none came free within GATE_WAIT."""
+
+    def __enter__(self):
+        self.ok = _GATE.acquire(timeout=GATE_WAIT)
+        return self.ok
+
+    def __exit__(self, *exc):
+        if self.ok:
+            _GATE.release()
+
+
+def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False, stream: bool = False) -> Answer | None:
     if not key():
         return Answer(OFF)
     cache_key = (path, mode(), json.dumps(body, sort_keys=True))
-    kept = _kept(cache_key, keep)
-    if kept is not None or cached_only:      # cached_only (F-222): what is kept, or None; never a call and never a search counted
-        return kept
-    if not _spend(family):
-        return Answer(OVER)
-    at = now()
-    answer = _ask(what, path, body, timeout)
+    while True:
+        kept = _kept(cache_key, keep)
+        if kept is not None or cached_only:      # cached_only (F-222): what is kept, or None; never a call and never a search counted
+            return kept
+        with _LOCK:
+            flying = _FLYING.get(cache_key)
+            first = flying is None
+            if first:
+                flying = _FLYING[cache_key] = _Flight()
+        if first:
+            break
+        flying.done.wait(GATE_WAIT + max(timeout, STREAM_CAP) + 5)      # the same search is on its way: its answer is ours, and no second search is counted
+        if flying.answer is None:
+            return Answer(FAILED, (), now())
+        if flying.answer.status != OVER:
+            return flying.answer
+        # the first asker's budget was spent, not ours: ask on our own
+    found = Answer(FAILED, (), now())
     try:
-        found = Answer(OK, read(answer, at), at) if answer is not None else Answer(FAILED, (), at)
-    except Exception as e:      # a shape we never saw (a missing field, a string for a number): a failure, never a crash
-        log.warning("LiteAPI %s not read (%s: %s)", what, type(e).__name__, e)
-        found = Answer(FAILED, (), at)
-    _keep(cache_key, found)
+        found = _call(what, path, body, timeout, family, read, stream)
+        if found.status != OVER:
+            _keep(cache_key, found)
+    finally:
+        flying.answer = found
+        with _LOCK:
+            if _FLYING.get(cache_key) is flying:
+                del _FLYING[cache_key]
+        flying.done.set()
     return found
+
+
+def _call(what, path, body, timeout, family, read, stream) -> Answer:
+    with _Gate() as through:
+        if not through:
+            _say(what, "no turn at the gate")
+            return Answer(FAILED, (), now())
+        if not _spend(family):
+            return Answer(OVER)
+        at = now()
+        try:
+            if stream:
+                items, complete = _stream(path, body, at)
+                return Answer(OK, items, at, complete)
+            answer = _ask(what, path, body, timeout)
+            return Answer(OK, read(answer, at), at) if answer is not None else Answer(FAILED, (), at)
+        except Exception as e:      # a shape we never saw (a missing field, a string for a number), a stream with nothing: a failure, never a crash
+            _say(what, f"{type(e).__name__}: {e}")
+            return Answer(FAILED, (), at)
 
 
 def _party(adults: int, kid_ages) -> tuple:
@@ -427,8 +642,9 @@ def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bo
     body = {"legs": [{"origin": o.upper(), "destination": d.upper(), "date": day.isoformat(), **({"direction": ("OUTBOUND", "INBOUND")[i]} if round_trip else {})}
                      for i, (o, d, day) in enumerate(legs)],
             "adults": adults, "children": len([a for a in ages if a >= 2]), "childrenAges": [a for a in ages if a >= 2],
-            "infants": len([a for a in ages if a < 2]), "infantAges": [a for a in ages if a < 2], "currency": "USD", "country": "US"}
-    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only)
+            "infants": len([a for a in ages if a < 2]), "infantAges": [a for a in ages if a < 2], "currency": "USD", "country": "US",
+            "filters": {"showCheapestOfferOnly": True}}      # 11.6 MB down to 4.4 MB; the time is LiteAPI's either way
+    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True)
 
 
 def about(hotel_id: str, family: str = "") -> str:
@@ -440,9 +656,10 @@ def about(hotel_id: str, family: str = "") -> str:
     kept = _kept(cache_key, DATA_KEEP)
     if kept is not None:
         return kept
-    if not _spend(family):
-        return ""
-    answer = _ask("hotel", "/data/hotel?" + urlencode({"hotelId": hotel_id}), None, STAY_TIMEOUT)
+    with _Gate() as through:
+        if not through or not _spend(family):
+            return ""
+        answer = _ask("hotel", "/data/hotel?" + urlencode({"hotelId": hotel_id}), None, STAY_TIMEOUT)
     words = strip_html(answer["data"].get("hotelDescription")) if isinstance(answer, dict) and isinstance(answer.get("data"), dict) else ""
     if words:
         _keep(cache_key, words)
