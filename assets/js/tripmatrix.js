@@ -1,9 +1,12 @@
 // The trip matrix (F-222). The page works as plain links (every square is a link to its own page); this adds four things on top.
-//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (2: LiteAPI's sandbox answered 429 to three squares' calls at once), the asked square first, then the nearest days and
+//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (3: the server's gate keeps LiteAPI to 3 calls at once, F-229),
+//      after one POST to data.warm that starts the first squares' searches on the server (never from drawing the page, so a crawler starts none); a square
+//      the server was too busy for ("busy") is asked again after BUSY_MS; the asked square first, then the nearest days and
 //      the likeliest places (gitaway/tripmatrix.py `order`); a square scrolled past before its turn is never asked for. A waiting square is a skeleton, never a number.
 //   2. The marks, with the same rules as gitaway/tripmatrix.py `marks` and `find` (change one, change the other: tests_browser/test_tripmatrix.py compares them):
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
-//   3. While squares are searched, a fact about the place sits in the waiting space; a search that takes a while says so; both fade when the answers land.
+//   3. While the first squares are searched, a small floating island says a fact about the place (F-230): it settles in on the spring and leaves calmly once the
+//      asked square has landed (or nothing in view is waiting); a search that takes a while says so in a word beside the count.
 //   4. Opening a square: its panel (laptop) or sheet (phone) grows out of the square tapped and folds back into it. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
 (function () {
@@ -11,13 +14,13 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 2, SLOW_MS = 4000, MARGIN = '240px 120px';
+  var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', again = 0, tries = {};
   var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');
   var M = function () { return window.GA && GA.motion; };
   var lanes = data.lanes, windows = data.windows;
-  var news = document.getElementById('mx-news'), side = document.getElementById('mx-side');
+  var side = document.getElementById('mx-side'), isle = document.getElementById('mx-fact'), isleUp = false, looked = false;
   var chosen = {}, opened = '', sheet = null, scrim = null;
 
   function money(c) { return '$' + Math.floor((c + 50) / 100).toLocaleString('en-US'); }
@@ -126,15 +129,41 @@
     root.querySelectorAll('.mx-sq.is-wait').forEach(function (el) { if (seen[el.dataset.sq]) count++; });
     return count;
   }
+  function firstIn() {      // the first squares have landed: the asked square (the first the server started), else everything in view
+    var a = lanes.filter(function (x) { return x.a; })[0], w = windows.filter(function (x) { return x.a; })[0] || windows[0];
+    return !!(a && known[key(a.k, w.k)]) || (looked && waiting() === 0);
+  }
+  function isleIn() {
+    if (!isle || isleUp) return;
+    isleUp = true;
+    isle.classList.remove('is-gone', 'is-leaving');
+    isle.setAttribute('aria-hidden', 'false');
+    if (M()) (M().reduced() ? M().fade(isle) : M().settle(isle, { y: 1 }));
+  }
+  function isleOut() {
+    if (!isle || !isleUp || isle.classList.contains('is-leaving')) return;
+    isle.classList.add('is-leaving');      // a calm fade and a small drop (CSS, the --motion tokens); then it is gone
+    isle.setAttribute('aria-hidden', 'true');
+    var gone = function () { if (isle.classList.contains('is-leaving')) isle.classList.add('is-gone'); };
+    isle.addEventListener('transitionend', gone, { once: true });
+    setTimeout(gone, (M() ? M().t('dur') : 240) + 100);
+  }
   function news_() {
-    var still = waiting() > 0, fact = document.getElementById('mx-fact');
+    var still = waiting() > 0;
     root.dataset.waiting = still ? '1' : '0';
-    if (fact) { fact.classList.toggle('is-gone', !still); fact.setAttribute('aria-hidden', still ? 'false' : 'true'); }
-    if (!still && news) news.removeAttribute('data-slow');
+    if (firstIn()) isleOut();
+    if (!still) root.removeAttribute('data-slow');
   }
 
   // ---- loading like map tiles ----
   function land(k, j) {
+    if (j.s === 'busy') {      // no turn at the server's gate in time: asked again after 3, 6, 12 s, then the square says so and settles
+      tries[k] = (tries[k] || 0) + 1;
+      if (tries[k] > BUSY_TRIES) { said(k, 'Lots of searches right now. Try again in a minute.'); return; }
+      again++;
+      setTimeout(function () { again--; delete asked[k]; pump(); }, BUSY_MS * Math.pow(2, tries[k] - 1));
+      return;
+    }
     known[k] = { c: j.c, s: j.s };
     panels[k] = j.panel;
     els(k).forEach(function (el) {
@@ -190,13 +219,13 @@
       if (!k) break;
       ask(k);
     }
-    root.dataset.busy = active > 0 ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
+    root.dataset.busy = active > 0 || again > 0 ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
   }
   function ask(k) {
     asked[k] = 1;
     active++;
     var p = k.split('|');
-    timers[k] = setTimeout(function () { if (news) news.setAttribute('data-slow', '1'); }, SLOW_MS);
+    timers[k] = setTimeout(function () { root.setAttribute('data-slow', '1'); }, SLOW_MS);
     fetch(data.tile + '&lane=' + encodeURIComponent(p[0]) + '&w=' + encodeURIComponent(p[1]), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { land(k, j); })
@@ -210,6 +239,7 @@
       var k = e.target.dataset.sq;
       seen[k] = Array.prototype.some.call(els(k), function (el) { return showing.has(el); });
     });
+    looked = true;
     news_();
     pump();
   }, { rootMargin: MARGIN });
@@ -217,6 +247,10 @@
   root.dataset.busy = '1';
   root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { if (!known[el.dataset.sq]) { io.observe(el); watched++; } });
   if (!watched) root.dataset.busy = '0';
+  else {
+    if (data.warm) fetch(data.warm, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(function () {});      // the head start, once
+    if (!firstIn()) isleIn();
+  }
 
   // ---- opening a square ----
   function placeholder(k) {

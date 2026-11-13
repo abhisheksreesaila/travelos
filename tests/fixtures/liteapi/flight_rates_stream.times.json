@@ -1,0 +1,30 @@
+[
+ {
+  "at": 0.2,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 5.7,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 5.8,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 9.6,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 9.9,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 9.9,
+  "event": "rates-chunk"
+ },
+ {
+  "at": 10.5,
+  "event": "rates-complete"
+ }
+]

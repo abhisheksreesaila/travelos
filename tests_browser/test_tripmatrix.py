@@ -28,7 +28,7 @@ class Stand:
     def __init__(self):
         self.peek_all, self.asked, self.lock = False, [], threading.Lock()
 
-    def __call__(self, lane, w, adults=2, kid_ages=(), home="", family="", peek=False):
+    def __call__(self, lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
         if peek and not self.peek_all:
             return None
         if not peek:
@@ -239,3 +239,99 @@ def test_the_sheet_fits_the_phone(matrix):
 def test_the_side_starts_on_the_find_once_it_is_known(matrix):
     page = matrix(DESKTOP)
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
+
+
+def test_each_square_says_its_total_large_and_its_days_weather_small_under_it(matrix):
+    """F-230: the number first; the start day's sky and degrees one small line under it; no weather row above the prices."""
+    for viewport in (DESKTOP, PHONE):
+        page = matrix(viewport)
+        assert page.locator(".mx-sky").count() == 0
+        got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.offsetParent && e.querySelector('.mx-sqw')).map(e => {
+            const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
+            return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), v.bottom <= w.top + 1,
+                    w.right <= e.getBoundingClientRect().right + 1];
+        })""")
+        assert got, viewport
+        for big, small, under, fits in got:
+            assert big > small and under and fits, (viewport["width"], big, small, under, fits)
+
+
+def test_while_the_first_squares_load_a_fact_floats_in_and_leaves_once_they_land(matrix, slow_server):
+    slow_server(r"/plan/matrix/tile", 1.5)
+    for viewport in (DESKTOP, PHONE):
+        page = matrix(viewport, wait=False, motion=True)
+        isle = page.locator("#mx-fact")
+        expect(isle).to_be_visible()
+        box = isle.bounding_box()
+        assert box["height"] < 200 and box["width"] <= 400, box                              # a small note, not a band across the page
+        assert page.evaluate("getComputedStyle(document.getElementById('mx-fact')).position") == "sticky"
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")                      # at the very bottom it never sits on the footer's links or switches
+        page.wait_for_timeout(100)
+        hit = page.evaluate("""() => { const n = document.getElementById('mx-fact').getBoundingClientRect();
+            return [...document.querySelectorAll('footer a, footer button, .ga-footer a, .ga-footer button')].filter(e => e.offsetParent).filter(e => {
+              const r = e.getBoundingClientRect(); return r.left < n.right && r.right > n.left && r.top < n.bottom && r.bottom > n.top; }).map(e => e.textContent.trim()); }""")
+        assert hit == [], (viewport["width"], hit)
+        page.evaluate("window.scrollTo(0, 0)")
+        assert page.evaluate("() => GA.motion.log.some(m => m.kind === 'settle')")            # it settled in (liquid)
+        expect(isle).to_be_hidden(timeout=8000)                                              # the asked square landed: it leaves
+        assert page.errors == []
+
+
+def test_the_script_starts_the_head_start_once_and_asks_three_tiles_at_a_time(matrix, base_url, browser):
+    """F-229 review: the head start comes from the script (one POST), never from drawing the page; the gate does the limiting, so 3 tiles at a time."""
+    ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce")
+    page = ctx.new_page()
+    posts = []
+    page.on("request", lambda r: posts.append(r.method) if "/plan/matrix/warm" in r.url else None)
+    page.goto(base_url + URL)
+    page.wait_for_selector("#mx.is-live")
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    assert posts == ["POST"]
+    ctx.close()
+    src = Path(__file__).resolve().parent.parent.joinpath("assets/js/tripmatrix.js").read_text()
+    assert re.search(r"MAX_AT_ONCE = 3\b", src)
+
+
+def test_a_busy_square_is_asked_again_and_lands(matrix, stand, monkeypatch):
+    once = {"busy": True}
+    real = stand.__call__
+
+    def busy_first(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
+        if not peek and tm.key(lane.key, w.key) == "sandiego|2026-12-12" and once.pop("busy", False):
+            return tm.Square(lane.key, w.key, tm.BUSY)
+        return real(lane, w, adults, kid_ages, home, family, peek, rank)
+    monkeypatch.setattr(gridsource, "SQUARE", busy_first)
+    page = matrix(DESKTOP, wait=False)
+    sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
+    expect(sq.locator(".mx-in")).to_have_text("$2,140", timeout=15000)
+    assert page.errors == []
+
+
+def test_a_square_that_stays_busy_backs_off_and_then_says_so(matrix, stand, monkeypatch):
+    """Review: a busy square is asked again 3 times (3, 6, 12 s apart), never forever; then it settles with words and the page stops waiting on it."""
+    real = stand.__call__
+
+    def always_busy(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
+        if not peek and tm.key(lane.key, w.key) == "sandiego|2026-12-12":
+            return tm.Square(lane.key, w.key, tm.BUSY)
+        return real(lane, w, adults, kid_ages, home, family, peek, rank)
+    monkeypatch.setattr(gridsource, "SQUARE", always_busy)
+    page = matrix(DESKTOP, wait=False)
+    asks = []
+    page.on("request", lambda r: asks.append(r.url) if "/plan/matrix/tile" in r.url and "lane=sandiego&w=2026-12-12" in r.url else None)
+    sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
+    expect(sq.locator(".mx-in")).to_have_text("Lots of searches right now. Try again in a minute.", timeout=40000)
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    assert len(asks) <= 3 and page.errors == []      # the first ask happened before the listener; 3 more at most
+
+
+def test_on_a_phone_the_note_is_just_the_fact_and_its_source(matrix):
+    page = matrix(PHONE, wait=False)
+    shown = page.evaluate("() => [...document.querySelectorAll('#mx-fact .mx-isle-ic, #mx-fact .mx-fact-k')].map(e => getComputedStyle(e).display === 'none' || getComputedStyle(e.parentNode).display === 'none')")
+    assert shown and all(shown)
+
+
+def test_the_weather_notes_under_the_cards_are_lines_of_their_own(matrix):
+    page = matrix(PHONE)
+    tops = page.evaluate("() => [...document.querySelectorAll('.mx-cards .mx-wx-n')].map(e => [e.getBoundingClientRect().left, getComputedStyle(e.parentNode).display])")
+    assert len(tops) >= 2 and all(d == "flex" for _, d in tops)

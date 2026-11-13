@@ -5,10 +5,11 @@ GET  /plan/matrix          the sentence ("A family of 4, SFO to San Diego or nea
                            panel; on a phone a card per place with its start days as squares, and the opened square in a sheet. `q=` is a retyped sentence.
 GET  /plan/matrix/tile     one square as JSON for assets/js/tripmatrix.js: its words, its total and its panel. Plain `def`: a search can wait seconds.
 GET  /plan/matrix/square   one square as its own page: the panel, for a link and for a page without the script. Plain `def` too.
+POST /plan/matrix/warm     the head start (F-229): the page's script asks once; the first squares start searching on worker threads. A plain GET starts none.
 POST /plan/matrix/save     "Booking opens soon": the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
 
-The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; the script asks for
-the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
+The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; the script then asks
+POST /plan/matrix/warm to start the first squares' searches at once (gitaway/matrixwarm.py, F-229), which the tiles join; a plain GET starts none. The script asks for the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
 On the showcase the sample catalog drives every square and says so; off it the routes exist only with LITEAPI_KEY (gitaway/showcase.py `_needs_keys`).
 """
 
@@ -22,7 +23,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Im
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, gridsource, importer, liteapi, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
+from gitaway import catalog, familydb, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import weather_ui
@@ -30,13 +31,14 @@ from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
-TILE, SQUARE, SAVE = PATH + "/tile", PATH + "/square", PATH + "/save"
+TILE, SQUARE, SAVE, WARM = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Script(src="/assets/js/tripmatrix.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 LEAD_DAYS = 28                      # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
+CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
 FINE = "Prices are a preview from LiteAPI and change until booked. Booking opens soon: nothing is booked or paid here."
 SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. Nothing is booked or paid here."
@@ -205,11 +207,27 @@ def label(lane, w, sq) -> str:
     return f"{head}: {tm.dollars(sq.cents)} for the whole trip" if sq.ok else f"{head}: {tm.SAID[sq.status]}"
 
 
-def square_el(s: State, lane, w, sq, marks, day=False, style=None):
+def sky_of(skies, lane, w):
+    """The weather of the square's start day where the trip starts (the lane's first place), or None."""
+    return next((d for d in skies[lane.places[0].name].days if d and d.date == w.depart), None) if skies else None
+
+
+def sky_line(wx):
+    """F-230: the square's second line, under its total: a small sky and the high, typical weather marked as such (the notes under the matrix say what
+    typical means and whose numbers they are). The square's label says the total; the panel's sky strip says the weather in words."""
+    if wx is None:
+        return ""
+    typ = wx.kind != weather.FORECAST
+    return Span(icon(wx.condition if wx.condition in WORDS else "cloud", 14, cls="mx-sqw-i"), Span(f"{wx.high_f}°", cls="mx-sqw-t"),
+                cls="mx-sqw " + ("is-typ" if typ else "is-fc") + (" is-wet" if wx.condition in WET else ""),
+                title=weather_ui.describe(wx), aria_hidden="true")
+
+
+def square_el(s: State, lane, w, sq, marks, day=False, style=None, wx=None):
     k = tm.key(lane.key, w.key)
     cls = " ".join(["mx-sq", state_cls(sq), *[f"is-{m}" for m in marks], "is-asked" if w.asked and lane.asked else ""]).strip()
-    head = [Span(f"{w.depart:%a}", Span(f" {w.depart:%b} {w.depart.day}", cls="mx-dd"), cls="mx-d")] if day else []
-    return A(*head, Span(NotStr(inner(sq)), cls="mx-in"), href=href(s, SQUARE, lane=lane.key, w=w.key), cls=cls, data_sq=k, aria_label=label(lane, w, sq),
+    head = [Span(f"{w.depart:%a}", Span(f" {w.depart:%b}", cls="mx-dd"), f" {w.depart.day}", cls="mx-d")] if day else []
+    return A(*head, Span(NotStr(inner(sq)), cls="mx-in"), sky_line(wx), href=href(s, SQUARE, lane=lane.key, w=w.key), cls=cls, data_sq=k, aria_label=label(lane, w, sq),
              **({"style": style} if style else {}))
 
 
@@ -226,7 +244,8 @@ def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
     if asked_sq is not None and asked_sq.ok and not lane.asked:
         vs = vs_words(sq.cents - asked_sq.cents, s.place.name, lane.combo)
     age = age_words(sq.fetched)
-    rows = [Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"), Div(P(sq.flight.airline, cls="mx-r-h"), P(sq.flight.out, cls="mx-r-s"), P(sq.flight.back, cls="mx-r-s") if sq.flight.back else ""),
+    rows = [Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"), Div(P(sq.flight.airline, cls="mx-r-h"), P(sq.flight.out, cls="mx-r-s"), P(sq.flight.back, cls="mx-r-s") if sq.flight.back else "",
+                                                                                     P(CHEAPEST_FOUND, cls="mx-r-s") if not sq.flight.complete else ""),
                 Span(catalog.money(sq.flight.cents), cls="mx-r-n"), cls="mx-row")]
     for st in sq.stays:
         bits = [st.room, "Breakfast" if st.board == "breakfast" else st.board.capitalize(), "Refundable" if st.refundable else "Non-refundable"]
@@ -290,15 +309,18 @@ def sentence(s: State, typed="", problems=()):
     return Div(*out, edit, cls="mx-sent", id="mx-sent")
 
 
-def fact_el(s: State, hidden):
+def fact_el(s: State):
+    """F-230: while the first squares load, a small floating note (an island) says a sourced fact about the place. Drawn hidden: the script shows it when it
+    starts loading squares and lets it go once the first ones land (without the script nothing loads, so there is nothing to wait for)."""
     found = placefacts.facts(s.place.slug)
     if not found:
         return ""
     fact = found[catalog.today().toordinal() % len(found)]
     source = getattr(fact, "source", "")
     cite = A("Source", href=source, cls="mx-fact-src", rel="noopener", target="_blank") if str(source).startswith("https://") else Span(source, cls="mx-fact-src")
-    return Div(Span(f"While we search · {s.place.name}", cls="mx-fact-k"), P(fact.text, cls="mx-fact-t"), cite, cls="mx-fact" + (" is-gone" if hidden else ""), id="mx-fact",
-               aria_hidden="true" if hidden else None)
+    return Aside(Span(icon("spark", 16, 2.2, cls="mx-isle-i"), cls="mx-isle-ic", aria_hidden="true"),
+                 Div(P(Span(f"While we search · {s.place.name}", cls="mx-fact-k")), P(fact.text, cls="mx-fact-t"), cite, cls="mx-isle-b"),
+                 cls="mx-isle is-gone", id="mx-fact", aria_hidden="true", aria_label=f"A fact about {s.place.name} while the prices load")
 
 
 def find_el(s: State, found):
@@ -308,23 +330,6 @@ def find_el(s: State, found):
                A(Span(found.words, cls="mx-find-w", id="mx-find-w"), Span(f" · {found.when}", cls="mx-find-d", id="mx-find-d"),
                  href=href(s, SQUARE, lane=found.lane, w=found.window), cls="mx-find-a", id="mx-find-a", data_open=found.key),
                cls="mx-find", id="mx-find", aria_live="polite", data_key=found.key)
-
-
-def sky_cells(tw, days, col):
-    """A lane's row of days, each wearing its sky (a compact sky strip: gitaway/pages/skystrip.py draws the full one in the panel). Typical days are dotted,
-    forecast days solid, rain and snow said in a word; a day with no weather is left plain."""
-    by = {d.date: d for d in tw.days if d}
-    out = []
-    for d in days:
-        wx = by.get(d)
-        if wx is None:
-            continue
-        wet = wx.condition in WET
-        out.append(Div(icon(wx.condition if wx.condition in WORDS else "cloud", 16, cls="mx-sky-i"), Span(f"{wx.high_f}°", cls="mx-sky-t"),
-                       Span(WORDS[wx.condition], cls="mx-sky-w") if wet else "",
-                       cls="mx-sky" + (" is-fc" if wx.kind == weather.FORECAST else " is-typ") + (" is-wet" if wet else ""), style=f"grid-column: {col[d]}",
-                       aria_label=weather_ui.describe(wx), title=wx.word))
-    return out
 
 
 def lane_el(s: State, lane, windows, days, known, marks, home, skies):
@@ -337,10 +342,9 @@ def lane_el(s: State, lane, windows, days, known, marks, home, skies):
                                                  P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key, data_from=lane.places[0].iata),
                                                  P(f"from {tm.dollars(min(totals))}" if totals else "", cls="mx-l-best", data_lane_best=lane.key)), cls="mx-lh"),
             Div(cls="mx-band", data_band=lane.key, data_l=f"{band_w.nights} nights", style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
-    kids += sky_cells(skies[lane.places[0].name], days, col)
     for w in windows:
         k = tm.key(lane.key, w.key)
-        kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}"))
+        kids.append(square_el(s, lane, w, known.get(k), marks.get(k, ()), style=f"grid-column: {col[w.depart]}", wx=sky_of(skies, lane, w)))
     found = any("find" in marks.get(tm.key(lane.key, w.key), ()) for w in windows)
     return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else "") + (" is-found" if found else ""), data_lane=lane.key)
 
@@ -365,22 +369,9 @@ def lanes_el(s: State, lanes, windows, known, marks, skies):
                      cls="mx-ad" + (" is-ask" if d == s.depart else "") + (" is-start" if d in starts else "")) for d in days], cls="mx-axis")
     return Section(Div(axis, *[lane_el(s, x, windows, days, known, marks, s.home, skies) for x in lanes], cls="mx-lanes", style=f"--mx-days: {len(days)}"),
                    P(Span(cls="mx-key-band"), "The nights of the cheapest start (or the one you opened). Under each start day: the flight and the stay for "
-                     f"{s.travelers}, all in.", cls="mx-legend"),
+                     f"{s.travelers}, all in, and that day’s weather where the trip starts.", cls="mx-legend"),
                    Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
                    cls="mx-cal", aria_label="Every place, every start day")
-
-
-def sky_words(s: State, lane, skies):
-    """The card's sky line: the asked first day's sky in each of the lane's places, said as the strip says it ("Sunny 66°/50° · typical")."""
-    out = []
-    for p in lane.places:
-        wx = next((d for d in skies[p.name].days if d and d.date == s.depart), None)
-        if wx:
-            out.append(f"{p.name + ' ' if lane.combo else ''}{WORDS.get(wx.condition, '')} {wx.high_f}°/{wx.low_f}°".strip())
-    if not out:
-        return ""
-    far = all(d.kind != weather.FORECAST for p in lane.places for d in skies[p.name].days if d)
-    return P(icon("sun", 16, cls="mx-sky-i"), " · ".join(out) + (" · typical, not a forecast" if far else " · forecast"), cls="mx-c-s mx-c-sky")
 
 
 def card_el(s: State, lane, windows, known, marks, skies):
@@ -390,8 +381,9 @@ def card_el(s: State, lane, windows, known, marks, skies):
     return Section(Div(_arts(lane, "mx-c-art"), H2(lane.name, cls="mx-c-n"), cls="mx-c-top"),
                    Div(Div(Span(tm.dollars(best[0]) if best else "", cls="mx-c-v", data_lane_best=lane.key),
                            Span(tm.when(best[2]) + " · its cheapest" if best else "", cls="mx-c-s", data_lane_when=lane.key), cls="mx-c-best"),
-                       P(via, cls="mx-c-s"), sky_words(s, lane, skies),
-                       Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True) for w in windows], cls="mx-wins"), cls="mx-c-bd"),
+                       P(via, cls="mx-c-s"),
+                       Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True, wx=sky_of(skies, lane, w))
+                             for w in windows], cls="mx-wins"), cls="mx-c-bd"),
                    cls="mx-card" + (" is-asked" if lane.asked else ""), data_lane=lane.key, aria_label=lane.name)
 
 
@@ -412,7 +404,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "windows": [{"k": w.key, "a": w.asked, "n": w.nights, "when": tm.when(w)} for w in windows],
             "days": [d.isoformat() for d in days_of(windows)],
             "known": {k: {"c": sq.cents, "s": sq.status} for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
@@ -429,7 +421,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     ages = [sq.fetched for sq in known.values() if sq.fetched]
     meta = Div(Span(Span(str(len(known)), id="mx-count-n"), f" of {total} in", cls="mx-count", id="mx-count", aria_live="polite"),
                Span(f"Preview · {age_words(min(ages))}" if ages else "Preview", cls="mx-preview", id="mx-age"),
-               Span(SAMPLE, cls="mx-sample") if meta_sample else "", cls="mx-meta")
+               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), cls="mx-meta", id="mx-meta")
     opened = default_open(lanes, windows, known, found)
     if opened:
         o_lane, o_w = next(x for x in lanes if x.key == opened[0]), next(w for w in windows if w.key == opened[1])
@@ -447,12 +439,24 @@ def matrix_page(s: State, family="", typed="", problems=()):
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
-               Div(find_el(s, found), fact_el(s, hidden=not waiting), P(SLOW, cls="mx-slow", role="status"), cls="mx-news", id="mx-news"),
+               Div(find_el(s, found), cls="mx-news", id="mx-news"),
                stage, cards,
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
+               fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
     return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True)
+
+
+def warm(s: State, family="") -> int:
+    """The head start (F-229, D-452): the first squares not yet known, queued for gitaway/matrixwarm.py's workers. Asked by the page's script, never by
+    drawing the page, so a crawler or a link preview spends no searches."""
+    if showcase.on():
+        return 0
+    lanes, windows = lanes_of(s), windows_of(s)
+    first = [(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows))]
+    todo = [(x, w, i) for x, w, i in first if gridsource.square(x, w, s.adults, s.kid_ages, s.home, family, peek=True) is None]
+    return matrixwarm.warm(todo, s.adults, s.kid_ages, s.home, family)
 
 
 def _square_of(s, lane_key, w_key, family="", peek=False):
@@ -460,7 +464,8 @@ def _square_of(s, lane_key, w_key, family="", peek=False):
     w = tm.window(s.depart, s.return_, s.flex, catalog.today(), w_key)
     if lane is None or w is None:
         return None, None, None, None
-    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek)
+    rank = tm.rank(lanes_of(s), windows_of(s)).get(tm.key(lane.key, w.key), 0)
+    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek, rank=rank, wait=liteapi.TILE_WAIT)      # a request thread: a short wait at the gate
     asked = next(x for x in lanes_of(s) if x.asked)
     asked_sq = sq if lane.asked else gridsource.square(asked, w, s.adults, s.kid_ages, s.home, family, peek=True)
     return lane, w, sq, asked_sq
@@ -528,6 +533,13 @@ def register(app):
             return JSONResponse({"error": "No such square."}, status_code=404)
         return JSONResponse({"key": sq.key, "s": sq.status, "c": sq.cents, "inner": inner(sq), "label": label(lane_, w_, sq), "drive": sq.drive,
                              "age": age_words(sq.fetched), "panel": to_xml(panel(s, lane_, w_, sq, asked_sq))}, headers={"Cache-Control": "no-store"})
+
+    @app.post(WARM)
+    def trip_matrix_warm(session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
+        s = state(to, home, d, r, a, k, x, nb, b)
+        if s.problems or not windows_of(s):
+            return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
+        return JSONResponse({"queued": warm(s, _family(session))}, headers={"Cache-Control": "no-store"})
 
     @app.get(SQUARE)
     def trip_matrix_square(session, lane: str = "", w: str = "", saved: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "",

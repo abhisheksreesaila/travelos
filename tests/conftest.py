@@ -154,6 +154,18 @@ def _no_liteapi_network(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_matrix_warm(monkeypatch):
+    """The matrix's head start (F-229) queues work but starts no worker in tests: a test runs the queue with `matrixwarm.run_pending()`."""
+    from gitaway import matrixwarm
+    monkeypatch.setattr(matrixwarm, "ASYNC", False)
+    matrixwarm.stop()
+    matrixwarm.clear()
+    yield
+    matrixwarm.stop()
+    matrixwarm.clear()
+
+
+@pytest.fixture(autouse=True)
 def _no_plan_worker():
     """A test that starts the app (a live server) starts the Plan it for me worker with it (planforme.start in on_startup), and it would go on building the paid orders of every later test
     before the test looks at them. Stop it before each test; a test that wants the worker calls `planforme.start` itself and stops it (F-193)."""
