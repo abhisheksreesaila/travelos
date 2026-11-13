@@ -28,9 +28,11 @@
 .pa-svg .pa-fw { animation: pa-burst calc(var(--motion-dur) * 18.75) var(--motion-ease) infinite; transform-box: fill-box; transform-origin: center; }
 .pa-svg .pa-fw2 { animation-delay: calc(var(--motion-dur) * -6.25); }
 .pa-svg .pa-fw3 { animation-delay: calc(var(--motion-dur) * -12.5); }
-@keyframes pa-drift { from { transform: translateX(-2.5rem); } 50% { transform: translateX(2.5rem); } to { transform: translateX(-2.5rem); } }
-@keyframes pa-rain { from { transform: translateY(-1rem); } to { transform: translateY(1rem); } }
-@keyframes pa-snow { from { transform: translateY(-1.667rem); } to { transform: translateY(1.667rem); } }
+/* moves are shares of the 480 x 240 drawing (transform-box: view-box), so they scale with it */
+.pa-svg .pa-cl, .pa-svg .pa-cl2, .pa-svg .pa-rn, .pa-svg .pa-sn { transform-box: view-box; }
+@keyframes pa-drift { from { transform: translateX(-6.25%); } 50% { transform: translateX(6.25%); } to { transform: translateX(-6.25%); } }
+@keyframes pa-rain { from { transform: translateY(-5%); } to { transform: translateY(5%); } }
+@keyframes pa-snow { from { transform: translateY(-8.333%); } to { transform: translateY(8.333%); } }
 @keyframes pa-spin { to { transform: rotate(360deg); } }
 @keyframes pa-burst { 0% { opacity: 0; transform: scale(.5); } 15% { opacity: 1; } 60% { opacity: .85; transform: scale(1); } 100% { opacity: 0; transform: scale(1.05); } }
 @media (prefers-reduced-motion: reduce) { .pa-svg * { animation: none !important; } }

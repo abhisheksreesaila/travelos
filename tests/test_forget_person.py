@@ -2,11 +2,12 @@
 
 import shutil
 import sqlite3
-import uuid
 import sys
 from pathlib import Path
 
 import pytest
+
+from tests.datacopy import copy_data
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import forget_person as fp  # noqa: E402
@@ -21,15 +22,13 @@ EMAIL = "forget-ari@example.com"
 def folder(client):
     """A copy of the data folder after two people signed in, with rows in every table the script touches and three photo files."""
     ari = person(EMAIL)
-    person("forget-sam@example.com")
+    sam = person("forget-sam@example.com")
     uid = ari["user_id"]
     src = auth.data_dir()
     host = sqlite3.connect(src / "app_host.db")
     fid = host.execute("SELECT tenant_id FROM core_memberships WHERE user_id = ?", (uid,)).fetchone()[0]
     host.close()
-    dst = Path(f"{src}-copy-{uuid.uuid4().hex[:8]}")    # its own folder per test: Windows cannot delete a database file a closed test still had open
-    shutil.rmtree(dst, ignore_errors=True)
-    shutil.copytree(src, dst)
+    dst = copy_data(src, (fid, sam["tenant_id"]))
     host = sqlite3.connect(dst / "app_host.db")   # the copy, never the live databases
     host.execute("INSERT INTO sys_audit_logs (id, actor_user_id, event_type, target_id, details, ip_address, created_at) VALUES ('a1', ?, 'login', ?, ?, '', 'now')", (uid, uid, EMAIL))
     host.commit()

@@ -1,9 +1,10 @@
-"""The cover's film as frame strips for review (cover v4, D-400..; v5, D-410..): the page scrolled to set points of each stage, at 390 and 1440,
-light and dark, one contact sheet each in docs/report/cover-<tag>-<width>-<mode>.png, and with --video a short scroll-through recording of each size.
+"""The cover as frame strips for review (F-227, one stage): the real page scrolled to each part at 390 and 1440, light and dark, with frames taken
+during the swap (the incoming screen settling on the spring) and once it has settled; one contact sheet each in docs/report/cover-<tag>-<width>-<mode>.png,
+and with --video a short scroll-through recording of each size (light).
 
-    pixi run python scripts/cover_film_report.py [--base http://127.0.0.1:6034] [--tag v5] [--video] [--only 390-light]
+    pixi run python scripts/cover_film_report.py [--base http://127.0.0.1:5013] [--tag f227] [--video] [--only 390-light]
 
-Frames scroll the real page (no ?p= hold), wait for the moments that play on their own to settle, and label each frame with its stage and point.
+Each frame is labelled with what it shows; the sheet also prints, for each swap, the incoming screen's opacity and scale at the moment it was taken.
 """
 import argparse
 import io
@@ -15,14 +16,14 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / "docs" / "report"
 SIZES = {"390": {"width": 390, "height": 844}, "1440": {"width": 1440, "height": 900}}
-POINTS = (("hero", 0), ("hero", 0.5), ("hero", 1), ("book", 0.06), ("book", 0.3), ("book", 0.52), ("book", 0.7), ("book", 0.95),
-          ("head", 0.2), ("head", 0.42), ("head", 0.62), ("head", 0.9), ("with", 0.1), ("with", 0.27), ("with", 0.37), ("with", 0.45), ("with", 0.7), ("with", 0.95),
-          ("tips", 0.35), ("tips", 0.95), ("trail", 0.6), ("creators", 0.2), ("creators", 0.9), ("end", 0.9))
-SETTLED = """() => [...document.images].filter((im) => { const r = im.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && r.width > 2; })
-  .every((im) => im.complete && im.naturalWidth > 0)"""
+# (part, how long after the part shows the frame is taken, in ms): during the settle (380 ms) and settled, its moments played
+POINTS = ((1, 120), (1, 3000), (2, 90), (2, 200), (2, 2400), (3, 90), (3, 200), (3, 1600))
+SHOW = """n => { const c = document.querySelector(`.cv-ch[data-n="${n}"]`), top = c.getBoundingClientRect().top + scrollY;
+  window.scrollTo(0, innerWidth >= 1100 ? top : top - innerHeight * 0.6); }"""
+STATE = """n => { const s = getComputedStyle(document.querySelector(`.cv-L${n}`)); return [s.opacity, new DOMMatrix(s.transform).a]; }"""
 
 
-def frames(browser, base, size, scheme, points=POINTS):
+def frames(browser, base, size, scheme):
     vp = SIZES[size]
     phone = vp["width"] < 760
     ctx = browser.new_context(viewport=vp, color_scheme=scheme, is_mobile=phone, has_touch=phone, device_scale_factor=1)
@@ -30,14 +31,21 @@ def frames(browser, base, size, scheme, points=POINTS):
     page.goto(f"{base}/")
     page.wait_for_function("!!window.GA_COVER")
     page.wait_for_timeout(600)
-    out = []
-    for key, p in points:
-        page.evaluate("([k, p]) => window.scrollTo(0, GA_COVER.yAt(k, p))", [key, p])
-        page.wait_for_timeout(300)
-        page.wait_for_function(SETTLED, timeout=15000)
-        page.wait_for_timeout(900)
+    out = [("opening", Image.open(io.BytesIO(page.screenshot())).convert("RGB"))]
+    for n, after in POINTS:
+        if after < 1000:                                     # come from the part before, so the swap plays
+            page.evaluate(SHOW, str(n - 1 if n > 1 else 1))
+            page.wait_for_function(f"document.querySelector('.cv-stage').dataset.part === '{n - 1 if n > 1 else 1}'")
+            page.wait_for_timeout(700)
+        page.evaluate(SHOW, str(n))
+        page.wait_for_function(f"document.querySelector('.cv-stage').dataset.part === '{n}'")
+        page.wait_for_timeout(after)
+        op, k = page.evaluate(STATE, str(n))
         im = Image.open(io.BytesIO(page.screenshot())).convert("RGB")
-        out.append((f"{key} {p:g}", im))
+        out.append((f"part {n} +{after}ms · opacity {float(op):.2f} scale {k:.3f}", im))
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_timeout(400)
+    out.append(("the close", Image.open(io.BytesIO(page.screenshot())).convert("RGB")))
     ctx.close()
     return out
 
@@ -56,10 +64,10 @@ def sheet(images, cols):
     return board
 
 
-def video(browser, base, size, scheme, tag):
+def video(browser, base, size, tag):
     vp = SIZES[size]
     phone = vp["width"] < 760
-    ctx = browser.new_context(viewport=vp, color_scheme=scheme, is_mobile=phone, has_touch=phone, record_video_dir=str(OUT / "_video"), record_video_size=vp)
+    ctx = browser.new_context(viewport=vp, is_mobile=phone, has_touch=phone, record_video_dir=str(OUT / "_video"), record_video_size=vp)
     page = ctx.new_page()
     page.goto(f"{base}/")
     page.wait_for_function("!!window.GA_COVER")
@@ -67,22 +75,22 @@ def video(browser, base, size, scheme, tag):
     end = page.evaluate("document.documentElement.scrollHeight - innerHeight")
     y = 0
     while y < end:
-        y = min(end, y + vp["height"] * 0.04)
+        y = min(end, y + vp["height"] * 0.03)
         page.evaluate(f"window.scrollTo(0, {y})")
         page.wait_for_timeout(33)
     page.wait_for_timeout(600)
     path = page.video.path()
     ctx.close()
-    dest = OUT / f"cover-{tag}-{size}-{scheme}.webm"
+    dest = OUT / f"cover-{tag}-{size}.webm"
     Path(path).replace(dest)
     return dest
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="http://127.0.0.1:6034")
+    ap.add_argument("--base", default="http://127.0.0.1:5013")
     ap.add_argument("--video", action="store_true")
-    ap.add_argument("--tag", default="v5")
+    ap.add_argument("--tag", default="f227")
     ap.add_argument("--only", default="")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -93,11 +101,13 @@ def main():
                 if a.only and a.only != f"{size}-{scheme}":
                     continue
                 ims = frames(browser, a.base, size, scheme)
+                for name, _ in ims:
+                    print(f"{size} {scheme} {name}")
                 path = OUT / f"cover-{a.tag}-{size}-{scheme}.png"
-                sheet(ims, 8 if size == "390" else 4).save(path, optimize=True)
+                sheet(ims, 5 if size == "390" else 4).save(path, optimize=True)
                 print(path)
-                if a.video and scheme == "light":
-                    print(video(browser, a.base, size, scheme, a.tag))
+            if a.video and not a.only:
+                print(video(browser, a.base, size, a.tag))
         browser.close()
 
 

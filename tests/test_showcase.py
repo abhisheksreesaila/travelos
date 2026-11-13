@@ -131,7 +131,7 @@ def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip
 
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms", "https://www.openstreetmap.org/copyright"]  # the cover credits its map data (F-206)
+    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
     assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/privacy", "/terms"]  # the creators page (F-186) and the legal pages (F-076)

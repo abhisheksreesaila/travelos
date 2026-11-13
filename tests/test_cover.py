@@ -1,47 +1,35 @@
-"""F-206, cover v5 (D-410 on, over v4's D-400 to D-406 and v3's D-380 to D-392): the signed-out landing is v3's sales story filmed as a camera over the app: "Take a trip.
-Leave a trail." and one button, then the three promises (book with everything in view; a head start, then it comes with you; leave a trail), each
-a stage painted with the app's real screens and, where the feature is not built yet, a drawn card that says it is made up; then the line again over
-a snowy Tahoe forest, the doors and the footer.
+"""F-227, the cover rebuilt (one stage: docs/decisions.md D-426 on): the signed-out landing tells the brief's story (docs/briefs/unified-booking.md
+"The cover tells this story"): "Compare the whole trip. Choose it together.", then three parts beside one product frame (1 Compare, 2 Plan it
+together, 3 Leave a trail others can follow, "Bloggers and vloggers welcome"), then the line again, Start a trip and "Booking opens soon".
 
-What a stranger reads and in what order, where its buttons go, the screenshots behind each part, the booking stage's beats, spotlights, numbers
-and partners, the disclosure, what a search engine or a shared link sees, and that a signed-in person keeps the landing they had. The film itself
-(the pinned stages, the camera, the moments, touch scroll, the stills) is tested in a real browser: tests_browser/test_cover.py."""
+What a stranger reads and in what order, what the frame draws for each part (and that every number in it is the sample's own, the find's $50
+included, and the weather NOAA's), where its doors go, the honesty about what is made up, the place art, that the script can only pick a part
+(no scroll handler, no transform, no layout read) and that a signed-in person keeps the landing they had. The film itself (the pinned frame, the
+Liquid swap, reduced motion, the still, phone and laptop, light and dark, frame rate) is tested in a real browser: tests_browser/test_cover.py."""
 import re
+import shutil
+import subprocess
+import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
 
-from gitaway import auth, icons
+from gitaway import icons, weather
 from gitaway.pages import cover
-from tests.live_trips import live_trip
-from tests import tahoe
 from tests.test_signin import sign_in
 
 ROOT = Path(__file__).resolve().parent.parent
-TAGLINE = "Take a trip. Leave a trail."
-LEDE = "Everything you need to decide, a head start on the plan, and the people who’ve been there."
-# the story, scene by scene: (its eyebrow or None, its one headline)
-STORY = (
-    (None, "Take a trip. Leave a trail."),
-    ("1 · Book with everything in view", "See the whole trip before you pay for any of it."),
-    ("2 · A head start, then it comes with you", "Don’t start from a blank page."),
-    (None, "Then the plan comes with you."),
-    (None, "Things a search won’t tell you."),
-    ("3 · Leave a trail", "Home again? Leave a trail."),
-    ("For travel writers", "You already wrote the post."),
-)
-BEATS = ("A cheaper flight, a pricier cabin? See both at once and decide.",
-         "The weather for your dates and the drive from the airport, right where you book.",
-         "You book on the booking site itself. Your bookings stay yours.")
-FEATURES = {"cockpit": "Every day on one line.", "day": "Each day, to the hour.", "ask": "Change it by asking.", "family": "Everyone on the same page."}
-# scene -> its screenshots, in order (the opening and the tools that come with you draw a laptop and a phone: each shows its own layout)
-SHOTS = {0: ["cockpit", "cockpit"], 1: ["book"], 2: ["trail"], 3: ["cockpit", "day", "ask", "family"] * 2, 6: ["creators"]}
-SHARED = r'<a [^>]*href="/community"[^>]*>See trips people shared'
-DISCLOSURE = "This trip is an example: the families, trips and tips in this story are made up. The places are real."
+LINE = "Compare the whole trip. Choose it together."
+PARTS = (("01 · Compare", "Every place, every date. One total each."),
+         ("02 · Plan it together", "Hearts, not group texts. One person decides."),
+         ("03 · Leave a trail", "Leave a trail others can follow."))
+OLD = ("Take a trip. Leave a trail.", "Book with everything in view", "blank page", "comes with you", "Things a search", "You already wrote",
+       "cv-shot", "<picture", "/assets/cover/shots", "data-scene", "data-stage", "Lena", "Okafor", "Tahoe in three days")
 
 
 def _text(html):
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html)).replace(" .", ".").replace(" ,", ",").replace(" ?", "?")
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html)).replace(" .", ".").replace(" ,", ",").replace(" ?", "?").strip()
 
 
 def _cover(client):
@@ -50,224 +38,158 @@ def _cover(client):
     return r.text
 
 
-def _close(html):
-    return re.search(r'<div[^>]*class="cv-close".*?</footer>', html, re.S).group(0)
+def _el(html, tag, cls):
+    """The whole element (tag ... /tag, nested same tags counted) that carries a class."""
+    m = re.search(rf'<{tag}\b[^>]*class="[^"]*\b{cls}\b[^"]*"[^>]*>', html)
+    assert m, cls
+    depth, i = 1, m.end()
+    for t in re.finditer(rf"<(/?){tag}\b[^>]*>", html[i:]):
+        depth += -1 if t.group(1) else 1
+        if depth == 0:
+            return html[m.start():i + t.end()]
+    raise AssertionError(cls)
 
 
-def _tag(html, cls, tag="div"):
-    return re.search(rf'<{tag}\b[^>]*class="{cls}"[^>]*>', html).group(0)
+def _layer(html, n):
+    return _el(html, "figure", f"cv-L{n}")
+
+
+def _part(html, n):
+    return _el(html, "div", f"cv-ch{n}")
 
 
 def _links(html):
     return re.findall(r'<a [^>]*href="([^"]+)"', html)
 
 
-def _scenes(html):
-    return re.findall(r'(<section[^>]*data-scene="\d+".*?</section>)(?=\s*<section[^>]*data-scene|\s*</main>)', html, re.S)
-
-
-def test_the_story_opens_on_the_line_and_runs_through_the_three_promises(client):
+def test_the_story_is_the_line_three_parts_and_the_line_again(client):
     html = _cover(client)
     assert 'class="cv-root' in re.search(r"<html[^>]*>", html).group(0)
-    scenes = _scenes(html)
-    assert len(scenes) == len(STORY)
-    for k, ((act, headline), scene) in enumerate(zip(STORY, scenes)):
-        heading = re.search(r"<h([12])[^>]*>(.*?)</h\1>", scene, re.S)
-        assert _text(heading.group(2)).strip() == headline, k
-        assert len(re.findall(r"<h[12]\b", scene)) == 1, k                   # one headline a scene
-        eyebrow = re.search(r'<p class="cv-eyebrow">.*?</p>', scene, re.S)
-        assert (_text(eyebrow.group(0)).strip() if eyebrow else None) == act, k
-    assert re.search(r"<h1[^>]*>", scenes[0]) and len(re.findall(r"<h1\b", html)) == 1
-    assert LEDE in _text(scenes[0])
-    assert _text(re.search(r"<h2[^>]*>.*?</h2>", _close(html), re.S).group(0)).strip() == TAGLINE      # and it closes on the line again
+    assert re.findall(r"<h1\b", html) and len(re.findall(r"<h1\b", html)) == 1
+    assert _text(re.search(r"<h1[^>]*>.*?</h1>", html, re.S).group(0)) == LINE
+    assert _text(_el(html, "p", "cv-lede")) == cover.LEDE
+    for n, (number, headline) in enumerate(PARTS, 1):
+        part = _part(html, n)
+        assert _text(re.search(r'<p class="cv-n">.*?</p>', part).group(0)) == number
+        assert _text(re.search(r"<h2[^>]*>.*?</h2>", part, re.S).group(0)) == headline
+    assert "Bloggers and vloggers welcome" in _text(_part(html, 3))
+    close = _el(html, "section", "cv-close")
+    assert _text(re.search(r"<h2[^>]*>.*?</h2>", close, re.S).group(0)) == LINE
+    assert "Booking opens soon" in _text(close) and _text(_el(close, "span", "cv-soon")) == "Booking opens soon"
+    order = [_text(html).index(t) for t in (LINE, PARTS[0][1], PARTS[1][1], PARTS[2][1], "Booking opens soon")]
+    assert order == sorted(order)
 
 
-def test_the_opening_has_one_door_plan_a_trip(client):
-    opening = _scenes(_cover(client))[0]
-    assert re.findall(r'<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>', opening, re.S) and [h for h in _links(opening)] == ["/start"]
-    assert "Plan a trip" in _text(opening)
-    assert "cv-tabs" not in opening and "Fourteen tabs" not in opening and "homework" not in _text(opening)    # the fourteen tabs are gone (D-381)
-
-
-def test_the_booking_scene_is_three_beats_over_one_screenshot(client):
-    """One screen; the camera keys (flight beside stay, weather, drive) and the spotlights sit on the crop; the third beat is the pullback, with
-    where you book beside it (cover v5, D-413: no numbers popping, no rings, no chips flying out)."""
-    scene = _scenes(_cover(client))[1]
-    beats = re.findall(r'<p data-beat="(\w+)" class="cv-beat">(.*?)</p>', scene, re.S)
-    assert [b for b, _ in beats] == ["0", "1", "2"]
-    assert [_text(t).strip() for _, t in beats] == [BEATS[0], BEATS[1], "Everything in one view. " + BEATS[2]]
-    assert len(re.findall(r'<picture\b', scene)) == 1                     # one screen; the camera moves over it
-    spots = re.findall(r'<span data-spot="(\w+)" class="cv-spot" style="left:([\d.]+)%;top:([\d.]+)%;width:([\d.]+)%;height:([\d.]+)%"', scene)
-    assert [k for k, *_ in spots] == ["fs", "wx", "drive"]
-    for x, y, w, h in [b for _, *b in spots]:
-        assert 0 <= float(x) and float(x) + float(w) <= 100.01 and 0 <= float(y) and float(y) + float(h) <= 100.01
-    lens = re.search(r'<div[^>]*class="cv-lens"[^>]*>', scene).group(0)
-    for k in ("fs", "fs-phone", "wx", "drive"):
-        z = [float(v) for v in re.search(rf'data-cam-{k}="([^"]+)"', lens).group(1).split(",")]
-        assert len(z) == 4 and z[0] + z[2] <= 1.001 and z[1] + z[3] <= 1.001, k
-    for gone in ("cv-ring", "cv-call", "cv-count", "cv-steps", "data-from"):
-        assert gone not in scene, gone
-    assert "1 h 23 min" in cover.ALT["book"]
-
-
-def test_the_cover_names_only_the_real_partners_as_live(client):
-    """Today GitAway's partners are Aviasales (flights) and Klook (stays, cars, things to do): only they show as live; Expedia, Booking.com and
-    more sites show muted with "Soon" (D-411). No other booking site's name appears anywhere else in the cover's words."""
+def test_the_old_stages_left_the_cover(client):
     html = _cover(client)
-    scene = _scenes(html)[1]
-    live = [_text(c).strip() for c in re.findall(r'<li class="cv-chip k-[a-z]+">(.*?)</li>', scene, re.S)]
-    soon = [_text(c).strip() for c in re.findall(r'<li class="cv-chip soon">(.*?)</li>', scene, re.S)]
-    assert live == ["Aviasales Flights", "Klook Stays, cars, things to do"]
-    assert soon == ["Expedia Soon", "Booking.com Soon", "More sites Soon"]
-    from gitaway.partners.registry import NAMES
-    rest = _text(re.sub(r'<li class="cv-chip soon">.*?</li>', "", html, flags=re.S))
-    for name in set(NAMES.values()) - {"Aviasales", "Klook"}:
-        assert name not in rest, name
-    assert "partner" not in _text(re.search(r"<footer.*?</footer>", html, re.S).group(0)).lower()
+    for gone in OLD:
+        assert gone not in html, gone
 
 
-def test_every_screenshot_is_real_on_disk_for_its_layout_and_mode(client):
-    scenes = _scenes(_cover(client))
-    for k, names in SHOTS.items():
-        assert re.findall(r'<picture data-shot="([a-z]+)"', scenes[k]) == names, k
-    for k in set(range(len(scenes))) - set(SHOTS):
-        assert "<picture" not in scenes[k], k                              # the drawn cards carry no screenshot
-    for pic in re.findall(r'<picture data-shot="[a-z]+".*?</picture>', _cover(client), re.S):
-        name = re.search(r'data-shot="([a-z]+)"', pic).group(1)
-        files = set(re.findall(r'(/assets/cover/shots/[^" ,]+\.webp)', pic))
-        fixed = re.search(r'data-layout="(\w+)"', pic)                     # a device's screen shows its own layout whatever the window
-        layouts = ("wide",) if name == "book" else (fixed.group(1),) if fixed else ("phone", "wide")
-        for layout in layouts:
-            for mode in ("light", "dark"):
-                for src in cover.shot_srcs(name, layout, mode):
-                    assert src in files, src
-                    assert (ROOT / src.lstrip("/")).is_file(), src
-        assert not fixed or all(f"-{fixed.group(1)}-" in f for f in files), files
-        for attr in ("data-light-phone", "data-dark-phone", "data-light-wide", "data-dark-wide"):      # what cover.js swaps in when the site's own switch differs
-            assert re.search(rf'{attr}="/assets/cover/shots/{name}-', pic), (name, attr)
-        img = re.search(r"<img [^>]*>", pic).group(0)
-        assert re.search(r'width="\d+"', img) and re.search(r'height="\d+"', img)                                # no jump when it loads
-        assert 'loading="lazy"' in img or ('fetchpriority="high"' in img and name == "cockpit"), name           # only the opening's phone loads at once
-        assert re.search(r'alt="[^"]{40,}"', img) or 'aria-hidden="true"' in img, name                       # a screenshot says what it shows (the twin is hidden)
-        if name != "book" and not fixed:
-            sources = re.findall(r"<source [^>]*>", pic)
-            assert any("prefers-color-scheme: dark" in t and cover.PHONE_Q in t and "-phone-dark-" in t for t in sources)
-            assert any(f'media="{cover.PHONE_Q}"' in t and "-phone-light-" in t for t in sources)
-
-
-def test_the_screenshots_stay_light():
-    """One visitor downloads one layout in one mode: on a phone the booking crop, six phone screenshots, the close's portrait cut and the blog
-    post's picture; on a laptop the crop, the laptop's screens (at 1440 on a sharp screen), the phone beside it and the close's wide photo."""
-    shots = ROOT / "assets/cover/shots"
-    phone_set = ("cockpit", "trail", "day", "ask", "family", "creators")
-    wide_set = ("cockpit", "trail", "day", "ask", "family", "creators")
-    size = lambda src: (ROOT / src.lstrip("/")).stat().st_size      # noqa: E731
-    post = size(cover.POST_PHOTO[0])
-    for mode in ("light", "dark"):
-        book = (shots / f"book-wide-{mode}-1600.webp").stat().st_size
-        phone = book + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in phone_set) + size(cover.CLOSE_PHOTO[3]) + post
-        assert phone <= 650_000, (mode, phone)
-        for w, cap in ((960, 700_000), (1440, 1_000_000)):
-            wide = book + post + size(cover.CLOSE_PHOTO[0]) + sum((shots / f"{n}-wide-{mode}-{w}.webp").stat().st_size for n in wide_set) \
-                + sum((shots / f"{n}-phone-{mode}-600.webp").stat().st_size for n in ("cockpit", "day", "ask", "family"))
-            assert wide <= cap, (w, mode, wide)
-
-
-def test_the_closing_photo_is_snowy_tahoe_and_credited(client):
-    """Tahoe is the example and it is winter: the close is a CC0 snowy forest at Lake Tahoe and the blog post's picture is South Lake Tahoe in
-    February (D-410), each recorded in assets/photos/CREDITS.md (source, author, licence) and credited on the cover; each file stays small."""
+def test_one_stage_one_frame_three_screens_beside_three_parts(client):
     html = _cover(client)
-    close = _close(html)
-    credits = (ROOT / "assets/photos/CREDITS.md").read_text(encoding="utf-8")
-    for photo, by in ((cover.CLOSE_PHOTO, cover.CLOSE_PHOTO[5]), (cover.POST_PHOTO, cover.POST_PHOTO[4])):
-        for f in [f for f in photo if isinstance(f, str) and f.startswith("/assets/photos/")]:
-            assert (ROOT / f.lstrip("/")).is_file() and (ROOT / f.lstrip("/")).stat().st_size <= 400_000, f
-            row = next(line for line in credits.splitlines() if Path(f).name in line)
-            assert by in row and "CC0 1.0" in row and "https://commons.wikimedia.org/wiki/File:" in row, row
-            assert f in html, f
-        assert by in _text(re.search(r"<footer.*?</footer>", html, re.S).group(0))
-    assert re.search(rf'<source media="{re.escape(cover.PHONE_Q)}" srcset="{cover.CLOSE_PHOTO[3]}">', close)       # a phone gets its own portrait cut
-    assert f"{cover.CLOSE_PHOTO[4]} · photo {cover.CLOSE_PHOTO[5]}, CC0" in _text(close)
-    assert "venice" not in re.search(r'<div class="cv-photo">.*?</div>', close, re.S).group(0).lower()
+    stage = _el(html, "section", "cv-stage")
+    assert len(re.findall(r'class="cv-stage"', html)) == 1 and re.search(r'<section[^>]*data-part="1"', stage)     # part 1 shows from the first paint
+    frame = _el(stage, "div", "cv-frame")
+    figures = re.findall(r"<figure\b[^>]*>", frame)
+    assert [(re.search(r'data-n="(\d)"', f).group(1), re.search(r'class="cv-L cv-L(\d)"', f).group(1)) for f in figures] == [("1", "1"), ("2", "2"), ("3", "3")]
+    parts = re.findall(r'<div\b[^>]*class="cv-ch cv-ch\d"[^>]*>', stage)
+    assert [(re.search(r'data-n="(\d)"', p).group(1), re.search(r"cv-ch(\d)", p).group(1)) for p in parts] == [("1", "1"), ("2", "2"), ("3", "3")]
+    assert stage.index("cv-frame") < stage.index("cv-chs")       # the frame first: on a phone it pins at the top and the parts pass under it
 
 
-def test_the_screenshots_show_only_the_made_up_family():
-    """scripts/cover_shots.py renames every traveler of the founder's Tahoe trip to the story's made-up family and signs in with a made-up address;
-    the booking shot's airport drive is the router's real answer, kept in the script, so no service is asked."""
-    from scripts import cover_shots
-    names = re.findall(r"- name: (.+)", tahoe.TEMPLATE)
-    renamed = {a.removeprefix("- name: "): b.removeprefix("- name: ") for a, b in cover_shots.TEMPLATE_NAMES}
-    assert sorted(renamed) == sorted(names) and set(renamed.values()) == {"Lena", "Sam", "Noa", "Theo"}
-    assert cover_shots.EMAIL.endswith("@example.com")
-    assert cover_shots.DRIVE == ("RNO", "South Lake Tahoe, California", 83) and cover_shots.CROP == {"book": "#pw"}
+def test_part_one_types_the_sentence_and_lights_the_find(client):
+    """The sentence, the matrix (four places, three dates, one total a square), the square that lights up and the find under it; the $50 is the
+    sample's own arithmetic (LA + San Diego minus San Diego alone, the same dates)."""
+    layer = _layer(_cover(client), 1)
+    assert _text(_el(layer, "p", "cv-sent")) == "A family of 4, from SFO, somewhere warm, Dec 12 to 16, give or take a day."
+    words = re.findall(r'<span class="cv-w( k)?" style="--w:(\d+)">', layer)
+    assert [int(k) for _, k in words] == list(range(len(words))) and sum(bool(k) for k, _ in words) >= 6
+    cells = re.findall(r'<span class="cv-c( lit)?" style="--i:(\d+)">(\$[\d,]+)', layer)
+    assert len(cells) == 12 and [int(i) for _, i, _ in cells] == list(range(12))
+    assert [c for lit, _, c in cells if lit] == ["$2,190"]
+    totals = {rid: t for rid, _, _, t in cover.ROWS}
+    assert totals["lasd"][1] - totals["sd"][1] == 50 and "$50 more than San Diego alone" in cover.FIND_LINE
+    lit = _el(layer, "span", "lit")
+    assert _text(lit) == "$2,190 +$50"
+    disc = _el(layer, "div", "cv-disc")
+    assert "LA + San Diego, $50 more than San Diego alone." in _text(disc) and "$2,190" in _text(_el(disc, "span", "cv-num"))
+    assert [_text(h) for h in re.findall(r'<span class="cv-wide">(.*?)</span>', layer)] == ["Dec 11–15", "Dec 12–16", "Dec 13–17"]
 
 
-def test_the_made_up_parts_are_drawn_in_the_apps_look_and_say_so(client):
-    """The trips others took and the local tips are not built yet (D-381, D-382): they are drawn, never a link, and the story says the families,
-    trips and tips are made up where they first appear (D-383), before any made-up family or tip shows."""
+def test_the_calendar_wears_san_diegos_real_typical_weather(client):
+    """Each day is NOAA's normal for San Diego (gitaway/normals.json): never invented, and said to be typical, not a forecast. Weekdays come from
+    the real 2026 calendar (docs/lessons.md 2026-11-12)."""
+    layer = _layer(_cover(client), 1)
+    st = weather.station(weather.CATALOG_STATIONS["sd"])
+    days = re.findall(r'<span class="cv-day( in)?"><span>(\w+)</span><b>(\d+)</b>.*?<span>(\d+)°</span>', layer, re.S)
+    assert [int(d) for _, _, d, _ in days] == list(range(11, 18))
+    for inside, dow, d, high in days:
+        day = date(2026, 12, int(d))
+        assert dow == f"{day:%a}" and int(high) == weather.normal_day(st, day).high_f
+        assert bool(inside) == (12 <= day.day <= 16)
+    assert "not a forecast yet" in _text(_el(layer, "small", "cv-typ")) and st.name in _text(_el(layer, "small", "cv-typ"))
+
+
+def test_part_two_lands_hearts_with_faces_beside_the_thread_and_the_owners_this_one(client):
+    layer = _layer(_cover(client), 2)
+    hearts = re.findall(r'<span class="cv-hf" style="--h:(\d)"><span class="cv-face( guest)?" title="([^"]+)"', layer)
+    assert [(h, t) for h, _, t in hearts] == [("0", "Ana"), ("1", "Leela"), ("2", "Dev"), ("3", "Sam (guest)")]
+    assert [g for _, g, _ in hearts] == ["", "", "", " guest"]                     # a guest is an outlined initial, not a drawn face
+    no_faces = re.sub(r'<span class="cv-face[^"]*" title="[^"]*">.*?</span>', "", layer, flags=re.S)
+    assert [_text(b) for b in re.findall(r'<div class="cv-bub" style="--b:\d">(.*?)</div>', no_faces, re.S)] == [
+        "Leela The beach!!", "Dev Two hours of coast is fine.", "Sam We could join for the LA part."]
+    assert _text(_el(layer, "span", "cv-pill")) == "This one" and "Ana decides." in _text(layer)
+
+
+def test_part_three_makes_the_card_to_post_and_a_creators_matrix(client):
     html = _cover(client)
-    scenes = _scenes(html)
-    head = scenes[2]
-    assert "Trips others took to Lake Tahoe" in _text(head) and len(re.findall(r'<span class="cv-fb-a">', head)) == 3
-    assert DISCLOSURE in _text(head)
-    assert _text(html).index(DISCLOSURE) < _text(html).index("Tips for your Tahoe trip")
-    assert all(n not in _text(s) for s in scenes[:2] for n in ("Okafor", "Lena", "Priya", "Garcí"))     # no made-up family before the head start
-    tips = _text(scenes[4])
-    for tip in ("Echo Summit", "Emerald Bay Rd closes in heavy snow", "Stagecoach lot fills by 8:30", "sledding at Spooner, free"):
-        assert tip in tips, tip
-    for s in (scenes[2], scenes[4], scenes[5], scenes[6]):
-        for fig in re.findall(r"<figure.*?</figure>", s, re.S):
-            assert "<a " not in fig and "<button" not in fig                    # a drawing: nothing in it can be pressed
-            assert re.search(r'aria-label="An illustration: [^"]*made-up', fig)
+    layer = _layer(html, 3)
+    assert "LA + San Diego" in _text(_el(layer, "div", "cv-ig")) and "Maya’s Tahoe trip" in _text(layer)
+    assert [_text(s) for s in re.findall(r'<span(?: class="lit")?>(\$[\d,]+)</span>', _el(layer, "div", "cv-mini"))] == ["$1,640", "$1,520", "$1,710"]
+    part = _part(html, 3)
+    assert re.search(r'<a [^>]*href="/for-creators"[^>]*>For creators', part)
 
 
-def test_the_tools_that_come_with_you_each_have_a_headline_and_a_screen(client):
-    scene = _scenes(_cover(client))[3]
-    arts = re.findall(r'<article data-feat="([a-z]+)" class="cv-feat">\s*<h3>(.*?)</h3>', scene, re.S)
-    assert [(n, _text(h).strip()) for n, h in arts] == list(FEATURES.items())
-    for name in FEATURES:                                                  # each on the laptop's screen and the phone's
-        assert len(re.findall(rf'<div data-layer="{name}" class="cv-layer">', scene)) == 2, name
-    assert "Move snowshoeing after lunch." in _text(scene)                 # Ask's own words, in the copy
-    assert re.search(r'data-loop="day,ask,family"', scene)                  # after the dive the screen loops through them on its own (D-412)
-    for gone in ("cv-typed", "cv-bub", "cv-ask"):                            # no request typing itself, no bubbles popping one by one
-        assert gone not in scene, gone
+def test_the_frame_is_a_drawing_nothing_in_it_can_be_pressed(client):
+    html = _cover(client)
+    for n in "123":
+        layer = _layer(html, n)
+        assert "<a " not in layer and "<button" not in layer and "<input" not in layer, n
+        assert re.search(r'aria-label="An illustration[^"]*made-up', layer), n
+        assert re.search(r'<span class="cv-sample">Sample \w+</span>', layer), n       # each screen says it is a sample, on its own bar
+
+
+def test_the_made_up_parts_are_said_where_the_first_of_them_shows(client):
+    """D-270, D-383, D-429: the made-up families, prices and trips show in production too, as an illustration. The first part's words say so, beside
+    the first screen (sample prices, no family yet); the made-up family and creator show only on the second and third screens; the footer says it
+    again."""
+    html = _cover(client)
+    assert cover.DISCLOSURE in _text(_part(html, 1))
+    first = _text(re.sub(r'aria-label="[^"]*"', "", _layer(html, 1)))
+    assert not re.search(r"\b(Ana|Leela|Dev|Sam|Maya)\b", first) and "Sample prices" in first
+    assert "Ana" in _text(_layer(html, 2)) and "Maya" in _text(_layer(html, 3))
+    assert "made up" in _text(_el(html, "footer", "cv-foot"))
 
 
 @pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])
-def test_the_doors_go_to_pages_that_exist(client, monkeypatch, mode):
+def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
     html = _cover(client)
-    close = _close(html)
-    assert re.search(r'<a [^>]*href="/start"[^>]*>Plan a trip', close)
-    assert bool(re.search(SHARED, close)) == (mode == "1")                   # nobody has published here: off the showcase there are no shared trips to see
-    assert re.search(r'<a [^>]*href="/for-creators"[^>]*>Bring your post', _scenes(html)[6])
-    for href in _links(close) + ["/for-creators"]:
-        if not href.startswith("http"):
-            assert client.get(href).status_code == 200, href
-
-
-def test_the_live_site_opens_the_door_to_shared_trips_once_a_real_one_is_published(client, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert not re.search(SHARED, _close(_cover(client)))
-    live_trip()
-    assert re.search(SHARED, _close(_cover(client)))
-    assert client.get("/community").status_code == 200
-
-
-@pytest.mark.parametrize("mode", ["1", "0"], ids=["showcase", "production"])
-def test_every_link_on_the_cover_lands_on_a_real_page(client, monkeypatch, mode):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
-    html = _cover(client)
+    hero = _el(html, "section", "cv-hero")
+    assert _links(hero) == ["/start", "#compare"] and 'id="compare"' in html
+    assert _links(_el(html, "section", "cv-close"))[0] == "/start"
+    assert _links(_el(html, "header", "cv-top")) == ["/", "/signin"]
     for href in sorted(set(_links(html))):
         if href.startswith(("#", "http", "mailto:")):
             continue
         assert client.get(href).status_code == 200, href
 
 
-def test_the_plan_it_for_me_card_closes_the_story_only_when_offered(client, monkeypatch):
+def test_the_plan_it_for_me_card_follows_the_close_only_when_offered(client, monkeypatch):
     from gitaway import planforme
     monkeypatch.setattr(planforme, "offered", lambda: True)
-    assert 'id="plan-for-me"' in _close(_cover(client))
+    assert 'id="plan-for-me"' in _el(_cover(client), "section", "cv-close")
     monkeypatch.setattr(planforme, "offered", lambda: False)
     html = _cover(client)
     assert 'id="plan-for-me"' not in html and "/assets/css/planforme.css" not in html
@@ -280,85 +202,111 @@ def test_a_signed_in_visitor_keeps_the_landing_they_had(client):
     assert "Fork a" in html and "getaway." in html and "/assets/css/landing.css" in html
 
 
-def test_a_search_result_and_a_shared_link_show_the_line(client):
-    html = _cover(client)
-    assert re.search(r"<title>GitAway · Take a trip\. Leave a trail\.</title>", html)
-    meta = dict(re.findall(r'<meta (?:name|property)="([^"]+)" content="([^"]*)"', html))
-    assert meta["description"] == LEDE.replace("’", "’")
-    assert meta["og:title"] == "GitAway · Take a trip. Leave a trail." and meta["og:description"] == meta["description"]
-    assert meta["og:type"] == "website" and meta["og:url"].endswith("/")
-    assert meta["og:image"].startswith("http") and meta["og:image"].endswith(cover.OG_IMAGE)
-    assert (ROOT / cover.OG_IMAGE.lstrip("/")).is_file()
-    assert "noindex" not in html
-
-
-def test_the_words_are_real_text_and_the_story_is_skippable_to(client):
-    html = _cover(client)
-    assert 'href="#main"' in html and 'id="main"' in html                 # skip to the story
-    assert "data-world" not in html and "cv-anchors" not in html          # no world, no world's labels (D-380)
-    assert 'aria-live="polite"' in _tag(html, "cv-beats")                 # a screen reader hears the beat change
-    assert re.search(r'<div aria-hidden="true" class="cv-rail">', html)    # the progress rail is a drawing, not a control
-
-
 def test_only_the_cover_loads_the_cover(client):
     for path in ("/start", "/signin", "/for-creators", "/privacy", "/community"):
         html = client.get(path).text
         assert "/assets/js/cover.js" not in html and "/assets/css/cover.css" not in html and "cv-root" not in html, path
 
 
-def test_the_first_paint_already_knows_day_or_night(client):
-    """A tiny inline script picks day or night (and calm under reduced motion) before anything is drawn, so the page never flashes the wrong one."""
+def test_a_search_result_and_a_shared_link_show_the_line(client):
     html = _cover(client)
-    boot = re.search(r"<script>(.*?)</script>", html, re.S)
-    assert boot and "cv-dark" in boot.group(1) and "prefers-color-scheme" in boot.group(1) and "prefers-reduced-motion" in boot.group(1)
-    assert len(boot.group(1).encode()) < 2048
-    assert html.index(boot.group(0)) < html.index('<main')
+    assert f"<title>GitAway · {LINE}</title>" in html
+    meta = dict(re.findall(r'<meta (?:name|property)="([^"]+)" content="([^"]*)"', html))
+    assert meta["description"] == cover.LEDE and meta["og:title"] == f"GitAway · {LINE}" and meta["og:type"] == "website"
+    assert meta["og:image"].startswith("http") and meta["og:image"].endswith(cover.OG_IMAGE) and (ROOT / cover.OG_IMAGE.lstrip("/")).is_file()
+    assert "noindex" not in html
 
 
-def test_the_map_data_in_the_screens_is_credited(client):
-    """The screenshots show OpenStreetMap data (the cockpit's paper map, the airport drive) and AWS Terrain Tiles relief: the footer credits both,
-    linking OpenStreetMap's copyright page as its attribution guidelines ask; and says the story is made up."""
-    footer = re.search(r"<footer.*?</footer>", _cover(client), re.S).group(0)
-    assert "© OpenStreetMap contributors" in _text(footer) and "USGS 3DEP" in _text(footer)
-    assert re.search(r'<a [^>]*href="https://www\.openstreetmap\.org/copyright"[^>]*>OpenStreetMap contributors</a>', footer)
-    assert "the families, trips, tips and thanks in this story are made up" in _text(footer)
+def test_the_page_follows_the_sites_light_and_dark(client):
+    """The cover is Direction A: tokens.css's palettes, the remembered choice applied by mode.js before the first paint, the footer's switch."""
+    html = _cover(client)
+    head = html.split("</head>")[0]
+    assert re.search(r'<script src="/assets/js/mode\.js[^"]*"></script>', head)
+    assert re.search(r'name="theme-color" content="#F2F2F5" media="\(prefers-color-scheme: light\)"', head)
+    assert re.search(r'name="theme-color" content="#000000" media="\(prefers-color-scheme: dark\)"', head)
+    assert re.findall(r'data-mode-pick="(\w+)"', _el(html, "footer", "cv-foot")) == ["auto", "light", "dark"]
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    assert "cv-dark" not in css and "--cv-bg" not in css                       # no palette of its own any more
 
 
-def test_the_decisions_record_the_covers_exceptions():
-    """The cover shows made-up families, trips and tips in production (an illustration, never presented as real activity), shows OpenStreetMap
-    data, and since v3 loads no 3D world."""
-    decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
-    assert re.search(r"^- D-\d+ · F-206.*showcase\.on\(\).*illustration", decisions, re.M)
-    assert re.search(r"^- D-\d+ · F-206.*ODbL.*openstreetmap\.org/copyright", decisions, re.M)
-    assert re.search(r"^- D-383 · .*D-270.*tips", decisions, re.M)
-    assert re.search(r"^- D-380 · .*three\.js", decisions, re.M)
-    assert re.search(r"^- D-40\d · .*calm desktop", decisions, re.M)      # the cover's laptop zooms: an exception to the calm laptop, for this page only
+def test_the_first_paint_knows_film_or_still(client):
+    """A tiny inline script marks the film (html.cv-film) before anything is drawn, unless ?still; should cover.js not run, the still stays."""
+    html = _cover(client)
+    boot = re.search(r"<script>(.*?)</script>", html, re.S).group(1)
+    assert "cv-film" in boot and "still" in boot and "GA_COVER" in boot and len(boot.encode()) < 1024
+    assert html.index(boot) < html.index("<main")
+
+
+def test_the_script_only_picks_a_part():
+    """No jitter by construction (D-427): cover.js watches the parts with an IntersectionObserver and sets data-part and .go. It has no scroll
+    handler, asks for no frames, reads no layout and writes no style; every move is cover.css's, on the --motion-* tokens."""
+    js = re.sub(r"//.*", "", (ROOT / "assets/js/cover.js").read_text(encoding="utf-8"))
+    assert "IntersectionObserver" in js and "dataset.part" in js and "'go'" in js
+    for banned in ("scroll", "requestAnimationFrame", "getBoundingClientRect", "offsetTop", "offsetHeight", "scrollY", ".style", "transform", "animate("):
+        assert banned not in js, banned
+
+
+def test_the_stylesheet_pins_with_sticky_and_moves_nothing_with_the_scroll():
+    css = re.sub(r"/\*.*?\*/", "", (ROOT / "assets/css/cover.css").read_text(encoding="utf-8"), flags=re.S)
+    for banned in ("animation-timeline", "view-timeline", "scroll-timeline", "timeline-scope", "will-change"):
+        assert banned not in css, banned
+    assert "position: sticky" in css and "position: fixed" not in css
+    film = css[css.index("@media (min-height: 600px)"):css.index("@keyframes cv-in")]
+    assert "prefers-reduced-motion: no-preference" in film and "cv-settle" in film        # the Liquid swap, and only with motion allowed
+    rules = re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"@keyframes[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", css))
+    hidden = [sel.strip() for sel, body in rules if re.search(r"(?<![\w-])opacity:\s*0\s*;", body)]
+    assert hidden and all(".cv-film" in s for s in hidden), hidden                     # nothing is hidden outside the film
 
 
 def test_the_phone_query_is_the_stylesheets(client):
-    """cover.js reads the phone query from the page (data-phone) and every <picture> is built from it; cover.css must use the very same one."""
     css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
     assert cover.PHONE_Q in [q.strip() for q in re.findall(r"@media ([^{]+)\{", css)]
     assert f'data-phone="{cover.PHONE_Q}"' in _cover(client)
 
 
+def test_every_place_drawn_has_its_art_in_both_modes(client):
+    """The place art (scripts/cover_art.py, from the F-221 drawings): the sprite is inlined once, every <use> names a symbol in it, every place has a
+    day palette and a night one (for the system's dark and for the person's), and nothing in the drawings is a fixed colour of their own."""
+    html = _cover(client)
+    sprite = (ROOT / "assets/cover/art.svg").read_text(encoding="utf-8")
+    assert html.count('class="pa-sprite"') == 1
+    symbols = set(re.findall(r'<symbol id="pa-([\w-]+)"', sprite))
+    used = set(re.findall(r'<use href="#pa-([\w-]+)"', html))
+    assert used == symbols == set(cover.ART)
+    assert re.findall(r'<span data-art="([\w-]+)" data-wx="(\w+)" class="pa"', _el(html, "div", "cv-band")) == list(cover.BAND)
+    assert "class=" not in sprite.split(">", 1)[1] and not re.search(r'fill="#|stroke="#|url\(#', sprite)
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    block = css[css.index("/* art:begin"):css.index("/* art:end */")]
+    for place in cover.ART:
+        assert block.count(f'.pa[data-art="{place}"]') == 3, place                   # day, the person's dark, the system's dark
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="needs node")
+def test_the_art_is_built_from_the_approved_drawings():
+    r = subprocess.run([sys.executable, str(ROOT / "scripts/cover_art.py"), "--check"], capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_screens_have_a_seam_for_the_real_matrix():
+    """Until F-222 ships the frame's screens are drawn here; each part has one drawer in SCREENS, to swap for a real screenshot then."""
+    assert list(cover.SCREENS) == ["1", "2", "3"] and all(callable(f) for f in cover.SCREENS.values())
+    assert "F-222" in cover.__doc__ and "SCREENS" in cover.__doc__
+
+
 def test_the_cover_uses_the_sites_own_icons(client):
     html = _cover(client)
-    for name in ("arrow-right", "fork", "heart", "snow"):
+    for name in ("arrow-right", "heart", "check", "sun"):
         assert icons.PATHS[name] in html, name
 
 
-def test_the_browser_bar_takes_the_openings_sky_by_day_and_night_by_night(client):
-    metas = re.findall(r'<meta name="theme-color"[^>]*>', _cover(client))
-    assert len(metas) == 2, metas
-    assert any('content="#E6EEF9"' in m and 'media="(prefers-color-scheme: light)"' in m for m in metas)
-    assert any('content="#070B14"' in m and 'media="(prefers-color-scheme: dark)"' in m for m in metas)
-    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
-    assert "--t-hero: #E6EEF9" in css and "--t-hero: #070B14" in css      # the same colours as the opening's tint
+def test_the_words_are_real_text_and_the_story_is_skippable_to(client):
+    html = _cover(client)
+    assert 'href="#main"' in html and 'id="main"' in html
+    assert re.search(r'<section[^>]*aria-label="How it works"', html)
 
 
-def test_only_off_production_does_the_page_turn_on_the_review_switch(client, monkeypatch):
-    """?scene=N&p=0.5 holds a stage at a point for the review tools; cover.js honours ?p only when <main> says data-debug="1"."""
-    assert 'data-debug="1"' in re.search(r"<main\b[^>]*>", _cover(client)).group(0)
-    monkeypatch.setattr(auth, "production", lambda: True)
-    assert "data-debug" not in re.search(r"<main\b[^>]*>", _cover(client)).group(0)
+def test_the_decisions_record_the_cover(client):
+    decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
+    assert re.search(r"^- D-383 · .*D-270", decisions, re.M)
+    for n in (426, 427, 428, 429, 443, 444):
+        assert re.search(rf"^- D-{n} · F-227", decisions, re.M), n

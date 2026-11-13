@@ -45,7 +45,7 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     assert page.get_by_text("Community trips").count() == 0 and page.get_by_text("Been somewhere wonderful?").count() == 0
     assert page.locator('a[href="/community"]').count() == 0                             # See trips people shared waits until someone has
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
-    page.locator(".cv-close .cv-ctas a", has_text="Plan a trip").click()
+    page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/start**")
 
 
