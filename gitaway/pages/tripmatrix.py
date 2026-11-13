@@ -218,7 +218,7 @@ def sky_line(wx):
         return ""
     typ = wx.kind != weather.FORECAST
     return Span(icon(wx.condition if wx.condition in WORDS else "cloud", 14, cls="mx-sqw-i"), Span(f"{wx.high_f}°", cls="mx-sqw-t"),
-                Span("typ.", cls="mx-sqw-k") if typ else "", cls="mx-sqw " + ("is-typ" if typ else "is-fc") + (" is-wet" if wx.condition in WET else ""),
+                cls="mx-sqw " + ("is-typ" if typ else "is-fc") + (" is-wet" if wx.condition in WET else ""),
                 title=weather_ui.describe(wx), aria_hidden="true")
 
 

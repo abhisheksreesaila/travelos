@@ -1447,14 +1447,18 @@ Needs: F-221
 Needs: F-222, F-224
 - [ ] 5 to 10 families plan with the matrix; success is someone finding an option they did not know about and changing their plan; then decide on booking
 
-## F-229 The matrix fills fast [todo]
+## F-229 The matrix fills fast [built; measured locally: the asked square met its target, the column did not (the sandbox was slow); measure on gitaway.me]
 Brief: docs/briefs/unified-booking.md "Speed" · Needs: F-222 · Measured 2026-11-12 (sandbox): a flight search takes 10–15 s on LiteAPI's side whatever the filters (showCheapestOfferOnly cuts 11.6 MB to 4.4 MB, not the time); a stay search 2–17 s; streaming (`Accept: text/event-stream`) sends 138 journeys at 4.7 s, more at 12 and 14 s, and never said `rates-complete` in 80 s. The page asks 2 squares at a time and a square's 1–3 calls run side by side: up to 6 calls at once against a sandbox that answered 429 at 3.
-- [ ] one gate in `liteapi` for every call (at most 3 in flight, site-wide) and one call for identical requests in flight (a second asker waits on the first's answer, never a second search)
-- [ ] flights through the stream: read until `rates-complete` or a deadline, keep the cheapest offer seen; the square says the price is the cheapest found, and the stream's shape is recorded in tests/fixtures/liteapi before it is parsed
-- [ ] the page, when drawn, starts the searches in order (the asked square, the asked start day for every place, the asked place on every day) so they are on their way before the script asks; the script asks for more squares at once since the gate does the limiting
+- [x] one gate in `liteapi` for every call (at most 3 in flight, site-wide, in rank order: the asked square first) and one call for identical requests in flight (a second asker waits on the first's answer, never a second search) (D-445, D-449)
+- [x] flights through the stream: read until `rates-complete`, 4 s after the first big chunk, or 14 s; keep the cheapest offer seen; the panel says "the cheapest flight found" when cut short; the stream recorded in tests/fixtures/liteapi/flight_rates_stream.sse (scripts/probe_liteapi_stream.py) before it was parsed (D-446, D-448)
+- [x] the page, when drawn, starts the searches in order (the asked square, the asked start day for every place, the asked place on every day: `gitaway/matrixwarm.py`) so they are on their way before the script asks; the script asks for 6 squares at once since the gate does the limiting (D-447, D-448)
 - [ ] measured on gitaway.me with the sandbox key: the asked square's total within 10 s, the asked day's column within 20 s; the times written here
+  - Measured locally, not on gitaway.me (this branch is never deployed), with `scripts/measure_matrix.py` (headless Chromium at 1440, the sandbox key, fresh dates each run), 2026-11-12 evening, when the sandbox was slow (single stay searches 26 to 33 s, 429 at 6 at once, some calls hanging 80 s, TLS handshakes timing out):
+  - before the priority gate (first come, first served): asked square 35.2 s; the column 3 of 5 by 43 s, the rest "Couldn't search" (stays timed out at 15 s, calls gave up at the gate)
+  - with the priority gate: **asked square 10.0 s** (target met); the asked day's column 4 of 5 by 75.6 s (target 20 s **not met**: LiteAPI's own time, stays alone took up to 33 s); a second run on overlapping dates had the column at 55.5 s
+  - Measure again on gitaway.me once deployed, at a quieter hour, before the family test
 
-## F-230 The square says the total first [todo]
+## F-230 The square says the total first [done]
 Brief: docs/briefs/unified-booking.md · Design: docs/design/trip-matrix.md (calendar lanes on a laptop, the trip panel beside them; place cards on a phone: kept) · Needs: F-222
-- [ ] each square shows its total large, with the day's weather as a small line under it (one sky and degrees, typical weather still marked) instead of a separate weather row above the prices
-- [ ] "While we search" is no longer a band across the page: a small floating note shows a fact about the place while the first squares are loading, and leaves once they land (Liquid in, calm out; reduced motion a fade)
+- [x] each square shows its total large, with the day's weather as a small line under it (one sky and degrees, typical weather dotted, the notes under the matrix) instead of a separate weather row above the prices (D-450)
+- [x] "While we search" is no longer a band across the page: a small floating note shows a fact about the place while the first squares are loading, and leaves once they land (Liquid in, calm out; reduced motion a fade) (D-451)

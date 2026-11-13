@@ -239,3 +239,32 @@ def test_the_sheet_fits_the_phone(matrix):
 def test_the_side_starts_on_the_find_once_it_is_known(matrix):
     page = matrix(DESKTOP)
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
+
+
+def test_each_square_says_its_total_large_and_its_days_weather_small_under_it(matrix):
+    """F-230: the number first; the start day's sky and degrees one small line under it; no weather row above the prices."""
+    for viewport in (DESKTOP, PHONE):
+        page = matrix(viewport)
+        assert page.locator(".mx-sky").count() == 0
+        got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.offsetParent && e.querySelector('.mx-sqw')).map(e => {
+            const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
+            return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), v.bottom <= w.top + 1,
+                    w.right <= e.getBoundingClientRect().right + 1];
+        })""")
+        assert got, viewport
+        for big, small, under, fits in got:
+            assert big > small and under and fits, (viewport["width"], big, small, under, fits)
+
+
+def test_while_the_first_squares_load_a_fact_floats_in_and_leaves_once_they_land(matrix, slow_server):
+    slow_server(r"/plan/matrix/tile", 1.5)
+    for viewport in (DESKTOP, PHONE):
+        page = matrix(viewport, wait=False, motion=True)
+        isle = page.locator("#mx-fact")
+        expect(isle).to_be_visible()
+        box = isle.bounding_box()
+        assert box["height"] < 200 and box["width"] <= 400, box                              # a small note, not a band across the page
+        assert page.evaluate("getComputedStyle(document.getElementById('mx-fact')).position") == "fixed"
+        assert page.evaluate("() => GA.motion.log.some(m => m.kind === 'settle')")            # it settled in (liquid)
+        expect(isle).to_be_hidden(timeout=8000)                                              # the asked square landed: it leaves
+        assert page.errors == []
