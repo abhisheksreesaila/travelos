@@ -1,6 +1,7 @@
 // The trip matrix (F-222). The page works as plain links (every square is a link to its own page); this adds four things on top.
-//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (6: the server's gate keeps LiteAPI to 3 calls at once, F-229,
-//      and the first squares were already started when the page was drawn), the asked square first, then the nearest days and
+//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (3: the server's gate keeps LiteAPI to 3 calls at once, F-229),
+//      after one POST to data.warm that starts the first squares' searches on the server (never from drawing the page, so a crawler starts none); a square
+//      the server was too busy for ("busy") is asked again after BUSY_MS; the asked square first, then the nearest days and
 //      the likeliest places (gitaway/tripmatrix.py `order`); a square scrolled past before its turn is never asked for. A waiting square is a skeleton, never a number.
 //   2. The marks, with the same rules as gitaway/tripmatrix.py `marks` and `find` (change one, change the other: tests_browser/test_tripmatrix.py compares them):
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
@@ -13,7 +14,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 6, SLOW_MS = 4000, MARGIN = '240px 120px';
+  var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, MARGIN = '240px 120px', again = 0;
   var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');
@@ -156,6 +157,11 @@
 
   // ---- loading like map tiles ----
   function land(k, j) {
+    if (j.s === 'busy') {      // no turn at the server's gate in time: the square stays a skeleton and is asked again in a moment
+      again++;
+      setTimeout(function () { again--; delete asked[k]; pump(); }, BUSY_MS);
+      return;
+    }
     known[k] = { c: j.c, s: j.s };
     panels[k] = j.panel;
     els(k).forEach(function (el) {
@@ -211,7 +217,7 @@
       if (!k) break;
       ask(k);
     }
-    root.dataset.busy = active > 0 ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
+    root.dataset.busy = active > 0 || again > 0 ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
   }
   function ask(k) {
     asked[k] = 1;
@@ -239,7 +245,10 @@
   root.dataset.busy = '1';
   root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { if (!known[el.dataset.sq]) { io.observe(el); watched++; } });
   if (!watched) root.dataset.busy = '0';
-  else if (!firstIn()) isleIn();
+  else {
+    if (data.warm) fetch(data.warm, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(function () {});      // the head start, once
+    if (!firstIn()) isleIn();
+  }
 
   // ---- opening a square ----
   function placeholder(k) {

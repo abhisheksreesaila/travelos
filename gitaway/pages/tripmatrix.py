@@ -5,10 +5,11 @@ GET  /plan/matrix          the sentence ("A family of 4, SFO to San Diego or nea
                            panel; on a phone a card per place with its start days as squares, and the opened square in a sheet. `q=` is a retyped sentence.
 GET  /plan/matrix/tile     one square as JSON for assets/js/tripmatrix.js: its words, its total and its panel. Plain `def`: a search can wait seconds.
 GET  /plan/matrix/square   one square as its own page: the panel, for a link and for a page without the script. Plain `def` too.
+POST /plan/matrix/warm     the head start (F-229): the page's script asks once; the first squares start searching on worker threads. A plain GET starts none.
 POST /plan/matrix/save     "Booking opens soon": the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
 
-The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; off the showcase it
-also starts the first squares' searches at once (gitaway/matrixwarm.py, F-229), which the tiles then join. The script asks for the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
+The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; the script then asks
+POST /plan/matrix/warm to start the first squares' searches at once (gitaway/matrixwarm.py, F-229), which the tiles join; a plain GET starts none. The script asks for the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
 On the showcase the sample catalog drives every square and says so; off it the routes exist only with LITEAPI_KEY (gitaway/showcase.py `_needs_keys`).
 """
 
@@ -30,7 +31,7 @@ from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
-TILE, SQUARE, SAVE = PATH + "/tile", PATH + "/square", PATH + "/save"
+TILE, SQUARE, SAVE, WARM = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Script(src="/assets/js/tripmatrix.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
@@ -403,7 +404,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "windows": [{"k": w.key, "a": w.asked, "n": w.nights, "when": tm.when(w)} for w in windows],
             "days": [d.isoformat() for d in days_of(windows)],
             "known": {k: {"c": sq.cents, "s": sq.status} for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
@@ -414,8 +415,6 @@ def matrix_page(s: State, family="", typed="", problems=()):
         body = Div(Div(sentence(s, typed, problems or s.problems or [MISSING["dates"]]), cls="mx-lead"), cls="mx mx-blank")
         return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan/matrix", head=HEAD, noindex=True)
     known = peek_all(s, lanes, windows, family)
-    if not showcase.on():      # the head start (F-229): the first squares start searching now, on worker threads; the page never waits for them
-        matrixwarm.warm([(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows)) if tm.key(x.key, w.key) not in known], s.adults, s.kid_ages, s.home, family)
     totals = totals_of(known)
     marks, found = tm.marks(lanes, windows, totals, s.budget_cents), tm.find(lanes, windows, totals)
     total = len(lanes) * len(windows)
@@ -441,11 +440,23 @@ def matrix_page(s: State, family="", typed="", problems=()):
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
                Div(find_el(s, found), cls="mx-news", id="mx-news"),
-               stage, cards, fact_el(s),
+               stage, cards,
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
+               fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
     return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True)
+
+
+def warm(s: State, family="") -> int:
+    """The head start (F-229, D-452): the first squares not yet known, queued for gitaway/matrixwarm.py's workers. Asked by the page's script, never by
+    drawing the page, so a crawler or a link preview spends no searches."""
+    if showcase.on():
+        return 0
+    lanes, windows = lanes_of(s), windows_of(s)
+    first = [(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows))]
+    todo = [(x, w, i) for x, w, i in first if gridsource.square(x, w, s.adults, s.kid_ages, s.home, family, peek=True) is None]
+    return matrixwarm.warm(todo, s.adults, s.kid_ages, s.home, family)
 
 
 def _square_of(s, lane_key, w_key, family="", peek=False):
@@ -454,7 +465,7 @@ def _square_of(s, lane_key, w_key, family="", peek=False):
     if lane is None or w is None:
         return None, None, None, None
     rank = tm.rank(lanes_of(s), windows_of(s)).get(tm.key(lane.key, w.key), 0)
-    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek, rank=rank)
+    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, family, peek=peek, rank=rank, wait=liteapi.TILE_WAIT)      # a request thread: a short wait at the gate
     asked = next(x for x in lanes_of(s) if x.asked)
     asked_sq = sq if lane.asked else gridsource.square(asked, w, s.adults, s.kid_ages, s.home, family, peek=True)
     return lane, w, sq, asked_sq
@@ -522,6 +533,13 @@ def register(app):
             return JSONResponse({"error": "No such square."}, status_code=404)
         return JSONResponse({"key": sq.key, "s": sq.status, "c": sq.cents, "inner": inner(sq), "label": label(lane_, w_, sq), "drive": sq.drive,
                              "age": age_words(sq.fetched), "panel": to_xml(panel(s, lane_, w_, sq, asked_sq))}, headers={"Cache-Control": "no-store"})
+
+    @app.post(WARM)
+    def trip_matrix_warm(session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
+        s = state(to, home, d, r, a, k, x, nb, b)
+        if s.problems or not windows_of(s):
+            return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
+        return JSONResponse({"queued": warm(s, _family(session))}, headers={"Cache-Control": "no-store"})
 
     @app.get(SQUARE)
     def trip_matrix_square(session, lane: str = "", w: str = "", saved: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "",

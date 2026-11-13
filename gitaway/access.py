@@ -39,6 +39,7 @@ OPEN_POSTS = (
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
     "/admin/plan-for-me/edit", "/admin/plan-for-me/send",   # the captain's founder check of a built plan (F-197): the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS
     "/trip/family/seen",   # I have read the chats up to now (F-143): my own read mark, every member, viewers too
+    "/plan/matrix/warm",   # the trip matrix's head start (F-229): starts price searches the page is about to ask for; changes no plan, anyone may ask
 )
 OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family
 ADMIN_POSTS = ("/family/invite", "/family/invite/revoke", "/family/role", "/family/remove", "/trip/delete")  # deleting an imported trip (F-042) is an admin's

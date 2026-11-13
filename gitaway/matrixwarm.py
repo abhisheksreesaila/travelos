@@ -1,6 +1,6 @@
-"""The trip matrix's head start (F-229, D-447): when /plan/matrix is drawn off the showcase, the squares the family will look at first start searching at
-once, on worker threads, so they are under way before the page's script asks for them; /plan/matrix/tile then joins the search in flight (liteapi's
-single flight) or reads the answer it left in the cache.
+"""The trip matrix's head start (F-229, D-447, D-452): when the page's script starts (one POST to /plan/matrix/warm, never a plain GET of the page), the
+squares the family will look at first start searching at once, on worker threads, so they are under way before the script asks for their tiles;
+/plan/matrix/tile then joins the search in flight (liteapi's single flight) or reads the answer it left in the cache.
 
     warm(squares, adults=, kid_ages=, home=, family=)   queue squares ((Lane, Window, rank), ...) in the order given; returns how many were queued. Never waits.
     run_pending()                                       do every queued square now, on this thread (tests; the workers do it otherwise)

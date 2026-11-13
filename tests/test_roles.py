@@ -27,6 +27,7 @@ OPEN_FOR_VIEWERS = {
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # a viewer may talk on a plan: text, photo, voice note (F-091)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
     "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
+    "/plan/matrix/warm",                                      # the trip matrix's head start: starts price searches the page is about to ask for, changes no plan (F-229)
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
     "/admin/draft", "/admin/link", "/admin/revoke", "/admin/drafts/{token}", "/claim/{token}",   # F-188: the captain's drafts for creators (404 unless GITAWAY_ADMIN_EMAILS) and a creator claiming their own post
     "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen",    # the captain's buttons (F-194: approve a trip that waits for him): the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)

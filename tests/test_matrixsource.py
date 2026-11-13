@@ -144,3 +144,18 @@ def test_a_flight_search_stopped_at_its_deadline_says_its_the_cheapest_found(mon
     monkeypatch.setattr(liteapi, "TRANSPORT", Streamer())
     sq = square()
     assert sq.flight.complete is True and page.CHEAPEST_FOUND not in to_xml(page.panel(s, LANES["sandiego"], W, sq))
+
+
+def test_a_busy_gate_is_said_as_busy_and_not_a_failure(real, monkeypatch):
+    monkeypatch.setattr(liteapi, "stays", lambda **kw: None if kw.get("cached_only") else liteapi.Answer(liteapi.BUSY))
+    sq = square()
+    assert sq.status == tm.BUSY and tm.SHORT[tm.BUSY] and tm.SAID[tm.BUSY] and sq.cents is None
+
+
+def test_a_tile_waits_a_short_while_and_the_head_start_longer(real, monkeypatch):
+    waits = []
+    monkeypatch.setattr(liteapi, "flights", lambda **kw: waits.append(kw.get("wait")) or liteapi.Answer(liteapi.FAILED))
+    monkeypatch.setattr(liteapi, "stays", lambda **kw: liteapi.Answer(liteapi.FAILED))
+    square(wait=liteapi.TILE_WAIT)
+    square()
+    assert waits == [liteapi.TILE_WAIT, None]

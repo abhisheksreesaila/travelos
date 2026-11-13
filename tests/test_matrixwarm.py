@@ -1,6 +1,7 @@
-"""F-229: the matrix's head start. Drawing /plan/matrix off the showcase queues the squares the family will look at first (the asked square, the asked start
-day for every place, the asked place on every day); workers search them through liteapi's gate, so a tile asked for a moment later joins the search in flight
-or reads its answer. The page never waits for any of it, and a family over its budget queues nothing. The tests run the queue themselves (conftest)."""
+"""F-229: the matrix's head start. The page's script, once it runs, POSTs /plan/matrix/warm, which queues the squares the family will look at first (the
+asked square, the asked start day for every place, the asked place on every day); workers search them through liteapi's gate, so a tile asked for a moment
+later joins the search in flight or reads its answer. A plain GET of the page (a crawler, a link preview) starts nothing; a family over its budget queues
+nothing. The tests run the queue themselves (conftest)."""
 import json
 import time
 from datetime import date
@@ -16,6 +17,7 @@ SD = places.resolve("San Diego")
 HEAD = ["sandiego|2026-12-12", "losangeles|2026-12-12", "orangecounty|2026-12-12", "losangeles+sandiego|2026-12-12", "orangecounty+sandiego|2026-12-12",
         "sandiego|2026-12-11", "sandiego|2026-12-13", "sandiego|2026-12-10", "sandiego|2026-12-14"]
 TILE = "/plan/matrix/tile?" + MATRIX.split("?")[1]
+WARM = "/plan/matrix/warm?" + MATRIX.split("?")[1]
 
 
 def head(lanes=None, windows=None):
@@ -39,11 +41,20 @@ def test_the_head_start_is_the_asked_square_then_its_day_for_every_place_then_it
     assert head(windows=only) == HEAD[:5]
 
 
-def test_drawing_the_page_queues_the_head_start_and_searches_nothing_itself(real, client):
+def test_a_plain_get_of_the_page_starts_no_searches(real, client, monkeypatch):
+    """A crawler or a link preview loads the page without its script: nothing is queued and no budget is spent."""
+    monkeypatch.setattr(matrixwarm, "ASYNC", True)
+    for _ in range(3):
+        assert client.get(MATRIX, headers={"User-Agent": "Slackbot-LinkExpanding 1.0"}).status_code == 200
+    assert matrixwarm.pending() == [] and not matrixwarm._threads and real.asked == [] and liteapi.searches_today() == 0
+
+
+def test_the_script_asks_for_the_head_start_and_it_is_queued_once(real, client):
     client.get(MATRIX)
-    assert real.asked == [] and matrixwarm.pending() == HEAD
-    client.get(MATRIX)
-    assert matrixwarm.pending() == HEAD                                          # drawn again: queued once
+    assert matrixwarm.pending() == []
+    r = client.post(WARM)
+    assert r.status_code == 200 and r.json()["queued"] == len(HEAD) and real.asked == [] and matrixwarm.pending() == HEAD
+    assert client.post(WARM).json()["queued"] == 0 and matrixwarm.pending() == HEAD      # asked again: queued once
     assert matrixwarm.run_pending() == len(HEAD) and real.asked
     calls = len(real.asked)
     j = client.get(TILE + "&lane=sandiego&w=2026-12-12").json()
@@ -53,11 +64,11 @@ def test_drawing_the_page_queues_the_head_start_and_searches_nothing_itself(real
 
 def test_nothing_is_queued_on_the_showcase_or_for_a_family_over_its_budget(real, client, monkeypatch):
     monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)
-    client.get(MATRIX)
-    assert matrixwarm.pending() == []
+    assert client.post(WARM).json()["queued"] == 0 and matrixwarm.pending() == []
     monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 150)
+    assert client.post(WARM.replace("home=SFO&", "home=&")).status_code == 400          # a search the page could not draw starts nothing
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    client.get(MATRIX)
+    assert client.post(WARM).json()["queued"] == 0
     assert matrixwarm.pending() == [] and real.asked == []
 
 
@@ -72,7 +83,7 @@ def test_the_page_never_waits_and_a_tile_joins_the_search_in_flight(real, client
     monkeypatch.setattr(liteapi, "TRANSPORT", slow)
     monkeypatch.setattr(matrixwarm, "ASYNC", True)
     t0 = time.monotonic()
-    assert client.get(MATRIX).status_code == 200
+    assert client.get(MATRIX).status_code == 200 and client.post(WARM).status_code == 200
     assert time.monotonic() - t0 < 0.5
     time.sleep(0.1)                                                              # the asked square's searches are on their way
     j = client.get(TILE + "&lane=sandiego&w=2026-12-12").json()
@@ -91,7 +102,7 @@ def test_the_tile_and_the_head_start_ask_with_the_squares_rank(real, client, mon
     seen = []
     real_square = gridsource.SQUARE
     monkeypatch.setattr(gridsource, "SQUARE", lambda lane, w, rank=0, **kw: seen.append((tm.key(lane.key, w.key), rank, kw["peek"])) or real_square(lane, w, **kw))
-    client.get(MATRIX)
+    client.post(WARM)
     matrixwarm.run_pending()
     asked = [(k, r) for k, r, peek in seen if not peek]
     assert asked == [(k, i) for i, k in enumerate(HEAD)]

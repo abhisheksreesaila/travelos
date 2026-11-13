@@ -537,11 +537,10 @@ def test_the_same_search_in_flight_is_joined_not_asked_twice(monkeypatch):
 
 def test_a_joiner_whose_first_asker_was_over_budget_asks_on_its_own(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", KEY)
-    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)
     slow = Slow(0.2)
     monkeypatch.setattr(liteapi, "TRANSPORT", slow)
     real_spend = liteapi._spend
-    monkeypatch.setattr(liteapi, "_spend", lambda family: (time.sleep(0.1), family != "broke")[1])      # the first asker is still deciding when the second joins
+    monkeypatch.setattr(liteapi, "can_search", lambda family: (time.sleep(0.1), family != "broke")[1])      # the first asker is still deciding when the second joins
     got = together(lambda: stays(family="broke"), lambda: (time.sleep(0.02), stays(family="rich"))[1])
     assert got[0].status == liteapi.OVER and got[1].ok and slow.calls == 1
     monkeypatch.setattr(liteapi, "_spend", real_spend)
@@ -596,12 +595,94 @@ def test_a_joiner_lends_its_rank_to_the_search_it_joined(monkeypatch):
     assert order == [1, 2, 3, 5, 4]
 
 
-def test_no_turn_at_the_gate_is_a_failure_that_is_not_kept(monkeypatch):
+def test_no_turn_at_the_gate_is_busy_and_not_kept(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", KEY)
     monkeypatch.setattr(liteapi, "GATE_WAIT", 0.1)
     slow = Slow(0.5)
     monkeypatch.setattr(liteapi, "TRANSPORT", slow)
     got = together(*[lambda a=a: stays(adults=a) for a in range(1, 5)])
-    assert sorted(g.status for g in got) == [liteapi.FAILED] + [liteapi.OK] * 3 and liteapi.searches_today() == 3
-    late = next(a for a, g in zip(range(1, 5), got) if g.status == liteapi.FAILED)
+    assert sorted(g.status for g in got) == [liteapi.BUSY] + [liteapi.OK] * 3 and liteapi.searches_today() == 3
+    late = next(a for a, g in zip(range(1, 5), got) if g.status == liteapi.BUSY)
     assert stays(adults=late).ok                                                 # asked again, it searches: the wait was not the answer
+
+
+# --- the review's fixes: no request waits long at the gate; a stream keeps its place until it is done; an empty rates-complete
+
+def test_a_family_over_its_budget_is_told_at_once_without_waiting_at_the_gate(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 1)
+    slow = Slow(0.6)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    assert stays(family="t1").ok
+    hold = [threading.Thread(target=lambda a=a: stays(adults=a, family=f"b{a}")) for a in (3, 4, 5)]      # the gate is full
+    for t in hold:
+        t.start()
+    time.sleep(0.05)
+    t0 = time.monotonic()
+    assert stays(adults=6, family="t1").status == liteapi.OVER and time.monotonic() - t0 < 0.2
+    for t in hold:
+        t.join(5)
+
+
+def test_a_long_line_at_the_gate_is_busy_at_once_and_not_kept(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "MAX_WAITING", 2)
+    slow = Slow(0.5)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    threads = [threading.Thread(target=lambda a=a: stays(adults=a)) for a in range(1, 6)]      # 3 in flight, 2 waiting: the line is full
+    for t in threads:
+        t.start()
+        time.sleep(0.02)
+    t0 = time.monotonic()
+    busy = stays(adults=9)
+    assert busy.status == liteapi.BUSY and time.monotonic() - t0 < 0.2 and liteapi.searches_today() == 3
+    for t in threads:
+        t.join(5)
+    assert stays(adults=9).ok                                                     # not kept: asked again, it searches
+
+
+def test_a_request_waits_only_its_own_short_while_at_the_gate(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    slow = Slow(1.0)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    threads = [threading.Thread(target=lambda a=a: stays(adults=a)) for a in range(1, 4)]
+    for t in threads:
+        t.start()
+    time.sleep(0.05)
+    t0 = time.monotonic()
+    got = stays(adults=7, wait=0.2)
+    assert got.status == liteapi.BUSY and 0.15 < time.monotonic() - t0 < 0.5
+    t0 = time.monotonic()
+    joined = stays(adults=1, wait=0.1)                                            # joining a search in flight waits its short while, plus the call's own time at most
+    assert joined.ok and time.monotonic() - t0 < 1.2
+    for t in threads:
+        t.join(5)
+    assert liteapi.TILE_WAIT <= 15 and liteapi.GATE_WAIT >= liteapi.TILE_WAIT
+
+
+def test_a_stream_keeps_its_place_at_the_gate_until_its_thread_is_done(monkeypatch):
+    """Past the cap before the headers came: the gate place stays taken until the transport gives up, and the late answer is closed at once."""
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 0.2)
+    s = Streamer(head_s=0.8)
+    monkeypatch.setattr(liteapi, "TRANSPORT", s)
+    t0 = time.monotonic()
+    assert flights().status == liteapi.FAILED and time.monotonic() - t0 < 0.7    # the asker is not held
+    assert liteapi._TURNS.free == liteapi.AT_ONCE - 1                             # but the place is: the line is still being opened
+    deadline = time.monotonic() + 3
+    while liteapi._TURNS.free < liteapi.AT_ONCE and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert liteapi._TURNS.free == liteapi.AT_ONCE and time.monotonic() - t0 >= 0.75      # given back when the transport came back
+    assert s.cut.is_set()                                                         # and what came back late was closed, not read
+
+
+@pytest.mark.parametrize("tail", [b"event: rates-complete\n\n", b"event: rates-complete\ndata: {}\n\n", b"event: rates-complete\ndata: \n\n"])
+def test_an_empty_rates_complete_ends_the_stream_and_keeps_what_came(monkeypatch, tail):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    chunks = b"".join(b"".join(m) for m in messages(STREAM)[:6])
+    s = Streamer(sse=chunks + tail)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 3.0)
+    monkeypatch.setattr(liteapi, "TRANSPORT", s)
+    t0 = time.monotonic()
+    got = flights()
+    assert got.ok and got.complete and got.items[0].cents == 7660 and time.monotonic() - t0 < 1.0

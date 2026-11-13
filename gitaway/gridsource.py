@@ -9,7 +9,8 @@ never an empty grid. The drive is not known yet (None) and nothing is booked yet
 
     square(lane, window, adults=, kid_ages=, home=, family=, peek=False, rank=0)   one square of the trip matrix (F-222): a tripmatrix.Square, the whole trip for
                                                                            one place (or two) and one start day. `peek`: only what is known without a call, else None.
-                                                                           `rank`: the square's place in the page's order (F-229), its turn at liteapi's gate.
+                                                                           `rank`: the square's place in the page's order (F-229), its turn at liteapi's gate;
+                                                                           `wait`: how long it may wait there (liteapi.TILE_WAIT for a request; None: GATE_WAIT).
 
 The matrix's squares come the same two ways: on the showcase the catalog (its places only; another place says it has no sample), its prices moved by the start
 day's weekday (SAMPLE_DAY, D-436) so the sample shows a cheapest start; off it LiteAPI: the cheapest flight, and the cheapest stay guests rate RATED or more
@@ -173,11 +174,11 @@ def _pick_stay(items):
     return next((s for s in items if (s.rating or 0) >= RATED), items[0])
 
 
-def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0):
+def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0, wait=None):
     split = tm.stays_for(lane, w)
     if not home or split is None:
         return None if peek else tm.Square(lane.key, w.key, tm.FAILED if not home else tm.NONE)
-    party = {"adults": adults, "kid_ages": tuple(kid_ages), "family": family, "cached_only": peek, "rank": rank}
+    party = {"adults": adults, "kid_ages": tuple(kid_ages), "family": family, "cached_only": peek, "rank": rank, "wait": wait}
     legs = tm.legs_for(lane, w, home)
     asks = [lambda: liteapi.flights(legs=legs, **party)] + [lambda p=p, a=a, b=b: liteapi.stays(city=p.city, country=COUNTRY, checkin=a, checkout=b, **party) for p, a, b in split]
     if peek:
@@ -190,6 +191,8 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0):
     fetched = min((a.fetched for a in answers if a.fetched), default=None)
     if any(a.status == liteapi.OVER for a in answers):
         return tm.Square(lane.key, w.key, tm.OVER, fetched=fetched)
+    if any(a.status == liteapi.BUSY for a in answers):      # no turn at the gate in time: said, never kept, asked again by the page
+        return tm.Square(lane.key, w.key, tm.BUSY, fetched=fetched)
     if not all(a.ok for a in answers):
         return tm.Square(lane.key, w.key, tm.FAILED, fetched=fetched)
     fl, *st = answers
@@ -203,14 +206,14 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0):
     return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive.minutes if drive else None, fetched)
 
 
-def _square(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0):
+def _square(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
     if showcase.on():
         return _catalog_square(lane, w, adults, kid_ages, home)
-    return _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank)
+    return _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank, wait)
 
 
 SQUARE = _square
 
 
-def square(lane, window, adults=2, kid_ages=(), home="", family="", peek=False, rank=0):
-    return SQUARE(lane, window, adults=adults, kid_ages=tuple(kid_ages), home=home, family=family, peek=peek, rank=rank)
+def square(lane, window, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
+    return SQUARE(lane, window, adults=adults, kid_ages=tuple(kid_ages), home=home, family=family, peek=peek, rank=rank, wait=wait)

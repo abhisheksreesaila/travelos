@@ -16,7 +16,8 @@ that touches the network; tests replace it. A failure is one WARNING line with n
 Every call goes through one gate (F-229, D-445): at most AT_ONCE in flight across the site (the sandbox answered 429 when a page sent more), and a search
 already in flight is joined, never asked twice: the second asker waits for the first one's Answer, and no second search is counted. A call carries a
 `rank` (its square's place in the page's order, 0 the asked square): when a place at the gate comes free the lowest rank waiting goes, and a joiner lends
-its rank to the search it joined. Flights are read from
+its rank to the search it joined. A family over its budget is told OVER before it waits; a call waits at most `wait` seconds (TILE_WAIT for a request,
+GATE_WAIT for the head start) and never joins a line longer than MAX_WAITING: either way it is BUSY, which is never kept, so asked again it searches. Flights are read from
 the stream (`Accept: text/event-stream`, D-446): `rates-chunk` messages shaped like the plain answer, then `rates-complete`, which the sandbox does not
 always send. The reader keeps each journey's cheapest offer seen and stops at `rates-complete`, STREAM_GRACE seconds after the first chunk of at least
 BULK journeys, or at STREAM_CAP whatever happens (a watchdog cuts a line that hangs); an Answer cut short says `complete=False`, the cheapest found.
@@ -41,7 +42,7 @@ from sqlalchemy import text
 from gitaway import community
 
 API = "https://api.liteapi.travel/v3.0"
-OK, OVER, OFF, FAILED = "ok", "over budget", "off", "failed"
+OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"      # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
 FAIL_KEEP = timedelta(minutes=5)
@@ -54,7 +55,9 @@ HOTEL_LIMIT = 30
 MAX_BYTES = 32 * 1024 * 1024             # a round trip's answer was 9 MB (386 journeys, 1,647 offers)
 MAX_CENTS = 10_000_000
 AT_ONCE = 3                              # calls in flight across the site (F-229): the sandbox answered 429 to a page's 6
-GATE_WAIT = 60                           # seconds a call waits for its turn at the gate before it fails (not kept: asked again, it searches)
+GATE_WAIT = 60                           # seconds a background call (the head start's few workers) waits for its turn at the gate; then BUSY, never kept
+TILE_WAIT = 12                           # and a request's call (a tile: a request thread), so the server's thread pool is never held long
+MAX_WAITING = 12                         # calls waiting at the gate at most; one more is BUSY at once
 STREAM_CAP = 14.0                        # seconds: the flight stream is read this long at most (complete answers came at 10.5 and 13.9 s; some never)
 STREAM_GRACE = 4.0                       # and this long after the first chunk of BULK journeys (those came at 4.7 to 5.7 s; later chunks to 14.5 s)
 BULK = 20                                # a chunk this big is the search answering; the lone first chunk is the sandbox's test airline
@@ -169,6 +172,12 @@ class _Lines:
         try:
             self.resp.fp.raw._sock.shutdown(socket.SHUT_RDWR)
         except (AttributeError, OSError):
+            pass
+
+    def close(self):
+        try:
+            self.resp.close()
+        except OSError:
             pass
 
 
@@ -448,18 +457,33 @@ def _ask(what: str, path: str, body: dict | None, timeout: float):
         return None
 
 
-def _stream(path: str, body: dict, at: datetime):
+def _stream(path: str, body: dict, at: datetime, gate=None):
     """Flights read from the stream: (each journey's cheapest offer, whether the stream said it was complete). Raises on a failure or a shape we never saw.
-    The transport and its lines run on their own thread, so the deadlines hold even while a read hangs; at the end the line is cut."""
+    The transport and its lines run on their own thread, so the deadlines hold even while a read hangs; at the end the line is cut. If that thread is still
+    connecting when the reader is done, it takes over `gate`'s place and gives it back when the transport returns (its socket timeout bounds that), so a
+    line LiteAPI still has open always counts against AT_ONCE."""
     started = time.monotonic()
     got: queue.Queue = queue.Queue()
     stop = threading.Event()
-    held = {}
+    held, hand = {}, {"done": False, "gate": None, "lock": threading.Lock()}
 
     def pump():
         try:
+            _pump()
+        finally:
+            with hand["lock"]:
+                hand["done"] = True
+                gate_ = hand["gate"]
+            if gate_ is not None:
+                gate_.turns.give()
+
+    def _pump():
+        try:
             status, ctype, lines = TRANSPORT(API + path, _headers(body, "text/event-stream"), json.dumps(body).encode(), STREAM_CAP)
             held["lines"] = lines
+            if stop.is_set():      # the reader gave up before the answer came: close it at once, read nothing
+                _shut(lines)
+                return
             got.put(("head", status, ctype))
             if isinstance(lines, (bytes, bytearray)):
                 got.put(("body", ctype, bytes(lines)))
@@ -472,13 +496,17 @@ def _stream(path: str, body: dict, at: datetime):
         except Exception as e:      # noqa: BLE001 (said by the reader)
             got.put(("error", e))
 
-    threading.Thread(target=pump, daemon=True, name="liteapi-stream").start()
+    pumping = threading.Thread(target=pump, daemon=True, name="liteapi-stream")
+    pumping.start()
     flights, size, msg, bulk_at, complete = {}, 0, [], None, False
 
     def take(event, payload):
         nonlocal complete
         if event == "error":
             raise Unreadable("the stream said error")
+        if event == "rates-complete" and payload.strip() in ("", "{}"):      # complete, with nothing new: what came in the chunks is the answer
+            complete = True
+            return 0
         if event not in ("rates-chunk", "rates-complete") or not payload:
             return 0
         try:
@@ -534,9 +562,20 @@ def _stream(path: str, body: dict, at: datetime):
         cut = getattr(held.get("lines"), "cut", None)
         if cut:
             cut()
+        pumping.join(0.25)
+        with hand["lock"]:
+            if not hand["done"] and gate is not None and gate.ok:      # still connecting: its place at the gate goes with it
+                hand["gate"], gate.ok = gate, False
     if not flights:
         raise Unreadable(f"no flights in the stream after {time.monotonic() - started:.1f} s")
     return tuple(sorted(flights.values(), key=lambda f: (f.cents, f.id))), complete
+
+
+def _shut(lines) -> None:
+    for name in ("cut", "close"):
+        fn = getattr(lines, name, None)
+        if fn:
+            fn()
 
 
 class _Flight:
@@ -554,6 +593,8 @@ class _Turns:
 
     def take(self, rank_of, timeout) -> bool:
         with self.cond:
+            if self.free <= 0 and len(self.waiting) >= MAX_WAITING:
+                return False
             self.seq += 1
             me = (self.seq, rank_of)
             self.waiting.append(me)
@@ -587,13 +628,13 @@ _TURNS = _Turns(AT_ONCE)
 class _Gate:
     """One of the AT_ONCE places in flight, in rank order; False when none came free within GATE_WAIT."""
 
-    def __init__(self, rank_of=lambda: 0):
-        self.rank_of = rank_of
+    def __init__(self, rank_of=lambda: 0, wait=None):
+        self.rank_of, self.wait = rank_of, GATE_WAIT if wait is None else wait
 
     def __enter__(self):
         self.turns = _TURNS
-        self.ok = self.turns.take(self.rank_of, GATE_WAIT)
-        return self.ok
+        self.ok = self.turns.take(self.rank_of, self.wait)
+        return self
 
     def __exit__(self, *exc):
         if self.ok:
@@ -601,7 +642,7 @@ class _Gate:
 
 
 def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, family: str, read, cached_only: bool = False, stream: bool = False,
-            rank: int = 0) -> Answer | None:
+            rank: int = 0, wait: float | None = None) -> Answer | None:
     if not key():
         return Answer(OFF)
     cache_key = (path, mode(), json.dumps(body, sort_keys=True))
@@ -619,18 +660,17 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
         if first:
             break
         _TURNS.nudge()      # a lower rank lent to a search still waiting at the gate
-        flying.done.wait(GATE_WAIT + max(timeout, STREAM_CAP) + 5)      # the same search is on its way: its answer is ours, and no second search is counted
+        flying.done.wait((GATE_WAIT if wait is None else wait) + max(timeout, STREAM_CAP) + 1)      # the same search is on its way: its answer is ours, and no second search counted
         if flying.answer is None:
-            return Answer(FAILED, (), now())
+            return Answer(BUSY)
         if flying.answer.status != OVER:
             return flying.answer
         # the first asker's budget was spent, not ours: ask on our own
     found = Answer(FAILED, (), now())
     try:
-        called = _call(what, path, body, timeout, family, read, stream, flying)
-        if called is not None and called.status != OVER:      # no turn at the gate, or a spent budget, is not the answer: asked again, it searches
-            _keep(cache_key, called)
-        found = called or found
+        found = _call(what, path, body, timeout, family, read, stream, flying, wait)
+        if found.status not in (OVER, BUSY):      # no turn at the gate, or a spent budget, is not the answer: asked again, it searches
+            _keep(cache_key, found)
     finally:
         flying.answer = found
         with _LOCK:
@@ -640,18 +680,20 @@ def _search(what: str, path: str, body: dict, keep: timedelta, timeout: float, f
     return found
 
 
-def _call(what, path, body, timeout, family, read, stream, flying) -> Answer | None:
-    """The Answer, or None when no place at the gate came free in time."""
-    with _Gate(lambda: flying.rank) as through:
+def _call(what, path, body, timeout, family, read, stream, flying, wait) -> Answer:
+    if not can_search(family):      # told at once, never after a wait at the gate
+        return Answer(OVER)
+    with _Gate(lambda: flying.rank, wait) as gate:
+        through = gate.ok
         if not through:
             _say(what, "no turn at the gate")
-            return None
+            return Answer(BUSY)
         if not _spend(family):
             return Answer(OVER)
         at = now()
         try:
             if stream:
-                items, complete = _stream(path, body, at)
+                items, complete = _stream(path, body, at, gate)
                 return Answer(OK, items, at, complete)
             answer = _ask(what, path, body, timeout)
             return Answer(OK, read(answer, at), at) if answer is not None else Answer(FAILED, (), at)
@@ -668,7 +710,7 @@ def _party(adults: int, kid_ages) -> tuple:
 
 
 def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str = "", country: str = "", lat: float | None = None, lng: float | None = None,
-          radius_m: int | None = None, family: str = "", cached_only: bool = False, rank: int = 0) -> Answer | None:
+          radius_m: int | None = None, family: str = "", cached_only: bool = False, rank: int = 0, wait: float | None = None) -> Answer | None:
     """Hotel rates for one room for the party, by a city and its country code or by a point and a radius in metres. `cached_only`: the kept answer or None, no call."""
     adults, ages = _party(adults, kid_ages)
     if checkout <= checkin:
@@ -681,10 +723,10 @@ def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str 
         raise ValueError("a city and country, or a point and a radius")
     body = {**where, "checkin": checkin.isoformat(), "checkout": checkout.isoformat(), "currency": "USD", "guestNationality": "US",
             "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_ASK}
-    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only, rank=rank)
+    return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only, rank=rank, wait=wait)
 
 
-def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bool = False, rank: int = 0) -> Answer | None:
+def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bool = False, rank: int = 0, wait: float | None = None) -> Answer | None:
     """Flight offers for the legs in order (one: one way; two back and forth: a round trip), for the party. Kids under 2 fly as infants. `cached_only` as for stays."""
     adults, ages = _party(adults, kid_ages)
     legs = tuple(legs)
@@ -696,7 +738,7 @@ def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bo
             "adults": adults, "children": len([a for a in ages if a >= 2]), "childrenAges": [a for a in ages if a >= 2],
             "infants": len([a for a in ages if a < 2]), "infantAges": [a for a in ages if a < 2], "currency": "USD", "country": "US",
             "filters": {"showCheapestOfferOnly": True}}      # 11.6 MB down to 4.4 MB; the time is LiteAPI's either way
-    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True, rank=rank)
+    return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True, rank=rank, wait=wait)
 
 
 def about(hotel_id: str, family: str = "") -> str:
@@ -708,7 +750,8 @@ def about(hotel_id: str, family: str = "") -> str:
     kept = _kept(cache_key, DATA_KEEP)
     if kept is not None:
         return kept
-    with _Gate() as through:
+    with _Gate() as gate:
+        through = gate.ok
         if not through or not _spend(family):
             return ""
         answer = _ask("hotel", "/data/hotel?" + urlencode({"hotelId": hotel_id}), None, STAY_TIMEOUT)
