@@ -1456,7 +1456,8 @@ Brief: docs/briefs/unified-booking.md "Speed" · Needs: F-222 · Measured 2026-1
   - Measured locally, not on gitaway.me (this branch is never deployed), with `scripts/measure_matrix.py` (headless Chromium at 1440, the sandbox key, fresh dates each run), 2026-11-12 evening, when the sandbox was slow (single stay searches 26 to 33 s, 429 at 6 at once, some calls hanging 80 s, TLS handshakes timing out):
   - before the priority gate (first come, first served): asked square 35.2 s; the column 3 of 5 by 43 s, the rest "Couldn't search" (stays timed out at 15 s, calls gave up at the gate)
   - with the priority gate: **asked square 10.0 s** (target met); the asked day's column 4 of 5 by 75.6 s (target 20 s **not met**: LiteAPI's own time, stays alone took up to 33 s); a second run on overlapping dates had the column at 55.5 s
-  - Measure again on gitaway.me once deployed, at a quieter hour, before the family test
+  - On gitaway.me, 2026-11-13 ~12:45 PT (deploy 70520b35, `scripts/measure_matrix.py --base https://gitaway.me`, cold dates each run): asked square **7.9 s** and **20.8 s** (target 10 s: met once, missed once); the asked day's column **84.9 s** and **86.0 s**, 5 of 5 (target 20 s **not met**: the nearby places and the joined places land 25 to 85 s in). A warm repeat (overlapping dates, LiteAPI cache) had the asked square at 0.3 s and the column at 18.9 s
+  - Left open: the column. Next lever is fewer calls per joined square or a wider gate if LiteAPI's live key allows more than 3 at once; decide before the family test
 
 ## F-230 The square says the total first [done]
 Brief: docs/briefs/unified-booking.md · Design: docs/design/trip-matrix.md (calendar lanes on a laptop, the trip panel beside them; place cards on a phone: kept) · Needs: F-222

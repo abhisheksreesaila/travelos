@@ -1,4 +1,4 @@
-"""How fast the trip matrix fills against LiteAPI's sandbox (F-229): `pixi run python scripts/measure_matrix.py --env PATH [--days 45] [--runs 1]`.
+"""How fast the trip matrix fills against LiteAPI's sandbox (F-229): `pixi run python scripts/measure_matrix.py --env PATH [--days 45] [--runs 1]`, or `--base https://gitaway.me` to measure the live site instead (no local app, no key).
 
 Starts this checkout's app on a free local port off the showcase (a throwaway data folder, LITEAPI_KEY read from the .env given and never printed), opens
 /plan/matrix in headless Chromium at 1440x900 for SFO to San Diego, 2 adults and kids 7 and 10, `--days` from today (each run a day later, so LiteAPI's
@@ -44,14 +44,47 @@ def key_from(env_path):
     return ""
 
 
+def measure(a, base: str) -> int:
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        for run in range(a.runs):
+            d = date.today() + timedelta(days=a.days + run)
+            url = f"{base}/plan/matrix?to=San+Diego&home=SFO&d={d}&r={d + timedelta(days=4)}&a=2&k=7,10&x=2"
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.add_init_script(f"document.addEventListener('DOMContentLoaded', {WATCH})")
+            page.goto(url)
+            asked = f"sandiego|{d}"
+            column = [f"{lane}|{d}" for lane in ("sandiego", "losangeles", "orangecounty", "losangeles+sandiego", "orangecounty+sandiego")]
+            end = time.monotonic() + a.wait
+            while time.monotonic() < end:
+                landed = page.evaluate("window.__landed || {}")
+                if all(c in landed for c in column) and page.evaluate("document.getElementById('mx').dataset.busy") == "0":
+                    break
+                time.sleep(0.25)
+            landed = page.evaluate("window.__landed || {}")
+            print(f"run {run + 1}: start {d}")
+            at = landed.get(asked)
+            print(f"  asked square: {at[0]:.1f} s ({at[1]})" if at else "  asked square: not landed")
+            col = [landed[c][0] for c in column if c in landed]
+            print(f"  asked day's column: {max(col):.1f} s, {len(col)} of {len(column)} landed" if col else "  asked day's column: none landed")
+            for sq, (t, how) in sorted(landed.items(), key=lambda x: x[1][0]):
+                print(f"    {t:5.1f} s  {sq:36} {how}")
+            page.close()
+        browser.close()
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env", required=True)
+    ap.add_argument("--env")
+    ap.add_argument("--base")
     ap.add_argument("--days", type=int, default=45)
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--wait", type=float, default=60)
     a = ap.parse_args()
-    k = key_from(a.env)
+    if a.base:
+        return measure(a, a.base.rstrip("/"))
+    k = key_from(a.env or "")
     if not k:
         print("no LITEAPI_KEY in that file")
         return 1
@@ -66,32 +99,7 @@ def main() -> int:
                 break
             except OSError:
                 time.sleep(0.2)
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            for run in range(a.runs):
-                d = date.today() + timedelta(days=a.days + run)
-                url = f"http://127.0.0.1:{port}/plan/matrix?to=San+Diego&home=SFO&d={d}&r={d + timedelta(days=4)}&a=2&k=7,10&x=2"
-                page = browser.new_page(viewport={"width": 1440, "height": 900})
-                page.add_init_script(f"document.addEventListener('DOMContentLoaded', {WATCH})")
-                page.goto(url)
-                asked = f"sandiego|{d}"
-                column = [f"{lane}|{d}" for lane in ("sandiego", "losangeles", "orangecounty", "losangeles+sandiego", "orangecounty+sandiego")]
-                end = time.monotonic() + a.wait
-                while time.monotonic() < end:
-                    landed = page.evaluate("window.__landed || {}")
-                    if all(c in landed for c in column) and page.evaluate("document.getElementById('mx').dataset.busy") == "0":
-                        break
-                    time.sleep(0.25)
-                landed = page.evaluate("window.__landed || {}")
-                print(f"run {run + 1}: start {d}")
-                at = landed.get(asked)
-                print(f"  asked square: {at[0]:.1f} s ({at[1]})" if at else "  asked square: not landed")
-                col = [landed[c][0] for c in column if c in landed]
-                print(f"  asked day's column: {max(col):.1f} s, {len(col)} of {len(column)} landed" if col else "  asked day's column: none landed")
-                for sq, (t, how) in sorted(landed.items(), key=lambda x: x[1][0]):
-                    print(f"    {t:5.1f} s  {sq:36} {how}")
-                page.close()
-            browser.close()
+        measure(a, f"http://127.0.0.1:{port}")
     finally:
         server.terminate()
         try:
