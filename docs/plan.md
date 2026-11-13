@@ -1446,3 +1446,15 @@ Needs: F-221
 ## F-228 The family test [todo]
 Needs: F-222, F-224
 - [ ] 5 to 10 families plan with the matrix; success is someone finding an option they did not know about and changing their plan; then decide on booking
+
+## F-229 The matrix fills fast [todo]
+Brief: docs/briefs/unified-booking.md "Speed" · Needs: F-222 · Measured 2026-11-12 (sandbox): a flight search takes 10–15 s on LiteAPI's side whatever the filters (showCheapestOfferOnly cuts 11.6 MB to 4.4 MB, not the time); a stay search 2–17 s; streaming (`Accept: text/event-stream`) sends 138 journeys at 4.7 s, more at 12 and 14 s, and never said `rates-complete` in 80 s. The page asks 2 squares at a time and a square's 1–3 calls run side by side: up to 6 calls at once against a sandbox that answered 429 at 3.
+- [ ] one gate in `liteapi` for every call (at most 3 in flight, site-wide) and one call for identical requests in flight (a second asker waits on the first's answer, never a second search)
+- [ ] flights through the stream: read until `rates-complete` or a deadline, keep the cheapest offer seen; the square says the price is the cheapest found, and the stream's shape is recorded in tests/fixtures/liteapi before it is parsed
+- [ ] the page, when drawn, starts the searches in order (the asked square, the asked start day for every place, the asked place on every day) so they are on their way before the script asks; the script asks for more squares at once since the gate does the limiting
+- [ ] measured on gitaway.me with the sandbox key: the asked square's total within 10 s, the asked day's column within 20 s; the times written here
+
+## F-230 The square says the total first [todo]
+Brief: docs/briefs/unified-booking.md · Design: docs/design/trip-matrix.md (calendar lanes on a laptop, the trip panel beside them; place cards on a phone: kept) · Needs: F-222
+- [ ] each square shows its total large, with the day's weather as a small line under it (one sky and degrees, typical weather still marked) instead of a separate weather row above the prices
+- [ ] "While we search" is no longer a band across the page: a small floating note shows a fact about the place while the first squares are loading, and leaves once they land (Liquid in, calm out; reduced motion a fade)
