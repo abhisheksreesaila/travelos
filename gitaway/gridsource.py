@@ -195,7 +195,7 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek):
     if not fl.items or not all(a.items for a in st):
         return tm.Square(lane.key, w.key, tm.NONE, fetched=fetched)
     f = fl.items[0]
-    flight = tm.FlightPart(f.airline, _leg_words(f.legs[0]), _leg_words(f.legs[-1]) if len(f.legs) > 1 else "", f.stops, f.cents)
+    flight = tm.FlightPart(f.airline, _leg_words(f.legs[0]), _leg_words(f.legs[-1]) if len(f.legs) > 1 else "", f.stops, f.cents, fl.complete)
     stays = tuple(_stay_part(p, a, b, _pick_stay(ans.items)) for (p, a, b), ans in zip(split, st))
     first = lane.places[0]
     drive = airportdrive.kept(first.iata, first.town) if peek else airportdrive.drive(first.iata, first.town)

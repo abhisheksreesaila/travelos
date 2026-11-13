@@ -1,5 +1,6 @@
 // The trip matrix (F-222). The page works as plain links (every square is a link to its own page); this adds four things on top.
-//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (2: LiteAPI's sandbox answered 429 to three squares' calls at once), the asked square first, then the nearest days and
+//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (6: the server's gate keeps LiteAPI to 3 calls at once, F-229,
+//      and the first squares were already started when the page was drawn), the asked square first, then the nearest days and
 //      the likeliest places (gitaway/tripmatrix.py `order`); a square scrolled past before its turn is never asked for. A waiting square is a skeleton, never a number.
 //   2. The marks, with the same rules as gitaway/tripmatrix.py `marks` and `find` (change one, change the other: tests_browser/test_tripmatrix.py compares them):
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
@@ -11,7 +12,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 2, SLOW_MS = 4000, MARGIN = '240px 120px';
+  var MAX_AT_ONCE = 6, SLOW_MS = 4000, MARGIN = '240px 120px';
   var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');

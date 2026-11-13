@@ -6,6 +6,7 @@
     marks(lanes, windows, totals, budget)   each answered square's marks: "find", "low" (the cheapest start in its lane), "over" (the budget)
     find(lanes, windows, totals)    the discovery: a nearby trip that beats or nearly matches the asked place on the same dates, said in words
     order(lanes, windows)           which squares to ask for first: the asked square, then the nearest dates and the likeliest places
+    head_start(lanes, windows)      which squares the server starts searching as the page is drawn (F-229): the asked square, its day, its place
 
 Nothing here fetches or invents: a total is a source's (gitaway/gridsource.py `square`), a square still waiting has none and gets no mark. assets/js/tripmatrix.js
 marks the squares with the same rules as answers land (`marks`, `find`): change one, change the other (tests_browser/test_tripmatrix.py compares them).
@@ -59,6 +60,7 @@ class FlightPart:
     back: str
     stops: int
     cents: int            # the whole party, both ways
+    complete: bool = True      # False: the search was stopped at its deadline (F-229), so this is the cheapest found by then
 
 
 @dataclass(frozen=True)
@@ -170,6 +172,15 @@ def order(lanes_, windows_) -> list:
     asked = next((i for i, w in enumerate(windows_) if w.asked), 0)
     ranked = sorted(((abs(j - asked) + i, i, j) for i in range(len(lanes_)) for j in range(len(windows_))))
     return [key(lanes_[i].key, windows_[j].key) for _, i, j in ranked]
+
+
+def head_start(lanes_, windows_) -> list:
+    """((Lane, Window), ...) the server starts searching as the page is drawn (F-229, gitaway/matrixwarm.py): the asked square, the asked start day for every
+    place, then the asked place on every other day, the nearest first, earlier dates first on a tie."""
+    asked_l = next((x for x in lanes_ if x.asked), lanes_[0])
+    j0 = next((j for j, w in enumerate(windows_) if w.asked), 0)
+    days = sorted((j for j in range(len(windows_)) if j != j0), key=lambda j: (abs(j - j0), j))
+    return [(x, windows_[j0]) for x in sorted(lanes_, key=lambda x: not x.asked)] + [(asked_l, windows_[j]) for j in days]
 
 
 # ---- marks ----------------------------------------------------------------------------------------------------------

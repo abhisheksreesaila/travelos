@@ -7,8 +7,8 @@ GET  /plan/matrix/tile     one square as JSON for assets/js/tripmatrix.js: its w
 GET  /plan/matrix/square   one square as its own page: the panel, for a link and for a page without the script. Plain `def` too.
 POST /plan/matrix/save     "Booking opens soon": the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
 
-The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; the script asks for
-the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
+The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; off the showcase it
+also starts the first squares' searches at once (gitaway/matrixwarm.py, F-229), which the tiles then join. The script asks for the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.
 On the showcase the sample catalog drives every square and says so; off it the routes exist only with LITEAPI_KEY (gitaway/showcase.py `_needs_keys`).
 """
 
@@ -22,7 +22,7 @@ from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Im
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, gridsource, importer, liteapi, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
+from gitaway import catalog, familydb, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import weather_ui
@@ -37,6 +37,7 @@ DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San D
 LEAD_DAYS = 28                      # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
+CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
 FINE = "Prices are a preview from LiteAPI and change until booked. Booking opens soon: nothing is booked or paid here."
 SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. Nothing is booked or paid here."
@@ -226,7 +227,8 @@ def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
     if asked_sq is not None and asked_sq.ok and not lane.asked:
         vs = vs_words(sq.cents - asked_sq.cents, s.place.name, lane.combo)
     age = age_words(sq.fetched)
-    rows = [Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"), Div(P(sq.flight.airline, cls="mx-r-h"), P(sq.flight.out, cls="mx-r-s"), P(sq.flight.back, cls="mx-r-s") if sq.flight.back else ""),
+    rows = [Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"), Div(P(sq.flight.airline, cls="mx-r-h"), P(sq.flight.out, cls="mx-r-s"), P(sq.flight.back, cls="mx-r-s") if sq.flight.back else "",
+                                                                                     P(CHEAPEST_FOUND, cls="mx-r-s") if not sq.flight.complete else ""),
                 Span(catalog.money(sq.flight.cents), cls="mx-r-n"), cls="mx-row")]
     for st in sq.stays:
         bits = [st.room, "Breakfast" if st.board == "breakfast" else st.board.capitalize(), "Refundable" if st.refundable else "Non-refundable"]
@@ -423,6 +425,8 @@ def matrix_page(s: State, family="", typed="", problems=()):
         body = Div(Div(sentence(s, typed, problems or s.problems or [MISSING["dates"]]), cls="mx-lead"), cls="mx mx-blank")
         return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan/matrix", head=HEAD, noindex=True)
     known = peek_all(s, lanes, windows, family)
+    if not showcase.on():      # the head start (F-229): the first squares start searching now, on worker threads; the page never waits for them
+        matrixwarm.warm([(x, w) for x, w in tm.head_start(lanes, windows) if tm.key(x.key, w.key) not in known], s.adults, s.kid_ages, s.home, family)
     totals = totals_of(known)
     marks, found = tm.marks(lanes, windows, totals, s.budget_cents), tm.find(lanes, windows, totals)
     total = len(lanes) * len(windows)

@@ -3,6 +3,7 @@ answers, read from the recorded sandbox answers (tests/fixtures/liteapi), and no
 from datetime import date, datetime, timezone
 
 import pytest
+from fasthtml.common import to_xml
 
 from gitaway import airportdrive, catalog, gridsource, liteapi, tripmatrix as tm
 from gitaway.partners import places
@@ -125,3 +126,21 @@ def test_the_drive_is_the_routers_minutes_from_the_first_airport_or_nothing(real
 def test_off_the_showcase_without_a_home_airport_nothing_is_searched(real):
     sq = square(home="")
     assert sq.status == tm.FAILED and real.asked == []
+
+
+def test_a_flight_search_stopped_at_its_deadline_says_its_the_cheapest_found(monkeypatch, client):
+    """F-229: the stream is read until it says complete or its deadline; then the square's flight is the cheapest found by then, and the panel says so."""
+    from tests.test_liteapi import Streamer
+    from gitaway.pages import tripmatrix as page
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 0.5)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer(complete=False))
+    sq = square()
+    assert sq.ok and sq.flight.complete is False
+    s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    assert page.CHEAPEST_FOUND in to_xml(page.panel(s, LANES["sandiego"], W, sq))
+    liteapi.clear()
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer())
+    sq = square()
+    assert sq.flight.complete is True and page.CHEAPEST_FOUND not in to_xml(page.panel(s, LANES["sandiego"], W, sq))
