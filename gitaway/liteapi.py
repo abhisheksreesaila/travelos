@@ -23,6 +23,7 @@ always send. The reader keeps each journey's cheapest offer seen and stops at `r
 BULK journeys, or at STREAM_CAP whatever happens (a watchdog cuts a line that hangs); an Answer cut short says `complete=False`, the cheapest found.
 """
 
+import http.client
 import json
 import logging
 import os
@@ -446,7 +447,10 @@ def _headers(body, accept="application/json") -> dict:
 def _ask(what: str, path: str, body: dict | None, timeout: float):
     """The parsed JSON answer, or None after saying once what went wrong (never the key). The caller holds the gate."""
     try:
-        status, ctype, raw = TRANSPORT(API + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
+        try:
+            status, ctype, raw = TRANSPORT(API + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
+        except (http.client.RemoteDisconnected, ConnectionResetError):      # the sandbox sometimes drops a line before answering: asked once more (never after a timeout)
+            status, ctype, raw = TRANSPORT(API + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
         if len(raw) > MAX_BYTES:
             raise Unreadable(f"over {MAX_BYTES} bytes")
         if status != 200:
@@ -722,7 +726,8 @@ def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str 
     else:
         raise ValueError("a city and country, or a point and a radius")
     body = {**where, "checkin": checkin.isoformat(), "checkout": checkout.isoformat(), "currency": "USD", "guestNationality": "US",
-            "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_ASK}
+            "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_ASK,
+            "maxRatesPerHotel": 1}      # one rate a hotel: 104 KB instead of 7.8 MB at the same price (measured 2026-11-13, none of 27 hotels dearer)
     return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only, rank=rank, wait=wait)
 
 

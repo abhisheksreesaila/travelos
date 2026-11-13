@@ -686,3 +686,36 @@ def test_an_empty_rates_complete_ends_the_stream_and_keeps_what_came(monkeypatch
     t0 = time.monotonic()
     got = flights()
     assert got.ok and got.complete and got.items[0].cents == 7660 and time.monotonic() - t0 < 1.0
+
+
+def test_a_stay_search_asks_for_one_rate_per_hotel(fake):
+    """Measured 2026-11-13: one rate a hotel is 104 KB instead of 7.8 MB, at the same price (none of 27 hotels dearer), so the search asks for one."""
+    liteapi.stays(checkin=date(2026, 12, 12), checkout=date(2026, 12, 16), adults=2, kid_ages=(7, 10), city="San Diego", country="US")
+    assert fake.asked[-1][2]["maxRatesPerHotel"] == 1
+
+
+def test_a_connection_liteapi_drops_is_asked_once_more(monkeypatch):
+    import http.client
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    f, drops = Fake(), {"n": 1}
+
+    def flaky(url, headers, body, timeout):
+        if drops["n"]:
+            drops["n"] -= 1
+            raise http.client.RemoteDisconnected("Remote end closed connection without response")
+        return f(url, headers, body, timeout)
+    monkeypatch.setattr(liteapi, "TRANSPORT", flaky)
+    got = liteapi.stays(checkin=date(2026, 12, 12), checkout=date(2026, 12, 16), adults=2, kid_ages=(7, 10), city="San Diego", country="US")
+    assert got.ok and got.items and len(f.asked) == 1
+
+
+def test_a_timeout_is_not_asked_again(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    calls = []
+
+    def slow(url, headers, body, timeout):
+        calls.append(url)
+        raise TimeoutError("timed out")
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = liteapi.stays(checkin=date(2026, 12, 12), checkout=date(2026, 12, 16), adults=2, kid_ages=(7, 10), city="San Diego", country="US")
+    assert not got.ok and len(calls) == 1
