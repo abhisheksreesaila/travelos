@@ -62,6 +62,11 @@
 .mx-fact-k { font-size: max(var(--label-min), 0.75rem); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
 .mx-fact-t { margin: 0; font-size: max(var(--text-min), 0.9375rem); font-weight: 600; line-height: 1.35; text-wrap: pretty; }
 .mx-fact-src { justify-self: start; color: var(--ink-2); font-size: max(var(--text-min), 0.8125rem); }
+@media (max-width: 720px) {      /* the founder: "minimal real estate": on a phone the note is the fact and its source, no icon or heading */
+  .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; }
+  .mx-isle-ic, .mx-isle-b > p:first-child { display: none; }
+  .mx-fact-t { font-weight: 500; }
+}
 .mx-slow { display: none; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
 .mx[data-slow="1"] .mx-slow { display: inline; animation: mx-fade var(--motion-dur) var(--motion-ease) both; }
 

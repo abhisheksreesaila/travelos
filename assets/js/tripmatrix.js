@@ -14,7 +14,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, MARGIN = '240px 120px', again = 0;
+  var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', again = 0, tries = {};
   var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');
@@ -157,9 +157,11 @@
 
   // ---- loading like map tiles ----
   function land(k, j) {
-    if (j.s === 'busy') {      // no turn at the server's gate in time: the square stays a skeleton and is asked again in a moment
+    if (j.s === 'busy') {      // no turn at the server's gate in time: asked again after 3, 6, 12 s, then the square says so and settles
+      tries[k] = (tries[k] || 0) + 1;
+      if (tries[k] > BUSY_TRIES) { said(k, 'Lots of searches right now. Try again in a minute.'); return; }
       again++;
-      setTimeout(function () { again--; delete asked[k]; pump(); }, BUSY_MS);
+      setTimeout(function () { again--; delete asked[k]; pump(); }, BUSY_MS * Math.pow(2, tries[k] - 1));
       return;
     }
     known[k] = { c: j.c, s: j.s };

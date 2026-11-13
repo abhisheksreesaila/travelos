@@ -307,6 +307,30 @@ def test_a_busy_square_is_asked_again_and_lands(matrix, stand, monkeypatch):
     assert page.errors == []
 
 
+def test_a_square_that_stays_busy_backs_off_and_then_says_so(matrix, stand, monkeypatch):
+    """Review: a busy square is asked again 3 times (3, 6, 12 s apart), never forever; then it settles with words and the page stops waiting on it."""
+    real = stand.__call__
+
+    def always_busy(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
+        if not peek and tm.key(lane.key, w.key) == "sandiego|2026-12-12":
+            return tm.Square(lane.key, w.key, tm.BUSY)
+        return real(lane, w, adults, kid_ages, home, family, peek, rank)
+    monkeypatch.setattr(gridsource, "SQUARE", always_busy)
+    page = matrix(DESKTOP, wait=False)
+    asks = []
+    page.on("request", lambda r: asks.append(r.url) if "/plan/matrix/tile" in r.url and "lane=sandiego&w=2026-12-12" in r.url else None)
+    sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
+    expect(sq.locator(".mx-in")).to_have_text("Lots of searches right now. Try again in a minute.", timeout=40000)
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    assert len(asks) <= 3 and page.errors == []      # the first ask happened before the listener; 3 more at most
+
+
+def test_on_a_phone_the_note_is_just_the_fact_and_its_source(matrix):
+    page = matrix(PHONE, wait=False)
+    shown = page.evaluate("() => [...document.querySelectorAll('#mx-fact .mx-isle-ic, #mx-fact .mx-fact-k')].map(e => getComputedStyle(e).display === 'none' || getComputedStyle(e.parentNode).display === 'none')")
+    assert shown and all(shown)
+
+
 def test_the_weather_notes_under_the_cards_are_lines_of_their_own(matrix):
     page = matrix(PHONE)
     tops = page.evaluate("() => [...document.querySelectorAll('.mx-cards .mx-wx-n')].map(e => [e.getBoundingClientRect().left, getComputedStyle(e.parentNode).display])")
