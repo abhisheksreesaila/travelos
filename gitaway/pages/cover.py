@@ -41,15 +41,17 @@ PHONE_Q = "(max-width: 720px)"
 DISCLOSURE = "Every family, price and trip on this page is made up, to show how it works. The places and their weather are real."
 SOON = "Booking opens soon"
 
-# the three parts: (number, its name, its headline in two tones, what it says, an id to link to)
+# the three parts: (number, its name, its headline, what it says, an id to link to). A headline is its ink words and its soft words, each a run of
+# phrases; a phrase with a beat (1 to 3) is marked in the part's colour at the moment the screen shows the same thing (D-457): the words and the
+# screen say it together.
 PARTS = (
-    ("1", "Compare", ("Every place, every date. ", "One total each."),
+    ("1", "Compare", ((("Every place,", 1), " ", ("every date.", 2), " "), (("One total each.", 3),)),
      "Say it once. The flight, the stay and the airport drive are added up for every square, and the one you didn’t think to ask for lights up.",
      "compare"),
-    ("2", "Plan it together", ("Hearts, not group texts. ", "One person decides."),
+    ("2", "Plan it together", ((("Hearts,", 1), " not group texts. "), (("One person decides.", 2),)),
      "Share it with the family and the friends coming along. Everyone hearts what they love and talks on the square; the owner taps “This one”.",
      "together"),
-    ("3", "Leave a trail", ("Leave a trail others can follow.", ""),
+    ("3", "Leave a trail", ((("Leave a trail", 1), " ", ("others can follow.", 2)), ()),
      "Your trip becomes a card ready to post, with a link back. A creator’s trip opens into a matrix of its own, so readers plan it for their dates.",
      "trail"),
 )
@@ -224,6 +226,10 @@ def _frame():
     return Div(Div(*[Figure(*SCREENS[n](), cls=f"cv-L cv-L{n}", data_n=n, aria_label=ALT[n]) for n in SCREENS], cls="cv-frame"), cls="cv-fwrap")
 
 
+def _phrases(run):
+    return [Span(x[0], cls=f"cv-hl b{x[1]}") if isinstance(x, tuple) else x for x in run]
+
+
 def _part(n, name, two, text, anchor):
     ink, soft = two
     extra = ()
@@ -231,7 +237,7 @@ def _part(n, name, two, text, anchor):
         extra = (P(DISCLOSURE, cls="cv-note ga-fine"),)
     if n == "3":
         extra = (A("For creators", icon("arrow-right", stroke=2), href="/for-creators", cls="cv-btn tonal cv-small"),)
-    return Div(Div(P(f"0{n} · {name}", cls="cv-n"), H2(ink, *((Em(soft),) if soft else ())),
+    return Div(Div(P(f"0{n} · {name}", cls="cv-n"), H2(*_phrases(ink), *((Em(*_phrases(soft)),) if soft else ())),
                    *((Span(TRAIL_SUB, cls="cv-subpill"),) if n == "3" else ()), P(text, cls="cv-say"), *extra, cls="cv-card"),
                cls=f"cv-ch cv-ch{n}", data_n=n, id=anchor)
 

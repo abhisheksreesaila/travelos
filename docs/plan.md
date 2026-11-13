@@ -1442,6 +1442,9 @@ Needs: F-221
 - [x] smooth on a mid-range phone: scripts/cover_fps.py at CPU 4x, 390 and 1440: 60 fps, no frame over 25 ms, no bursts, no long task; film strips docs/report/cover-f227-*.png; screenshots docs/design/trip-matrix/built-cover/
 - [x] the place art ported from art.js (scripts/cover_art.py, D-428); the made-up parts said in part 1 and the footer, the weather NOAA's (D-429)
 - [ ] real screens from the matrix: the frame's screens are drawn HTML from the artboard until F-222 ships; swap them at `cover.SCREENS` (D-430)
+- [x] the founder's look (2026-11-13): the frame changes when the part's words reach the middle, the other words wait dimmed, one trip grows from screen to screen (D-456)
+- [x] each part marks what its headline says, in its own colour, at the moment the words say it (D-457)
+- [ ] the founder looks again on a laptop and a phone
 
 ## F-228 The family test [todo]
 Needs: F-222, F-224

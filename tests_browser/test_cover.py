@@ -13,6 +13,7 @@ from tests_browser.look import audit
 SIZES = {"390": PHONE, "1440": DESKTOP}
 READY = "!!window.GA_COVER"
 SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
+INDIGO, PINK, ORANGE = "rgb(67, 56, 202)", "rgb(201, 42, 94)", "rgb(194, 65, 12)"      # tokens.css --k-flight, --k-food, --k-tix: each part's colour
 
 
 @pytest.fixture
@@ -124,17 +125,89 @@ def test_each_screens_moments_play_once_on_the_springs(cover):
     page.wait_for_timeout(2900)
     assert set(_opacity(page, ".cv-L1 :is(.cv-w, .cv-c, .cv-plus, .cv-disc, .cv-stripw)")) == {"1"}
     lit = page.evaluate("(() => { const s = getComputedStyle(document.querySelector('.cv-c.lit')); return [s.backgroundColor, s.animationName, s.animationTimingFunction]; })()")
-    assert lit[0] == "rgb(11, 11, 13)" and lit[1] == "cv-pop, cv-lit" and SPRING in lit[2], lit         # the find lights up on the spring
+    assert lit[0] == INDIGO and lit[1] == "cv-pop, cv-lit" and SPRING in lit[2], lit                   # the find lights up on the spring, in part 1's colour
     _show(page, 2)
     page.wait_for_timeout(2000)
     hearts = page.evaluate("[...document.querySelectorAll('.cv-L2 .cv-hf')].map((h) => [getComputedStyle(h).opacity, getComputedStyle(h).animationName, getComputedStyle(h).animationTimingFunction])")
     assert hearts == [["1", "cv-land", SPRING]] * 4, hearts
     _show(page, 3)
     page.wait_for_timeout(1200)
-    assert page.evaluate("getComputedStyle(document.querySelector('.cv-ig')).animationName") == "cv-form" and _opacity(page, ".cv-ig, .cv-creator") == ["1", "1"]
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-ig')).animationName") == "cv-form, cv-lift" and _opacity(page, ".cv-ig, .cv-creator") == ["1", "1"]
     _show(page, 1)                                                                       # back again: the moments do not replay
     states = page.evaluate("document.querySelector('.cv-L1 .cv-c').getAnimations().map((a) => a.playState)")
     assert states == ["finished"], states
+
+
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_the_screen_changes_when_its_words_arrive_and_the_other_words_wait_dimmed(cover, size):
+    """D-456 (founder 2026-11-13: "the text comes a little slowly and the information a little early; it has to be in sync"): the part changes
+    when its words (the card, not the tall block around it) reach the line, so at the change they are on the screen in full; the words of the
+    other parts wait at 0.6 on a laptop (still 4.5:1) (stacked, the words come in under the frame and none wait dimmed)."""
+    page = cover(SIZES[size])
+    vh, part, seen = SIZES[size]["height"], "1", []
+    top = page.evaluate("document.querySelector('.cv-stage').getBoundingClientRect().top + scrollY")
+    y = top - vh
+    while part != "3":
+        y += 30
+        page.evaluate(f"window.scrollTo(0, {y})")
+        page.wait_for_timeout(40)
+        now = page.evaluate("document.querySelector('.cv-stage').dataset.part")
+        if now != part:
+            part = now
+            seen.append((now, _box(page, f".cv-ch{now} h2")))
+    assert [n for n, _ in seen] == ["2", "3"], seen
+    for n, (_, t, _, h) in seen:
+        assert 0 <= t and t + h <= vh, (n, t, h, vh)                                   # the new headline is on the screen at the change
+    page.wait_for_timeout(500)
+    assert _opacity(page, ".cv-card") == (["0.6", "0.6", "1"] if size == "1440" else ["1", "1", "1"])
+
+
+def test_one_trip_carries_the_story_from_part_to_part(cover):
+    """D-456: the lit square, the family's square and the card to post are one trip; only it is named for the view transition that changes
+    the part, so it grows from one into the next while the rest of the screen cross-fades."""
+    count = """window.__vt = 0; const start = document.startViewTransition.bind(document);
+      document.startViewTransition = (f) => { window.__vt++; return start(f); };"""
+    page = cover(DESKTOP, init=count)
+    named = "[...document.querySelectorAll('.cv-stage *')].filter((e) => getComputedStyle(e).viewTransitionName === 'cv-find').map((e) => e.className)"
+    for n, cls in (("1", "cv-c lit"), ("2", "cv-sq"), ("3", "cv-ig"), ("1", "cv-c lit")):
+        _show(page, n)
+        page.wait_for_timeout(500)
+        assert page.evaluate(named) == [cls], n
+    assert page.evaluate("getComputedStyle(document.documentElement).viewTransitionName") == "none"      # the page itself is never captured
+    assert page.evaluate("window.__vt") == 3                                             # each change of part was one transition
+
+
+def test_a_quick_reader_back_and_forth_lands_on_the_part_in_front_of_them(cover):
+    """A second change while a transition is starting wins: the frame ends on the part whose words are at the line."""
+    page = cover(DESKTOP)
+    _show(page, 1)
+    page.evaluate("""() => { const c = (n) => document.querySelector(`.cv-ch${n}`).getBoundingClientRect().top + scrollY;
+      window.scrollTo(0, c(2)); setTimeout(() => window.scrollTo(0, c(1)), 30); }""")
+    page.wait_for_timeout(1200)
+    assert page.evaluate("document.querySelector('.cv-stage').dataset.part") == "1"
+    assert _opacity(page, ".cv-L") == ["1", "0", "0"]
+
+
+def test_each_part_marks_what_its_headline_says_in_its_own_colour(cover):
+    """D-457 (founder 2026-11-13: "everything is a number and a place; what am I looking at?"): a phrase of the headline is marked at the moment
+    the screen shows it. Compare: the places, then the dates pass; the total stays, indigo. Plan it together: the hearts, then the owner's
+    This one, pink. Leave a trail: the card to post, then the creator's trip, orange."""
+    page = cover(DESKTOP)
+    _show(page, 1)
+    page.wait_for_timeout(1000)                                                           # the first beat: every place
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-pl')).animationName") == "cv-glow"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-ch1 .b1')).animationName") == "cv-pass"
+    page.wait_for_timeout(2400)
+    css = "([q, p]) => getComputedStyle(document.querySelector(q))[p]"
+    assert page.evaluate(css, [".cv-c.lit", "backgroundColor"]) == INDIGO
+    assert [page.evaluate(css, [f".cv-ch1 .b{k}", "backgroundSize"]).split()[0] for k in (1, 2, 3)] == ["0%", "0%", "100%"]
+    _show(page, 2)
+    page.wait_for_timeout(2600)
+    assert page.evaluate(css, [".cv-pill", "backgroundColor"]) == PINK and set(page.evaluate(
+        "[...document.querySelectorAll('.cv-hb')].map((h) => getComputedStyle(h).backgroundColor)")) == {PINK}
+    _show(page, 3)
+    page.wait_for_timeout(1800)
+    assert ORANGE in page.evaluate(css, [".cv-ig", "boxShadow"]) and ORANGE in page.evaluate(css, [".cv-crow", "boxShadow"])
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -153,7 +226,8 @@ def test_reduced_motion_pins_the_frame_and_swaps_with_a_plain_fade(cover, size):
     assert page.evaluate("(() => { const s = getComputedStyle(document.querySelector('.cv-L1')); return [s.transitionProperty, s.transitionDuration, s.transitionTimingFunction]; })()") == ["opacity, visibility", "0.12s, 0s", "linear, linear"]
     at_rest = ".cv-L1 :is(.cv-w, .cv-c, .cv-disc), .cv-L2 :is(.cv-hf, .cv-bub), .cv-L3 :is(.cv-ig, .cv-creator)"
     assert set(_opacity(page, at_rest)) == {"1"}
-    assert page.evaluate("getComputedStyle(document.querySelector('.cv-c.lit')).backgroundColor") == "rgb(11, 11, 13)"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-c.lit')).backgroundColor") == INDIGO      # the emphasis at rest (D-457)
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-ch1 .cv-hl.b3')).backgroundSize").startswith("100% ")
 
 
 def _still_order(page):

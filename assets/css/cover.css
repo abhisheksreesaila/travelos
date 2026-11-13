@@ -169,6 +169,24 @@
 .cv-foot .ga-brand-name { color: var(--ink); }
 .cv-fine { font-size: var(--t-fine) !important; }
 
+/* ---------- the emphasis (D-457, founder 2026-11-13: "everything is a number and a place; what am I looking at?") ----------
+   Each part has one colour (Compare indigo, Plan it together pink, Leave a trail orange: the kind tokens, a fill with --k-on and a tint with its
+   ink, both modes) and marks in it only what its headline says: the headline's phrase gets a highlighter and the screen shows the same thing at
+   the same moment (the beats, in the film below). These rules are where the beats end, and all a still or reduced motion shows. */
+.cv-L1, .cv-ch1 { --cv-hi: var(--k-flight); --cv-hi-t: var(--k-flight-t); --cv-hi-i: var(--k-flight-i); }
+.cv-L2, .cv-ch2 { --cv-hi: var(--k-food); --cv-hi-t: var(--k-food-t); --cv-hi-i: var(--k-food-i); }
+.cv-L3, .cv-ch3 { --cv-hi: var(--k-tix); --cv-hi-t: var(--k-tix-t); --cv-hi-i: var(--k-tix-i); }
+.cv-hl { --cv-ink: color-mix(in srgb, var(--cv-hi) 34%, transparent); background: linear-gradient(var(--cv-ink), var(--cv-ink)) no-repeat 0 92% / 100% 0.36em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.cv-ch1 .cv-hl:is(.b1, .b2) { background-size: 0% 0.36em; }        /* places and dates pass; the total stays marked */
+.cv-L1 .cv-c.lit { background: var(--cv-hi); color: var(--k-on); box-shadow: 0 0 0 0.3333rem var(--cv-hi-t), var(--sh2); }
+.cv-L1 .cv-plus { background: var(--cv-hi-t); color: var(--cv-hi-i); }
+.cv-L2 .cv-hb { background: var(--cv-hi); color: var(--k-on); }
+.cv-L2 .cv-pill { background: var(--cv-hi); color: var(--k-on); box-shadow: 0 0 0 0.3333rem var(--cv-hi-t), var(--sh1); }
+.cv-L3 .cv-ig { box-shadow: 0 0 0 0.3333rem var(--cv-hi), var(--sh3); transform: rotate(-1.5deg); }
+.cv-L3 .cv-lk { color: var(--cv-hi-i); }
+.cv-L3 .cv-crow:first-child { box-shadow: 0 0 0 0.25rem var(--cv-hi); }
+.cv-L3 .cv-mini span.lit { background: var(--cv-hi); color: var(--k-on); }
+
 /* ---------- the film: the frame pinned, the parts' words passing it, the screens swapping (html.cv-film, cover_boot.js) ---------- */
 @media (min-height: 600px) {
   .cv-film .cv-stage { row-gap: 0; align-items: start; padding-top: 0; }
@@ -180,6 +198,9 @@
   .cv-film .cv-L { position: absolute; inset: 0; border-radius: 0; box-shadow: none; opacity: 0; visibility: hidden;
     transition: opacity var(--motion-dur) var(--motion-ease), visibility 0s linear var(--motion-dur); }
   .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { opacity: 1; visibility: visible; transition-delay: 0s; }
+  /* the words in step with the frame (D-456): the part on the frame has its words full, the others wait dimmed, and both change together */
+  .cv-film .cv-live .cv-card { opacity: .6; transition: opacity var(--motion-dur) var(--motion-ease); }
+  .cv-film .cv-live[data-part="1"] .cv-ch1 .cv-card, .cv-film .cv-live[data-part="2"] .cv-ch2 .cv-card, .cv-film .cv-live[data-part="3"] .cv-ch3 .cv-card { opacity: 1; }
   @media (prefers-reduced-motion: reduce) {
     /* reduced motion keeps a plain, short fade between the screens (base.css stops every other transition) */
     .cv-film .cv-stage .cv-L { transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade) !important; }
@@ -189,21 +210,46 @@
   @media (prefers-reduced-motion: no-preference) {
     /* the incoming screen settles in on the spring (the outgoing one fades under it on the transition above) */
     .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { animation: cv-settle var(--motion-spring-dur) var(--motion-spring) both; }
+    /* one trip carries the story (D-456): the lit square grows into the family's hearted square, which becomes the card to post (a view
+       transition cover.js starts on a part change; only this one element is named, the page itself is never captured) */
+    .cv-film .cv-stage[data-part="1"] .cv-L1 .cv-c.lit, .cv-film .cv-stage[data-part="2"] .cv-L2 .cv-sq, .cv-film .cv-stage[data-part="3"] .cv-L3 .cv-ig { view-transition-name: cv-find; }
 
     /* each screen's small moments, started once by .go (cover.js), on the same springs; hidden only here, until they play */
     .cv-film .cv-L1 :is(.cv-w, .cv-c, .cv-plus, .cv-disc, .cv-stripw), .cv-film .cv-L2 :is(.cv-hf, .cv-bub, .cv-decide), .cv-film .cv-L3 :is(.cv-ig, .cv-creator) { opacity: 0; }
     .cv-film .go .cv-w { animation: cv-in var(--motion-quick) var(--motion-ease) both; animation-delay: calc(var(--w) * var(--motion-fade) * .4); }
     .cv-film .go .cv-c { animation: cv-pop var(--motion-settle-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 2 + var(--i) * var(--motion-fade) * .4); }
     .cv-film .go .cv-c.lit { animation: cv-pop var(--motion-settle-dur) var(--motion-spring) both, cv-lit var(--motion-spring-dur) var(--motion-spring) forwards;
-      animation-delay: calc(var(--motion-spring-dur) * 2 + var(--i) * var(--motion-fade) * .4), calc(var(--motion-spring-dur) * 4.4); }
-    .cv-film .go .cv-plus { animation: cv-pop var(--motion-settle-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 4.8); }
-    .cv-film .go .cv-disc { animation: cv-form var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 4.8); }
-    .cv-film .go .cv-stripw { animation: cv-rise var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 5.4); }
+      animation-delay: calc(var(--motion-spring-dur) * 2 + var(--i) * var(--motion-fade) * .4), calc(var(--motion-spring-dur) * 5.6); }
+    .cv-film .go .cv-plus { animation: cv-pop var(--motion-settle-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 6); }
+    .cv-film .go .cv-disc { animation: cv-form var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 6); }
+    .cv-film .go .cv-stripw { animation: cv-rise var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 6.2); }
     .cv-film .go .cv-hf { animation: cv-land var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-dur) + var(--h) * var(--motion-quick)); }
     .cv-film .go .cv-bub { animation: cv-rise var(--motion-settle-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 2.2 + var(--b) * var(--motion-dur)); }
     .cv-film .go .cv-decide { animation: cv-pop var(--motion-settle-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 4); }
     .cv-film .go .cv-ig { animation: cv-form var(--motion-spring-dur) var(--motion-spring) both; animation-delay: var(--motion-fade); }
     .cv-film .go .cv-creator { animation: cv-rise var(--motion-spring-dur) var(--motion-spring) both; animation-delay: calc(var(--motion-spring-dur) * 1.4); }
+
+    /* the beats (D-457): a phrase of the headline is marked at the moment the screen shows it. Each beat's moment is --at; before it the marked
+       things wait unmarked (the rules just below), then the mark plays forwards to where the emphasis rules above leave it. */
+    .cv-ch1 .b1, .cv-ch2 .b1, .cv-ch3 .b1 { --at: calc(var(--motion-spring-dur) * 2); }
+    .cv-ch1 .b2, .cv-ch3 .b2 { --at: calc(var(--motion-spring-dur) * 3.8); }
+    .cv-ch1 .b3 { --at: calc(var(--motion-spring-dur) * 5.6); }
+    .cv-ch2 .b2 { --at: calc(var(--motion-spring-dur) * 5); }
+    .cv-film .cv-hl { background-size: 0% 0.36em; }
+    .cv-film .cv-L1 .cv-c.lit { background: var(--paper-2); color: var(--ink); box-shadow: none; }
+    .cv-film .cv-L2 .cv-hb { background: var(--card); color: var(--danger); }
+    .cv-film .cv-L2 .cv-pill { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh1); }
+    .cv-film .cv-L3 .cv-ig { box-shadow: var(--sh2); transform: none; }
+    .cv-film .cv-L3 .cv-crow:first-child { box-shadow: none; }
+    .cv-film .go .cv-hl { animation: cv-mark var(--motion-spring-dur) var(--motion-ease) forwards; animation-delay: var(--at); }
+    .cv-film .go.cv-ch1 .cv-hl:is(.b1, .b2) { animation: cv-pass calc(var(--motion-spring-dur) * 2.4) var(--motion-ease); animation-delay: var(--at); }
+    .cv-film .go .cv-pl { animation: cv-glow calc(var(--motion-spring-dur) * 2.4) var(--motion-ease); animation-delay: calc(var(--motion-spring-dur) * 2); }
+    .cv-film .go .cv-hd:not(:first-child) { animation: cv-glow calc(var(--motion-spring-dur) * 2.4) var(--motion-ease); animation-delay: calc(var(--motion-spring-dur) * 3.8); }
+    .cv-film .go .cv-hb { animation: cv-heart var(--motion-spring-dur) var(--motion-spring) forwards; animation-delay: calc(var(--motion-spring-dur) * 2 + var(--h) * var(--motion-quick)); }
+    .cv-film .go .cv-pill { animation: cv-fill var(--motion-spring-dur) var(--motion-spring) forwards; animation-delay: calc(var(--motion-spring-dur) * 5); }
+    .cv-film .go .cv-ig { animation: cv-form var(--motion-spring-dur) var(--motion-spring) both, cv-lift var(--motion-spring-dur) var(--motion-spring) forwards;
+      animation-delay: var(--motion-fade), calc(var(--motion-spring-dur) * 2); }
+    .cv-film .go .cv-crow:first-child { animation: cv-ring var(--motion-spring-dur) var(--motion-spring) forwards; animation-delay: calc(var(--motion-spring-dur) * 3.8); }
   }
 
   /* stacked (under 1100px): the frame pins at the top and each part's card passes under it */
@@ -214,6 +260,7 @@
     .cv-film .cv-ch { min-height: 80svh; align-content: start; padding-top: 1.3333rem; position: relative; z-index: 1; margin-top: 0; }
     .cv-film .cv-ch { scroll-margin-top: calc(var(--fh-s) + 1rem); }      /* a jump to a part lands its words below the pinned frame */
     .cv-film .cv-card { padding: 1.5rem 1.5rem 1.6667rem; border-radius: 1.8333rem; background: var(--card); box-shadow: var(--sh2); }
+    .cv-film .cv-live .cv-card { opacity: 1; }      /* stacked, the words come in under the frame as it changes: none wait dimmed */
   }
 }
 @keyframes cv-in { from { opacity: 0; } to { opacity: 1; } }
@@ -222,7 +269,21 @@
 @keyframes cv-rise { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
 @keyframes cv-form { from { opacity: 0; transform: translateY(1rem) scale(.95); } to { opacity: 1; transform: none; } }
 @keyframes cv-land { from { opacity: 0; transform: translateY(-1rem) scale(.6); } to { opacity: 1; transform: none; } }
-@keyframes cv-lit { from { background-color: var(--paper-2); color: var(--ink); box-shadow: none; transform: scale(.92); } to { background-color: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); transform: none; } }
+@keyframes cv-lit { from { background-color: var(--paper-2); color: var(--ink); box-shadow: none; transform: scale(.92); } 60% { transform: scale(1.08); }
+  to { background-color: var(--cv-hi); color: var(--k-on); box-shadow: 0 0 0 0.3333rem var(--cv-hi-t), var(--sh2); transform: none; } }
+@keyframes cv-mark { from { background-size: 0% 0.36em; } to { background-size: 100% 0.36em; } }
+@keyframes cv-pass { 0% { background-size: 0% 0.36em; background-position: 0 92%; } 25%, 70% { background-size: 100% 0.36em; background-position: 0 92%; }
+  71% { background-size: 100% 0.36em; background-position: 100% 92%; } 100% { background-size: 0% 0.36em; background-position: 100% 92%; } }
+@keyframes cv-glow { 0%, 100% { background-color: transparent; box-shadow: none; } 25%, 75% { background-color: var(--cv-hi-t); color: var(--cv-hi-i); box-shadow: 0 0 0 0.3333rem var(--cv-hi-t); border-radius: 0.6667rem; } }
+@keyframes cv-heart { from { background-color: var(--card); color: var(--danger); transform: none; } 50% { transform: scale(1.5); } to { background-color: var(--cv-hi); color: var(--k-on); transform: none; } }
+@keyframes cv-fill { from { background-color: var(--accent); color: var(--on-accent); box-shadow: var(--sh1); transform: none; } 50% { transform: scale(1.08); }
+  to { background-color: var(--cv-hi); color: var(--k-on); box-shadow: 0 0 0 0.3333rem var(--cv-hi-t), var(--sh1); transform: none; } }
+@keyframes cv-lift { from { box-shadow: var(--sh2); transform: none; } to { box-shadow: 0 0 0 0.3333rem var(--cv-hi), var(--sh3); transform: rotate(-1.5deg); } }
+@keyframes cv-ring { from { box-shadow: 0 0 0 0 var(--cv-hi); } to { box-shadow: 0 0 0 0.25rem var(--cv-hi); } }
+/* the one trip's morph between the parts (cover.js, D-456) */
+.cv-film { view-transition-name: none; }
+::view-transition-group(cv-find) { animation-duration: var(--motion-screen-dur); animation-timing-function: var(--motion-zoom); }
+::view-transition-old(cv-find), ::view-transition-new(cv-find) { animation-duration: var(--motion-screen-dur); }
 
 /* ---------- the phone ---------- */
 @media (max-width: 720px) {
