@@ -250,7 +250,7 @@ def test_every_link_on_every_level_lands(trip):
         queue += [u for u in links(r.text) if u not in seen]
     assert len(seen) > 30         # the week, its days, 2 blocks and every step of them
     for level in ("week", "day", "block", "step"):
-        assert any(trip.get(u).text.count(f'data-level="{level}"') for u in list(seen)[:60])
+        assert any(trip.get(u).text.count(f'data-level="{level}"') for u in sorted(seen))      # every link, in a fixed order: a set's order changes per run
 
 
 def test_every_button_on_the_sheet_lands_where_it_says(trip):
