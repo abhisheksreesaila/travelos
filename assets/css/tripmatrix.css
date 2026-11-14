@@ -37,6 +37,30 @@
 .mx-sample { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--warn-tint); color: var(--warn-ink);
   font-size: max(var(--label-min), 0.75rem); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
+/* the nights slider (F-237): one range input in the sentence (laptop) and one on each phone card, all the same control. The track fills in ink to the thumb (--fill,
+   set by the page and the script); the thumb is a ring that clears the 3:1 against the canvas; the target is the full height of the control (the --target floor, 48px on
+   a phone) so a thumb finds it, and `touch-action: pan-y` leaves the page's own scroll to a vertical drag. */
+.mx-nights { display: inline-flex; align-items: center; gap: 0.625rem; min-height: var(--target); font-size: 1rem; font-weight: 650; letter-spacing: 0; }
+.mx-nights-w { min-width: 4.5ch; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mx-range { -webkit-appearance: none; appearance: none; flex: 1 1 8rem; width: 8rem; min-width: 5rem; height: var(--target); margin: 0; padding: 0; background: transparent; cursor: pointer;
+  touch-action: pan-y; --fill: 50%; }
+.mx-range::-webkit-slider-runnable-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.mx-range::-moz-range-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.mx-range::-webkit-slider-thumb { -webkit-appearance: none; width: 1.75rem; height: 1.75rem; margin-top: -0.625rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
+.mx-range::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
+.mx-range:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; border-radius: var(--r-pill); }
+.mx:not(.is-live) .mx-range { opacity: 0.5; pointer-events: none; }      /* before the script is ready it cannot be moved; the links under the sentence work meanwhile */
+.mx-sent .mx-nights { font-size: inherit; font-weight: inherit; letter-spacing: inherit; gap: 0.5rem; }      /* in the sentence the nights read as the sentence does */
+.mx-sent .mx-range { flex: none; width: 7rem; }
+.mx-nights-links { flex-basis: 100%; }
+.mx-c-nights { width: 100%; box-sizing: border-box; padding: 0 0.25rem; }
+.mx-c-nights .mx-range { width: auto; }
+.mx-est-note { display: none; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
+.mx[data-est="1"] .mx-est-note { display: inline; }
+@media (max-width: 1019px) { .mx-sent-nights { display: none; } }      /* the phone and the tablet slide on the cards */
+@media (min-width: 1020px) { .mx-c-nights { display: none; } }
+.mx-day.is-off, .mx-ad.is-off { display: none; }      /* a longer trip's days: drawn with their sky, shown when the nights reach them */
+
 /* the news: the find, and a fact about the place while squares are searched */
 .mx-news { display: grid; gap: 0.75rem; }
 .mx-news:has(> .mx-find.is-empty) { display: none; }
@@ -91,6 +115,12 @@
 .mx-sq.is-find .mx-v { color: var(--up-fg); text-decoration: none; }
 .mx-sq.is-open { box-shadow: 0 0 0 0.1875rem var(--ink); }
 .mx-sq.is-wait { color: transparent; }
+/* an estimate while the slider moves (F-237): "about" and a plainer number, never a mark; the answer settles over it */
+.mx-est { display: inline-flex; flex-direction: column; align-items: center; gap: 0; color: var(--ink-2); font-weight: 600; }
+.mx-about { font-size: max(var(--label-min), 0.75rem); font-weight: 650; line-height: 1.1; }
+.mx-sq.is-est .mx-est-n { font-size: 0.8em; }
+.mx-lane .mx-sq.is-est .mx-est { color: var(--ink-2); }
+.mx-lane .mx-sq.is-on.is-est .mx-est { color: var(--on-ink); }
 @keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* the art: the place's own drawing (gitaway/placeart.py), or its plain tint */
@@ -271,7 +301,13 @@
 }
 
 @media (min-width: 1020px) {
-  .mx-isle { justify-self: start; bottom: 15rem; }      /* above the trip bar */
+  .mx-isle { justify-self: start; bottom: calc(var(--mx-bar-h, 12rem) + 0.75rem); }      /* above the trip bar, wherever it is (assets/js/tripmatrix.js sets --mx-bar-h: the distance from the bar's top to the screen's bottom) */
+}
+
+@media (min-width: 1020px) and (pointer: coarse) {      /* a touch screen this wide (a tablet on its side): the start prices are 48px targets, the slider too (F-236 review) */
+  .mx-lane > .mx-sq { min-height: 4rem; }      /* 4rem is 48px off the 12px laptop root */
+  .mx-range { height: 4rem; }
+  .mx-nights { min-height: 4rem; }
 }
 
 @media (min-width: 1020px) and (max-width: 1279px) {      /* narrower days: the totals step down so a total never reaches its neighbour */
