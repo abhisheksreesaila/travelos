@@ -77,6 +77,7 @@ class StayPart:
     photo: str            # the hotel's own photo from the source, or ""
     rating: str           # "9.4 of 10 · 1,063 reviews", or ""
     cents: int            # all its nights, the whole party, fees paid at the hotel included
+    offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
 
 
 @dataclass(frozen=True)

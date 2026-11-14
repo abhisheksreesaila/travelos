@@ -21,4 +21,26 @@ class MatrixSave:
     saved_at: str
 
 
-MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id")]
+class MatrixBooking:
+    """A stay booked through LiteAPI's sandbox from a matrix square (F-233, D-480). Personal data: the lead guest's name and email, kept only to show the confirmation
+    again; never logged, always escaped on output. One row per stay booked (a two-place square books two)."""
+    id: str                 # the client reference sent to LiteAPI (the idempotency key), so a second press finds this row
+    trip_id: str = ""       # the family trip this stay became ("" if the trip could not be made)
+    user_id: str = ""
+    booking_id: str         # LiteAPI's booking id (a sample booking: "SAMPLE-" and the reference)
+    place: str = ""
+    hotel: str
+    room: str = ""
+    checkin: str
+    checkout: str
+    total_cents: int = 0    # what LiteAPI says the stay costs, taxes included
+    due_at_stay_cents: int = 0   # of it (or on top, as the source said) paid at the hotel
+    refundable: int = 0
+    confirmation: str = ""  # the hotel's confirmation code ("test" in the sandbox)
+    guest_name: str
+    guest_email: str
+    sample: int = 0         # 1: made on the showcase's sample squares, nothing was sent to LiteAPI
+    created_at: str
+
+
+MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id"), (MatrixBooking, "matrix_bookings", "id")]
