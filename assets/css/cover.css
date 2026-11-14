@@ -78,6 +78,7 @@
 @media (hover: hover) and (pointer: fine) { .cv-band > .pa:hover { translate: 0 -0.8333rem; rotate: 0deg; } }
 
 /* the scene behind the line (D-472): the sky is the gradient, then a sun, stars (night only), clouds, three waves; the middle and front waves pass over the postcards' feet */
+.cv-scene.cv-off { visibility: hidden; }      /* cover.js: out of sight it is not drawn at all */
 .cv-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: linear-gradient(var(--sk-a), var(--sk-b) 55%, var(--sk-c)); }
 .cv-sun { position: absolute; right: 4%; top: 19rem; width: 20rem; height: 20rem; isolation: isolate; }
 .cv-sun::after { content: ""; position: absolute; inset: 27%; border-radius: 50%; background: var(--cv-sun); }
@@ -252,12 +253,12 @@
   .cv-film .cv-frame { display: block; position: sticky; top: calc(50svh - var(--fh) / 2); height: var(--fh); border-radius: 2.5rem; background: var(--card); box-shadow: var(--sh3); overflow: hidden; }
   .cv-film .cv-chs { display: block; grid-area: 1 / 1; }
   .cv-film .cv-stage { position: relative; isolation: isolate; }
-  .cv-film .cv-washes { display: grid; position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; margin-left: -50vw; z-index: -1; pointer-events: none; }      /* edge to edge, as tall as the stage; each wash sticks inside it */
-  .cv-film .cv-wash { display: block; grid-area: 1 / 1; align-self: start; position: sticky; top: 0; height: 100svh; opacity: 0;
-    transition: opacity var(--cv-swap) var(--motion-ease);
-    background: radial-gradient(70rem 50rem at 84% 34%, color-mix(in srgb, var(--wc) 22%, var(--paper)), transparent 72%), radial-gradient(60rem 44rem at 6% 86%, color-mix(in srgb, var(--wc) 12%, var(--paper)), transparent 72%),
-      color-mix(in srgb, var(--wc) 8%, var(--paper)); }
+  .cv-film .cv-washes { display: block; position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; margin-left: -50vw; z-index: -1; pointer-events: none; }      /* edge to edge, as tall as the stage */
+  .cv-film .cv-wash { position: absolute; inset: 0; opacity: 0; visibility: hidden;
+    transition: opacity var(--cv-swap) var(--motion-ease), visibility 0s linear var(--cv-swap);      /* a wash that is covered or faded out is not drawn once the change has finished: one layer at rest, not three */
+    background: color-mix(in srgb, var(--wc) 12%, var(--paper)); }      /* a flat tint: every gradient cost frames at 4x CPU, a flat layer none (D-474); it is not pinned either, a pinned layer made everything over it a layer of its own */
   .cv-film .cv-wk1, .cv-film .cv-stage:is([data-part="2"], [data-part="3"]) .cv-wk2, .cv-film .cv-stage[data-part="3"] .cv-wk3 { opacity: 1; }
+  .cv-film .cv-stage[data-part="1"] .cv-wk1, .cv-film .cv-stage[data-part="2"] .cv-wk2, .cv-film .cv-stage[data-part="3"] .cv-wk3 { visibility: visible; transition-delay: 0s; }
   .cv-film .cv-ch { min-height: 100svh; display: grid; align-content: center; }
   /* a screen that has faded out is also hidden (after its fade), so nothing under the shown one is read, pointed at or tabbed to */
   .cv-film .cv-L { position: absolute; inset: 0; border-radius: 0; box-shadow: none; opacity: 0; visibility: hidden;
@@ -270,7 +271,7 @@
     /* reduced motion keeps a plain, short fade between the screens (base.css stops every other transition) */
     .cv-film .cv-stage .cv-L { transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade) !important; }
     .cv-film .cv-live .cv-card { transform: none; }      /* the words only brighten, they do not move */
-    .cv-film .cv-wash { transition: opacity var(--motion-fade) linear !important; }
+    .cv-film .cv-wash { transition: opacity var(--motion-fade) linear, visibility 0s linear var(--motion-fade) !important; }
     .cv-film .cv-stage[data-part="1"] .cv-L1, .cv-film .cv-stage[data-part="2"] .cv-L2, .cv-film .cv-stage[data-part="3"] .cv-L3 { transition-delay: 0s !important; }
   }
 
@@ -322,7 +323,7 @@
     .cv-L1 { --nd: calc(var(--motion-spring-dur) * 6.2); } .cv-L2 { --nd: calc(var(--motion-spring-dur) * 1.4); } .cv-L { --nl: calc(var(--motion-spring-dur) * 2.4); }
     .cv-film .go .cv-nr { animation: cv-ghost var(--nl) steps(1, end) var(--nd) both; }
     .cv-film .go .cv-num::after { content: "$" counter(th) "," counter(rm, cv-3); counter-reset: th var(--ath) rm var(--arm); position: absolute; left: 0; right: 0; top: 0; text-align: right; white-space: nowrap;
-      animation: cv-count var(--nl) var(--motion-ease) var(--nd) both, cv-gone var(--nl) steps(1, end) var(--nd) both; }
+      animation: cv-count var(--nl) steps(12, end) var(--nd) both, cv-gone var(--nl) steps(1, end) var(--nd) both; }
 
     /* D-470: the find is booked: Book it appears, is pressed, turns green and says Booked, and the bar's dots move on from Compare to Book */
     .cv-film .cv-bk1 { visibility: visible; } .cv-film .cv-bk2 { opacity: 0; }
@@ -332,7 +333,6 @@
     .cv-film .go .cv-bk2 { animation: cv-in var(--motion-quick) var(--motion-ease) calc(var(--motion-spring-dur) * 10.2) both; }
     .cv-film .go.cv-L1 .cv-sn.d1 { animation: cv-dot-off var(--motion-spring-dur) var(--motion-spring) calc(var(--motion-spring-dur) * 10.2) both; }
     .cv-film .go.cv-L1 .cv-sn.d2 { animation: cv-dot-on var(--motion-spring-dur) var(--motion-spring) calc(var(--motion-spring-dur) * 10.2) both; }
-    .cv-film .go:is(.cv-L2, .cv-L3) .cv-sn.now { animation: cv-dot-on var(--motion-spring-dur) var(--motion-spring) var(--motion-spring-dur) both; }
 
     /* the found square keeps a soft ring going out from it (compositor only; it waits while another screen is on the frame) */
     .cv-film .cv-c.lit::after { content: ""; position: absolute; inset: -0.3333rem; border-radius: inherit; border: 0.1667rem solid var(--cv-hi); opacity: 0; }
@@ -343,7 +343,7 @@
        a heart, "This one" and Booked also throw confetti (cover.js only toggles .tap-a/.tap-b, so a second tap starts it again) */
     .cv-film .cv-L :is(.cv-hf, .cv-c, .cv-pill, .cv-book, .cv-bub, .cv-day) { cursor: pointer; transition: scale var(--motion-settle-dur) var(--motion-spring); }
     .cv-film .cv-L :is(.cv-hf, .cv-c, .cv-pill, .cv-book, .cv-bub, .cv-day):active { scale: 1.15; transition-duration: var(--motion-fade); }
-    @media (hover: hover) and (pointer: fine) { .cv-film .cv-L :is(.cv-hf, .cv-c, .cv-bub, .cv-day):hover { scale: 1.06; } .cv-film .cv-L :is(.cv-pill, .cv-book):hover { scale: 1.05; } }
+    .cv-film .cv-L :is(.cv-hf, .cv-c, .cv-pill, .cv-book, .cv-bub, .cv-day):active { scale: 1.15; }      /* after the hover rules: pressed beats hovered */
     .cv-film .cv-pill { position: relative; }
     .cv-film .cv-L :is(.cv-hf, .cv-pill, .cv-book)::after { content: ""; position: absolute; left: 50%; top: 50%; z-index: 2; width: 0.4167rem; height: 0.4167rem; margin: -0.2083rem 0 0 -0.2083rem; border-radius: 50%; pointer-events: none; opacity: 0;
       background: var(--k-food); box-shadow: -2rem -1.1rem 0 var(--k-tix), 2rem -1.3rem 0 var(--k-flight), -1.4rem 1.5rem 0 var(--k-stay), 1.8rem 1.3rem 0 var(--k-car), 0 -2.1rem 0 var(--k-food), -2.4rem 0.2rem 0 var(--k-flight), 2.5rem 0.1rem 0 var(--k-tix), 0 2.1rem 0 var(--k-wx); }

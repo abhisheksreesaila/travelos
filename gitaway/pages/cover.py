@@ -162,7 +162,7 @@ CLOUD = ('<svg class="cv-cloud c{n}" viewBox="0 0 150 64" aria-hidden="true" foc
          '<circle cx="108" cy="38" r="20"/><rect x="36" y="38" width="82" height="20" rx="10"/></svg>')
 WAVE = ('<svg class="cv-wave {c}" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">'
         '<path d="M0 60q75-40 150 0t150 0t150 0t150 0t150 0t150 0t150 0t150 0V120H0z"/></svg>')
-STARS = ((8, 9), (19, 22), (31, 7), (44, 17), (58, 6), (67, 24), (79, 11), (90, 20), (95, 5), (13, 38), (84, 33))     # left %, top %
+STARS = ((6, 1.2), (15, 2.2), (27, 0.8), (41, 1.8), (53, 1.1), (66, 2.2), (78, 1.3), (88, 2), (95, 0.9), (2, 14), (97, 12), (3, 30), (98, 33))     # left %, top %: in the strip above the words and in the side gutters, never behind a word
 
 
 def _scene(mood):

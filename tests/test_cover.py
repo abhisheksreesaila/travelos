@@ -355,3 +355,43 @@ def test_the_numbers_that_count_up_say_their_final_value_in_the_page(client):
     assert len(nums) == 2
     for th, rm, text in nums:
         assert text == f"${int(th)},{int(rm):03d}" and text == "$2,190"
+
+
+def test_the_looping_motion_stands_still_without_motion_allowed():
+    """D-472: every `infinite` loop in the stylesheet sits inside a prefers-reduced-motion: no-preference block (the film's own, or the opening's)."""
+    css = re.sub(r"/\*.*?\*/", "", (ROOT / "assets/css/cover.css").read_text(encoding="utf-8"), flags=re.S)
+    depth, starts, blocks = 0, [], []
+    for i, ch in enumerate(css):
+        if ch == "{":
+            starts.append(i)
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            s = starts.pop()
+            if depth == 0:
+                blocks.append(css[css.rfind("}", 0, s) + 1:i + 1])
+    assert any("infinite" in b for b in blocks)
+    for b in blocks:
+        if "infinite" in re.sub(r"@keyframes[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", b):
+            assert "prefers-reduced-motion: no-preference" in b and b.index("infinite") > b.index("prefers-reduced-motion: no-preference"), b[:100]
+
+
+def test_the_scene_has_a_day_and_a_night_the_same_for_the_system_and_the_person():
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    light = dict(re.findall(r"(--(?:sk-day-[abc]|cv-sun|cv-glow|cv-cloud|cv-sea-[12]|cv-star|cv-cell-a)):\s*([^;]+);", css[css.index(".cv-root {\n  /* D-472"):css.index("the scene's palettes, dark")]))
+    chosen = re.search(r'\.cv-root\[data-mode="dark"\] \{([^}]*)\}', css).group(1)
+    system = re.search(r'\.cv-root:not\(\[data-mode="light"\]\) \{([^}]*)\}', css[css.index("the scene's palettes, dark"):]).group(1)
+    assert chosen.strip() == system.strip()
+    dark = dict(re.findall(r"(--[\w-]+):\s*([^;]+);", chosen))
+    assert set(dark) == set(light) and all(dark[k] != light[k] for k in dark), set(dark) ^ set(light)
+
+
+def test_the_script_toggles_classes_for_taps_and_for_a_scene_out_of_sight():
+    js = (ROOT / "assets/js/cover.js").read_text(encoding="utf-8")
+    assert "tap-a" in js and "tap-b" in js and ".cv-scene" in js and "cv-off" in js and js.count("IntersectionObserver") == 3      # the parts, the scenes (the third is its comment)
+
+
+def test_the_decisions_record_the_world_class_cover():
+    decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
+    for n in range(470, 477):
+        assert re.search(rf"^- D-{n} · ", decisions, re.M), n

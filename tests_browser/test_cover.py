@@ -387,3 +387,149 @@ def test_each_screen_fits_its_frame(cover, size):
         over = page.evaluate("""n => { const f = document.querySelector('.cv-frame').getBoundingClientRect();
           return Math.max(...[...document.querySelectorAll(`.cv-L${n} *`)].filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect().bottom)) - f.bottom; }""", n)
         assert over <= 0, (size, n, over)
+
+
+# ---------- F-232: the cover, world class (docs/decisions.md D-470 on) ----------
+
+WORDS = """() => { const out = [], cv = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+  const rgb = (c) => { cv.clearRect(0, 0, 1, 1); cv.fillStyle = '#000'; cv.fillStyle = c; cv.fillRect(0, 0, 1, 1); return [...cv.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+  const take = (e, text) => { const r = e.getBoundingClientRect(), card = e.closest('.cv-card');
+    if (card && getComputedStyle(card).opacity !== '1') return;                      // the words of a part that is not on the frame are not on the screen
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    if (!hit || !(e === hit || e.contains(hit))) return;                              // words under the pinned frame are not on the screen either
+    if (r.width && r.height && r.top >= 0 && r.bottom <= innerHeight) out.push([text, r.left, r.top, r.width, r.height, rgb(getComputedStyle(e).color)]); };
+  document.querySelectorAll('.cv-hero h1 .cv-hw, .cv-hero .cv-lede, .cv-nav a').forEach((e) => take(e, e.textContent.trim()));
+  document.querySelectorAll('.cv-ch .cv-card :is(h2, .cv-say, .cv-note, .cv-n)').forEach((e) => take(e, e.textContent.trim().slice(0, 24)));
+  document.querySelectorAll('.cv-close h2, .cv-close h2 em').forEach((e) => take(e, e.textContent.trim().slice(0, 24)));
+  return out; }"""
+HIDE = "* { color: transparent !important; text-decoration-color: transparent !important; } .cv-hl, .cv-n, .cv-st { background: none !important; }"
+
+
+def _lum(rgb):
+    lin = [(v / 255 / 12.92) if v / 255 <= 0.03928 else ((v / 255 + 0.055) / 1.055) ** 2.4 for v in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def _worst_ratio(shot, box, ink):
+    """The lowest contrast between the text colour and any pixel painted where the text sits (the page drawn without its text)."""
+    from PIL import Image
+    import io
+    im = Image.open(io.BytesIO(shot)).convert("RGB")
+    _, x, y, w, h, _ = box
+    crop = im.crop((int(x), int(y), int(x + w) + 1, int(y + h) + 1))
+    worst = 99.0
+    for px in set(getattr(crop, 'get_flattened_data', crop.getdata)()):
+        a, b = _lum(ink), _lum(px)
+        worst = min(worst, (max(a, b) + 0.05) / (min(a, b) + 0.05))
+    return worst
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_every_word_on_the_sky_the_washes_and_the_dusk_reads_at_4_5_to_1(cover, size, scheme):
+    """D-472, D-474: the audit skips text over a gradient, so this one reads what is painted under each word (the page drawn with its text hidden):
+    the opening's sky, clouds and sun, each part's wash and the close's dusk. Reduced motion, so the scene stands still."""
+    page = cover(SIZES[size], scheme, motion="reduce", init="try { localStorage.setItem('ga-mode', '%s'); } catch (e) {}" % scheme if scheme == "dark" else None)
+    low = []
+
+    def sweep(where):
+        words = page.evaluate(WORDS)
+        page.add_style_tag(content=HIDE)
+        shot = page.screenshot()
+        page.evaluate("document.querySelector('style:last-of-type') && [...document.querySelectorAll('style')].pop().remove()")
+        for w in words:
+            ratio = _worst_ratio(shot, w, w[5])
+            if ratio < 4.5:
+                low.append((where, w[0], round(ratio, 2)))
+        return len(words)
+
+    assert sweep("opening") >= 8
+    for n in (1, 2, 3):
+        _show(page, n)
+        page.wait_for_timeout(500)
+        assert sweep(f"part {n}") >= 3
+    page.evaluate("document.querySelector('.cv-close').scrollIntoView()")
+    page.wait_for_timeout(300)
+    assert sweep("close") >= 2
+    assert not low, low
+
+
+GREEN = "rgb(21, 128, 61)"       # tokens.css --k-car: the booked pill
+
+
+def test_the_find_is_booked_in_the_sandbox_and_the_dots_move_on(cover):
+    """D-470: after the find lights up, Book it appears, is pressed, turns green and says Booked; the bar's dots go from Compare to Book."""
+    page = cover(DESKTOP)
+    _show(page, 1)
+    page.wait_for_timeout(1200)
+    assert page.evaluate("[getComputedStyle(document.querySelector('.cv-bk1')).opacity, getComputedStyle(document.querySelector('.cv-bk2')).opacity]") == ["1", "0"]
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-L1 .cv-sn.d1')).width") == "21px"            # Compare is still the long dot
+    page.wait_for_timeout(5200)
+    assert page.evaluate("[getComputedStyle(document.querySelector('.cv-bk1')).opacity, getComputedStyle(document.querySelector('.cv-bk2')).opacity]") == ["0", "1"]
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-book')).backgroundColor") == GREEN
+    assert page.evaluate("[...document.querySelectorAll('.cv-L1 .cv-sn')].map((d) => getComputedStyle(d).width)") == ["9px", "21px", "9px", "9px"]      # Book is the long one now
+
+
+def test_the_totals_count_up_and_end_on_the_real_text(cover):
+    """D-471: the family's total counts up from $0 in a pseudo-element while the page's own text waits; at the end the count is gone and the text is back."""
+    page = cover(DESKTOP)
+    _show(page, 2)
+    page.wait_for_timeout(1100)                                                             # a second in: counting (delay 1.4 spring lengths, then 2.4 of them)
+    mid = page.evaluate("(() => { const n = document.querySelector('.cv-L2 .cv-num'); return [getComputedStyle(n, '::after').content, getComputedStyle(n.firstChild).color]; })()")
+    assert mid[0] not in ('"$2,190"', "none", "normal") and mid[0].startswith('"$') and mid[1] == "rgba(0, 0, 0, 0)", mid
+    page.wait_for_timeout(2400)
+    done = page.evaluate("(() => { const n = document.querySelector('.cv-L2 .cv-num'); return [getComputedStyle(n, '::after').opacity, getComputedStyle(n.firstChild).color, n.textContent]; })()")
+    assert done == ["0", "rgb(11, 11, 13)", "$2,190"], done
+
+
+def test_a_tap_throws_confetti_and_a_second_tap_throws_it_again(cover):
+    """D-475: a heart, "This one" and Booked answer a tap; two class names for one animation so the second tap restarts it. Pressing swells them (scale)."""
+    page = cover(DESKTOP)
+    _show(page, 2)
+    page.wait_for_timeout(2600)
+    heart = page.locator(".cv-L2 .cv-hf").first
+    names = []
+    for _ in range(2):
+        heart.dispatch_event("pointerdown")
+        names.append(page.evaluate("getComputedStyle(document.querySelector('.cv-L2 .cv-hf'), '::after').animationName"))
+    assert names == ["cv-burst-a", "cv-burst-b"], names
+    box = heart.bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+    page.wait_for_timeout(300)
+    assert float(page.evaluate("getComputedStyle(document.querySelector('.cv-L2 .cv-hf')).scale")) > 1.1
+    page.mouse.up()
+
+
+def test_each_part_washes_the_stage_in_its_colour_and_never_past_it(cover):
+    """D-474: wash 1 is always under; 2 and 3 fade in over it as their part shows; the washes live inside the stage (not over the footer)."""
+    page = cover(DESKTOP)
+    op = "[...document.querySelectorAll('.cv-wash')].map((w) => getComputedStyle(w).opacity)"
+    for n, want in ((1, ["1", "0", "0"]), (2, ["1", "1", "0"]), (3, ["1", "1", "1"]), (2, ["1", "1", "0"]), (1, ["1", "0", "0"])):
+        _show(page, n)
+        page.wait_for_timeout(1300)
+        assert page.evaluate(op) == want, n
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_timeout(300)
+    inside = page.evaluate("""() => { const st = document.querySelector('.cv-stage').getBoundingClientRect();
+      return [...document.querySelectorAll('.cv-wash')].map((w) => w.getBoundingClientRect().bottom <= st.bottom + 1); }""")
+    assert inside == [True, True, True]
+    foot = page.evaluate("(() => { const f = document.querySelector('.cv-foot > p').getBoundingClientRect(); return document.elementFromPoint(f.left + 20, f.top + f.height / 2).closest('footer') !== null; })()")
+    assert foot
+
+
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_the_scene_moves_with_motion_allowed_and_stands_still_without(cover, size):
+    """D-472: clouds, sea, sun and stars are CSS loops; reduced motion has none of them (nor the opening's arrivals); out of sight they pause."""
+    still = cover(SIZES[size], motion="reduce")
+    assert still.evaluate("document.getAnimations().length") == 0
+    page = cover(SIZES[size])
+    page.wait_for_timeout(300)
+    assert page.evaluate("document.querySelector('.cv-hero .cv-cloud.c1').getAnimations().map((a) => a.animationName)") == ["cv-drift"]
+    assert page.evaluate("[...document.querySelectorAll('.cv-hero .cv-wave')].map((w) => getComputedStyle(w).animationName)") == ["cv-roll"] * 3
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-hero .cv-cloud.c1')).animationPlayState") == "running"
+    page.evaluate("window.scrollTo(0, document.querySelector('.cv-stage').getBoundingClientRect().top + scrollY + 200)")
+    page.wait_for_function("document.querySelector('.cv-hero .cv-scene').classList.contains('cv-off')")
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-hero .cv-cloud.c1')).animationPlayState") == "paused"
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function("!document.querySelector('.cv-hero .cv-scene').classList.contains('cv-off')")
