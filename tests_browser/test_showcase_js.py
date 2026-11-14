@@ -51,14 +51,19 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
 
 
 @SIZES
-def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewport, base_url):
-    """F-231: a signed-in person has no landing. Off the showcase without a LiteAPI key there is no matrix, so / opens the import of a trip already booked."""
+def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewport, base_url, monkeypatch):
+    """F-231: a signed-in person has no landing. With a LiteAPI key / opens the trip matrix; off the showcase without one there is no matrix, so it opens the import of a trip already booked."""
     page = visit("/", viewport)
-    page.context.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
-    page.goto(f"{base_url}/")
-    page.wait_for_url("**/trips/import")
-    assert no_sideways_scroll(page)
-    assert page.locator("#cal, .feature, .search, .forkline").count() == 0
+    page.context.request.post(f"{base_url}/signin", form={"email": "front.door@example.com", "next": "/", "intent": "save"}, max_redirects=0)      # a family with no trip
+    for key, want in ((None, "**/trips/import"), ("a-key", "**/plan/matrix")):
+        if key:
+            monkeypatch.setenv("LITEAPI_KEY", key)
+        else:
+            monkeypatch.delenv("LITEAPI_KEY", raising=False)
+        page.goto(f"{base_url}/")
+        page.wait_for_url(want)
+        assert no_sideways_scroll(page)
+        assert page.locator("#cal, .feature, .search, .forkline").count() == 0
 
 
 @SIZES

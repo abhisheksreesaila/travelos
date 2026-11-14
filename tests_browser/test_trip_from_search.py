@@ -50,6 +50,8 @@ def test_the_booking_lanes_form_takes_any_place_and_makes_it_a_trip_too(browser,
     page = ctx.new_page()
     page.goto(f"{base_url}/plan")
     page.locator("#ps-trip input[name=place]").fill("Lake Tahoe")
+    for name, day in (("d", "2027-03-05"), ("r", "2027-03-09")):      # the date pickers dress these native fields; the form needs both
+        page.locator(f"#ps-trip input[name={name}]").evaluate("(e, v) => { e.value = v; }", day)
     tap(page.locator("#ps-trip button[type=submit]"), viewport)
     page.wait_for_url(re.compile(r"/plan\?place=Lake"))
     make = page.locator("#ps-make button")
