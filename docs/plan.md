@@ -1506,12 +1506,13 @@ Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design
 - [x] the For creators page (Golden hour) and Community trips (Postcards) rebuilt from the compare page's option A
 - [ ] re-record the demo's AI answer with a real key (it is hand-written today: tests/fixtures/creator_import/lisbon-48-hours/README.md)
 
-## F-236 The matrix looks like the design: big numbers, the nights band, every day's sky [todo]
+## F-236 The matrix looks like the design: big numbers, the nights band, every day's sky [done]
 Founder, 2026-11-14, looking at /plan/matrix: "I like the colours and the content; the numbers look small, the matrix looks a little less enticing, it didn't match the artifact." Design: docs/design/trip-matrix/matrix-c.html (laptop C, calendar lanes, picked 2026-11-12) and docs/design/trip-matrix.md.
-- [ ] laptop: each place a lane of days, every day wearing its sky (icon, high, rain chance); the totals under each start day large and bold (the design's size), the asked start day in ink, the cheapest per lane an ink pill, the find yellow; the chosen nights a ringed band that holds those days, labelled "4 nights · $2,080", never wider than the grid
-- [ ] the opened square as the design's trip bar (art, the find line, who likes it, the flight/stay/drive/weather chips, the total huge, Book) or A's panel kept, whichever the design file shows for the laptop; the phone keeps B's place cards
-- [ ] no "No sample" lanes on the showcase: every nearby place the matrix shows has sample offers (Orange County too), or the lane is not shown
-- [ ] side by side screenshots of the design and the build at 1440 and 390 in docs/report/f236-*.png; tests_browser/test_tripmatrix.py and the F-233 booking sheet still pass
+- [x] laptop: each place a lane of days, every day wearing its sky (icon, high, rain chance); the totals under each start day large and bold (the design's size), the asked start day in ink, the cheapest per lane an ink pill, the find yellow; the chosen nights a ringed band that holds those days, labelled "4 nights · $2,080", never wider than the grid
+- [x] the opened square as the design's trip bar (art, the find line, who likes it, the flight/stay/drive/weather chips, the total huge, Book) or A's panel kept, whichever the design file shows for the laptop; the phone keeps B's place cards
+- [x] no "No sample" lanes on the showcase: every nearby place the matrix shows has sample offers (Orange County too), or the lane is not shown
+- [x] side by side screenshots of the design and the build at 1440 and 390 in docs/report/f236-*.png; tests_browser/test_tripmatrix.py and the F-233 booking sheet still pass
+- Decisions D-520 to D-524. Not in the bar because there is no source: faces of who likes it (hearts, F-224) and door-to-door time.
 
 ## F-237 Change the nights right on the matrix [todo]
 Founder, 2026-11-14: "can you make 4 nights like a slider so that we can change nights right there?" Needs: F-236

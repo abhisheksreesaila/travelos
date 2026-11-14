@@ -30,6 +30,11 @@ def squares(html):
     return found
 
 
+def lane_html(html, key):
+    """What one laptop lane draws: from its opening tag to the next lane's."""
+    return html.split(f'data-lane="{key}" class="mx-lane', 1)[1].split('data-lane="', 1)[0]
+
+
 def data(html):
     return json.loads(re.search(r'<script type="application/json" id="mx-data">(.*?)</script>', html, re.S).group(1))
 
@@ -60,12 +65,13 @@ def test_on_the_showcase_every_square_is_drawn_at_once_with_the_samples_marks(sa
         sq = known[k]
         assert inner == (tm.dollars(sq.cents) if sq.ok else tm.SHORT[sq.status])
         assert {c[3:] for c in cls if c in ("is-low", "is-find", "is-over")} == set(marks.get(k, ()))
-    assert drawn["orangecounty|2026-12-12"][1] == "No sample"                         # a place the catalog lacks says so, in words
+    assert drawn["orangecounty|2026-12-12"][1] == tm.dollars(known["orangecounty|2026-12-12"].cents) and known["orangecounty|2026-12-12"].ok      # F-236: sampled, never "No sample"
+    assert not any(inner == "No sample" for _, inner in drawn.values())
     assert "Sample prices" in html and page.SAMPLE_FINE in html
     assert 'id="mx-count-n">25</span>' in html and data(html)["known"]["sandiego|2026-12-12"]["c"] == known["sandiego|2026-12-12"].cents
     found = tm.find(page.lanes_of(s), page.windows_of(s), page.totals_of(known))
     if found:
-        assert unescape(re.search(r'id="mx-find-w">([^<]+)<', html).group(1)) == found.words
+        assert unescape(re.search(r'id="mx-find-w"[^>]*>([^<]+)<', html).group(1)) == found.words
 
 
 def test_the_sentence_says_or_nearby_and_give_or_take_and_its_menus_are_links(sample, client):
@@ -172,16 +178,27 @@ def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sam
     assert j["saved"].startswith("Saved to your trip")
 
 
-def test_each_place_wears_its_art_and_each_square_its_start_days_weather_under_the_total(sample, client):
-    """F-230: the total is the square's big number; that start day's weather is one small line under it (a sky and degrees), typical still marked."""
+def test_each_place_wears_its_art_each_lane_day_its_sky_and_each_card_square_its_start_days_weather_under_the_total(sample, client):
+    """F-236: on the laptop every day of every lane wears its sky (icon, high, the chance of a wet day for a typical day; the total sits alone in its pill); on the phone
+    (F-230) the card's square keeps one small sky line under its total. Typical weather is marked, never a forecast."""
     from gitaway import placeart
     from gitaway.pages.skystrip import weather_for
     html = client.get(MATRIX).text
     assert html.count(placeart.art("sandiego")[:60]) >= 2                                     # the lane's thumb and the phone's card
     assert 'class="mx-art-i is-plain"' not in html.split('data-lane="sandiego"')[1].split("data-lane=")[0]
-    assert 'class="mx-sky ' not in html and "mx-c-sky" not in html                             # no weather row above the prices, no separate sky line on a card
-    tw = {p: weather_for(p, date(2026, 12, 10), date(2026, 12, 18)) for p in ("San Diego", "Los Angeles", "Orange County")}
-    for attrs, body in re.findall(r'<a ([^>]*data-sq="[^"]+"[^>]*)>(.*?)</a>', html, re.S):
+    assert 'class="mx-sky ' not in html and "mx-c-sky" not in html                             # no weather row above the prices
+    lanes_html, cards_html = html.split('class="mx-cards"', 1)
+    tw = {p: weather_for(p, date(2026, 12, 8), date(2026, 12, 20)) for p in ("San Diego", "Los Angeles", "Orange County")}
+    assert "mx-sqw" not in lanes_html.split('class="mx-lanes"', 1)[1]                         # the lane's pill holds the total alone
+    for lane_key, place in (("sandiego", "San Diego"), ("losangeles", "Los Angeles"), ("orangecounty", "Orange County")):
+        lane = lane_html(lanes_html, lane_key)
+        cells = dict(re.findall(r'data-day="(2026-12-\d\d)"[^>]*>(.*?)</div>', lane, re.S))
+        assert sorted(cells) == [f"2026-12-{d:02d}" for d in range(8, 21)], lane_key        # two days either side of Dec 10 to 18, every one drawn
+        for day in (d for d in tw[place].days if d):
+            text = " ".join(re.sub(r"<[^>]+>", "", cells[day.date.isoformat()]).split())
+            assert text == f"{day.high_f}° {day.wet_pct}%", (lane_key, day.date, text)        # December is far: typical (the chance of a wet day shown), never a forecast
+            assert f'class="mx-day is-typ' in lane and "is-fc" not in lane
+    for attrs, body in re.findall(r'<a ([^>]*data-sq="[^"]+"[^>]*)>(.*?)</a>', cards_html, re.S):
         k = re.search(r'data-sq="([^"]+)"', attrs).group(1)
         lane, start = k.split("|")
         first = {"sandiego": "San Diego", "losangeles": "Los Angeles", "orangecounty": "Orange County"}[lane.split("+")[0]]
@@ -191,9 +208,33 @@ def test_each_place_wears_its_art_and_each_square_its_start_days_weather_under_t
             assert wx is None and "mx-sqw" not in body, k
             continue
         assert wx, k
-        assert wx.group(1) == "is-typ" and f"{day.high_f}°" in re.sub(r"<[^>]+>", "", wx.group(2))     # December is far: typical, marked, never a forecast
+        assert wx.group(1) == "is-typ" and f"{day.high_f}°" in re.sub(r"<[^>]+>", "", wx.group(2))
         assert body.index('class="mx-in"') < body.index('class="mx-sqw')                         # the number first, the weather under it
     assert "not a forecast" in unescape(html)                                                 # the normals' line, said under the calendar and the cards
+
+
+def test_the_laptop_band_rings_the_nights_of_the_cheapest_start_the_find_lane_at_the_find(sample, client):
+    """F-236: each lane's band sits on its cheapest start (the find's lane on the find), spans its nights' days (nights + 1 cells), says its words on its edge and the
+    square under its start is the ink pill; the lane's name block says that total large."""
+    html = client.get(MATRIX).text
+    s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    lanes, windows = page.lanes_of(s), page.windows_of(s)
+    known = page.peek_all(s, lanes, windows)
+    found = tm.find(lanes, windows, page.totals_of(known))
+    days = page.days_of(windows)
+    assert days[0].isoformat() == "2026-12-08" and days[-1].isoformat() == "2026-12-20"
+    for x in lanes:
+        w = page.band_window(x, windows, known, found)
+        lane = lane_html(html, x.key)
+        col = days.index(w.depart) + 2
+        band = re.search(r'<div [^>]*data-band="[^"]+"[^>]*>', lane).group(0)
+        assert f"grid-column: {col} / span 5" in band and col + 4 <= len(days) + 1            # never past the last day of the grid
+        sq = known[tm.key(x.key, w.key)]
+        want = f"Found · {page.vs_words(found.diff_cents, 'San Diego', x.combo)}" if found and found.key == sq.key else f"4 nights · {tm.dollars(sq.cents)}"
+        assert unescape(re.search(r'data-l="([^"]+)"', band).group(1)) == want
+        assert f'data-lane-total="{x.key}">{tm.dollars(sq.cents)}<' in lane.replace('class="mx-l-best" ', "").replace(' class="mx-l-best"', "")
+        ons = re.findall(r'<a [^>]*class="[^"]*\bis-on\b[^"]*"[^>]*data-sq="([^"]+)"|<a [^>]*data-sq="([^"]+)"[^>]*class="[^"]*\bis-on\b', lane)
+        assert [a or b for a, b in ons] == [tm.key(x.key, w.key)], x.key
 
 
 def test_the_phone_cards_carry_the_weathers_credit_since_they_say_a_sky(sample, client):
@@ -238,3 +279,11 @@ def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_
 def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):
     html = unescape(client.get("/plan/matrix").text)
     assert "Say where you fly from" in html and "data-sq" not in html and real.asked == []
+
+
+def test_on_the_showcase_a_nearby_place_without_a_sample_is_not_a_lane(sample):
+    """F-236: San Francisco's nearby places (Napa, Monterey) have no sample: their rows would say "No sample" in every square, so they are not drawn; the asked place stays."""
+    s = page.state("San Francisco", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    assert [x.key for x in page.lanes_of(s)] == ["sanfrancisco"]
+    sd = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    assert [x.key for x in page.lanes_of(sd)] == ["sandiego", "losangeles", "orangecounty", "losangeles+sandiego", "orangecounty+sandiego"]

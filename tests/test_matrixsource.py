@@ -49,10 +49,22 @@ def test_the_sample_moves_with_the_day_so_the_showcase_shows_a_cheapest_start(sa
     assert len(set(totals.values())) > 1
 
 
-def test_on_the_showcase_a_place_the_catalog_lacks_has_no_sample_and_two_places_split_the_nights(sample):
-    assert square("orangecounty").status == tm.NO_SAMPLE and square("orangecounty").cents is None
+def test_on_the_showcase_two_places_split_the_nights_and_every_nearby_place_has_a_sample(sample):
     both = square("losangeles+sandiego")
     assert both.ok and [(s.place, s.nights) for s in both.stays] == [("Los Angeles", 2), ("San Diego", 2)]
+    oc = square("orangecounty")      # F-236: Orange County is sampled too, never "No sample"
+    assert oc.ok and oc.sample and oc.flight.airline == "Pacific Hop 52" and "SFO 7:55 AM → SNA 9:20 AM" in oc.flight.out and oc.drive == 25
+    assert [(s.place, s.name) for s in oc.stays] == [("Orange County", "Newport Bay Lodge")]
+    both = square("orangecounty+sandiego")
+    assert both.ok and [(s.place, s.nights) for s in both.stays] == [("Orange County", 2), ("San Diego", 2)] and "SAN" in both.flight.back and "SNA" in both.flight.out
+    assert both.cents == both.flight.cents + sum(s.cents for s in both.stays)
+
+
+def test_a_place_the_sample_cannot_price_has_no_sample(sample):
+    napa = places.resolve("Napa")
+    assert not gridsource.has_sample(napa) and gridsource.has_sample(places.resolve("Orange County")) and gridsource.has_sample(SD)
+    lane = tm.lanes(napa, nearby=False)[0]
+    assert gridsource.square(lane, W, home="SFO", **PARTY).status == tm.NO_SAMPLE
 
 
 def test_off_the_showcase_a_square_is_liteapis_cheapest_flight_and_a_well_rated_stay(real):
