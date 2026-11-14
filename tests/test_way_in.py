@@ -231,3 +231,25 @@ def test_the_pages_stylesheets_still_load_tokens_then_base_then_page(client):
     h = client.get("/trips/sun-tacos-and-tide-pools").text
     idx = [h.index(f"/assets/css/{n}") for n in ("tokens.css", "base.css", "itinerary.css")]
     assert idx == sorted(idx)
+
+
+# ---- "has a trip" and "has a booking" are the same family (review of F-231) -------------------------------------------------
+
+def test_a_family_whose_trip_a_matrix_save_made_lands_on_its_cockpit_with_a_booking(client, monkeypatch):
+    from gitaway import session as ses
+    from tests.test_signin import person
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    sign_in(client, "ari")
+    assert where(client.get("/", follow_redirects=False)) == "/plan/matrix"
+    form = {"to": "San Diego", "home": "SFO", "d": "2026-12-12", "r": "2026-12-16", "a": "2", "k": "7,10", "x": "2", "lane": "losangeles+sandiego", "w": "2026-12-12"}
+    assert client.post("/plan/matrix/save", data=form, follow_redirects=False).status_code == 303
+    assert ses.trips(person("ari")) and ses.booking(person("ari"))      # a trip without a booking cannot be made this way
+    assert where(client.get("/", follow_redirects=False)) == "/trip/cockpit" and client.get("/trip/cockpit").status_code == 200
+
+
+def test_a_trip_made_from_a_search_has_a_booking_so_the_cockpit_opens(client):
+    from gitaway import session as ses
+    from tests.test_signin import person
+    sign_in(client, "ari")
+    client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-05", "r": "2027-03-09", "a": "2"}, follow_redirects=False)
+    assert ses.booking(person("ari")) and client.get("/trip/cockpit").status_code == 200
