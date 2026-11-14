@@ -19,6 +19,8 @@ import time
 from dataclasses import dataclass
 from datetime import date
 
+from sqlalchemy.exc import IntegrityError
+
 from gitaway import familydb, liteapi
 
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
@@ -237,8 +239,11 @@ def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_i
             if not got.ok:
                 return Result(got.status, tuple(done), len(prep.rows) - len(done))
             booking = got.items[0]
-        with familydb.transaction(db):
-            _save(db, ref, trip_id, user_id, row, booking, prep.sample)
+        try:
+            with familydb.transaction(db):
+                _save(db, ref, trip_id, user_id, row, booking, prep.sample)
+        except IntegrityError:      # a second press of the same square stored this stay first: its row is the booking
+            pass
         done.append(_stored(familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)[0]))
     return Result(liteapi.OK, tuple(done), 0)
 

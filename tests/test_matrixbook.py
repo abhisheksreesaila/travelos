@@ -230,3 +230,41 @@ def test_nothing_the_guest_typed_reaches_a_log(sandbox, family, caplog):
     with caplog.at_level(logging.DEBUG):
         mb.book(mb.prepare((PART,), DAYS, fam), GUEST, db, fam, "trip-1", "u1")
     assert "test.traveler" not in " ".join(r.getMessage() for r in caplog.records)
+
+
+def test_two_presses_at_once_book_one_stay_and_both_see_it(sandbox, client):
+    """Both pass the "no row yet" check before either saves: the second's insert conflicts and it reads the first's row instead of failing."""
+    import threading
+    import time as clock
+    sign_in(client)
+    who = person()
+    fam = who["tenant_id"]
+    prep = mb.prepare((PART,), DAYS, fam, sample=True)
+    real_rows = familydb.rows
+
+    def slow_rows(db, sql, **params):
+        got = real_rows(db, sql, **params)
+        if sql.startswith("SELECT * FROM matrix_bookings WHERE id"):
+            clock.sleep(0.4)      # the window between the check and the save, held open
+        return got
+    familydb.rows = slow_rows
+    results, errors = [], []
+
+    def press():
+        try:
+            with ses.family(who) as f:
+                results.append(mb.book(prep, GUEST, f.db, fam, "trip-1", "u1"))
+        except Exception as e:      # noqa: BLE001 (the test reports it)
+            errors.append(repr(e))
+    try:
+        threads = [threading.Thread(target=press) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(20)
+    finally:
+        familydb.rows = real_rows
+    assert errors == [] and len(results) == 2 and all(r.ok for r in results)
+    assert results[0].done == results[1].done and len(results[0].done) == 1
+    with ses.family(who) as f:
+        assert real_rows(f.db, "SELECT COUNT(*) AS n FROM matrix_bookings")[0]["n"] == 1
