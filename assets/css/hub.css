@@ -33,13 +33,13 @@
 /* ---------- the sky ---------- */
 .hub-hero { position: relative; padding-block: 1.5rem 5.5rem; overflow: hidden; background: linear-gradient(180deg, var(--hub-sky-1) 0%, var(--hub-sky-2) 55%, var(--hub-sand) 100%); }
 .hub-hero-in { position: relative; }
-.hub-sun { position: absolute; right: 8%; top: 1.5rem; width: 4.5rem; height: 4.5rem; border-radius: 50%; background: radial-gradient(circle, var(--hub-sun-a), var(--hub-sun-b)); box-shadow: 0 0 3.5rem var(--hub-sun-a); }
+.hub-sun { position: absolute; right: 1rem; top: 0.75rem; width: 3rem; height: 3rem; border-radius: 50%; background: radial-gradient(circle, var(--hub-sun-a), var(--hub-sun-b)); box-shadow: 0 0 3.5rem var(--hub-sun-a); }
 .hub-cloud { position: absolute; height: 2rem; width: 7rem; border-radius: var(--r-pill); background: var(--hub-cloud); opacity: 0.92; animation: hub-drift calc(var(--motion-dur) * 160) linear infinite alternate; }
 .hub-cloud::before, .hub-cloud::after { content: ""; position: absolute; border-radius: 50%; background: var(--hub-cloud); }
 .hub-cloud::before { width: 3rem; height: 3rem; left: 1.25rem; top: -1.5rem; }
 .hub-cloud::after { width: 2.25rem; height: 2.25rem; left: 4rem; top: -0.875rem; }
-.hub-cloud-1 { top: 5.5rem; left: 4%; }
-.hub-cloud-2 { top: 9rem; right: 14%; width: 5.5rem; animation-duration: calc(var(--motion-dur) * 220); }
+.hub-cloud-1 { display: none; }
+.hub-cloud-2 { bottom: 1.25rem; right: 8%; width: 5.5rem; animation-duration: calc(var(--motion-dur) * 220); }
 @keyframes hub-drift { from { translate: -2rem 0; } to { translate: 4rem 0; } }
 .hub-head { position: relative; display: grid; gap: 1.25rem; justify-items: start; padding-top: 0.5rem; }
 .hub-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--hub-card); color: var(--hub-ink); font-weight: 700; font-size: max(var(--text-min), 0.875rem); }
@@ -120,6 +120,7 @@
 @media (prefers-reduced-motion: reduce) { .hub *, .hub-share { animation: none !important; transition: none !important; } .hub-card:hover { translate: none; } }
 
 @media (min-width: 40rem) { .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; } }
+@media (min-width: 40rem) { .hub-cloud-1 { display: block; top: 5.5rem; left: 4%; } .hub-cloud-2 { bottom: auto; top: 9rem; right: 14%; } .hub-sun { right: 8%; top: 1.5rem; width: 4.5rem; height: 4.5rem; } }
 @media (min-width: 64rem) {
   .hub-hero { padding-block: 2.5rem 7rem; }
   .hub-sun { width: 6.5rem; height: 6.5rem; top: 2rem; }
