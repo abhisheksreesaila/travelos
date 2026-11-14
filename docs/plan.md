@@ -1524,11 +1524,11 @@ Founder, 2026-11-14: "can you make 4 nights like a slider so that we can change 
 
 # The booking journey, one step at a time (founder, 2026-11-14: cover done → the matrix → the opened square → book; then plan)
 
-## F-238 The matrix, more minimal: nights is a word, no dead text at the bottom [todo]
+## F-238 The matrix, more minimal: nights is a word, no dead text at the bottom [done]
 Founder, 2026-11-14: "the slider should be part of the sentence: they click 3 nights and a drop-down shows a slider … apply minimalistic features … there are privacy terms at the bottom and lines of text people are not going to see: what is the purpose of wasting that real estate?"
-- [ ] "4 nights" is a word of the sentence like the others; tapping it opens a small popover with the slider (2 to 7), the same behaviour as F-237 (estimates while sliding, real prices on release); no inline slider on the laptop or the phone
-- [ ] the bottom of the matrix is clean: the legend, the weather notes and the sample/booking fine print fold into one quiet "ⓘ About these prices" that opens on tap (the credits weather.notes requires stay, one tap away); the site footer is not drawn on the matrix
-- [ ] a minimal pass: remove what does not earn its place (repeated labels, counts, badges), keeping 4.5:1 and every honest label (sample, typical, estimate)
+- [x] "4 nights" is a word of the sentence like the others; tapping it opens a small popover with the slider (2 to 7), the same behaviour as F-237 (estimates while sliding, real prices on release); no inline slider on the laptop or the phone
+- [x] the bottom of the matrix is clean: the legend, the weather notes and the sample/booking fine print fold into one quiet "ⓘ About these prices" that opens on tap (the credits weather.notes requires stay, one tap away); the site footer is not drawn on the matrix
+- [x] a minimal pass: remove what does not earn its place (repeated labels, counts, badges), keeping 4.5:1 and every honest label (sample, typical, estimate)
 
 ## F-239 Design: the opened square and the checkout [todo]
 Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on the flight I've chosen, I see the weather for those four days … in the same view … a really fun way of doing it; then we book it (assume LiteAPI gives everything)". The current "Book the stays" sheet reads as an old theme.
