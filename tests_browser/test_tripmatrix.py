@@ -180,7 +180,7 @@ def test_the_laptop_is_liquid_here_the_one_named_exception(matrix):
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("San Diego · Dec 13 to 17")
     opened = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').slice(-1)[0]")
     assert opened and not opened.get("calm")
-    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("style", re.compile(r"grid-column: 5 / span 5"))
+    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("style", re.compile(r"grid-column: 7 / span 5"))
     page.goto(page.url.split("/plan/")[0] + "/plan")
     assert page.evaluate("!document.documentElement.hasAttribute('data-liquid')")             # everywhere else the laptop stays calm
 
@@ -241,19 +241,56 @@ def test_the_side_starts_on_the_find_once_it_is_known(matrix):
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
 
 
-def test_each_square_says_its_total_large_and_its_days_weather_small_under_it(matrix):
-    """F-230: the number first; the start day's sky and degrees one small line under it; no weather row above the prices."""
-    for viewport in (DESKTOP, PHONE):
-        page = matrix(viewport)
-        assert page.locator(".mx-sky").count() == 0
-        got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.offsetParent && e.querySelector('.mx-sqw')).map(e => {
-            const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
-            return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), v.bottom <= w.top + 1,
-                    w.right <= e.getBoundingClientRect().right + 1];
-        })""")
-        assert got, viewport
-        for big, small, under, fits in got:
-            assert big > small and under and fits, (viewport["width"], big, small, under, fits)
+def test_the_phone_square_says_its_total_large_and_its_days_weather_small_under_it(matrix):
+    """F-230: the number first; the start day's sky and degrees one small line under it; no weather row above the prices (the phone's cards)."""
+    page = matrix(PHONE)
+    assert page.locator(".mx-sky").count() == 0
+    got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.offsetParent && e.querySelector('.mx-sqw')).map(e => {
+        const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
+        return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), v.bottom <= w.top + 1,
+                w.right <= e.getBoundingClientRect().right + 1];
+    })""")
+    assert got
+    for big, small, under, fits in got:
+        assert big > small and under and fits and big >= 20, (big, small, under, fits)      # a start total is at least 20px on a phone
+
+
+def test_the_laptop_lane_days_wear_their_sky_and_the_totals_are_big_and_ringed_in_a_band_inside_the_grid(matrix):
+    """F-236 (docs/design/trip-matrix/matrix-c.html): every day of a lane wears its sky (icon, high, chance of a wet day), the start totals sit under their days in pills
+    at least 1.4 times the sky's size, the asked day's head is ink, the nights are a band that holds its five days and never passes the grid's edge."""
+    page = matrix(DESKTOP)
+    lane = page.locator(".mx-lane[data-lane='sandiego']")
+    assert lane.locator(".mx-day").count() == 13 and lane.locator(".mx-day.is-typ .mx-day-i").count() == 13
+    assert " ".join(lane.locator(".mx-day").nth(4).inner_text().split()) == "66° 19%"      # Dec 12, San Diego: NOAA's typical high and chance of a wet day
+    expect(page.locator(".mx-ad.is-ask")).to_have_text(re.compile(r"SAT\s*12", re.I))
+    sizes = page.evaluate("""() => { const q = s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
+        return [q('.mx-lane .mx-sq .mx-v'), q('.mx-lane .mx-day-t'), q('.mx-l-best'), q('#mx-side .mx-p-n')]; }""")
+    assert sizes[0] >= 16 and sizes[0] >= 1.4 * sizes[1] and sizes[2] >= 20 and sizes[3] >= 36, sizes
+    fit = page.evaluate("""() => { const grid = document.querySelector('.mx-lanes').getBoundingClientRect();
+        return [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), lane = b.closest('.mx-lane');
+          const inside = [...lane.querySelectorAll('.mx-day.is-in')].map(d => d.getBoundingClientRect());
+          return [r.left >= grid.left - 1 && r.right <= grid.right + 1, inside.length, inside.every(d => d.left >= r.left - 1 && d.right <= r.right + 1)]; }); }""")
+    assert len(fit) == 5 and all(ok and n == 5 and holds for ok, n, holds in fit), fit
+    on = page.evaluate("() => [...document.querySelectorAll('.mx-lane .mx-sq.is-on')].map(e => e.dataset.sq)")
+    assert on == ["sandiego|2026-12-13", "losangeles|2026-12-12", "orangecounty|2026-12-13", "losangeles+sandiego|2026-12-12", "orangecounty+sandiego|2026-12-12"]
+    assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l").startswith("Found · +")
+    colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find'), o = document.querySelector('.mx-lane:not(.is-lit) .mx-sq.is-on');
+        return [c(f), c(o)]; }""")
+    assert colours[0] == "rgb(255, 212, 59)" and colours[1] == "rgb(11, 11, 13)", colours      # the find is yellow, the nights shown are ink
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+
+
+def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_the_bar(matrix):
+    page = matrix(DESKTOP)
+    page.click(".mx-lane[data-lane='losangeles'] .mx-sq >> nth=3")
+    lane = page.locator(".mx-lane[data-lane='losangeles']")
+    expect(lane.locator(".mx-band")).to_have_attribute("data-l", re.compile(r"^4 nights · \$"))
+    expect(lane.locator(".mx-sq.is-on")).to_have_attribute("data-sq", "losangeles|2026-12-13")
+    expect(lane.locator(".mx-band")).to_have_attribute("style", re.compile(r"grid-column: 7 / span 5"))
+    expect(lane.locator(".mx-l-best")).to_have_text("$2,400")
+    expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles · Dec 13 to 17")
+    assert page.locator("#mx-side").bounding_box()["y"] + page.locator("#mx-side").bounding_box()["height"] <= 900      # the bar is in view, at the bottom
+    assert page.errors == []
 
 
 def test_while_the_first_squares_load_a_fact_floats_in_and_leaves_once_they_land(matrix, slow_server):

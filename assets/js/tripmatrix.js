@@ -7,7 +7,9 @@
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
 //   3. While the first squares are searched, a small floating island says a fact about the place (F-230): it settles in on the spring and leaves calmly once the
 //      asked square has landed (or nothing in view is waiting); a search that takes a while says so in a word beside the count.
-//   4. Opening a square: its panel (laptop) or sheet (phone) grows out of the square tapped and folds back into it. Liquid at every width (D-439): the page sets
+//   4. Opening a square: its trip bar (laptop, the design's bar under the calendar, D-520) or sheet (phone) grows out of the square tapped and folds back into it.
+//      The ringed band of each lane (its nights, labelled "4 nights · $2,080", the find's lane "Found · +$50 vs San Diego alone") sits on the find's start in the find's lane,
+//      else the lane's cheapest start, else the opened square, and moves with the same rules as pages/tripmatrix.py `band_window` and `band_words`. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
 (function () {
   var root = document.getElementById('mx'), raw = document.getElementById('mx-data');
@@ -15,7 +17,7 @@
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
   var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', again = 0, tries = {};
-  var known = {}, panels = {}, asked = {}, seen = {}, active = 0, timers = {};
+  var known = {}, panels = {}, bars = {}, asked = {}, seen = {}, active = 0, timers = {}, curFind = null;
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
   var wide = window.matchMedia('(min-width: 1020px)');
   var M = function () { return window.GA && GA.motion; };
@@ -80,6 +82,7 @@
   // ---- drawing what is known ----
   function remark() {
     var t = totals(), r = marks(t);
+    curFind = r.find;
     root.querySelectorAll('[data-sq]').forEach(function (el) {
       var m = r.marks[el.dataset.sq] || [];
       ['find', 'low', 'over'].forEach(function (n) { el.classList.toggle('is-' + n, m.indexOf(n) >= 0); });
@@ -91,9 +94,8 @@
         el.textContent = best ? (el.classList.contains('mx-l-best') ? 'from ' + money(best[0]) : money(best[0])) : '';
       });
       root.querySelectorAll('[data-lane-when="' + x.k + '"]').forEach(function (el) { el.textContent = best ? best[2].when + ' · its cheapest' : ''; });
-      if (!chosen[x.k] && best) band(x.k, best[2].k);
-      var lane = root.querySelector('.mx-lane[data-lane="' + x.k + '"]');
-      if (lane) lane.classList.toggle('is-found', !!(r.find && r.find.lane === x.k));
+      var at = chosen[x.k] || (r.find && r.find.lane === x.k ? r.find.w : (best ? best[2].k : ''));      // pages/tripmatrix.py `band_window`
+      if (at) band(x.k, at);
     });
     drawFind(r.find);
     var n = Object.keys(known).length, count = document.getElementById('mx-count-n');
@@ -116,13 +118,30 @@
     box.classList.remove('is-empty');
     if (fresh && M()) (M().reduced() ? M().fade(box) : M().settle(box, { y: 6 }));
   }
+  function bandWords(x, w) {      // pages/tripmatrix.py `band_words`
+    var got = known[key(x.k, w.k)];
+    if (!got || got.s !== 'ok') return w.n + ' nights';
+    if (curFind && curFind.key === key(x.k, w.k)) return 'Found · ' + vs(curFind.key);
+    return w.n + ' nights · ' + money(got.c);
+  }
   function band(laneKey, wKey) {
     var el = root.querySelector('[data-band="' + laneKey + '"]'), w = windows.filter(function (x) { return x.k === wKey; })[0];
-    if (!el || !w) return;
-    var col = data.days.indexOf(w.k) + 2, from = el.getBoundingClientRect(), want = col + ' / span ' + (w.n + 1);
-    if (el.style.gridColumn.replace(/\s/g, '') === want.replace(/\s/g, '')) return;
-    el.style.gridColumn = want;
-    if (M() && from.width) M().land(el, from);
+    var x = lanes.filter(function (l) { return l.k === laneKey; })[0];
+    if (!el || !w || !x) return;
+    var at = data.days.indexOf(w.k), col = at + 2, from = el.getBoundingClientRect(), want = col + ' / span ' + (w.n + 1);
+    if (el.style.gridColumn.replace(/\s/g, '') !== want.replace(/\s/g, '')) {
+      el.style.gridColumn = want;
+      if (M() && from.width) M().land(el, from);
+    }
+    var last = data.days[at + w.n], got = known[key(laneKey, wKey)];
+    el.dataset.l = bandWords(x, w);
+    var lane = root.querySelector('.mx-lane[data-lane="' + laneKey + '"]');
+    if (lane) {
+      lane.classList.toggle('is-lit', !!(curFind && curFind.lane === laneKey && curFind.w === wKey));
+      lane.querySelectorAll('.mx-day[data-day]').forEach(function (d) { d.classList.toggle('is-in', d.dataset.day >= w.k && d.dataset.day <= last); });
+    }
+    root.querySelectorAll('[data-lane-total="' + laneKey + '"]').forEach(function (t) { t.textContent = got && got.s === 'ok' ? money(got.c) : ''; });
+    root.querySelectorAll('.mx-sq[data-sq^="' + laneKey + '|"]').forEach(function (sq) { sq.classList.toggle('is-on', sq.dataset.sq === key(laneKey, wKey)); });
   }
   function waiting() {
     var count = 0;
@@ -166,6 +185,7 @@
     }
     known[k] = { c: j.c, s: j.s };
     panels[k] = j.panel;
+    bars[k] = j.bar;
     els(k).forEach(function (el) {
       io.unobserve(el);
       el.querySelector('.mx-in').innerHTML = j.inner;
@@ -177,9 +197,6 @@
         else M().run(el, [{ opacity: 0.2, transform: 'scale(0.9)' }, { opacity: 1, transform: 'none' }], { t: 'settle', ease: 'spring' });
       }
     });
-    if (j.drive) root.querySelectorAll('[data-lane-drive="' + k.split('|')[0] + '"]').forEach(function (el) {
-      if (!el.textContent) el.textContent = j.drive + ' min drive from ' + (el.dataset.from || '');
-    });
     var age = document.getElementById('mx-age');
     if (age && j.age && age.textContent === 'Preview') age.textContent = 'Preview · ' + j.age;
     var r = remark();
@@ -189,8 +206,8 @@
       var a = lanes.filter(function (x) { return x.a; })[0], w = windows.filter(function (x) { return x.a; })[0] || windows[0];
       var first = r.find ? r.find.key : (a && known[key(a.k, w.k)] ? key(a.k, w.k) : '');
       var now = side.querySelector('[data-open]');
-      if (first && panels[first] && (!now || now.dataset.open !== first)) {
-        var inner = fill(side, first);
+      if (first && bars[first] && (!now || now.dataset.open !== first)) {
+        var inner = fill(side, first, bars);
         if (inner && M() && wide.matches) M().fade(inner);
       }
     }
@@ -253,11 +270,12 @@
   }
 
   // ---- opening a square ----
-  function placeholder(k) {
-    return '<div class="mx-p" data-open="' + k + '"><p class="mx-p-note" role="status">Searching this square. It fills in as soon as its answer lands.</p></div>';
+  function placeholder(k, cls) {
+    return '<div class="' + cls + '" data-open="' + k + '"><p class="mx-p-note" role="status">Searching this square. It fills in as soon as its answer lands.</p></div>';
   }
-  function fill(box, k) {
-    box.innerHTML = panels[k] || placeholder(k);
+  function fill(box, k, from) {      // `from`: the bars (the laptop) or the panels (the sheet)
+    var src = from || panels;
+    box.innerHTML = src[k] || placeholder(k, src === bars ? 'mx-b' : 'mx-p');
     var chip = box.querySelector('[data-vs]');
     if (chip && !chip.textContent) { var v = vs(k); chip.textContent = v; chip.classList.toggle('is-empty', !v); }
     bindSave(box);
@@ -271,7 +289,7 @@
     chosen[p[0]] = p[1];
     band(p[0], p[1]);
     if (wide.matches && side) {
-      var inner = fill(side, k);
+      var inner = fill(side, k, bars);
       if (!refill && M() && inner) (M().reduced() ? M().fade(inner) : M().open(inner, from || side));
       return;
     }

@@ -323,6 +323,7 @@ def bar(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
     fine = [f"{sq.flight.airline}", " · ".join(f"{st.name} ({st.rating})" if st.rating else st.name for st in sq.stays)]
     fine += [f"{catalog.money(sum(st.due_at_stay_cents for st in sq.stays))} of it paid at the hotel"] if any(st.due_at_stay_cents for st in sq.stays) else []
     fine += [CHEAPEST_FOUND] if not sq.flight.complete else []
+    fine += ["The flight books on its airline’s site."]
     form = (Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
                  Button(icon("check", 16, 2.4), "Save to trip", type="submit", cls="btn btn-card mx-save"), method="post", action=SAVE, cls="mx-save-f")
             if can_save else "")
@@ -332,7 +333,7 @@ def bar(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
                    Div(*parts, cls="mx-parts"), P(" · ".join(x for x in fine if x), cls="mx-b-fine"), cls="mx-b-mid"),
                Div(Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"),
                    Div(book_form(s, lane, w, sq) if can_save else "", P(saved, cls="mx-saved", role="status") if saved else form, cls="mx-b-btns"),
-                   P(Span(BOOK_SAMPLE if sq.sample else BOOK_WORDS, cls="mx-soon-h"), " The flight books on its airline’s site.", cls="mx-soon"), cls="mx-b-end"),
+                   P(Span(BOOK_SAMPLE if sq.sample else BOOK_WORDS, cls="mx-soon-h"), cls="mx-soon"), cls="mx-b-end"),
                cls="mx-b", data_open=sq.key)
 
 
@@ -427,7 +428,7 @@ def day_cell(d, col, wx, band_w):
         return Div(**base)
     typ = wx.kind != weather.FORECAST
     chance = f" {wx.wet_pct}%" if typ and wx.wet_pct is not None else ""
-    return Div(icon(wx.condition if wx.condition in WORDS else "cloud", 16, cls="mx-day-i"), Span(f"{wx.high_f}°{chance}", cls="mx-day-t"),
+    return Div(icon(wx.condition if wx.condition in WORDS else "cloud", 22, 2, cls="mx-day-i"), Span(f"{wx.high_f}°{chance}", cls="mx-day-t"),
                title=weather_ui.describe(wx) + ("" if wx.wet_pct is None or not typ else f", wet on about {wx.wet_pct}% of days"),
                **{**base, "cls": base["cls"] + (" is-typ" if typ else " is-fc") + (" is-wet" if wx.condition in WET else "")})
 
@@ -437,12 +438,10 @@ def lane_el(s: State, lane, windows, days, known, marks, home, skies, found=None
     band_w = band_window(lane, windows, known, found)
     sky = skies.get(lane.places[0].name) if skies else None
     by_day = {d.date: d for d in sky.days if d} if sky else {}
-    drive = next((sq.drive for k, sq in known.items() if k.startswith(lane.key + "|") and sq.drive), None)
     at = known.get(tm.key(lane.key, band_w.key))
     lit = found is not None and found.lane == lane.key and found.window == band_w.key
     kids = [Div(_arts(lane, "mx-thumb"), Div(P(lane.name, cls="mx-l-n"), P(via_of(lane, home), cls="mx-l-s"),
-                                                 P(f"{drive} min drive from {lane.places[0].iata}" if drive else "", cls="mx-l-s", data_lane_drive=lane.key, data_from=lane.places[0].iata),
-                                                 P("No weather for this place yet" if sky is not None and not by_day else "", cls="mx-l-s"),
+                                                 P("No weather for this place yet" if sky is not None and not by_day else "", cls="mx-l-s mx-l-nowx"),
                                                  P(tm.dollars(at.cents) if at is not None and at.ok else "", cls="mx-l-best", data_lane_total=lane.key)), cls="mx-lh"),
             Div(cls="mx-band", data_band=lane.key, data_l=band_words(lane, band_w, at, found, s), style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
     kids += [day_cell(d, col[d], by_day.get(d), band_w) for d in days]
@@ -460,17 +459,22 @@ def skies_of(lanes, windows):
 
 def lanes_el(s: State, lanes, windows, known, marks, skies, found=None):
     days = days_of(windows)
-    notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     typical = any(d and d.kind != weather.FORECAST for tw in skies.values() for d in tw.days)
     starts = {w.depart for w in windows}
     axis = Div(Div(Span("Sky each day", cls="mx-label"), Span("typical, not a forecast yet" if typical else "", cls="mx-ah-n"), cls="mx-ah"),
                *[Div(Span(f"{d:%a}", cls="mx-adw"), Span(str(d.day) if d.day != 1 and d != days[0] else f"{d:%b} {d.day}", cls="mx-adn"),
                      cls="mx-ad" + (" is-ask" if d == s.depart else "") + (" is-start" if d in starts else "")) for d in days], cls="mx-axis")
     return Section(Div(axis, *[lane_el(s, x, windows, days, known, marks, s.home, skies, found) for x in lanes], cls="mx-lanes", style=f"--mx-days: {len(days)}"),
-                   P(Span(cls="mx-key-band"), f"Your {s.nights} nights, ringed (tap a start price to move them). Under each start day: the flight and the stay for "
-                     f"{s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start.", cls="mx-legend"),
-                   Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
                    cls="mx-cal", aria_label="Every place, every start day")
+
+
+def key_el(s: State, skies):
+    """What the laptop's calendar means, under the trip bar (the bar stays in view; this is read once): the ringed nights, the pills' colours, the weather's credit and
+    labels (AGENTS.md: a page showing weather shows weather.notes). Hidden on a phone, whose cards carry their own."""
+    notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
+    return Div(P(Span(cls="mx-key-band"), f"Your {s.nights} nights, ringed (tap a start price to move them). Under each start day: the flight and the stay for "
+                 f"{s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start.", cls="mx-legend"),
+               Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "", cls="mx-key")
 
 
 def card_el(s: State, lane, windows, known, marks, skies, found=None):
@@ -536,6 +540,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
         side = Div(P("Open a square to see the whole trip: the flight, the stay, the drive.", cls="mx-p-note"), cls="mx-b")
     skies = skies_of(lanes, windows)
     stage = Div(lanes_el(s, lanes, windows, known, marks, skies, found), Aside(side, cls="mx-side", id="mx-side", aria_label="The square you opened", aria_live="polite"), cls="mx-stage")
+    key = key_el(s, skies)
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     cards = Div(*[card_el(s, x, windows, known, marks, skies, found) for x in lanes],
                 Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
@@ -544,7 +549,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
                Div(find_el(s, found), cls="mx-news", id="mx-news"),
-               stage, cards,
+               stage, key, cards,
                Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
