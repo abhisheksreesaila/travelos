@@ -45,7 +45,7 @@ PT, MT, AZ, CT, ET, HT, AK = ("America/Los_Angeles", "America/Denver", "America/
 STATIONS = (
     ("USW00093134", "Los Angeles", PT, ("CA",), ("los angeles", "downtown los angeles", "hollywood")),
     ("USW00023174", "Los Angeles coast (LAX)", PT, ("CA",), ("santa monica", "venice beach", "marina del rey", "manhattan beach", "redondo beach")),
-    ("USC00040192", "Anaheim", PT, ("CA",), ("anaheim", "disneyland resort", "disneyland park", "disneyland california", "disneyland ca", "disneyland anaheim", "disney california adventure")),
+    ("USC00040192", "Anaheim", PT, ("CA",), ("anaheim", "disneyland resort", "disneyland park", "disneyland california", "disneyland ca", "disneyland anaheim", "disney california adventure", "orange county")),
     ("USW00023188", "San Diego", PT, ("CA",), ("san diego", "la jolla", "coronado", "mission beach")),
     ("USW00022521", "Honolulu", HT, ("HI",), ("honolulu", "waikiki", "waikiki beach", "oahu", "ko olina")),
     ("USW00094728", "New York City", ET, ("NY",), ("new york", "new york city", "nyc", "manhattan", "brooklyn")),

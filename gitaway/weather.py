@@ -108,6 +108,7 @@ class Day:
     precip_in: float | None = None   # forecast: the day's rain or melted snow
     wind_mph: int | None = None      # forecast: the strongest wind of the day
     label: str = ""                  # normals: "Typical late December · not a forecast yet"
+    wet_pct: int | None = None       # normals: the station's chance of a wet day, in percent (the matrix's day cells; a forecast day has none)
 
 
 # ---- asking MET Norway --------------------------------------------------------------------------------------------------------
@@ -683,7 +684,7 @@ def normal_day(st: Station, d: date) -> Day:
     """The station's typical weather for a date, as a Day of kind NORMAL that says it is not a forecast."""
     high, low, wet, snow = st.normals[(d.month - 1) * 3 + third(d.day)]
     condition, words = _typical(high, low, wet, snow)
-    return Day(d, NORMAL, high, low, condition, words, label=normals_label(d))
+    return Day(d, NORMAL, high, low, condition, words, label=normals_label(d), wet_pct=int(wet))
 
 
 # ---- a trip's weather -------------------------------------------------------------------------------------------------------------

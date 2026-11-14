@@ -216,3 +216,16 @@ def test_common_ways_of_writing_a_destination_find_its_station(text, name):
 @pytest.mark.parametrize("text", ["Disneyland Resort Paris", "Hollywood, fl", "Austin, mn"])
 def test_a_lowercase_code_that_is_not_the_stations_own_state_or_a_place_abroad_still_refuses_it(text):
     assert weather.station_named(text) is None, text
+
+
+def test_a_typical_day_carries_noaas_chance_of_a_wet_day_and_a_forecast_day_none():
+    """F-236: the matrix's day cells say the rain chance where a source knows it: the station's wet-day share for a typical day, never made up for a forecast."""
+    hilo = weather.station("USW00021504")
+    assert weather.normal_day(hilo, date(2026, 12, 24)).wet_pct == 64 and weather.normal_day(hilo, date(2027, 8, 5)).wet_pct == 88
+    assert weather.Day(date(2026, 12, 24), weather.FORECAST, 60, 50, "rain", "Rain").wet_pct is None
+
+
+def test_orange_county_california_has_weather_from_the_anaheim_station_and_another_orange_county_has_none():
+    """F-236: the matrix's Orange County lane wears a sky: the station inside it is Anaheim's (named in the credit line); an Orange County in another state is not it."""
+    assert weather.station_named("Orange County").name == "Anaheim" and weather.station_named("Orange County, California").name == "Anaheim"
+    assert weather.station_named("Orange County, Florida") is None
