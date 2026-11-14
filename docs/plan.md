@@ -1476,3 +1476,27 @@ Founder, 2026-11-14 (after signing in locally and landing on "Fork a getaway" an
 - [ ] the matrix, signed in, says "Already booked? Bring your trip in" (to the import), and saving a square still makes the family's trip (D-442)
 - [ ] the cockpit has "Plan another trip" opening the matrix
 - [ ] nothing links to a deleted page (a test sweeps the pages); every test that used them is moved to the new way in, none deleted to get to green
+
+# World-class journey (brief docs/briefs/world-class-journey.md, approved 2026-11-14, overnight)
+
+## F-232 The cover, world class: colourful and immersive [todo]
+Brief: docs/briefs/world-class-journey.md · Builds on F-227 (D-426..D-460) · Files: gitaway/pages/cover.py, assets/css/cover.css, assets/js/cover.js
+- [ ] the cover is colourful (each part's colour washes the stage, the hero is a living scene, not grey), every arrival a micro-interaction, still no scroll-linked transforms (D-427) and 60 fps at CPU 4x (scripts/cover_fps.py)
+- [ ] the story leads to the matrix (Start a trip) and says the four steps: compare, book, plan together, share
+- [ ] 4.5:1 in light and dark, reduced motion calm, the 28 KB script budget held
+
+## F-233 Book a square with LiteAPI's sandbox [todo]
+Brief: docs/briefs/world-class-journey.md · Needs: F-220, F-222 · Risk: personal data (guest names, email), payments (sandbox only)
+- [ ] the matrix square's Book: prebook the stay (LiteAPI sandbox), guest details, book, a confirmation with LiteAPI's booking id, said plainly "Sandbox booking: nothing is charged"; every new LiteAPI answer recorded from the sandbox before it is parsed (tests/fixtures/liteapi)
+- [ ] the booked stay becomes the family's trip and lands on its cockpit
+- [ ] colourful and alive: the square grows into the booking sheet, steps settle on the springs
+
+## F-234 Share the trip to Instagram [todo]
+Brief: docs/briefs/world-class-journey.md · Absorbs F-226's card
+- [ ] a trip card image (1080×1350: the place's art, dates, route, a link back) made on the server or in the page, shared through the phone's share sheet (Web Share with files), downloaded on a laptop
+- [ ] reachable from the cockpit ("Share to Instagram"); the link back opens a public page that tells nothing private
+
+## F-235 A creator's blog becomes a trip like magic [todo]
+Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design/joyful-pages/compare.html (For creators A, Community A)
+- [ ] /creators/import shows the trip being made as it is read: the post's title and photo, then days and stops landing one by one, colourful and alive; a recorded popular blog post as the fixture
+- [ ] the For creators page (Golden hour) and Community trips (Postcards) rebuilt from the compare page's option A
