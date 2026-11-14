@@ -295,7 +295,7 @@ def _hero():
 
 
 def _stage():
-    return Section(*[Span(cls=f"cv-wash cv-wk{n}", aria_hidden="true") for n in "123"], _frame(), Div(*[_part(*p) for p in PARTS], cls="cv-chs"),
+    return Section(Div(*[Span(cls=f"cv-wash cv-wk{n}") for n in "123"], cls="cv-washes", aria_hidden="true"), _frame(), Div(*[_part(*p) for p in PARTS], cls="cv-chs"),
                    cls="cv-stage", data_part="1", aria_label="How it works")
 
 
