@@ -62,6 +62,14 @@ def test_a_share_keeps_one_link_per_trip(tahoe_trip):
     assert tripshare.find(first.token).names == "Ari"
 
 
+def test_two_opens_at_once_make_one_link(tahoe_trip, monkeypatch):
+    """The sheet is asked for twice when a finger goes down and then lifts: the second save meets the first's row and must answer with that row's token (a different one 404ed)."""
+    me = person("ari")
+    first = tripshare.save(me)
+    monkeypatch.setattr(tripshare.secrets, "token_urlsafe", lambda n: "another-token-here")
+    assert tripshare.save(me).token == first.token
+
+
 def test_art_is_found_for_a_place_named_with_more_words():
     assert tripshare.art_for("South Lake Tahoe") == "laketahoe" and tripshare.art_for("San Diego") == "sandiego" and tripshare.art_for("Reykjavik") == ""
 

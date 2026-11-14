@@ -120,13 +120,12 @@ def save(session, names=False, exact=False) -> Share:
     family, trip = session.get("tenant_id") or "", trip_id(session)
     now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
     with _db() as conn:
-        row = conn.execute(text("SELECT token FROM trip_shares WHERE family = :f AND trip = :t"), {"f": family, "t": trip}).first()
-        token = row[0] if row else secrets.token_urlsafe(12)
         conn.execute(text("""INSERT INTO trip_shares (token, family, trip, title, place, art, route, month, exact, days, names, slug, on_, created_at, updated_at)
-                               VALUES (:token, :f, :t, :title, :place, :art, :route, :month, :exact, :days, :names, :slug, 1, :now, :now)
-                               ON CONFLICT (family, trip) DO UPDATE SET title = :title, place = :place, art = :art, route = :route, month = :month, exact = :exact,
-                               days = :days, names = :names, slug = :slug, on_ = 1, updated_at = :now"""),
-                       {**snap, "route": json.dumps(snap["route"]), "token": token, "f": family, "t": trip, "now": now})
+                             VALUES (:token, :f, :t, :title, :place, :art, :route, :month, :exact, :days, :names, :slug, 1, :now, :now)
+                             ON CONFLICT (family, trip) DO UPDATE SET title = :title, place = :place, art = :art, route = :route, month = :month, exact = :exact,
+                             days = :days, names = :names, slug = :slug, on_ = 1, updated_at = :now"""),
+                     {**snap, "route": json.dumps(snap["route"]), "token": secrets.token_urlsafe(12), "f": family, "t": trip, "now": now})
+        token = conn.execute(text("SELECT token FROM trip_shares WHERE family = :f AND trip = :t"), {"f": family, "t": trip}).scalar()      # the row's own token: two opens at once make one
         conn.commit()
     return Share(token, snap["title"], snap["place"], snap["art"], snap["route"], snap["month"], snap["exact"], snap["days"], snap["names"], snap["slug"])
 
