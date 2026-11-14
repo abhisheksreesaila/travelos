@@ -1467,3 +1467,12 @@ Brief: docs/briefs/unified-booking.md "Speed" · Needs: F-222 · Measured 2026-1
 Brief: docs/briefs/unified-booking.md · Design: docs/design/trip-matrix.md (calendar lanes on a laptop, the trip panel beside them; place cards on a phone: kept) · Needs: F-222
 - [x] each square shows its total large, with the day's weather as a small line under it (one sky and degrees, typical weather dotted, the notes under the matrix) instead of a separate weather row above the prices (D-450)
 - [x] "While we search" is no longer a band across the page: a small floating note shows a fact about the place while the first squares are loading, and leaves once they land (Liquid in, calm out; reduced motion a fade) (D-451)
+
+## F-231 One way in after sign-in: the matrix, or your trip [todo]
+Founder, 2026-11-14 (after signing in locally and landing on "Fork a getaway" and the old Where to? form): "remove any version of old and build the matrix". Picked: no trip yet → the trip matrix, with "Already booked? Bring it in" beside it; has a trip → its cockpit, with "Plan another" opening the matrix. Build tonight, deploy only after the founder looks. Decisions from D-461.
+- [ ] a signed-in `/` redirects: the family's current trip → `/trip/cockpit`; no trip → `/plan/matrix` (the old signed-in landing in `pages/home.py`, "Fork a getaway", is deleted, with its CSS, JS and tests)
+- [ ] `layout.plan_href()` (Plan a trip, Start a trip): signed in → `/plan/matrix`; signed out → sign in, then `/` (which decides); where the matrix does not exist (off the showcase without `LITEAPI_KEY`) → the import (`/trip/ask`)
+- [ ] the old Where to? form (`/start`, `pages/start.py`) is deleted; `/start` and its old query links redirect to `/plan/matrix` (keeping place, dates and party where the matrix reads them)
+- [ ] the matrix, signed in, says "Already booked? Bring your trip in" (to the import), and saving a square still makes the family's trip (D-442)
+- [ ] the cockpit has "Plan another trip" opening the matrix
+- [ ] nothing links to a deleted page (a test sweeps the pages); every test that used them is moved to the new way in, none deleted to get to green
