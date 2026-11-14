@@ -8,7 +8,7 @@
 .mx-label { font-size: max(var(--label-min), 0.75rem); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
 
 /* the sentence */
-.mx-lead { display: grid; gap: 0.625rem; }
+.mx-lead { position: relative; display: grid; gap: 0.625rem; }
 .mx-sent { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.4rem; font-size: 1.5rem; font-weight: 700; line-height: 1.25; letter-spacing: -0.03em; text-wrap: balance; }
 .mx-tk { position: relative; }
 .mx-tok, .mx-pen { display: inline-flex; align-items: center; min-height: var(--target); cursor: pointer; list-style: none; border-radius: 0.5rem; }
@@ -17,8 +17,14 @@
 .mx-tok:hover, .mx-tk[open] > .mx-tok { text-decoration-color: var(--ink); }
 .mx-pen { justify-content: center; width: var(--target); color: var(--ink-2); }
 .mx-edit { margin-left: auto; }
-.mx-pop { display: grid; gap: 0.75rem; margin: 0.25rem 0 0.75rem; padding: 1rem; border-radius: var(--r-md); background: var(--card); box-shadow: var(--sh2);
-  font-size: 1rem; font-weight: 500; letter-spacing: 0; min-width: min(22rem, calc(100vw - 2.5rem)); }
+.mx-pop { position: absolute; z-index: 50; top: 100%; left: 0; display: grid; gap: 0.75rem; margin: 0.25rem 0 0; padding: 1rem; border-radius: var(--r-md); background: var(--card-2); box-shadow: var(--sh3);
+  font-size: 1rem; font-weight: 500; letter-spacing: 0; min-width: min(22rem, calc(100vw - 2.5rem)); box-sizing: border-box; }      /* F-238: a popover floats over the page (it never pushes the matrix down) and grows from its word */
+.mx-edit .mx-pop, .mx-about .mx-pop { left: auto; right: 0; }
+.mx-about { position: static; margin-left: auto; }      /* its popover hangs from the top row's edge, whichever word is where */
+@media (max-width: 720px) {      /* a phone: every popover is the sentence's width, so none can run off the screen */
+  .mx-tk { position: static; }
+  .mx-pop, .mx-edit .mx-pop, .mx-about .mx-pop { left: 0; right: 0; min-width: 0; }
+}
 .mx-pop-h { margin: 0; font-size: 1.125rem; font-weight: 700; }
 .mx-pop-note, .mx-p-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; text-wrap: pretty; }
 .mx-err { margin: 0; color: var(--danger); font-size: 1rem; font-weight: 650; }
@@ -32,34 +38,41 @@
 .mx-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
 .mx-import { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 0.2em; display: inline-flex; align-items: center; min-height: var(--target); }
 .mx-count { font-family: var(--font-mono); color: var(--ink); }
+.mx[data-waiting="0"] .mx-count { display: none; }      /* F-238: a count of squares is for while they are coming in; once all are in it says nothing */
 .mx-preview { display: inline-flex; align-items: center; gap: 0.375rem; }
 .mx-preview::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ok); }
 .mx-sample { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--warn-tint); color: var(--warn-ink);
   font-size: max(var(--label-min), 0.75rem); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
-/* the nights slider (F-237): one range input in the sentence (laptop) and one on each phone card, all the same control. The track fills in ink to the thumb (--fill,
-   set by the page and the script); the thumb is a ring that clears the 3:1 against the canvas; the target is the full height of the control (the --target floor, 48px on
-   a phone) so a thumb finds it, and `touch-action: pan-y` leaves the page's own scroll to a vertical drag. */
-.mx-nights { display: inline-flex; align-items: center; gap: 0.625rem; min-height: var(--target); font-size: 1rem; font-weight: 650; letter-spacing: 0; }
-.mx-nights-w { min-width: 4.5ch; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.mx-range { -webkit-appearance: none; appearance: none; flex: 1 1 8rem; width: 8rem; min-width: 5rem; height: var(--target); margin: 0; padding: 0; background: transparent; cursor: pointer;
-  touch-action: pan-y; --fill: 50%; }
+/* the nights slider (F-237, F-238): "4 nights" is a word of the sentence and its popover holds the one range input. The track fills in ink to the thumb (--fill, set by the page
+   and the script); the thumb is a ring that clears the 3:1 against the canvas; the target is the full height of the control (the --target floor, 48px on a phone) so a thumb
+   finds it, and `touch-action: pan-y` leaves the page's own scroll to a vertical drag. */
+.mx-pop-nights { min-width: min(18rem, calc(100vw - 2.5rem)); }
+.mx-range { -webkit-appearance: none; appearance: none; width: 100%; height: var(--target); margin: 0; padding: 0; background: transparent; cursor: pointer; touch-action: pan-y; --fill: 50%; }
 .mx-range::-webkit-slider-runnable-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
 .mx-range::-moz-range-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
 .mx-range::-webkit-slider-thumb { -webkit-appearance: none; width: 1.75rem; height: 1.75rem; margin-top: -0.625rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
 .mx-range::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
 .mx-range:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; border-radius: var(--r-pill); }
-.mx:not(.is-live) .mx-range { opacity: 0.5; pointer-events: none; }      /* before the script is ready it cannot be moved; the links under the sentence work meanwhile */
-.mx-sent .mx-nights { font-size: inherit; font-weight: inherit; letter-spacing: inherit; gap: 0.5rem; }      /* in the sentence the nights read as the sentence does */
-.mx-sent .mx-range { flex: none; width: 7rem; }
-.mx-nights-links { flex-basis: 100%; }
-.mx-c-nights { width: 100%; box-sizing: border-box; padding: 0 0.25rem; }
-.mx-c-nights .mx-range { width: auto; }
+.mx:not(.is-live) .mx-range { opacity: 0.5; pointer-events: none; }      /* before the script is ready it cannot be moved; the links beside it work meanwhile */
+.mx-range-ends { display: flex; justify-content: space-between; margin-top: -0.5rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 650; font-variant-numeric: tabular-nums; }
 .mx-est-note { display: none; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
 .mx[data-est="1"] .mx-est-note { display: inline; }
-@media (max-width: 1019px) { .mx-sent-nights { display: none; } }      /* the phone and the tablet slide on the cards */
-@media (min-width: 1020px) { .mx-c-nights { display: none; } }
 .mx-day.is-off, .mx-ad.is-off { display: none; }      /* a longer trip's days: drawn with their sky, shown when the nights reach them */
+
+/* ⓘ About these prices (F-238): one quiet control in the top row; its popover holds the legend, the sample fine print, the weather's credit and Privacy and Terms */
+.mx-about-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.5rem; border-radius: 0.5rem; list-style: none; cursor: pointer; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
+.mx-about-btn::-webkit-details-marker { display: none; }
+.mx-about-btn:hover, .mx-about[open] > .mx-about-btn { color: var(--ink); }
+.mx-pop-about { gap: 0.625rem; width: min(34rem, calc(100vw - 2.5rem)); }
+.mx-pop-about .mx-key-band { margin-top: 0.1875rem; align-self: flex-start; }
+.mx-legend { display: flex; align-items: center; gap: 0.625rem; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); line-height: 1.35; }
+.mx-key-band { flex: none; width: 1.75rem; height: 1rem; border-radius: 0.375rem; box-shadow: inset 0 0 0 0.125rem var(--ink); }
+.mx-about-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.25rem; border-top: 1px solid var(--line); }
+.mx-credit { margin: 0; text-align: center; font-size: max(var(--text-min), 0.875rem); }
+.mx-credit-a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.2em; display: inline-flex; align-items: center; min-height: var(--target); }
+.mx-about-nav { display: flex; gap: 0.5rem; }
+.mx-about-nav a { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 0.5rem; color: var(--ink); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; }
 
 /* the news: the find, and a fact about the place while squares are searched */
 .mx-news { display: grid; gap: 0.75rem; }
@@ -132,9 +145,8 @@
 .mx-art-i.is-plain[data-kind="desert"] { background: var(--k-tix-t); }
 .mx-arts.n2 .mx-art-i + .mx-art-i { box-shadow: -0.125rem 0 0 var(--card); }
 
-/* the weather's notes (credit, "not a forecast"): one line each, under the calendar and under the cards */
-.mx-wx { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
-.mx-key { display: none; }
+/* the weather's notes (credit, "not a forecast"): one line each, in the ⓘ About these prices (F-238) */
+.mx-wx { display: flex; flex-direction: column; gap: 0.25rem; }
 .mx-wx-n { color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
 
 /* the phone and the tablet: a card per place */
@@ -255,9 +267,6 @@
   .mx-lane.is-lit .mx-band::after { background: var(--k-ride); color: var(--k-ride-on); }
   .mx-lane.is-lit .mx-day.is-in { color: var(--up-fg2); }
   .mx-lane.is-lit .mx-day.is-in .mx-day-i { color: var(--up-fg); }
-  .mx-key { display: grid; gap: 0.25rem; }
-  .mx-key .mx-legend { margin: 0; }
-  .mx-key .mx-wx { margin: 0; }
 
   /* the start prices: the big numbers */
   .mx-lane > .mx-sq { grid-row: 2; z-index: 1; align-self: start; min-height: 2.5rem; padding: 0 0.25rem; border-radius: var(--r-pill); gap: 0; }
@@ -274,8 +283,6 @@
   .mx-lane .mx-sq.is-over.is-on .mx-v { color: var(--on-ink); }
   .mx-lane .mx-sq.is-open { box-shadow: none; }
   .mx-lane .mx-sq.is-find.is-open { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
-  .mx-legend { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0.5rem 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
-  .mx-key-band { flex: none; width: 1.75rem; height: 1rem; border-radius: 0.375rem; box-shadow: inset 0 0 0 0.125rem var(--ink); }
   .mx-p-art { height: 9rem; }
 
   /* the opened square: the design's trip bar under the calendar */
@@ -307,7 +314,6 @@
 @media (min-width: 1020px) and (pointer: coarse) {      /* a touch screen this wide (a tablet on its side): the start prices are 48px targets, the slider too (F-236 review) */
   .mx-lane > .mx-sq { min-height: 4rem; }      /* 4rem is 48px off the 12px laptop root */
   .mx-range { height: 4rem; }
-  .mx-nights { min-height: 4rem; }
 }
 
 @media (min-width: 1020px) and (max-width: 1279px) {      /* narrower days: the totals step down so a total never reaches its neighbour */

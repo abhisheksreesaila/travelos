@@ -22,13 +22,13 @@ from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Img, Input, Label, Link, Noscript, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Img, Input, Label, Link, Nav, Noscript, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
 from gitaway import catalog, familydb, firstrun, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, weather_ui
 from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
@@ -353,7 +353,7 @@ def bar(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
             if can_save else "")
     return Div(head,
                Div(Div(title, Span(vs, cls="mx-vs" + ("" if vs else " is-empty"), data_vs="1"), cls="mx-b-h"),
-                   P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), Span(SAMPLE, cls="mx-sample") if sq.sample else "", cls="mx-p-meta"),
+                   P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), cls="mx-p-meta"),
                    Div(*parts, cls="mx-parts"), P(" · ".join(x for x in fine if x), cls="mx-b-fine"), cls="mx-b-mid"),
                Div(Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"),
                    Div(book_form(s, lane, w, sq) if can_save else "", P(saved, cls="mx-saved", role="status") if saved else form, cls="mx-b-btns"),
@@ -375,19 +375,17 @@ def nights_words(n) -> str:
     return f"{n} night{'' if n == 1 else 's'}"
 
 
-def nights_el(s: State, cls=""):
-    """The nights slider (F-237, D-530): a range input in the sentence and on each phone card, all one control (assets/js/tripmatrix.js keeps them in step). Sliding
-    shows estimates ("about $X") at once; letting go searches the squares in view. Without the script the chips under it are plain links."""
+def nights_pop(s: State):
+    """"4 nights" is a word of the sentence like the others (F-238, D-542): tapping it opens a small popover with the nights slider (F-237, D-530), the only one.
+    Sliding shows estimates ("about $X") at once; letting go searches the squares in view. Without the script the popover holds plain links to each nights."""
     lo, hi = nights_range(s)
-    return Label(Span(nights_words(s.nights), cls="mx-nights-w", data_nights_out="1", aria_hidden="true"),
-                 Input(type="range", min=str(lo), max=str(hi), step="1", value=str(s.nights), cls="mx-range", data_nights="1", aria_label="Nights",
-                       aria_valuetext=nights_words(s.nights), style=f"--fill: {round((s.nights - lo) * 100 / (hi - lo))}%"),
-                 cls=f"mx-nights {cls}".strip())
-
-
-def nights_links(s: State):
-    lo, hi = nights_range(s)
-    return Noscript(Div(*[_chip(nights_words(n), href(s, r=(s.depart + timedelta(days=n)).isoformat()), n == s.nights) for n in range(lo, hi + 1)], cls="mx-chips mx-nights-links"))
+    chips = Noscript(Div(*[_chip(nights_words(n), href(s, r=(s.depart + timedelta(days=n)).isoformat()), n == s.nights) for n in range(lo, hi + 1)], cls="mx-chips mx-nights-links"))
+    return Details(Summary(Span(nights_words(s.nights), data_nights_out="1"), cls="mx-tok"),
+                   Div(P("Nights", cls="mx-pop-h"),
+                       Input(type="range", min=str(lo), max=str(hi), step="1", value=str(s.nights), cls="mx-range", data_nights="1", aria_label="Nights",
+                             aria_valuetext=nights_words(s.nights), style=f"--fill: {round((s.nights - lo) * 100 / (hi - lo))}%"),
+                       Div(Span(str(lo)), Span(str(hi)), cls="mx-range-ends", aria_hidden="true"), chips, cls="mx-pop mx-pop-nights"),
+                   cls="mx-tk mx-tk-nights", data_pop="nights")
 
 
 def sentence(s: State, typed="", problems=()):
@@ -402,7 +400,7 @@ def sentence(s: State, typed="", problems=()):
     else:
         out.append(Span(route + ",", cls="mx-word"))
     out.append(Span(found["dates"], cls="mx-word", data_dates="1"))
-    out.append(nights_el(s, "mx-sent-nights"))
+    out.append(nights_pop(s))
     out.append(_pop("flex", (found.get("flex") or "") + ",", P("Start days", cls="mx-pop-h"),
                     Div(*[_chip("Exactly" if n == 0 else f"± {n} day{'s' if n > 1 else ''}", href(s, x=n), s.flex == n) for n in range(tm.MAX_FLEX + 1)], cls="mx-chips")))
     out.append(_pop("budget", found.get("budget", "any budget") + ".", P("Your budget, all in", cls="mx-pop-h"),
@@ -415,7 +413,7 @@ def sentence(s: State, typed="", problems=()):
                         *([P(" ".join(problems), cls="mx-err", id="mx-q-err", role="alert")] if problems else []),
                         Button("Search", type="submit", cls="btn btn-ink"), method="get", action=PATH, cls="mx-pop mx-pop-edit"),
                    cls="mx-tk mx-edit", data_pop="edit", open=bool(problems))
-    return Div(*out, edit, nights_links(s), cls="mx-sent", id="mx-sent")
+    return Div(*out, edit, cls="mx-sent", id="mx-sent")
 
 
 def fact_el(s: State):
@@ -484,7 +482,7 @@ def lane_el(s: State, lane, windows, days, known, marks, home, skies, found=None
     by_day = {d.date: d for d in sky.days if d} if sky else {}
     at = known.get(tm.key(lane.key, band_w.key))
     lit = found is not None and found.lane == lane.key and found.window == band_w.key
-    kids = [Div(_arts(lane, "mx-thumb"), Div(P(lane.name, cls="mx-l-n"), P(via_of(lane, home), cls="mx-l-s"),
+    kids = [Div(_arts(lane, "mx-thumb"), Div(P(lane.name, cls="mx-l-n"),
                                                  P("No weather for this place yet" if sky is not None and not by_day else "", cls="mx-l-s mx-l-nowx"),
                                                  P(tm.dollars(at.cents) if at is not None and at.ok else "", cls="mx-l-best", data_lane_total=lane.key)), cls="mx-lh"),
             Div(cls="mx-band", data_band=lane.key, data_l=band_words(lane, band_w, at, found, s), style=f"grid-column: {col[band_w.depart]} / span {band_w.nights + 1}")]
@@ -515,24 +513,36 @@ def lanes_el(s: State, lanes, windows, known, marks, skies, found=None):
                    cls="mx-cal", aria_label="Every place, every start day")
 
 
-def key_el(s: State, skies):
-    """What the laptop's calendar means, under the trip bar (the bar stays in view; this is read once): the ringed nights, the pills' colours, the weather's credit and
-    labels (AGENTS.md: a page showing weather shows weather.notes). Hidden on a phone, whose cards carry their own."""
+def about_el(s: State, skies, sample: bool):
+    """The one quiet "ⓘ About these prices" (F-238, D-540): what the calendar's colours mean, the weather's credit and labels (AGENTS.md: a page showing weather shows
+    weather.notes), the preview and sample fine print, and the site's Privacy and Terms and the one light/dark button (the footer's other tenant), closed until it is tapped. It replaces the legend, the notes under the calendar and
+    the cards, the fine print and the site footer."""
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
-    return Div(P(Span(cls="mx-key-band"), Span("Your ", Span(nights_words(s.nights), data_nights_out="1"), ", ringed (slide the nights, or tap a start price to move them). Under each start day: the flight "
-                 f"and the stay for {s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start."), cls="mx-legend"),
-               Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "", cls="mx-key")
+    return Details(Summary(icon("info", 18, 2.2), Span("About these prices"), cls="mx-about-btn"),
+                   Div(P(Span(cls="mx-key-band"), Span("Your ", Span(nights_words(s.nights), data_nights_out="1"), ", ringed (tap the nights in the sentence to change them, or tap a start price to move them). "
+                         f"Under each start day: the flight and the stay for {s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start."), cls="mx-legend"),
+                       P(SAMPLE_FINE if sample else FINE, cls="mx-foot-n"),
+                       Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
+                       Div(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="mx-about-nav", aria_label="Legal"), mode_switch("about"), cls="mx-about-foot"), cls="mx-pop mx-pop-about"),
+                   cls="mx-tk mx-about", data_pop="about")
+
+
+def credit_el(skies):
+    """MET Norway's credit (F-238 review, D-540): CC BY 4.0 asks for credit, a link to the licence and a note of changes "in any reasonable manner", and weather.py promises it
+    wherever a forecast shows, so while any forecast (not typical) day is on the page one small linked line says it. The full per-place credits stay in the ⓘ."""
+    made = [tw.updated for tw in skies.values() if tw.updated and any(d and d.kind == weather.FORECAST for d in tw.days)]
+    if not made:
+        return ""
+    return P(A(f"Forecast based on data from MET Norway · updated {made[0]}", href=weather.CREDIT_URL, rel="noopener", cls="mx-credit-a"), cls="mx-credit")
 
 
 def card_el(s: State, lane, windows, known, marks, skies, found=None):
     got = [(known[tm.key(lane.key, w.key)].cents, j, w) for j, w in enumerate(windows) if tm.key(lane.key, w.key) in known and known[tm.key(lane.key, w.key)].ok]
     best = min(got) if got else None
     on = band_window(lane, windows, known, found).key      # the card's ringed start, as the lane's band sits (design B's ink ring on the shown window)
-    via = f"{s.home} → {lane.places[0].iata}" + (f" · {lane.places[-1].iata} → {s.home}" if lane.combo else "")
     return Section(Div(_arts(lane, "mx-c-art"), H2(lane.name, cls="mx-c-n"), cls="mx-c-top"),
                    Div(Div(Span(tm.dollars(best[0]) if best else "", cls="mx-c-v", data_lane_best=lane.key),
                            Span(tm.when(best[2]) + " · its cheapest" if best else "", cls="mx-c-s", data_lane_when=lane.key), cls="mx-c-best"),
-                       P(via, cls="mx-c-s"), nights_el(s, "mx-c-nights"),
                        Div(*[square_el(s, lane, w, known.get(tm.key(lane.key, w.key)), marks.get(tm.key(lane.key, w.key), ()), day=True, wx=sky_of(skies, lane, w), on=w.key == on)
                              for w in windows], cls="mx-wins"), cls="mx-c-bd"),
                    cls="mx-card" + (" is-asked" if lane.asked else ""), data_lane=lane.key, aria_label=lane.name)
@@ -582,11 +592,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     totals = totals_of(known)
     marks, found = tm.marks(lanes, windows, totals, s.budget_cents), tm.find(lanes, windows, totals)
     total = len(lanes) * len(windows)
-    ages = [sq.fetched for sq in known.values() if sq.fetched]
-    meta = Div(Span(Span(str(len(known)), id="mx-count-n"), f" of {total} in", cls="mx-count", id="mx-count", aria_live="polite"),
-               Span(f"Preview · {age_words(min(ages))}" if ages else "Preview", cls="mx-preview", id="mx-age"),
-               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"),
-               import_el(), cls="mx-meta", id="mx-meta")
+    skies = skies_of(lanes, windows, nights_range(s)[1])
     opened = default_open(lanes, windows, known, found)
     if opened:
         o_lane, o_w = next(x for x in lanes if x.key == opened[0]), next(w for w in windows if w.key == opened[1])
@@ -594,23 +600,20 @@ def matrix_page(s: State, family="", typed="", problems=()):
         side = bar(s, o_lane, o_w, known.get(tm.key(*opened)), known.get(tm.key(asked.key, o_w.key)))
     else:
         side = Div(P("Open a square to see the whole trip: the flight, the stay, the drive.", cls="mx-p-note"), cls="mx-b")
-    skies = skies_of(lanes, windows, nights_range(s)[1])
     stage = Div(lanes_el(s, lanes, windows, known, marks, skies, found), Aside(side, cls="mx-side", id="mx-side", aria_label="The square you opened", aria_live="polite"), cls="mx-stage")
-    key = key_el(s, skies)
-    notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
-    cards = Div(*[card_el(s, x, windows, known, marks, skies, found) for x in lanes],
-                Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
-                cls="mx-cards")      # the cards say a sky, so they carry its credit and labels too (the calendar's own are hidden on a phone)
+    cards = Div(*[card_el(s, x, windows, known, marks, skies, found) for x in lanes], cls="mx-cards")      # the credit and labels for the skies they show: the ⓘ in the top row
+    meta = Div(Span(Span(str(len(known)), id="mx-count-n"), f" of {total} in", cls="mx-count", id="mx-count", aria_live="polite"),
+               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"),
+               import_el(), about_el(s, skies, meta_sample), cls="mx-meta", id="mx-meta")
     waiting = len(known) < total
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
                Div(find_el(s, found), cls="mx-news", id="mx-news"),
-               stage, key, cards,
-               Div(P(SAMPLE_FINE if meta_sample else FINE, cls="mx-foot-n"), cls="mx-foot"),
+               stage, cards, credit_el(skies),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
-    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True)
+    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False)
 
 
 def warm(s: State, family="") -> int:

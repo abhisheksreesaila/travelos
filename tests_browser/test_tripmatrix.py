@@ -140,8 +140,8 @@ def test_a_square_scrolled_past_before_its_turn_is_never_asked_for(matrix, stand
     page = matrix(PHONE, wait=False)
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     page.wait_for_function("() => document.querySelectorAll('.mx-card[data-lane=\"orangecounty+sandiego\"] .mx-sq.is-wait').length === 0", timeout=15000)
-    middle = [k for k in stand.asked if k.startswith("orangecounty|")]
-    assert middle == [], middle                                                               # passed by before its turn: never searched
+    middle = [k for k in stand.asked if k.startswith("losangeles|")]
+    assert middle == [], middle                                                               # passed by before its turn: never searched (F-238: the page is shorter now, so the second card is the one a jump to the bottom passes)
 
 
 def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_is_said(matrix, slow_server):
@@ -379,10 +379,13 @@ def test_on_a_phone_the_note_is_just_the_fact_and_its_source(matrix):
     assert shown and all(shown)
 
 
-def test_the_weather_notes_under_the_cards_are_lines_of_their_own(matrix):
+def test_the_weather_notes_are_lines_of_their_own_inside_about_these_prices(matrix):
+    """F-238 (D-540): the notes left the foot of the page and the cards; one tap on the ⓘ shows them, one to a line."""
     page = matrix(PHONE)
-    tops = page.evaluate("() => [...document.querySelectorAll('.mx-cards .mx-wx-n')].map(e => [e.getBoundingClientRect().left, getComputedStyle(e.parentNode).display])")
-    assert len(tops) >= 2 and all(d == "flex" for _, d in tops)
+    assert page.locator(".mx-about .mx-wx-n").first.is_hidden()                                 # closed: nothing at the bottom of the page
+    page.click(".mx-about-btn")
+    tops = page.evaluate("() => [...document.querySelectorAll('.mx-about .mx-wx-n')].map(e => [e.getBoundingClientRect().top, getComputedStyle(e.parentNode).display])")
+    assert len(tops) >= 2 and all(d == "flex" for _, d in tops) and len({t for t, _ in tops}) == len(tops)
 
 
 # ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
@@ -392,8 +395,16 @@ NIGHTS_URL = URL.replace("r=2026-12-16", "r=2026-12-18")
 WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
 
 
+def open_nights(page):
+    """Tap the sentence's "4 nights" word: its popover holds the slider (F-238)."""
+    if not page.locator(".mx-tk-nights input").is_visible():
+        page.click(".mx-tk-nights > summary")
+        expect(page.locator(".mx-tk-nights input")).to_be_visible()
+
+
 def slide(page, n, release=True):
-    """Move the nights slider that is on screen to `n`: the `input` event is the drag, the `change` event is letting go."""
+    """Move the nights slider (in the word's popover) to `n`: the `input` event is the drag, the `change` event is letting go."""
+    open_nights(page)
     page.evaluate("""([n, release]) => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.value = n;
         r.dispatchEvent(new Event('input', {bubbles: true})); if (release) r.dispatchEvent(new Event('change', {bubbles: true})); }""", [n, release])
 
@@ -425,7 +436,7 @@ def test_sliding_shows_every_square_as_an_estimate_at_once_marks_none_and_search
     expect(page.locator("#mx-est")).to_be_visible()
     expect(page.locator("#mx-est")).to_contain_text("estimates")
     expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
-    expect(page.locator(".mx-sent-nights .mx-nights-w")).to_have_text("6 nights")
+    expect(page.locator(".mx-tk-nights > summary")).to_have_text("6 nights")
     expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-day:not(.is-off)")).to_have_count(15)      # Dec 8 to 22: the calendar grew to hold the longer trip
     band = page.locator(".mx-lane[data-lane='sandiego'] .mx-band")
     expect(band).to_have_attribute("style", re.compile(r"grid-column: 7 / span 7"))
@@ -462,7 +473,7 @@ def test_the_address_keeps_the_nights_so_a_reload_or_a_shared_link_does(matrix, 
     assert hrefs and all("r=2026-12-18" in h for h in hrefs if "d=2026" in h), hrefs      # the squares', the menus' and the find's links carry them too
     page.reload()
     page.wait_for_selector("#mx.is-live")
-    expect(page.locator(".mx-sent-nights input")).to_have_value("6")
+    expect(page.locator(".mx-tk-nights input")).to_have_value("6")
     expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
     page.wait_for_function(WAIT_IDLE)
     assert drawn(page)["sandiego|2026-12-12"][1] == "$2,950"
@@ -523,22 +534,77 @@ def test_the_opened_squares_bar_save_and_book_are_for_the_exact_nights_never_an_
     expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("data-l", re.compile(r"^6 nights · \$"))
 
 
-def test_the_phones_cards_carry_the_same_slider_in_step_with_the_sentences(matrix, stand):
-    page = matrix(PHONE)
-    cards = page.locator(".mx-c-nights input")
-    assert cards.count() == 5 and page.locator(".mx-sent-nights").first.is_hidden()
-    assert cards.first.bounding_box()["height"] >= 47.5                               # a 48px target
-    slide(page, 6, release=False)
-    assert page.eval_on_selector_all("input[data-nights]", "els => els.map(e => e.value)") == ["6"] * 6
-    expect(page.locator(".mx-card[data-lane='sandiego'] .mx-c-nights .mx-nights-w")).to_have_text("6 nights")
-    laptop = matrix(DESKTOP)
-    assert laptop.locator(".mx-c-nights").first.is_hidden() and laptop.locator(".mx-sent-nights input").is_visible()
+def test_nights_is_a_word_on_the_phone_and_the_laptop_that_opens_a_popover_with_the_only_slider(matrix, stand):
+    """F-238 (D-542): no slider inline anywhere; the word opens one small popover, on a phone as on a laptop, and the word says the nights at once."""
+    for viewport in (PHONE, DESKTOP):
+        page = matrix(viewport)
+        assert page.locator("input[data-nights]").count() == 1 and page.locator(".mx-c-nights").count() == 0
+        expect(page.locator(".mx-tk-nights input")).to_be_hidden()                       # closed: the sentence is only words
+        word = page.locator(".mx-tk-nights > summary")
+        floor = 47.5 if viewport is PHONE else 0                                         # a 48px target on a phone (a mouse's laptop keeps its compact --target)
+        assert word.bounding_box()["height"] >= floor
+        page.click(".mx-tk-nights > summary")
+        pop, box = page.locator(".mx-pop-nights"), page.locator(".mx-pop-nights").bounding_box()
+        expect(pop).to_be_visible()
+        assert page.locator(".mx-tk-nights input").bounding_box()["height"] >= floor
+        assert box["x"] >= 0 and box["x"] + box["width"] <= viewport["width"] + 0.5, box      # never off the screen
+        slide(page, 6, release=False)
+        expect(word).to_have_text("6 nights")
+        assert page.errors == []
+
+
+def test_the_popover_goes_away_on_a_tap_elsewhere_or_escape_and_one_word_opens_at_a_time(matrix, stand):
+    page = matrix(DESKTOP)
+    page.click(".mx-tk-nights > summary")
+    page.click(".mx-tk-flex > summary")
+    expect(page.locator(".mx-pop-nights")).to_be_hidden()
+    page.keyboard.press("Escape")
+    expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
+    page.click(".mx-about-btn")
+    expect(page.locator(".mx-pop-about")).to_be_visible()
+    page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=1")
+    expect(page.locator(".mx-pop-about")).to_be_hidden()
+
+
+def test_the_popover_grows_from_its_word_on_the_spring_and_fades_under_reduced_motion(matrix, stand):
+    page = matrix(PHONE, motion=True)
+    page.click(".mx-tk-nights > summary")
+    page.wait_for_function("() => GA.motion.log.some(m => m.kind === 'open')")
+    log = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').pop()")
+    word = page.locator(".mx-tk-nights > summary").bounding_box()
+    assert abs(log["from"]["left"] - word["x"]) < 2 and abs(log["from"]["top"] - word["y"]) < 2 and log["dur"] > 0, (log, word)
+    calm = matrix(DESKTOP, motion=True)                                                  # liquid on the matrix at every width (D-439)
+    calm.click(".mx-tk-nights > summary")
+    calm.wait_for_function("() => GA.motion.log.some(m => m.kind === 'open')")
+
+
+def test_about_these_prices_holds_the_legend_the_credit_the_fine_print_privacy_and_terms_and_the_page_has_no_footer(matrix, stand):
+    """F-238 (D-540): nothing is drawn under the matrix; one quiet ⓘ opens it all on tap."""
+    for viewport in (PHONE, DESKTOP):
+        page = matrix(viewport)
+        assert page.locator("footer, .ga-footer").count() == 0
+        assert page.locator(".mx-foot, .mx-key").count() == 0
+        expect(page.locator(".mx-pop-about")).to_be_hidden()
+        page.click(".mx-about-btn")
+        panel = page.locator(".mx-pop-about")
+        expect(panel).to_contain_text("ringed")
+        expect(panel).to_contain_text(re.compile(r"Prices are a preview from LiteAPI|Sample prices from GitAway"))
+        expect(panel).to_contain_text("NOAA")
+        expect(panel.locator("a[href='/privacy']")).to_be_visible()
+        expect(panel.locator("a[href='/terms']")).to_be_visible()
+        assert panel.locator("a[href='/terms']").bounding_box()["height"] >= (47.5 if viewport is PHONE else 0)
+        box = panel.bounding_box()
+        assert box["x"] >= 0 and box["x"] + box["width"] <= viewport["width"] + 0.5, box
+        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+        page.click(".mx-pop-about .ga-mode")                                          # the footer's one light/dark button lives here now (D-460)
+        assert page.evaluate("document.documentElement.dataset.mode") == "dark"
 
 
 def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand):
     page = matrix(DESKTOP)
     before = len(stand.asked)
-    page.locator(".mx-sent-nights input").focus()
+    open_nights(page)
+    page.locator(".mx-tk-nights input").focus()
     for _ in range(3):
         page.keyboard.press("ArrowRight")
     page.wait_for_function(WAIT_IDLE)
@@ -566,6 +632,8 @@ def test_the_floating_note_sits_above_the_bar_whatever_its_height_not_at_a_magic
     for viewport in (DESKTOP, TABLET):
         page = matrix(viewport, wait=False)
         expect(page.locator("#mx-fact")).to_be_visible()
+        page.wait_for_function("""() => { const s = document.getElementById('mx-side').getBoundingClientRect(), v = parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h'));
+            return Math.abs(v - (innerHeight - s.top)) <= 1; }""")      # the dock settles with the layout (a frame after what is above the bar changes): wait for it, never read it mid-move
         n, b, var, bottom, vh = page.evaluate("""() => { const f = document.getElementById('mx-fact'), s = document.getElementById('mx-side').getBoundingClientRect();
             return [f.getBoundingClientRect(), s, parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h')), parseFloat(getComputedStyle(f).bottom), innerHeight]; }""")
         assert abs(var - (vh - b["top"])) <= 1 and abs(bottom - (var + 9)) <= 1, (viewport, var, b, bottom)      # its stop is the bar's top and 0.75rem
@@ -578,7 +646,8 @@ def test_a_touch_screen_at_the_laptops_width_gets_48px_start_prices_and_slider(m
     assert page.evaluate("matchMedia('(pointer: coarse)').matches")
     heights = page.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")
     assert len(heights) == 25 and min(heights) >= 47.5, min(heights)
-    assert page.locator(".mx-sent-nights input").bounding_box()["height"] >= 47.5
+    open_nights(page)
+    assert page.locator(".mx-tk-nights input").bounding_box()["height"] >= 47.5
     mouse = matrix(TABLET)
     assert min(mouse.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")) < 47.5      # a mouse keeps the compact pills
 
@@ -605,3 +674,28 @@ def test_estimates_and_the_slider_read_and_fit_in_light_and_dark(matrix, viewpor
         out.mkdir(parents=True, exist_ok=True)
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(out / f"f237-{viewport['width']}-{scheme}-sliding.png"))
+
+
+def focused(page, selector):
+    """The focus is on `selector` (waited for: a details' `toggle` event, where the script moves focus, is queued a task after the click or key)."""
+    page.wait_for_function("sel => document.activeElement && document.activeElement.matches(sel)", arg=selector)
+    return True
+
+
+def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_popover_and_tabbing_out_closes_it(matrix, stand):
+    """F-238 review: Enter on "4 nights" lands on the slider (arrows work at once); Tab past the popover closes it and goes on to the next word."""
+    page = matrix(DESKTOP)
+    page.locator(".mx-tk-nights > summary").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator(".mx-pop-nights")).to_be_visible()
+    focused(page, '.mx-tk-nights input[data-nights]')
+    page.keyboard.press("ArrowRight")
+    expect(page.locator(".mx-tk-nights > summary")).to_have_text("5 nights")
+    page.keyboard.press("Tab")
+    expect(page.locator(".mx-pop-nights")).to_be_hidden()
+    focused(page, '.mx-tk-flex > summary')
+    page.keyboard.press("Enter")
+    focused(page, '.mx-tk-flex .mx-chip')        # a words' popover of links: focus lands on its first choice
+    page.keyboard.press("Escape")
+    expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
+    focused(page, '.mx-tk-flex > summary')       # and Escape gives focus back to the word

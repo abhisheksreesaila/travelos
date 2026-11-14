@@ -11,7 +11,7 @@
 //      The ringed band of each lane (its nights, labelled "4 nights · $2,080", the find's lane "Found · +$50 vs San Diego alone") sits on the find's start in the find's lane,
 //      else the lane's cheapest start, else the opened square, and moves with the same rules as pages/tripmatrix.py `band_window` and `band_words`. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
-//   5. The nights slider (F-237, D-530 to D-535): one range input in the sentence and one on each phone card, all the same control. While it moves every square shows
+//   5. The nights slider (F-237, D-530 to D-535; F-238, D-542): one range input, in the popover of the sentence's "4 nights" word (the same word on a phone and a laptop). While it moves every square shows
 //      "about $X" at once (`estimate`: the flight and the nightly stay rate already read for that square's start day, else the lane's cheapest; never a search, never a
 //      mark, never a price). Let go (after COMMIT_MS), the address keeps the nights, one GET of data.peek fills what is already known for them (the showcase's samples, LiteAPI's
 //      cache) and only then the squares in view are asked for, as tiles, through the same gate and budgets. Every nights has its own store (`stores`), so going back is
@@ -412,7 +412,27 @@
       if (dy > 80) { s.style.transform = ''; close(); } else if (M()) { M().spring(s, s.style.transform); s.style.transform = ''; } else s.style.transform = '';
     });
   }
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  // ---- the sentence's words and ⓘ About these prices: popovers that grow from their word (F-238, D-542) ----
+  var pops = root.querySelectorAll('details.mx-tk');
+  function shutPops(except) { pops.forEach(function (d) { if (d !== except && d.open) d.open = false; }); }
+  pops.forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      shutPops(d);
+      var pop = d.querySelector('.mx-pop'), word = d.querySelector('summary');
+      if (pop && M()) (M().reduced() ? M().fade(pop) : M().open(pop, word));      // grows out of the word tapped; reduced motion: a fade
+      var first = pop && pop.querySelector('input, a[href], button, summary');      // keyboard: focus moves into the popover (to the slider for the nights) so a key can use it at once
+      if (first) first.focus({ preventScroll: true });
+    });
+    d.addEventListener('focusout', function (e) { if (d.open && e.relatedTarget && !d.contains(e.relatedTarget)) d.open = false; });      // Tab on past the popover puts it away
+  });
+  document.addEventListener('pointerdown', function (e) { if (!e.target.closest('details.mx-tk')) shutPops(null); });      // a tap anywhere else puts the popover away
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var open = Array.prototype.filter.call(pops, function (d) { return d.open; });
+    open.forEach(function (d) { d.open = false; var w = d.querySelector('summary'); if (w) w.focus({ preventScroll: true }); });
+    if (!open.length) close();
+  });
   root.addEventListener('click', function (e) {
     var a = e.target.closest('.mx-sq[data-sq], .mx-find-a[data-open]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
@@ -507,7 +527,9 @@
     side.dataset.n = String(N);
     var dock = function () { root.style.setProperty('--mx-bar-h', Math.max(0, innerHeight - side.getBoundingClientRect().top) + 'px'); }, queued = 0;      // the floating note sits above the bar's top, wherever the bar is
     var later = function () { if (!queued) queued = requestAnimationFrame(function () { queued = 0; dock(); }); };
-    if (window.ResizeObserver) new ResizeObserver(later).observe(side);
+    if (window.ResizeObserver) { var ro = new ResizeObserver(later); ro.observe(side); ro.observe(root); }      // the bar's top also moves when what is above it changes height (the count going, a find arriving)
+    if (window.MutationObserver) new MutationObserver(later).observe(root, { attributes: true, attributeFilter: ['data-waiting', 'data-busy', 'data-est', 'data-slow'] });      // what is above the bar changes with these (the count goes, a note comes)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);      // the words' own font changes their height
     addEventListener('scroll', later, { passive: true });
     addEventListener('resize', later);
     dock();
