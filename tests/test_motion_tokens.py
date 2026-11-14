@@ -8,9 +8,7 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 CSS = sorted(p.name for p in (ASSETS / "css").glob("*.css") if p.name != "tokens.css")
 JS = sorted(p.name for p in (ASSETS / "js").glob("*.js"))
 # What may keep a literal time, and why. None of these is a sheet, menu, popover, toast or screen move.
-ALLOWED_FILES = {
-    "landing.css": "the marketing page's hero and feature illustrations (a demo that plays on hover: staggered delays, a drawn line, a cursor); not part of the app",
-}
+ALLOWED_FILES = {}
 ALLOWED_CSS = (
     "infinite",              # every looping decoration: the held block's wiggle, the recording dot, the mic pulse, presence dots, the plane and clouds on sign-in, bobbing stickers, shimmer
     "ak-ink 0.5s",           # the typed words fading in

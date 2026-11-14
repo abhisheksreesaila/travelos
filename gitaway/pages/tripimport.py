@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse, Response
 
 from gitaway import access, confirmations, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti
 from gitaway.icons import icon
-from gitaway.layout import page, trip_field
+from gitaway.layout import page, plan_href, trip_field
 from gitaway.pages import bookedwhere
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"), Script(src="/assets/js/tripimport.js", defer=True))
@@ -248,7 +248,7 @@ def register(app):
         if not ses.current_traveler(session):
             return _signin()
         if not can_import(session):
-            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         return paste_page()
 
     @app.post(PATH)
@@ -256,7 +256,7 @@ def register(app):
         if not ses.current_traveler(session):
             return _signin()
         if not can_import(session):
-            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         if file is not None and getattr(file, "filename", ""):  # an uploaded PDF wins over the paste box
             data = await file.read(expedia.MAX_PDF_BYTES + 1)
             try:
@@ -275,7 +275,7 @@ def register(app):
         if not ses.current_traveler(session):
             return _signin()
         if not can_import(session):
-            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         return paste_page(text)
 
     @app.post(f"{PATH}/save")
@@ -283,7 +283,7 @@ def register(app):
         if not ses.current_traveler(session):
             return _signin()
         if not can_import(session):
-            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return _sorry("Import a trip", CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         try:
             parsed = ti.parse(text)  # read again: a posted form is never trusted
         except ti.ImportProblem as e:
@@ -305,7 +305,7 @@ def register(app):
         plan = importer.plan_of(session)
         if plan is None:
             return _sorry("No imported trip is open", "Details with confirmation numbers are kept for trips you import. Open one from your calendar, or import a trip.",
-                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Plan a trip", href="/start", cls="btn btn-sm"), *([A("Browse community trips", href="/community", cls="btn btn-sm")] if showcase.on() else []), A("Back to the trip", href="/trip", cls="btn btn-sm"), status=404)
+                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Plan a trip", href=plan_href(), cls="btn btn-sm"), *([A("Browse community trips", href="/community", cls="btn btn-sm")] if showcase.on() else []), A("Back to the trip", href="/trip", cls="btn btn-sm"), status=404)
         return details_page(plan, ses.open_trip_id(), can_delete(session), can_import(session))
 
     @app.get("/trip/delete")

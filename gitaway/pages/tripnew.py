@@ -1,7 +1,7 @@
 """Make this a trip (F-210): a booking search becomes the family's trip and opens on the cockpit. The model is gitaway/tripstart.py.
 
-POST /trip/new   from /plan's lanes (`place`, `d`, `r`, `a`, `k`, `home`, `iata`) or Where to? (its own fields, `from`, `n`, `k1`.., or a sample city `to` on the showcase).
-                 Made: 303 to /trip/cockpit. Signed out: 303 to sign-in, which comes back to the GET below. A search that does not hold up: 303 to Where to?, which says
+POST /trip/new   from /plan's lanes (`place`, `d`, `r`, `a`, `k`, `home`, `iata`; a sample city `to`, or `from`, `n`, `k1`.. are read too).
+                 Made: 303 to /trip/cockpit. Signed out: 303 to sign-in, which comes back to the GET below. A search that does not hold up: 303 to /plan, which says
                  what is wrong. A viewer never gets here (gitaway/access.py refuses every write a viewer makes).
 GET  /trip/new   the finish card after a sign-in: the search in words and the one button. It writes nothing (a link must not make a trip).
 """
@@ -26,16 +26,15 @@ def _params(request_params) -> dict:
     return {k: v for k, v in request_params.items() if isinstance(v, str)}
 
 
-def _back_to_start(params) -> RedirectResponse:
-    """Where to?, filled with what was sent, so it says what is wrong on each field."""
-    keep = ("place", "to", "focus", "from", "home", "d", "r", "a", "n", *[f"k{i}" for i in range(1, plan_search.MAX_KIDS + 1)])
-    words = {"go": "1", **{k: params[k] for k in keep if params.get(k)}}
-    if params.get("k") and not params.get("n"):        # the lanes' `k` is Where to?'s count and pickers
-        ages = [a.strip() for a in params["k"].split(",") if a.strip()]
-        words |= {"n": str(len(ages)), **{f"k{i}": a for i, a in enumerate(ages, 1)}}
-    if words.get("home") and not words.get("from"):
-        words["from"] = words.pop("home")
-    return RedirectResponse("/start?" + urlencode(words), status_code=303)
+def _back_to_booking(params) -> RedirectResponse:
+    """The booking lanes, filled with what was sent, so they say what is wrong with it."""
+    keep = ("place", "to", "focus", "home", "from", "d", "r", "a", "k", "iata")
+    words = {k: params[k] for k in keep if params.get(k)}
+    if not words.get("k") and params.get("n"):        # a count with one age picker per kid
+        words["k"] = plan_search.kids_from(params["n"], [params.get(f"k{i}", "") for i in range(1, plan_search.MAX_KIDS + 1)])
+    if words.get("from") and not words.get("home"):
+        words["home"] = words.pop("from")
+    return RedirectResponse("/plan?" + urlencode(words), status_code=303)
 
 
 def finish_page(search, words, role):
@@ -59,7 +58,7 @@ def register(app):
         params = _params(request.query_params)
         search, errors = tripstart.read(params)
         if errors or search is None:
-            return _back_to_start(params)
+            return _back_to_booking(params)
         words = tripstart.words(search, params.get("iata", ""))
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=" + quote("/trip/new?" + urlencode(words), safe=""), status_code=303)
@@ -70,7 +69,7 @@ def register(app):
         params = _params(await request.form())
         search, errors = tripstart.read(params)
         if errors or search is None:
-            return _back_to_start(params)
+            return _back_to_booking(params)
         words = tripstart.words(search, params.get("iata", ""))
         if not ses.current_traveler(session):
             return RedirectResponse("/signin?next=" + quote("/trip/new?" + urlencode(words), safe=""), status_code=303)

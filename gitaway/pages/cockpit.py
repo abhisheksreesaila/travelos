@@ -19,7 +19,7 @@ import logging
 from fasthtml.common import A, Article, B, Button, Dd, Details, Div, Dl, Dt, Em, H1, H2, Header, I, Li, Link, Main, NotStr, Ol, P, Script, Section, Span, Summary, Ul
 from starlette.responses import Response
 
-from gitaway import cockpit as ck, geopack, phone, session as ses, topbar
+from gitaway import cockpit as ck, geopack, phone, session as ses, showcase, topbar
 from gitaway.icons import icon
 from gitaway.layout import join_note
 from gitaway.pages import tripcanvas
@@ -167,7 +167,8 @@ def page_body(v):
     head = Header(Div(Span(v.eyebrow, cls="ck-eyebrow"), H1(v.title, cls="ck-title"), cls="ck-head-t ck-head-desk"),
                   Div(topbar.trip_menu(phone_kicker) or phone_kicker, H1(v.head_day, cls="ck-title"), P(v.head_sub, cls="ck-pday"), cls="ck-head-t ck-head-phone"),   # the phone's eyebrow is the trip menu (switch trips)
                   Div(Span(icon("sun", 15, 2.2), "Sample weather", cls="ck-chip ck-chip-sample") if any(d.wx.sample for d in v.days) else "",      # said where every sky can see it
-                      Span(icon("calendar", 15, 2.2), v.dates, cls="ck-chip"), Span(icon("users", 15, 2.2), v.party, cls="ck-chip"), cls="ck-chips"), cls="ck-head")
+                      Span(icon("calendar", 15, 2.2), v.dates, cls="ck-chip"), Span(icon("users", 15, 2.2), v.party, cls="ck-chip"),
+                      A(icon("plus", 15, 2.4), "Plan another trip", href=showcase.planning_path(), cls="ck-chip ck-chip-link", id="ck-plan-another"), cls="ck-chips"), cls="ck-head")
     week = Section(*[stub(v, d) for d in v.days], cls="ck-week" + (" is-long" if len(v.days) > 9 else ""), id="ck-week", aria_label="The week")
     wallet = Section(*[pass_card(p) for p in v.passes], cls=f"ck-wallet ck-n{len(v.passes)}", id="ck-wallet", aria_label="Bookings") if v.passes else ""
     icons = {name: str(icon(name, 14, 2.4)) for name in MAP_ICONS}

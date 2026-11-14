@@ -1,4 +1,4 @@
-// The booking lanes' trip form (F-198): one age picker per kid, as /start has (start.js). The page works without it: the server reads the kid count and the first that many ages.
+// The booking lanes' trip form (F-198): one age picker per kid, as the old Where to? form had. The page works without it: the server reads the kid count and the first that many ages.
 (function () {
   var form = document.getElementById('ps-trip');
   if (!form || !form.elements.n) return;

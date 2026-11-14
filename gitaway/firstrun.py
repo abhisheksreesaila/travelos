@@ -10,7 +10,6 @@ from fasthtml.common import A, Div, H2, P, Section, Span
 from gitaway import session as ses, showcase
 from gitaway.icons import icon
 
-PLAN = "/start"
 IMPORT = "/trips/import"
 BUILD = "/trips/build"
 COMMUNITY = "/community"
@@ -35,15 +34,16 @@ def _import_path():
                cls="fr-path fr-path-multi")
 
 
-def paths(plan_href=PLAN):
-    """The three ways to begin: a plain list of links, so it works without JavaScript."""
+def paths():
+    """The ways to begin: a plain list of links, so it works without JavaScript. Planning is the trip matrix, so where that does not exist it is left out."""
     community = [_path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look")] if showcase.on() else []
+    plan = [_path(showcase.planning_path(), "plane", "sun", "Plan a trip", "Pick a place and dates. We line up the whole trip, a flight and a stay, for every start day.", "Start planning")] if showcase.matrix_open() else []
     return Div(
-        _path(plan_href, "plane", "sun", "Plan a trip", "Pick a place and dates. We line up where to book flights, a stay and a car, with your dates filled in.", "Start planning"),
+        *plan,
         _import_path(),
         *community,
-        cls="fr-paths" + ("" if community else " fr-two"))
+        cls="fr-paths" + ("" if len(plan) + len(community) == 2 else " fr-two"))
 
 
-def welcome(title="Welcome to GitAway", lede="Your family has no trips yet, so this is the fun part. Pick a way to begin.", plan_href=PLAN, heading=H2, eyebrow="FIRST TRIP"):
-    return Section(Span(eyebrow, cls="eyebrow"), heading(title, cls="fr-h"), P(lede, cls="fr-lede"), paths(plan_href), cls="fr", aria_label="Start your first trip")
+def welcome(title="Welcome to GitAway", lede="Your family has no trips yet, so this is the fun part. Pick a way to begin.", heading=H2, eyebrow="FIRST TRIP"):
+    return Section(Span(eyebrow, cls="eyebrow"), heading(title, cls="fr-h"), P(lede, cls="fr-lede"), paths(), cls="fr", aria_label="Start your first trip")

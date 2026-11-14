@@ -18,7 +18,7 @@ from fasthtml.common import NotStr, A, Button, Details, Div, Form, H1, H2, Heade
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, tripcal as cal, tripday as td, topbar
+from gitaway import access, canvas, catalog, geo, members, phone, tripgeo, pickers, session as ses, showcase, tripcal as cal, tripday as td, topbar
 from gitaway.icons import icon
 from gitaway.layout import avatar, join_note, trip_field
 from gitaway.pages import dayshared as calui, morning as morning_ui, passes as passes_ui, passkeys as passkeys_ui, rides as rides_ui, tab_ask
@@ -442,7 +442,7 @@ def _guard(session):
     if not ses.current_traveler(session):
         return RedirectResponse("/signin?next=%2Ftrip", status_code=303)
     if not ses.booking(session):
-        return RedirectResponse("/start", status_code=303)
+        return RedirectResponse(showcase.planning_path(), status_code=303)
     return None
 
 

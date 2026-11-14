@@ -504,7 +504,8 @@ def top_bar(trip, ledger_el=None):
         brand(),
         preview(),
         A(Span(f"{trip.origin} → {trip.destination_name}", cls="ws-bold"), Span(f"{fmt(trip.depart)} – {fmt(trip.return_)}"),
-          Span(trip.summary), Span("Change", cls="ws-change"), href="/start" + (f"?{catalog.trip_query(trip)}" if trip != catalog.SAMPLE_TRIP else ""), cls="ws-pill"),
+          Span(trip.summary), Span("Change", cls="ws-change"), href=plan_search.matrix_href({"to": trip.key, "focus": trip.focus, "home": trip.home, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(), "a": trip.adults,
+                                                                                   "k": ",".join(map(str, trip.kid_ages))} if trip != catalog.SAMPLE_TRIP else {}), cls="ws-pill"),
         ledger_el or "",
         Span(f"Press 1–{7 if showcase.on() else 6} to focus a pane", cls="ws-hint"),
         avatar(who, "ws-avatar") if who else A("Sign in", href=session.signin_href(), cls="btn btn-sm"),
@@ -680,7 +681,7 @@ def register(app):
             return (body, cookie_header) if cookie_header else body
         picks = resolve_pick(f, h, c, trip)
         stay, flight = resolve_stay(picks[1], rooms, add, trip), resolve_flight(picks[0], fare, bags, trip)
-        if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"; /start offers to continue the rest
+        if any((f, h, c, rooms, add, fare, bags, d, r, a, k, to)):  # a bare /plan is not "picks"
             session_helpers.remember_plan(session, plan_path(*picks, stay, trip, flight)[len("/plan?"):])
         body = workspace(*picks, x=x, v=v, stay=stay, flight=flight, trip=trip)
         return (body, cookie_header) if cookie_header else body

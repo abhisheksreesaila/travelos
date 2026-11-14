@@ -1,7 +1,7 @@
 """Sign-in (F-017, F-039, F-052; Direction A since F-200): /signin?next=<local path>&intent=<save|pay|invite|fork>.
 
 Everything is browsable signed out; save, pay, invite and fork land here, then continue to `next`. Without a `next`
-the traveler lands on /start, "Where to?" (F-035).
+the traveler lands on /, which opens their trip or the trip matrix (F-231).
 Google sign-in is /login and /auth/callback (fh-saas); the local dev sign-in is a POST here (see gitaway.auth).
 The page (docs/design/reskin, a-signin): the intent as the title, what signing in is for as a trip card with B's ticket stub (what the card says comes from `next`,
 gitaway.signin_context), two big buttons (Google, a passkey); on a laptop the left half carries the line ("Take a trip. Leave a trail.") over the trip's widgets.
@@ -148,7 +148,7 @@ def _page(request, next_path, intent, asked, error="", status=200):
 
 def register(app):
     @app.get("/signin")
-    def signin_page(request, session, next: str = "/start", intent: str = ""):
+    def signin_page(request, session, next: str = "/", intent: str = ""):
         next_path, asked, intent = ses.safe_next(next), (intent if intent in ses.INTENTS else ""), _intent(intent)
         if ses.current_traveler(session):
             if (full := _continue(session, asked, next_path)):
@@ -157,7 +157,7 @@ def register(app):
         return _page(request, next_path, intent, asked)
 
     @app.post("/signin")
-    def signin_submit(request, session, email: str = "", next: str = "/start", intent: str = ""):
+    def signin_submit(request, session, email: str = "", next: str = "/", intent: str = ""):
         """The local dev sign-in: any email, only with GITAWAY_DEV_LOGIN=1 and a request from this machine."""
         if not auth.dev_login_allowed(request):
             return Response("Dev sign-in is off.", status_code=403)
@@ -171,19 +171,19 @@ def register(app):
         return RedirectResponse(next_path, status_code=303)
 
     @app.get("/login")
-    def login(request, session, next: str = "/start", intent: str = ""):
+    def login(request, session, next: str = "/", intent: str = ""):
         """Start Google sign-in through fh-saas. Without Google keys this is just the sign-in page."""
-        next_path = ses.safe_next(next, "/start")
+        next_path = ses.safe_next(next, "/")
         if not auth.google_enabled():
             return RedirectResponse(f"/signin?next={quote(next_path, safe='')}&intent={intent if intent in ses.INTENTS else ''}", status_code=303)
-        next_path = next_path if len(next_path) <= auth.MAX_NEXT else "/start"  # the cookie is tiny; a long address is not worth keeping
+        next_path = next_path if len(next_path) <= auth.MAX_NEXT else "/"  # the cookie is tiny; a long address is not worth keeping
         session["login_next"], session["login_intent"] = next_path, (intent if intent in ses.INTENTS else "")
         return RedirectResponse(handle_login_request(request, session), status_code=303)
 
     @app.get("/auth/callback")
     def auth_callback(request, session, code: str = "", state: str = "", error: str = ""):
         """Google sends people back here. fh-saas verifies, signs in and makes the family tenant; we then go where they were headed."""
-        next_path, asked = ses.safe_next(session.get("login_next"), "/start"), session.get("login_intent") or ""
+        next_path, asked = ses.safe_next(session.get("login_next"), "/"), session.get("login_intent") or ""
         try:
             if error or not code or not state:  # Google sends ?error=access_denied (no code) when the person cancels
                 raise ValueError("no code")

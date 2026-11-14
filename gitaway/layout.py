@@ -99,9 +99,9 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
-# The site's way in, the same everywhere (founder, 2026-11-13, D-458): "/start" is drawn as `plan_href()`. Community trips is always there: off the
+# The site's way in, the same everywhere (founder, 2026-11-13, D-458): Plan a trip is drawn as `plan_href()`. Community trips is always there: off the
 # showcase, before anyone has shared a trip, its page says so.
-NAV = [("For creators", "/for-creators"), ("Community trips", "/community"), ("Plan a trip", "/start")]
+NAV = [("For creators", "/for-creators"), ("Community trips", "/community"), ("Plan a trip", "/plan/matrix")]
 
 
 MARK = ('<svg class="ga-mark" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false">'
@@ -170,7 +170,7 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
     A signed-in person's page (nav=True) also carries the one top bar (F-139, gitaway.topbar) before it: topbar.css shows the bar from 1020px up and
     hides this header there; below that width this header is what shows, as before."""
     from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
-    links = [A(label, href=plan_href() if href == "/start" else href, aria_current="page" if href == current else None) for label, href in NAV]
+    links = [A(label, href=plan_href() if href == NAV[-1][1] else href, aria_current="page" if href == current else None) for label, href in NAV]
     top = topbar.bar() if nav and traveler is None else ""
     return (top, Header(
         A("Skip to content", href="#main", cls="ga-skip"),
@@ -182,9 +182,9 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
 
 
 def plan_href() -> str:
-    """Where "Plan a trip" and "Start a trip" go (D-458): Where to? (/start), where a family starts a trip or brings in one already booked; signed
-    out, through sign-in first. The trip matrix is reached from a trip, not from the front door, until booking opens."""
-    return "/start" if session.request_traveler() else session.signin_href("/start")
+    """Where "Plan a trip" and "Start a trip" go (D-461): the trip matrix when signed in (the family's own trip is one tap away on `/`), where it exists, else the
+    import of a trip already booked; signed out, sign in first, and `/` then decides."""
+    return showcase.planning_path() if session.request_traveler() else session.signin_href("/")
 
 
 def site_footer(links=()):

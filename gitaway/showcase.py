@@ -44,6 +44,16 @@ def on() -> bool:
     return not auth.production()
 
 
+def matrix_open() -> bool:
+    """Does the trip matrix (/plan/matrix) exist here? On the showcase always; off it only with LITEAPI_KEY (`LITEAPI_PAGES`)."""
+    return on() or not _needs_keys("/plan/matrix")
+
+
+def planning_path() -> str:
+    """The way in to a new trip (F-231): the matrix where it exists, else the import of a trip already booked (D-461)."""
+    return "/plan/matrix" if matrix_open() else "/trips/import"
+
+
 def community_open() -> bool:
     """Do Community trips and the creator pages exist? On the showcase always; off it only once a real trip is published (F-181)."""
     from gitaway import community

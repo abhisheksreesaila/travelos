@@ -11,7 +11,7 @@ The story of the brief (docs/briefs/unified-booking.md "The cover tells this sto
     the close     the headline again and Start a trip, then the footer.
 
 The header is the site's way in (founder, 2026-11-13): For creators, Community trips and Plan a trip (`layout.NAV`), then Sign in. Start a trip and
-Plan a trip are one door, `layout.plan_href()`: sign in, then Where to? (/start), where a trip already booked comes in too (D-458).
+Plan a trip are one door, `layout.plan_href()`: sign in, then `/` decides: the family's trip, or the trip matrix (D-461).
 
 No jitter by construction (D-427): the frame is CSS sticky; assets/js/cover.js only sets data-part on the stage from an IntersectionObserver and adds
 .go to a part the first time it shows. cover.css does the rest on the --motion-* tokens: the outgoing screen fades, the incoming one settles in on
@@ -288,7 +288,7 @@ def page(footer_links, drive=()):
         NotStr(_sprite()),
         A("Skip to the story", href="#main", cls="ga-skip"),
         Header(brand(), Div(preview(), cls="cv-tag"),
-               Nav(*[A(Span(label, cls="cv-nl-full"), Span(SHORT.get(label, label), cls="cv-nl-short", aria_hidden="true"), href=plan_href() if href == "/start" else href,
+               Nav(*[A(Span(label, cls="cv-nl-full"), Span(SHORT.get(label, label), cls="cv-nl-short", aria_hidden="true"), href=plan_href() if href == NAV[-1][1] else href,
                        aria_label=label) for label, href in NAV], cls="cv-nav", aria_label="Main"),
                A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
         Main(_hero(), _stage(), _close(), id="main", data_phone=PHONE_Q),

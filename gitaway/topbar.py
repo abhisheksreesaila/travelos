@@ -14,7 +14,7 @@ import logging
 
 from fasthtml.common import A, Button, Details, Div, Form, Header, Input, Kbd, Li, Nav, P, Script, Span, Summary, Ul
 
-from gitaway import session as ses
+from gitaway import session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import mark, mode_switch, preview
 
@@ -35,7 +35,7 @@ def section(path: str) -> str:
         return "book"      # F-200: Book this trip (F-198's lanes for the open trip)
     if p == "/family" or p.startswith("/family/") or p == "/trip/family" or p.startswith("/trip/family/"):
         return "family"
-    if p in ("/trip", "/start", "/plan", "/rides") or p.startswith(("/trip/", "/trips/build", "/trips/import", "/plan/", "/start/")):
+    if p in ("/trip", "/plan", "/rides") or p.startswith(("/trip/", "/trips/build", "/trips/import", "/plan/")):
         return "trip"
     return ""
 
@@ -78,7 +78,7 @@ def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
         summary,
         Div(Span("Your trips", cls="ga-tb-k") if len(trips) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="ga-tb-solo"),
             Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
-            A(icon("plus", 16, 2.4), "Plan another trip", href="/start", cls="ga-tb-item"),
+            A(icon("plus", 16, 2.4), "Plan another trip", href=showcase.planning_path(), cls="ga-tb-item"),
             A(icon("ticket", 16, 2.4), "Book this trip", href="/trip/book", cls="ga-tb-item", id=None if phone else "ga-tb-book") if t else "",   # F-198: the booking lanes for the open trip, any destination
             A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
             A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id=None if phone else "ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page (ids on the bar's copy only: a phone's copy is on the same page)
@@ -145,7 +145,7 @@ def bar(path=None):
         A("Skip to content", href="#main", cls="ga-skip"),
         Div(A(mark(), Span("GitAway", cls="ga-brand-name"), href="/", cls="ga-brand", aria_label="GitAway home"),
             preview(), cls="ga-tb-l"),       # the honest "Early preview" label, beside the brand
-        Nav(_link("Trip", "/trip", "trip", current, "calendar") if has_trip else _link("Start", "/start", "trip", current, "plus"),
+        Nav(_link("Trip", "/trip", "trip", current, "calendar") if has_trip else _link("Start", showcase.planning_path(), "trip", current, "plus"),
             _link("Book", "/trip/book", "book", current, "ticket") if has_trip else "",
             _link("Family", "/trip/family" if has_trip else "/family", "family", current, "users"),
             A(icon("mic", 15, 2.2), "Ask", Kbd("/", cls="ga-tb-kbd"), href="/trip/ask", cls="ga-tb-link ga-tb-ask", id="ga-tb-ask", aria_current="page" if current == "ask" else None,

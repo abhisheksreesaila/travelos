@@ -1,6 +1,6 @@
 """Install on iPhone (F-044): the web app manifest, the service worker and its offline page.
 
-GET /manifest.webmanifest   "Add to Home Screen" opens GitAway full screen at /trip (the phone trip view; signed out it goes to sign-in, with no trip to /start)
+GET /manifest.webmanifest   "Add to Home Screen" opens GitAway full screen at /trip (the phone trip view; signed out it goes to sign-in, with no trip to the trip matrix)
 GET /sw.js                  the service worker, served from the root so its scope is the whole site
 GET /offline                what a page shows when there is no connection and it was never opened before
 
@@ -67,7 +67,7 @@ def register(app):
         return page(
             "Offline",
             Section(
-                Div(H1("You're offline"), P("This page isn't saved on your phone yet. Pages you opened recently still work offline; the rest will load once you're back online."), A("Back to your trip", href="/start", cls="btn btn-primary")),
+                Div(H1("You're offline"), P("This page isn't saved on your phone yet. Pages you opened recently still work offline; the rest will load once you're back online."), A("Back to your trip", href="/", cls="btn btn-primary")),
                 cls="ga-soon ga-wrap",
             ),
         )

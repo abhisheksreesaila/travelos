@@ -1,5 +1,6 @@
 """The trip matrix (F-222): places down and start days across, each square the whole trip (flight + stay), so a family sees the trip they did not know to ask for.
 
+GET  /start               the old Where to? address: redirects here with its place, dates and party (F-231)
 GET  /plan/matrix          the sentence ("A family of 4, SFO to San Diego or nearby, Dec 12 to 16 give or take 2 days, under $3,000."), the find, and the matrix: on a laptop
                            calendar lanes (each place a row of days wearing its sky, the nights a band, the whole trip's total under each start day) beside the opened square's
                            panel; on a phone a card per place with its start days as squares, and the opened square in a sheet. `q=` is a retyped sentence.
@@ -23,10 +24,10 @@ from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Im
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
+from gitaway import catalog, familydb, firstrun, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import weather_ui
+from gitaway.pages import plan_search, weather_ui
 from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
 
@@ -408,11 +409,16 @@ def page_data(s: State, lanes, windows, known) -> str:
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
+def import_el():
+    """"Already booked? Bring your trip in" (F-231): a signed-in family that booked elsewhere goes to the import, not through a search."""
+    return A("Already booked? Bring your trip in", href=firstrun.IMPORT, cls="mx-import", id="mx-import") if ses.request_traveler() else ""
+
+
 def matrix_page(s: State, family="", typed="", problems=()):
     lanes, windows = lanes_of(s), windows_of(s)
     meta_sample = showcase.on()
     if s.problems or not windows:
-        body = Div(Div(sentence(s, typed, problems or s.problems or [MISSING["dates"]]), cls="mx-lead"), cls="mx mx-blank")
+        body = Div(Div(sentence(s, typed, problems or s.problems or [MISSING["dates"]]), Div(import_el(), cls="mx-meta"), cls="mx-lead"), cls="mx mx-blank")
         return page("The trip matrix", H1("The trip matrix", cls="mx-sr"), body, current="/plan/matrix", head=HEAD, noindex=True)
     known = peek_all(s, lanes, windows, family)
     totals = totals_of(known)
@@ -421,7 +427,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     ages = [sq.fetched for sq in known.values() if sq.fetched]
     meta = Div(Span(Span(str(len(known)), id="mx-count-n"), f" of {total} in", cls="mx-count", id="mx-count", aria_live="polite"),
                Span(f"Preview · {age_words(min(ages))}" if ages else "Preview", cls="mx-preview", id="mx-age"),
-               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), cls="mx-meta", id="mx-meta")
+               Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), import_el(), cls="mx-meta", id="mx-meta")
     opened = default_open(lanes, windows, known, found)
     if opened:
         o_lane, o_w = next(x for x in lanes if x.key == opened[0]), next(w for w in windows if w.key == opened[1])
@@ -513,6 +519,11 @@ def _family(session):
 
 
 def register(app):
+    @app.get("/start")
+    def start(request):
+        """The old Where to? form is gone (F-231, D-461): its address, and every link made of it, opens the matrix with the place, dates and party it carried."""
+        return RedirectResponse(plan_search.matrix_href(request.query_params), status_code=303)
+
     @app.get(PATH)
     def trip_matrix(session, q: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = state(to, home, d, r, a, k, x, nb, b)
