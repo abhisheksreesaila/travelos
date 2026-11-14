@@ -28,7 +28,7 @@ from starlette.responses import JSONResponse, RedirectResponse
 
 from gitaway import catalog, familydb, firstrun, gridsource, importer, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, weather
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, weather_ui
 from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
@@ -515,7 +515,7 @@ def lanes_el(s: State, lanes, windows, known, marks, skies, found=None):
 
 def about_el(s: State, skies, sample: bool):
     """The one quiet "ⓘ About these prices" (F-238, D-540): what the calendar's colours mean, the weather's credit and labels (AGENTS.md: a page showing weather shows
-    weather.notes), the preview and sample fine print, and the site's Privacy and Terms, closed until it is tapped. It replaces the legend, the notes under the calendar and
+    weather.notes), the preview and sample fine print, and the site's Privacy and Terms and the one light/dark button (the footer's other tenant), closed until it is tapped. It replaces the legend, the notes under the calendar and
     the cards, the fine print and the site footer."""
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     return Details(Summary(icon("info", 18, 2.2), Span("About these prices"), cls="mx-about-btn"),
@@ -523,7 +523,7 @@ def about_el(s: State, skies, sample: bool):
                          f"Under each start day: the flight and the stay for {s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start."), cls="mx-legend"),
                        P(SAMPLE_FINE if sample else FINE, cls="mx-foot-n"),
                        Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
-                       Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="mx-about-nav", aria_label="Legal"), cls="mx-pop mx-pop-about"),
+                       Div(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="mx-about-nav", aria_label="Legal"), mode_switch("about"), cls="mx-about-foot"), cls="mx-pop mx-pop-about"),
                    cls="mx-tk mx-about", data_pop="about")
 
 

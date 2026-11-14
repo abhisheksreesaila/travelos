@@ -596,6 +596,8 @@ def test_about_these_prices_holds_the_legend_the_credit_the_fine_print_privacy_a
         box = panel.bounding_box()
         assert box["x"] >= 0 and box["x"] + box["width"] <= viewport["width"] + 0.5, box
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+        page.click(".mx-pop-about .ga-mode")                                          # the footer's one light/dark button lives here now (D-460)
+        assert page.evaluate("document.documentElement.dataset.mode") == "dark"
 
 
 def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand):

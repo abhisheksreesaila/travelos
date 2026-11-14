@@ -246,6 +246,7 @@ def test_the_weathers_credit_and_labels_are_one_tap_away_in_about_these_prices_f
     assert "About these prices" in about.split("</summary>", 1)[0] and 'class="mx-wx"' in about and 'class="mx-legend"' in about
     assert "NOAA" in about and "not a forecast" in about and page.SAMPLE_FINE in about and "ringed" in about
     assert 'href="/privacy"' in about and 'href="/terms"' in about and "ga-footer" not in html
+    assert 'data-mode-toggle="1"' in about and html.count("data-mode-toggle") == 1               # the footer held the one light/dark button (D-460); it lives here now
 
 
 def test_the_matrix_says_nothing_twice_no_route_under_every_lane_and_no_sample_badge_in_the_bar(sample, client):
