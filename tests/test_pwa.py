@@ -43,7 +43,7 @@ def test_apple_touch_icon_is_180():
 def test_every_page_carries_the_install_tags(client):
     from main import app
     paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
-    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/auth/callback", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/plan/matrix/tile", "/robots.txt", "/sitemap.xml"}  # the template is a file download and the thread poll is an HTML fragment, robots.txt and the sitemap are files, not pages
+    paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/auth/callback", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/plan/matrix/tile", "/plan/matrix/peek", "/robots.txt", "/sitemap.xml"}  # the template is a file download and the thread poll is an HTML fragment, robots.txt and the sitemap are files, not pages
     paths |= {"/trips/sun-tacos-and-tide-pools", "/trips/no-such-trip"}
     assert {"/", "/plan/matrix", "/offline"} <= paths
     for path in sorted(paths):

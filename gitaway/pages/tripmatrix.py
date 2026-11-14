@@ -519,8 +519,8 @@ def key_el(s: State, skies):
     """What the laptop's calendar means, under the trip bar (the bar stays in view; this is read once): the ringed nights, the pills' colours, the weather's credit and
     labels (AGENTS.md: a page showing weather shows weather.notes). Hidden on a phone, whose cards carry their own."""
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
-    return Div(P(Span(cls="mx-key-band"), "Your ", Span(nights_words(s.nights), data_nights_out="1"), ", ringed (slide the nights, or tap a start price to move them). Under each start day: the flight and the stay for "
-                 f"{s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start.", cls="mx-legend"),
+    return Div(P(Span(cls="mx-key-band"), Span("Your ", Span(nights_words(s.nights), data_nights_out="1"), ", ringed (slide the nights, or tap a start price to move them). Under each start day: the flight "
+                 f"and the stay for {s.travelers}, all in. Ink: the nights shown; yellow: the find; green: the cheapest start."), cls="mx-legend"),
                Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "", cls="mx-key")
 
 
@@ -563,7 +563,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "nlast": {n: len(days_of(ws)) for n, ws in by.items()},
             "known": {k: {"c": sq.cents, "s": sq.status, "e": estimate_of(sq), "i": inner(sq), "l": label(*cell[k], sq)}
                       for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 

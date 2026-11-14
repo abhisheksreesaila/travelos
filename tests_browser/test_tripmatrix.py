@@ -4,7 +4,7 @@ Set F222_SHOTS=1 for docs/design/trip-matrix/built/*.png."""
 import os
 import re
 import threading
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -20,13 +20,14 @@ URL = "/plan/matrix?to=San+Diego&home=SFO&d=2026-12-12&r=2026-12-16&a=2&k=7,10&x
 TABLE = {"sandiego": (2310, 2260, 2140, 2080, 2390), "losangeles": (2480, 2410, 2350, 2400, 2550), "orangecounty": (2420, 2380, 2290, 2240, 2610),
          "losangeles+sandiego": (2400, 2330, 2190, 2160, 2470), "orangecounty+sandiego": (2500, 2450, 2380, None, 2600)}
 STARTS = ("2026-12-10", "2026-12-11", "2026-12-12", "2026-12-13", "2026-12-14")
+FLIGHT, FLIGHT_NIGHT = 60_000, 2_000      # the stand's flight: $600 at 4 nights and $20 more for each night more (F-237: a longer trip is not a pure multiple, so an estimate is not the answer)
 
 
 class Stand:
     """A source with a fixed table. `peek_all`: the page's server knows every square (no script needed); else it knows none. Records what was asked for."""
 
     def __init__(self):
-        self.peek_all, self.asked, self.lock = False, [], threading.Lock()
+        self.peek_all, self.asked, self.asked_nights, self.lock = False, [], [], threading.Lock()
 
     def __call__(self, lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
         if peek and not self.peek_all:
@@ -34,12 +35,14 @@ class Stand:
         if not peek:
             with self.lock:
                 self.asked.append(tm.key(lane.key, w.key))
+                self.asked_nights.append(w.nights)
         dollars = TABLE[lane.key][STARTS.index(w.key)]
         if dollars is None:
             return tm.Square(lane.key, w.key, tm.NONE)
-        flight = tm.FlightPart("Test Air", "Sat, Dec 12 · SFO 8:05 AM → SAN 9:32 AM · Nonstop", "Wed, Dec 16 · SAN 6:40 PM → SFO 8:10 PM · Nonstop", 0, 60_000)
-        stays = tuple(tm.StayPart(p.name, w.nights // len(lane.places), f"Test Stay {p.name}", "Two queens", "breakfast", True, 16_000 if i == 0 else 0, "", "9.1 of 10",
-                                  (dollars * 100 - 60_000) // len(lane.places) + (dollars * 100 - 60_000) % len(lane.places) * (i == 0)) for i, p in enumerate(lane.places))
+        flight = tm.FlightPart("Test Air", "Sat, Dec 12 · SFO 8:05 AM → SAN 9:32 AM · Nonstop", "Wed, Dec 16 · SAN 6:40 PM → SFO 8:10 PM · Nonstop", 0, FLIGHT + FLIGHT_NIGHT * (w.nights - 4))
+        nights = [(b - a).days for _, a, b in tm.stays_for(lane, w)]
+        stays = tuple(tm.StayPart(p.name, n, f"Test Stay {p.name}", "Two queens", "breakfast", True, 16_000 if i == 0 else 0, "", "9.1 of 10",
+                                  round((dollars * 100 - FLIGHT) / 4 * n)) for i, (p, n) in enumerate(zip(lane.places, nights)))      # the stay is a rate for a night: 4 nights make the table's dollars
         return tm.Square(lane.key, w.key, tm.OK, flight, stays, 25, None, False)
 
 
@@ -54,10 +57,10 @@ def stand(monkeypatch):
 def matrix(browser, base_url, stand):
     contexts = []
 
-    def matrix(viewport=DESKTOP, js=True, scheme="light", motion=False, url=URL, wait=True, signed_in=False):
+    def matrix(viewport=DESKTOP, js=True, scheme="light", motion=False, url=URL, wait=True, signed_in=False, touch=False):
         phone = viewport is PHONE
         ctx = browser.new_context(viewport=viewport, reduced_motion="no-preference" if motion else "reduce", java_script_enabled=js, color_scheme=scheme,
-                                  has_touch=phone, is_mobile=phone)
+                                  has_touch=phone or touch, is_mobile=phone)
         ctx.set_default_timeout(8000)
         contexts.append(ctx)
         if signed_in:
@@ -84,8 +87,16 @@ def drawn(page):
     return {k: (tuple(m), w) for k, m, w in got}
 
 
-def totals():
-    return {tm.key(lane, w): d * 100 for lane, row in TABLE.items() for w, d in zip(STARTS, row) if d is not None}
+def totals(nights=4):
+    """The stand's totals in cents for trips of `nights`: what its squares add up to."""
+    out = {}
+    for lane, row in TABLE.items():
+        split = [nights] if "+" not in lane else [nights // 2, nights - nights // 2]
+        for w, d in zip(STARTS, row):
+            if d is not None:
+                rate = (d * 100 - FLIGHT) / 4
+                out[tm.key(lane, w)] = FLIGHT + FLIGHT_NIGHT * (nights - 4) + sum(round(rate * n) for n in split)
+    return out
 
 
 def test_server_and_script_mark_the_same(matrix, stand):
@@ -260,7 +271,7 @@ def test_the_laptop_lane_days_wear_their_sky_and_the_totals_are_big_and_ringed_i
     at least 1.4 times the sky's size, the asked day's head is ink, the nights are a band that holds its five days and never passes the grid's edge."""
     page = matrix(DESKTOP)
     lane = page.locator(".mx-lane[data-lane='sandiego']")
-    assert lane.locator(".mx-day").count() == 13 and lane.locator(".mx-day.is-typ .mx-day-i").count() == 13
+    assert lane.locator(".mx-day:not(.is-off)").count() == 13 and lane.locator(".mx-day.is-typ:not(.is-off) .mx-day-i").count() == 13      # F-237: three more days wait, hidden, for a longer trip
     assert " ".join(lane.locator(".mx-day").nth(4).inner_text().split()) == "66° 19%"      # Dec 12, San Diego: NOAA's typical high and chance of a wet day
     expect(page.locator(".mx-ad.is-ask")).to_have_text(re.compile(r"SAT\s*12", re.I))
     sizes = page.evaluate("""() => { const q = s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
@@ -372,3 +383,225 @@ def test_the_weather_notes_under_the_cards_are_lines_of_their_own(matrix):
     page = matrix(PHONE)
     tops = page.evaluate("() => [...document.querySelectorAll('.mx-cards .mx-wx-n')].map(e => [e.getBoundingClientRect().left, getComputedStyle(e.parentNode).display])")
     assert len(tops) >= 2 and all(d == "flex" for _, d in tops)
+
+
+# ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
+
+TABLET = {"width": 1100, "height": 800}      # a laptop's narrow end, and a tablet on its side (F-236 review)
+NIGHTS_URL = URL.replace("r=2026-12-16", "r=2026-12-18")
+WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
+
+
+def slide(page, n, release=True):
+    """Move the nights slider that is on screen to `n`: the `input` event is the drag, the `change` event is letting go."""
+    page.evaluate("""([n, release]) => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.value = n;
+        r.dispatchEvent(new Event('input', {bubbles: true})); if (release) r.dispatchEvent(new Event('change', {bubbles: true})); }""", [n, release])
+
+
+def let_go(page):
+    page.evaluate("() => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.dispatchEvent(new Event('change', {bubbles: true})); }")
+
+
+def marks_at(nights):
+    from gitaway.partners import places
+    lanes = tm.lanes(places.resolve("San Diego"))
+    windows = tm.windows(date(2026, 12, 12), date(2026, 12, 12) + timedelta(days=nights), 2, date(2026, 9, 30))
+    return {k: tuple(m) for k, m in tm.marks(lanes, windows, totals(nights), 230_000).items()}
+
+
+def test_sliding_shows_every_square_as_an_estimate_at_once_marks_none_and_searches_nothing(matrix, stand):
+    page = matrix(DESKTOP)
+    page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=3")                       # open Dec 13: the bar is its real answer for four nights
+    expect(page.locator("#mx-side [data-slot='total']")).to_have_text("$2,080")
+    stand.asked.clear()
+    slide(page, 6, release=False)
+    sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
+    expect(sq.locator(".mx-in")).to_have_text("about $2,910")                         # $600 flight + $385 a night for six nights, from what was read at four
+    expect(page.locator(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq[data-sq='losangeles+sandiego|2026-12-12'] .mx-in")).to_have_text("about $2,985")      # two places: 3 nights each at their rates
+    assert stand.asked == []                                                          # no search per step
+    shown = page.evaluate("""() => [...document.querySelectorAll('.mx-lane .mx-sq')].map(e => [e.classList.contains('is-est'), e.getAttribute('aria-label'), ['is-find', 'is-low', 'is-over'].some(c => e.classList.contains(c))])""")
+    assert len(shown) == 25 and all(est and label.endswith("an estimate") and not marked for est, label, marked in shown)      # an estimate is said as one and never marked
+    expect(page.locator("#mx-find")).to_have_class(re.compile("is-empty"))
+    expect(page.locator("#mx-est")).to_be_visible()
+    expect(page.locator("#mx-est")).to_contain_text("estimates")
+    expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
+    expect(page.locator(".mx-sent-nights .mx-nights-w")).to_have_text("6 nights")
+    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-day:not(.is-off)")).to_have_count(15)      # Dec 8 to 22: the calendar grew to hold the longer trip
+    band = page.locator(".mx-lane[data-lane='sandiego'] .mx-band")
+    expect(band).to_have_attribute("style", re.compile(r"grid-column: 7 / span 7"))
+    expect(band).to_have_attribute("data-l", "6 nights · about $2,820")
+    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-l-best")).to_have_text("about $2,820")
+    note = page.locator("#mx-side .mx-p-note")
+    expect(note).to_have_text("Let go for the exact price of 6 nights.")               # the opened square never shows a guess as its price
+    assert page.locator("#mx-side .mx-save, #mx-side .mx-book, #mx-side [data-slot='total']").count() == 0
+    assert page.errors == []
+
+
+def test_letting_go_makes_every_square_its_real_answer_marked_by_the_same_rules_as_the_server(matrix, stand):
+    page = matrix(DESKTOP)
+    slide(page, 6)
+    page.wait_for_function(WAIT_IDLE)
+    live = drawn(page)
+    stand.peek_all = True
+    still = drawn(matrix(js=False, url=NIGHTS_URL))                                   # every square known to the server, marked by gitaway/tripmatrix.py
+    assert len(live) == len(still) == 25 and live == still
+    want = marks_at(6)
+    assert {k: v[0] for k, v in live.items()} == {k: want.get(k, ()) for k in live}
+    assert want != marks_at(4)                                                        # the nights moved the marks, so this is not the same check twice
+    assert live["sandiego|2026-12-12"][1] == tm.dollars(totals(6)["sandiego|2026-12-12"]) == "$2,950"
+    assert all(n == 6 for n in stand.asked_nights[25:])                               # everything searched after the slider moved was for six nights
+    expect(page.locator("#mx-est")).to_be_hidden()
+
+
+def test_the_address_keeps_the_nights_so_a_reload_or_a_shared_link_does(matrix, stand):
+    page = matrix(DESKTOP)
+    slide(page, 6)
+    page.wait_for_function(WAIT_IDLE)
+    assert "r=2026-12-18" in page.url and "d=2026-12-12" in page.url
+    hrefs = page.eval_on_selector_all("a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
+    assert hrefs and all("r=2026-12-18" in h for h in hrefs if "d=2026" in h), hrefs      # the squares', the menus' and the find's links carry them too
+    page.reload()
+    page.wait_for_selector("#mx.is-live")
+    expect(page.locator(".mx-sent-nights input")).to_have_value("6")
+    expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
+    page.wait_for_function(WAIT_IDLE)
+    assert drawn(page)["sandiego|2026-12-12"][1] == "$2,950"
+
+
+def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matrix, stand):
+    page = matrix(DESKTOP)
+    slide(page, 6)
+    page.wait_for_function(WAIT_IDLE)
+    stand.asked.clear()
+    words = page.evaluate("""() => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.value = 4;
+        r.dispatchEvent(new Event('input', {bubbles: true}));      // in the same breath: no wait, no fetch
+        return [...document.querySelectorAll('.mx-lane .mx-sq')].map(e => [e.dataset.sq, e.querySelector('.mx-in').textContent.trim()]); }""")
+    want = {k: tm.dollars(c) for k, c in totals(4).items()}
+    assert len(words) == 25 and all(w == want.get(k, "None found") for k, w in words), words
+    let_go(page)
+    page.wait_for_function(WAIT_IDLE)
+    assert stand.asked == [] and "r=2026-12-16" in page.url
+
+
+def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
+    page = matrix(PHONE)
+    before = len(stand.asked)
+    slide(page, 6)
+    page.wait_for_function(WAIT_IDLE)
+    asked = stand.asked[before:]
+    assert {f"sandiego|{w}" for w in STARTS} <= set(asked) and len(asked) == len(set(asked))      # each once
+    assert not any(k.startswith("orangecounty+sandiego|") for k in asked)                         # the last card is far below the screen
+    assert set(stand.asked_nights[before:]) == {6}
+    far = page.locator(".mx-card[data-lane='orangecounty+sandiego'] .mx-sq").first
+    assert "is-wait" in far.get_attribute("class") and not re.search(r"\d", far.locator(".mx-in").inner_text())      # not asked for, and nothing read for its place to guess from: a skeleton, never a number
+    far.scroll_into_view_if_needed()
+    expect(far).to_have_class(re.compile("is-ok"))
+    assert set(stand.asked_nights[before:]) == {6}
+
+
+def test_on_the_showcase_it_is_instant_the_peek_knows_every_square_and_nothing_is_searched(matrix, stand):
+    page = matrix(DESKTOP)
+    stand.peek_all = True                                                             # the sample catalog: every square is known without a search
+    stand.asked.clear()
+    slide(page, 7)
+    page.wait_for_function(WAIT_IDLE)
+    assert len(stand.asked) <= 1      # nothing is searched; at most the opened square's own bar is asked for (the sample catalog's own answer)
+    live = drawn(page)
+    assert {k: v[0] for k, v in live.items()} == {k: marks_at(7).get(k, ()) for k in live} and live["sandiego|2026-12-13"][1] == tm.dollars(totals(7)["sandiego|2026-12-13"])
+
+
+def test_the_opened_squares_bar_save_and_book_are_for_the_exact_nights_never_an_estimate(matrix, stand):
+    page = matrix(DESKTOP, signed_in=True)
+    page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=3")
+    expect(page.locator("#mx-side .mx-save")).to_be_visible()
+    slide(page, 6, release=False)
+    assert page.locator("#mx-side .mx-save, #mx-side .mx-book").count() == 0
+    let_go(page)
+    expect(page.locator("#mx-side [data-slot='total']")).to_have_text(tm.dollars(totals(6)["sandiego|2026-12-13"]))
+    assert page.eval_on_selector_all("#mx-side form input[name='r']", "els => els.map(e => e.value)") == ["2026-12-18", "2026-12-18"]      # Book and Save, for six nights
+    expect(page.locator("#mx-side .mx-p-h")).to_have_text("San Diego · Dec 13 to 19")
+    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("data-l", re.compile(r"^6 nights · \$"))
+
+
+def test_the_phones_cards_carry_the_same_slider_in_step_with_the_sentences(matrix, stand):
+    page = matrix(PHONE)
+    cards = page.locator(".mx-c-nights input")
+    assert cards.count() == 5 and page.locator(".mx-sent-nights").first.is_hidden()
+    assert cards.first.bounding_box()["height"] >= 47.5                               # a 48px target
+    slide(page, 6, release=False)
+    assert page.eval_on_selector_all("input[data-nights]", "els => els.map(e => e.value)") == ["6"] * 6
+    expect(page.locator(".mx-card[data-lane='sandiego'] .mx-c-nights .mx-nights-w")).to_have_text("6 nights")
+    laptop = matrix(DESKTOP)
+    assert laptop.locator(".mx-c-nights").first.is_hidden() and laptop.locator(".mx-sent-nights input").is_visible()
+
+
+def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand):
+    page = matrix(DESKTOP)
+    before = len(stand.asked)
+    page.locator(".mx-sent-nights input").focus()
+    for _ in range(3):
+        page.keyboard.press("ArrowRight")
+    page.wait_for_function(WAIT_IDLE)
+    page.wait_for_timeout(400)
+    assert set(stand.asked_nights[before:]) == {7} and "r=2026-12-19" in page.url
+
+
+def test_at_1100_the_band_label_and_the_trip_bars_chips_stay_inside(matrix):
+    """F-236 review: the band's words sit inside the band and the bar's chips inside the bar at the laptop's narrow end."""
+    page = matrix(TABLET)
+    page.click("#mx-find-a")
+    fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), a = getComputedStyle(b, '::after'), w = parseFloat(a.width);
+        return [w > 0 && r.right - parseFloat(a.right) - w >= r.left - 1, r.width]; })""")
+    assert len(fit) == 5 and all(ok for ok, _ in fit), fit
+    bar = page.evaluate("""() => { const b = document.querySelector('#mx-side .mx-b').getBoundingClientRect(), s = document.getElementById('mx-side'),
+        chips = [...document.querySelectorAll('#mx-side .mx-part')].map(e => e.getBoundingClientRect());
+        return [chips.length, chips.every(c => c.left >= b.left - 1 && c.right <= b.right + 1), s.scrollWidth <= s.clientWidth + 1, document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1]; }""")
+    assert bar[0] >= 4 and all(bar[1:]), bar
+
+
+def test_the_floating_note_sits_above_the_bar_whatever_its_height_not_at_a_magic_number(matrix, slow_server):
+    slow_server(r"/plan/matrix/tile", 3)
+    css = (Path(__file__).resolve().parent.parent / "assets" / "css" / "tripmatrix.css").read_text()
+    assert "bottom: 15rem" not in css and "--mx-bar-h" in css
+    for viewport in (DESKTOP, TABLET):
+        page = matrix(viewport, wait=False)
+        expect(page.locator("#mx-fact")).to_be_visible()
+        n, b, var, bottom, vh = page.evaluate("""() => { const f = document.getElementById('mx-fact'), s = document.getElementById('mx-side').getBoundingClientRect();
+            return [f.getBoundingClientRect(), s, parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h')), parseFloat(getComputedStyle(f).bottom), innerHeight]; }""")
+        assert abs(var - (vh - b["top"])) <= 1 and abs(bottom - (var + 9)) <= 1, (viewport, var, b, bottom)      # its stop is the bar's top and 0.75rem
+        assert n["bottom"] <= b["top"] + 1, (viewport, n, b)      # it never sits on the bar
+
+
+def test_a_touch_screen_at_the_laptops_width_gets_48px_start_prices_and_slider(matrix):
+    """F-236 review: a tablet on its side is 1020px or wider and had 30px start pills."""
+    page = matrix(TABLET, touch=True)
+    assert page.evaluate("matchMedia('(pointer: coarse)').matches")
+    heights = page.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")
+    assert len(heights) == 25 and min(heights) >= 47.5, min(heights)
+    assert page.locator(".mx-sent-nights input").bounding_box()["height"] >= 47.5
+    mouse = matrix(TABLET)
+    assert min(mouse.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")) < 47.5      # a mouse keeps the compact pills
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
+def test_estimates_and_the_slider_read_and_fit_in_light_and_dark(matrix, viewport, scheme):
+    page = matrix(viewport, scheme=scheme)
+    for y in range(0, 4000, 300):      # let every card land first, step by step (as the F-222 sweep does), so the audit measures squares at rest
+        page.evaluate(f"window.scrollTo(0, {y})")
+        page.wait_for_timeout(120)
+        page.wait_for_function(WAIT_IDLE)
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function("() => document.getAnimations().every(a => a.effect.getTiming().iterations === Infinity || a.playState !== 'running')")
+    page.wait_for_timeout(700)      # the last arrivals' settle: measure the estimates, not a square mid-fade
+    slide(page, 6, release=False)
+    page.wait_for_timeout(300)
+    seen = audit(page)
+    assert seen["wide"] <= 1, seen["wide"]
+    for key in ("small", "tiny", "low", "glass"):
+        assert not seen[key], (key, seen[key][:40])
+    if os.getenv("F237_SHOTS"):
+        out = Path(__file__).resolve().parent.parent / "docs" / "report"
+        out.mkdir(parents=True, exist_ok=True)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.screenshot(path=str(out / f"f237-{viewport['width']}-{scheme}-sliding.png"))
