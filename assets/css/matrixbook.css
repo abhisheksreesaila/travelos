@@ -55,7 +55,7 @@
 .mxb-l { font-size: max(var(--text-min), 0.875rem); font-weight: 650; color: var(--ink-2); }
 .mxb-field input { width: 100%; min-height: var(--target); padding: 0 0.875rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card-2); color: var(--ink);
   font: inherit; font-size: max(var(--text-min), 1rem); }
-.mxb-field input:focus-visible { outline: 2px solid var(--k-flight); outline-offset: 1px; }
+.mxb-field input:focus-visible { outline: 0.125rem solid var(--k-flight); outline-offset: 1px; }
 .mxb-field.has-err input { border-color: var(--warn-line); }
 .mxb-err { margin: 0; color: var(--warn-ink); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
 .mxb-go { width: 100%; min-height: var(--target); }
