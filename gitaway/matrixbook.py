@@ -141,6 +141,8 @@ def prepare(parts, dates, family: str = "", sample: bool = False) -> Prep:
         got = liteapi.prebook(part.offer_id, family)
         if not got.ok:
             return Prep(got.status, (), False)
+        if (got.items[0].checkin, got.items[0].checkout) != (a, b):      # a rate for other nights is never booked as these
+            return Prep(liteapi.FAILED, (), False)
         rows.append(Row(place, part, got.items[0]))
     return Prep(liteapi.OK, tuple(rows), sample, secrets.token_urlsafe(12))
 

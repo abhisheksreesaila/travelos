@@ -23,7 +23,8 @@ class Sandbox(Fake):
 
     def __init__(self, prebook=None, book=None):
         super().__init__()
-        self.prebook, self.book = prebook or (200, raw("prebook.json")), book or (200, raw("book.json"))
+        nights = lambda b: b.replace(b"2026-12-14", b"2026-12-12").replace(b"2026-12-17", b"2026-12-16")      # the recordings are of other dates: the square's nights  # noqa: E731
+        self.prebook, self.book = prebook or (200, nights(raw("prebook.json"))), book or (200, nights(raw("book.json")))
 
     def __call__(self, url, headers, body, timeout):
         if url == PREBOOK or url == BOOK:
@@ -61,7 +62,7 @@ def price_like_the_square(real, client, extra=0):
     import json
     panel = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["panel"]
     shown = float(re.search(r'mx-row-stay.*?mx-r-n">\$([\d,.]+)<', panel, re.S).group(1).replace(",", ""))
-    doc = json.loads(raw("prebook.json"))
+    doc = json.loads(real.prebook[1])
     doc["data"]["price"] = round(shown - 120 + extra, 2)
     real.prebook = (200, json.dumps(doc).encode())
     return shown

@@ -1,4 +1,4 @@
-"""A trip matrix square saved to the family's trip (F-222): "Booking opens soon", so a square is kept, never booked.
+"""A trip matrix square saved to the family's trip (F-222), and the stays booked from one through LiteAPI's sandbox (F-233).
 
 Part of the family database (gitaway.familydb appends MATRIX_TABLES to its FAMILY_TABLES; a new table needs no migration). One row per square a family saved,
 keyed by the trip and the square, so pressing Save twice keeps one row (the newer price). The words and prices are what the source said when it was saved

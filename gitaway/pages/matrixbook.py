@@ -10,7 +10,7 @@ anything is asked of LiteAPI. Flights are not booked here: the confirmation link
 and email come out through FastHTML's escaping; the guest's email is never logged and never put in a URL.
 """
 
-from urllib.parse import quote
+from datetime import date
 
 from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, Li, Ol, P, Span, to_xml
 from starlette.responses import RedirectResponse, Response
@@ -89,9 +89,14 @@ def _flight_link(s, lane, w):
     return (found[0].name, plan_search._href(found[0], plan_search.query(search))) if found else None
 
 
+def _day(iso: str) -> str:
+    day = date.fromisoformat(iso)
+    return f"{day:%b} {day.day}"
+
+
 def _done_row(d: mb.Done):
     return Div(Span(icon("check", 16, 2.6), cls="mx-kt k-car mxb-tick"),
-               Div(P(d.hotel, cls="mx-r-h"), P(f"{d.place} · {d.checkin} to {d.checkout}", cls="mx-r-s"),
+               Div(P(d.hotel, cls="mx-r-h"), P(f"{d.place} · {_day(d.checkin)} to {_day(d.checkout)}", cls="mx-r-s"),
                    P("Booking id ", Span(d.booking_id, cls="mxb-id", data_booking_id=d.booking_id), cls="mx-r-s"),
                    P("Hotel confirmation ", Span(d.confirmation, cls="mxb-id"), cls="mx-r-s") if d.confirmation else ""),
                Span(catalog.money(d.total_cents), cls="mx-r-n"), cls="mx-row mxb-row mxb-done")
@@ -105,8 +110,8 @@ def _confirmation(s, lane, w, res: mb.Result):
                    P(f"{first.guest_name}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), cls="mxb-booked"),
                Div(*[_done_row(d) for d in res.done], cls="mx-rows"),
                Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"),
-                   Div(P("Flights", cls="mx-r-h"), P("They book on their own site, so you choose the fare.", cls="mx-r-s")),
-                   A(f"Search on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener") if flight else Span(""), cls="mx-row mxb-row") if flight else "",
+                   Div(P("Flights", cls="mx-r-h"), P("They book on their own site, so you choose the fare.", cls="mx-r-s"),
+                       A(f"Search on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener")), Span(""), cls="mx-row mxb-row") if flight else "",
                A(icon("arrow-right", 18, 2.4), "Open your trip", href="/trip/cockpit", cls="btn btn-ink mxb-go", data_trip="1"),
                cls="mxb-confirm", data_step="booked")
 

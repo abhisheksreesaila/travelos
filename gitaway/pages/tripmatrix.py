@@ -6,7 +6,8 @@ GET  /plan/matrix          the sentence ("A family of 4, SFO to San Diego or nea
 GET  /plan/matrix/tile     one square as JSON for assets/js/tripmatrix.js: its words, its total and its panel. Plain `def`: a search can wait seconds.
 GET  /plan/matrix/square   one square as its own page: the panel, for a link and for a page without the script. Plain `def` too.
 POST /plan/matrix/warm     the head start (F-229): the page's script asks once; the first squares start searching on worker threads. A plain GET starts none.
-POST /plan/matrix/save     "Booking opens soon": the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
+POST /plan/matrix/save     Save to trip: the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
+POST /plan/matrix/book     Book the stay (F-233): the sandbox booking sheet and its confirm step, in gitaway/pages/matrixbook.py.
 
 The page draws what is known without a call (gridsource.square `peek`: the sample catalog, or LiteAPI's cache) and a skeleton for the rest; the script then asks
 POST /plan/matrix/warm to start the first squares' searches at once (gitaway/matrixwarm.py, F-229), which the tiles join; a plain GET starts none. The script asks for the squares in view like map tiles and marks them with the same rules as gitaway/tripmatrix.py. Without the script every square is a link to its own page.

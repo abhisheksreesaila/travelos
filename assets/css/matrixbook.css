@@ -7,7 +7,7 @@
 .mxb-bar { position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-2); touch-action: none; }
 .mxb-bar .mx-grab { margin-left: calc(50% - 1.25rem); }
 @media (min-width: 721px) {
-  .mxb-sheet { inset: 0; margin: auto; width: min(36rem, calc(100% - 2rem)); height: fit-content; max-height: min(92vh, 52rem); border-radius: var(--r-lg); padding-bottom: 0; }
+  .mxb-sheet { inset: 0; margin: auto; width: min(44rem, calc(100% - 2rem)); height: fit-content; max-height: min(92vh, 52rem); border-radius: var(--r-lg); padding-bottom: 0; }
   .mxb-bar .mx-grab { display: none; }
   .mxb-bar { justify-content: flex-end; }
 }
@@ -69,7 +69,7 @@
 .mxb-confirm[data-step="booked"] .mxb-big { animation: mxb-pop var(--motion-spring-dur) var(--motion-spring) both; }
 @keyframes mxb-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .mxb-id { font-family: var(--font-mono); font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
-.mxb-flight { min-height: var(--target); }
+.mxb-flight { min-height: var(--target); margin-top: 0.5rem; }
 .mxb-back { justify-self: start; min-height: var(--target); }
 .mxb-confirm .mxb-go { text-decoration: none; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; }
 

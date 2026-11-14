@@ -65,6 +65,11 @@ def test_a_room_that_is_gone_ends_the_prebook_with_no_rows(monkeypatch):
     assert (prep.status, prep.rows, prep.ok) == (liteapi.GONE, (), False)
 
 
+def test_a_rate_for_other_nights_than_the_squares_is_never_booked_as_them(sandbox):
+    prep = mb.prepare((PART,), [("San Diego", date(2026, 12, 12), date(2026, 12, 16))], "fam")
+    assert (prep.status, prep.rows) == (liteapi.FAILED, ())
+
+
 def test_a_sample_square_is_prebooked_by_a_stand_in_and_never_reaches_liteapi(sandbox):
     prep = mb.prepare((PART,), DAYS, "fam", sample=True)
     assert prep.ok and prep.sample and prep.words == "Sample booking: nothing is booked or charged" and prep.total_cents == 47900
@@ -107,7 +112,7 @@ def test_a_square_of_two_stays_books_both_and_a_failed_second_keeps_the_first(mo
     monkeypatch.setenv("LITEAPI_KEY", KEY)
     ok = Book()
     monkeypatch.setattr(liteapi, "TRANSPORT", ok)
-    parts, days = (PART, PART), DAYS + [("Los Angeles", date(2026, 12, 17), date(2026, 12, 19))]
+    parts, days = (PART, PART), DAYS + [("Los Angeles", date(2026, 12, 14), date(2026, 12, 17))]
     prep = mb.prepare(parts, days, fam)
     calls = {"n": 0}
 
