@@ -223,13 +223,13 @@ def _footer_line() -> str:
     return f"Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; {taken}"
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False):
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True):
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
 
     `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options.
-    `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`)."""
+    `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`). `footer=False` leaves the site footer out (the trip matrix, F-238: its Privacy and Terms sit in its own ⓘ)."""
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-        Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), site_footer(footer_links), data_theme=theme, cls="ga-page"),
+        Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), *((site_footer(footer_links),) if footer else ()), data_theme=theme, cls="ga-page"),
     )

@@ -237,10 +237,24 @@ def test_the_laptop_band_rings_the_nights_of_the_cheapest_start_the_find_lane_at
         assert [a or b for a, b in ons] == [tm.key(x.key, w.key)], x.key
 
 
-def test_the_phone_cards_carry_the_weathers_credit_since_they_say_a_sky(sample, client):
+def test_the_weathers_credit_and_labels_are_one_tap_away_in_about_these_prices_for_laptop_and_phone(sample, client):
+    """F-238 (D-540): the cards and the calendar no longer carry notes of their own: one quiet control holds the weather's credit (AGENTS.md: a page showing weather
+    shows weather.notes), the legend, the sample fine print, Privacy and Terms; the site footer is not drawn on the matrix."""
     html = client.get(MATRIX).text
-    cards = html.split('class="mx-cards"', 1)[1]
-    assert "mx-sqw" in cards and 'class="mx-wx"' in cards                     # AGENTS.md: a page showing weather shows weather.notes
+    assert "mx-sqw" in html.split('class="mx-cards"', 1)[1] and html.count('class="mx-wx"') == 1 and html.count('class="mx-legend"') == 1
+    about = html.split('data-pop="about"', 1)[1].split("</details>", 1)[0]
+    assert "About these prices" in about.split("</summary>", 1)[0] and 'class="mx-wx"' in about and 'class="mx-legend"' in about
+    assert "NOAA" in about and "not a forecast" in about and page.SAMPLE_FINE in about and "ringed" in about
+    assert 'href="/privacy"' in about and 'href="/terms"' in about and "ga-footer" not in html
+
+
+def test_the_matrix_says_nothing_twice_no_route_under_every_lane_and_no_sample_badge_in_the_bar(sample, client):
+    """F-238 (D-541): the route is in the sentence (and in the bar's flight chip); the sample label is the page's one badge and the bar's "Sample booking" line."""
+    html = client.get(MATRIX).text
+    assert "class=\"mx-l-s\"" not in html and 'class="mx-c-s">SFO' not in html
+    assert "SFO → LAX" not in html.split('id="mx-side"', 1)[0]
+    bar = html.split('id="mx-side"', 1)[1].split("</aside>", 1)[0]
+    assert "mx-sample" not in bar and "Sample booking" in bar
 
 
 def test_while_squares_wait_a_sourced_fact_floats_in_a_small_note_not_a_band(real, client):
@@ -291,16 +305,18 @@ def test_on_the_showcase_a_nearby_place_without_a_sample_is_not_a_lane(sample):
 
 # ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
 
-def test_the_nights_slider_is_in_the_sentence_and_on_every_phone_card_two_to_seven(sample, client):
+def test_nights_is_a_word_of_the_sentence_that_opens_one_slider_two_to_seven(sample, client):
+    """F-238 (D-542): "4 nights" is a word like the others (a details with a pop), the only slider, none on the cards; without the script its popover holds the links."""
     html = client.get(MATRIX).text
     ranges = re.findall(r"<input [^>]*type=\"range\"[^>]*>", html)
-    assert len(ranges) == 6                                                   # the sentence's, and one on each of the five cards
-    for r in ranges:
-        assert 'min="2"' in r and 'max="7"' in r and 'value="4"' in r and 'aria-label="Nights"' in r and 'aria-valuetext="4 nights"' in r
-    assert 'data-dates="1"' in html and ">4 nights<" in html
-    assert html.count("mx-c-nights") == 5
-    assert "<noscript>" in html and all(f">{n} nights<" in html.split("<noscript>", 1)[1] for n in (2, 3, 5, 6, 7))         # without the script: plain links to each nights
-    assert "d=2026-12-12&amp;r=2026-12-18&amp;" in html.split("<noscript>", 1)[1]
+    assert len(ranges) == 1 and 'data-pop="nights"' in html
+    r = ranges[0]
+    assert 'min="2"' in r and 'max="7"' in r and 'value="4"' in r and 'aria-label="Nights"' in r and 'aria-valuetext="4 nights"' in r
+    word = html.split('data-pop="nights"', 1)[1].split("</details>", 1)[0]
+    assert 'class="mx-tok"' in word.split("</summary>", 1)[0] and ">4 nights<" in word.split("</summary>", 1)[0]
+    assert 'data-dates="1"' in html and "mx-c-nights" not in html and "mx-sent-nights" not in html
+    assert "<noscript>" in word and all(f">{n} nights<" in word.split("<noscript>", 1)[1] for n in (2, 3, 5, 6, 7))
+    assert "d=2026-12-12&amp;r=2026-12-18&amp;" in word.split("<noscript>", 1)[1]
 
 
 def test_a_trip_already_longer_in_the_address_widens_the_slider_to_hold_it(sample, client):
