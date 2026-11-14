@@ -1,4 +1,4 @@
-"""F-183: a creator pastes a link, watches a calm skeleton, reviews the draft, fixes an unsure stop, picks a picture, ticks "This is my post" and publishes; a stranger then reads it with the source
+"""F-183: a creator pastes a link, watches the trip land (F-235), reviews the draft, fixes an unsure stop, picks a picture, ticks "This is my post" and publishes; a stranger then reads it with the source
 link back. In a real browser at phone (390) and laptop (1440) width, with a fake Claude and a fake web (the server runs in this process). Set F183_SHOTS=1 to save screenshots to docs/report/f183-*.png."""
 import os
 import re
@@ -31,12 +31,6 @@ def too_small(page, selector):
     """Controls under 40px tall (44px is the target on the phone's 16px root; the laptop's root is 12px)."""
     return page.evaluate("""sel => [...document.querySelectorAll(sel)].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 40; })
         .map(e => (e.getAttribute('name') || e.id || e.textContent.trim()).slice(0, 30))""", selector)
-
-
-def press_draft_without_leaving(page):
-    """Press "Draft my trip" the way the page's script sees it (a submit with the button as its submitter) but stop the browser from leaving: while a navigation is pending Playwright cannot read or
-    screenshot the old page, so this is the only way to look at the skeleton. The real press, through to the editor, is the rest of the test."""
-    page.evaluate("""() => { const f = document.getElementById('ci-form'); f.addEventListener('submit', e => e.preventDefault()); f.requestSubmit(document.getElementById('ci-draft')); }""")
 
 
 @pytest.fixture
@@ -76,16 +70,13 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     shot(page, f"paste-{viewport['width']}")
 
     page.fill("#ci-link", POST)
-    press_draft_without_leaving(page)
-    expect(page.locator("#ci-skel")).to_be_visible()       # the calm skeleton while the model works
-    expect(page.locator("#ci-skel")).to_contain_text("Reading your post and drafting the days")
-    expect(page.locator("#ci-form")).to_be_hidden()
-    assert overflow(page) <= 1
-    shot(page, f"skeleton-{viewport['width']}")
-    page.reload()
-    expect(page.locator("#ci-skel")).to_be_hidden()
-    page.fill("#ci-link", POST)
     page.click("#ci-draft")
+    expect(page.locator("#ci-magic")).to_be_visible()      # the trip is made in front of them (F-235); tests_browser/test_creator_magic.py watches it land
+    expect(page.locator("#ci-form")).to_be_hidden()
+    expect(page.locator("#cm-done")).to_be_visible()
+    assert overflow(page) <= 1
+    shot(page, f"magic-{viewport['width']}")
+    page.click("#cm-edit")
     expect(page.locator("h1")).to_have_text("Check your draft")
     assert overflow(page) <= 1
     if viewport is PHONE:
@@ -137,18 +128,17 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     stranger.close()
 
 
-def test_the_skeleton_is_still_and_the_form_still_works_with_reduced_motion(setup, browser, base_url):
+def test_the_magic_import_shows_everything_at_once_with_reduced_motion(setup, browser, base_url):
     ctx = browser.new_context(viewport=PHONE, reduced_motion="reduce", has_touch=True, is_mobile=True)
     ctx.set_default_timeout(9000)
     ctx.request.post(f"{base_url}/signin", form={"email": "maya.chen@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page = ctx.new_page()
     page.goto(f"{base_url}/creators/import")
     page.fill("#ci-text", "Day 1 Santa Monica Pier at 10:00 AM and the Third Street Promenade. Day 2 Venice Canals.")
-    press_draft_without_leaving(page)
-    expect(page.locator("#ci-skel")).to_be_visible()
-    page.reload()
-    page.fill("#ci-text", "Day 1 Santa Monica Pier at 10:00 AM and the Third Street Promenade. Day 2 Venice Canals.")
     page.click("#ci-draft")
+    expect(page.locator("#cm-done")).to_be_visible()      # reduced motion: the days and stops are all there at once, nothing waits on an animation
+    assert page.locator(".cm-day").count() == 2
+    page.click("#cm-edit")
     expect(page.locator("h1")).to_have_text("Check your draft")
     ctx.close()
 

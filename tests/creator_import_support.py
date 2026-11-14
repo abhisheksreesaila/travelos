@@ -3,6 +3,7 @@
 import json
 import re
 from html import unescape
+from pathlib import Path
 from html.parser import HTMLParser
 from types import SimpleNamespace
 
@@ -130,3 +131,18 @@ def as_post(fields):
     for k, v in fields:
         out[k] = [*out[k], v] if isinstance(out.get(k), list) else [out[k], v] if k in out else v
     return out
+
+
+# ---- a real popular post, recorded (F-235): scripts/record_import_fixture.py, replayed here -----------------------------------------------
+
+RECORDED = Path(__file__).resolve().parent / "fixtures" / "creator_import" / "lisbon-48-hours"
+
+
+def recorded():
+    """(address, Web, answer): The Planet D's "48 Hours in Lisbon, Itinerary" as the network answered (robots.txt, page, lead picture) and the draft answer for it. Nothing here touches the network."""
+    meta = json.loads((RECORDED / "meta.json").read_text())
+    pages = {u: (r["status"], {"content-type": r["content-type"]}, (RECORDED / r["file"]).read_bytes()) for u, r in meta["responses"].items()}
+    if meta["lead"] and (RECORDED / "lead.jpg").exists():
+        pages[meta["lead"]] = (200, {"content-type": "image/jpeg"}, (RECORDED / "lead.jpg").read_bytes())
+    answer = {k: v for k, v in json.loads((RECORDED / "answer.json").read_text()).items() if not k.startswith("_")}
+    return meta["url"], Web(pages), answer

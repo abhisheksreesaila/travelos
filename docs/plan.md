@@ -1498,7 +1498,8 @@ Brief: docs/briefs/world-class-journey.md · Absorbs F-226's card · Decisions: 
 - [x] reachable from the cockpit ("Share to Instagram"); the link back opens a public page that tells nothing private (/s/<token>, or the published trip)
 - [ ] before deploy: one `docker build` that renders a card (cairo in the image)
 
-## F-235 A creator's blog becomes a trip like magic [todo]
-Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design/joyful-pages/compare.html (For creators A, Community A)
-- [ ] /creators/import shows the trip being made as it is read: the post's title and photo, then days and stops landing one by one, colourful and alive; a recorded popular blog post as the fixture
-- [ ] the For creators page (Golden hour) and Community trips (Postcards) rebuilt from the compare page's option A
+## F-235 A creator's blog becomes a trip like magic [done]
+Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design/joyful-pages/compare.html (For creators A, Community A) · Decisions: D-500 to D-507 · reviewer PASS
+- [x] /creators/import shows the trip being made as it is read: the post's title and photo, then days and stops landing one by one, colourful and alive; a recorded popular blog post (The Planet D, 48 Hours in Lisbon) as the fixture
+- [x] the For creators page (Golden hour) and Community trips (Postcards) rebuilt from the compare page's option A
+- [ ] re-record the demo's AI answer with a real key (it is hand-written today: tests/fixtures/creator_import/lisbon-48-hours/README.md)

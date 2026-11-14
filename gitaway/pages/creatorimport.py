@@ -11,13 +11,15 @@ A draft belongs to the person who made it (anyone else gets a 404) and needs no 
 its parameter is called `token` because tests/test_roles.py matches the open prefixes that way.
 """
 
+import json
+import logging
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
-from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
+from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Li, Link, Ol, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import FileResponse, RedirectResponse, Response
+from starlette.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 
 from gitaway import ai, community, creatordraft as cd, importsource, session as ses, stoplinks
 from gitaway.hub import HubError
@@ -31,6 +33,8 @@ PATH = "/creators/import"
 HEAD = (Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/creatorimport.css"), Script(src="/assets/js/creatorimport.js", defer=True))
 STOP_MAX = cd.MAX_STOP
 NOTHING = "Paste the link to your post, or the text of it."
+UNEXPECTED = "Something went wrong while making your trip. Try again, or paste the text of your post."
+log = logging.getLogger("gitaway.creatorimport")
 _LONE_LINK = re.compile(r"https?://\S+", re.I)
 
 
@@ -58,33 +62,87 @@ def paste_page(session, link="", text="", error="", status=200):
         Div(Button(icon("star", 20, 2.4), "Draft my trip", type="submit", name="do", value="draft", cls="btn btn-primary", id="ci-draft"),
             Button("Write it myself", type="submit", name="do", value="manual", cls="btn", id="ci-manual"), cls="ci-actions"),
         action=PATH, method="post", id="ci-form", cls="ci-form card")
-    skeleton = Div(Div(cls="skeleton ci-sk-line ci-sk-title"), Div(cls="skeleton ci-sk-line"), *[Div(cls="skeleton ci-sk-day") for _ in range(3)],
-                   Span("Reading your post and drafting the days…", cls="ci-sk-say"),
-                   cls="ci-skel", id="ci-skel", hidden=True, role="status", aria_busy="true", aria_label="Drafting your trip")
+    stage = Section(
+        Div(Div(Img(alt="", cls="cm-img", referrerpolicy="no-referrer", hidden=True), Span(icon("play", 36, 2), cls="cm-ph", aria_hidden="true"), cls="cm-photo"),
+            Div(Span("", cls="cm-site", id="cm-site"), H2("Opening your post…", id="cm-title", cls="cm-title"), P("", cls="cm-by", id="cm-by"), cls="cm-meta"), cls="cm-post"),
+        Ol(*[Li(Span(icon("check", 16, 3), cls="cm-tick", aria_hidden="true"), label, cls="cm-step", data_step=str(i)) for i, label in enumerate(("Opening your post", "Finding the days and stops", "Laying out your trip"))], cls="cm-steps", id="cm-steps"),
+        P(Span(cls="cm-caret", aria_hidden="true"), Span("Opening your post", id="cm-log"), cls="cm-log", aria_hidden="true"),
+        P(Span("From your post", cls="cm-say-k"), Span("", cls="cm-word", id="cm-word"), cls="cm-say", id="cm-say", aria_hidden="true"),
+        Ol(cls="cm-days", id="cm-days"),
+        Div(Div(Span(icon("check", 22, 2.6), "Your trip is ready", cls="pb-chip pb-chip-live"), P("", cls="cm-count", id="cm-count"), cls="cm-ready"),
+            Form(Label(Input(type="checkbox", name="own", value="1", id="cm-own", required=True, cls="ci-own"), Span("This is my post", cls="ci-own-t"), cls="ci-own-l"),
+                 Input(type="hidden", name="do", value="publish"),
+                 Button(icon("check", 20, 2.6), "Publish", type="submit", id="cm-publish", cls="btn btn-primary"),
+                 A("Preview what strangers see", href=PATH, id="cm-preview", cls="btn"), A("Edit the draft", href=PATH, id="cm-edit", cls="btn"),
+                 action=PATH, method="post", id="cm-form", cls="cm-form"),
+            P("Nothing is public until you tick the box and publish.", cls="ci-hint"), cls="cm-done", id="cm-done", hidden=True),
+        P("", role="status", cls="sr-only", id="cm-live"),
+        cls="cm", id="ci-magic", hidden=True, aria_label="Making your trip")
     body = Section(Div(H1("Turn your post into a trip"), P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
-                   form, skeleton, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
+                   form, stage, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
     return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
 
 
-def _read(session, link, text, how):
-    """The draft a paste becomes, or (None, message). `how` is "draft" or "manual" ("Write it myself": nothing is fetched and no model is asked)."""
+def _steps(session, link, text, how):
+    """What a paste becomes, step by step: ("read", material) once the post is read, then ("made", draft). Raises SourceError, ai.AIError or HubError (a sentence fit to show).
+    `how` is "draft" or "manual" ("Write it myself": nothing is fetched and no model is asked)."""
     me = ses.current_traveler(session)
     name = me.name if me else ""
+    if how == "manual" or cd.mode() == "manual":
+        if how != "manual" and not text.strip():
+            raise HubError(cd.NOT_ON)
+        why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
+        material = importsource.offline(link, text)
+        yield "read", material
+        yield "made", cd.blank(me.id, material, name, why)
+        return
+    if (hit := cd.allow(me.id)):
+        raise HubError(cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT)
+    if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
+        material = importsource.offline(link, text)
+        yield "read", material
+        yield "made", cd.sample(me.id, material, name)
+        return
+    material = importsource.gather(link, text)
+    yield "read", material
+    yield "made", cd.make(me.id, me.id, material, name)
+
+
+def _read(session, link, text, how):
+    """The draft a paste becomes, or (None, message)."""
     try:
-        if how == "manual" or cd.mode() == "manual":
-            if how != "manual" and not text.strip():
-                return None, cd.NOT_ON
-            why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
-            return cd.blank(me.id, importsource.offline(link, text), name, why), ""
-        if (hit := cd.allow(me.id)):
-            return None, cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT
-        if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
-            return cd.sample(me.id, importsource.offline(link, text), name), ""
-        return cd.make(me.id, me.id, importsource.gather(link, text), name), ""
-    except importsource.SourceError as e:
+        made = None
+        for step, value in _steps(session, link, text, how):
+            made = value if step == "made" else made
+        return made, ""
+    except (importsource.SourceError, ai.AIError, HubError) as e:
         return None, str(e)
-    except (ai.AIError, HubError) as e:
-        return None, str(e)
+
+
+# ---- the magic import (F-235): the same steps, told to the page as they happen ---------------------------------------------------
+
+def _line(**event) -> str:
+    return json.dumps(event, ensure_ascii=False) + "\n"
+
+
+def _told(step, value) -> str:
+    if step == "read":
+        return _line(event="read", title=value.title, by=value.by, image=(value.images[0] if value.images else value.thumb) or "", site=urlsplit(value.url).hostname or "",
+                     kind=value.kind, chars=len(value.text), words=importsource.own_words(value.text))
+    d = value
+    return _line(event="draft", id=d["id"], title=d["title"], place=d["place_name"] or cd.PLACES.get(d["place"], ""), editor=f"{PATH}/{d['id']}", preview=f"{PATH}/{d['id']}/preview",
+                 days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"]} for s in day["stops"]]} for day in d["days"]], tips=d["tips"], unsure=cd.UNNAMED)
+
+
+def _stream(session, link, text, how):
+    try:
+        for step, value in _steps(session, link, text, how):
+            yield _told(step, value)
+    except (importsource.SourceError, ai.AIError, HubError) as e:
+        yield _line(event="error", message=str(e))
+    except Exception as e:  # noqa: BLE001 - the stream must end with a sentence, never silently; the log line names only the kind of failure (no post text, no message)
+        log.error("creator import stream failed: %s", type(e).__name__)
+        yield _line(event="error", message=UNEXPECTED)
 
 
 # ---- the editor ---------------------------------------------------------------------------------------------------------
@@ -217,8 +275,11 @@ def register(app):
         link, text, how = str(f.get("link") or "").strip(), str(f.get("text") or ""), "manual" if f.get("do") == "manual" else "draft"
         if not link and _LONE_LINK.fullmatch(text.strip()):   # the For creators page has one box: a lone address in it is the link (F-186)
             link, text = text.strip(), ""
+        told = request.headers.get("x-magic") == "1"      # the page asked to be told as the draft is made (F-235): one line of JSON per step
         if not link and not text.strip() and how == "draft":
-            return paste_page(session, "", "", NOTHING, 422)
+            return (StreamingResponse(iter([_line(event="error", message=NOTHING)]), 422, media_type="application/x-ndjson") if told else paste_page(session, "", "", NOTHING, 422))
+        if told:
+            return StreamingResponse(_stream(session, link, text, how), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
         made, error = await run_in_threadpool(_read, session, link, text, how)     # fetches the page, asks the model: never on the event loop (F-182)
         if made is None:
             return paste_page(session, link, text, error, 422)
