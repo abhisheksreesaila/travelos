@@ -1505,3 +1505,10 @@ Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design
 - [x] /creators/import shows the trip being made as it is read: the post's title and photo, then days and stops landing one by one, colourful and alive; a recorded popular blog post (The Planet D, 48 Hours in Lisbon) as the fixture
 - [x] the For creators page (Golden hour) and Community trips (Postcards) rebuilt from the compare page's option A
 - [ ] re-record the demo's AI answer with a real key (it is hand-written today: tests/fixtures/creator_import/lisbon-48-hours/README.md)
+
+## F-236 The matrix looks like the design: big numbers, the nights band, every day's sky [todo]
+Founder, 2026-11-14, looking at /plan/matrix: "I like the colours and the content; the numbers look small, the matrix looks a little less enticing, it didn't match the artifact." Design: docs/design/trip-matrix/matrix-c.html (laptop C, calendar lanes, picked 2026-11-12) and docs/design/trip-matrix.md.
+- [ ] laptop: each place a lane of days, every day wearing its sky (icon, high, rain chance); the totals under each start day large and bold (the design's size), the asked start day in ink, the cheapest per lane an ink pill, the find yellow; the chosen nights a ringed band that holds those days, labelled "4 nights · $2,080", never wider than the grid
+- [ ] the opened square as the design's trip bar (art, the find line, who likes it, the flight/stay/drive/weather chips, the total huge, Book) or A's panel kept, whichever the design file shows for the laptop; the phone keeps B's place cards
+- [ ] no "No sample" lanes on the showcase: every nearby place the matrix shows has sample offers (Orange County too), or the lane is not shown
+- [ ] side by side screenshots of the design and the build at 1440 and 390 in docs/report/f236-*.png; tests_browser/test_tripmatrix.py and the F-233 booking sheet still pass
