@@ -11,7 +11,7 @@
 //      The ringed band of each lane (its nights, labelled "4 nights · $2,080", the find's lane "Found · +$50 vs San Diego alone") sits on the find's start in the find's lane,
 //      else the lane's cheapest start, else the opened square, and moves with the same rules as pages/tripmatrix.py `band_window` and `band_words`. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
-//   5. The nights slider (F-237, D-530 to D-537): one range input in the sentence and one on each phone card, all the same control. While it moves every square shows
+//   5. The nights slider (F-237, D-530 to D-535): one range input in the sentence and one on each phone card, all the same control. While it moves every square shows
 //      "about $X" at once (`estimate`: the flight and the nightly stay rate already read for that square's start day, else the lane's cheapest; never a search, never a
 //      mark, never a price). Let go (after COMMIT_MS), the address keeps the nights, one GET of data.peek fills what is already known for them (the showcase's samples, LiteAPI's
 //      cache) and only then the squares in view are asked for, as tiles, through the same gate and budgets. Every nights has its own store (`stores`), so going back is

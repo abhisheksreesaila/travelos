@@ -1514,9 +1514,10 @@ Founder, 2026-11-14, looking at /plan/matrix: "I like the colours and the conten
 - [x] side by side screenshots of the design and the build at 1440 and 390 in docs/report/f236-*.png; tests_browser/test_tripmatrix.py and the F-233 booking sheet still pass
 - Decisions D-520 to D-524. Not in the bar because there is no source: faces of who likes it (hearts, F-224) and door-to-door time.
 
-## F-237 Change the nights right on the matrix [todo]
+## F-237 Change the nights right on the matrix [done]
 Founder, 2026-11-14: "can you make 4 nights like a slider so that we can change nights right there?" Needs: F-236
-- [ ] a nights control in the sentence ("4 nights", 2 to 7) that changes every square's trip length and the band
-- [ ] while sliding, each square shows "about $X" at once from what is known (its nightly stay rate, the cheapest return flight already read), labelled as an estimate; no search per step
-- [ ] on release, only the squares in view search (the tiles' rules, the gate, the budgets), kept per nights so going back is instant; the opened square and Book always use real prices for those exact nights
-- [ ] on the showcase it is instant from the sample catalog; the phone's place cards get the same control
+- [x] a nights control in the sentence ("4 nights", 2 to 7) that changes every square's trip length and the band
+- [x] while sliding, each square shows "about $X" at once from what is known (its nightly stay rate, the cheapest return flight already read), labelled as an estimate; no search per step
+- [x] on release, only the squares in view search (the tiles' rules, the gate, the budgets), kept per nights so going back is instant; the opened square and Book always use real prices for those exact nights
+- [x] on the showcase it is instant from the sample catalog; the phone's place cards get the same control
+- Decisions D-530 to D-535; reviewer PASS (4704 tests). Later, maybe: cap a hand-typed longer trip at about 14 nights on the slider.
