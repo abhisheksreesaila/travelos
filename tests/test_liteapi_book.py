@@ -200,3 +200,14 @@ def test_a_failure_logs_no_email_and_no_key(sandbox, monkeypatch, caplog):
         liteapi.book("p", GUEST, "r")
     text = " ".join(r.getMessage() for r in caplog.records)
     assert "test.traveler@example.com" not in text and KEY not in text and "LiteAPI" in text
+
+
+def test_the_lookup_needs_exactly_one_booking_with_exactly_our_reference(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    doc = json.loads(raw("bookings_by_reference.json"))
+    item = doc["data"][0]
+    for data in ([], [{**item, "clientReference": "someone-else"}], [item, dict(item)], [{**item, "clientReference": "someone-else"}, item, {**item, "clientReference": "x"}][:1]):
+        monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a, d=data: (200, "application/json", json.dumps({"data": d}).encode()))
+        assert liteapi.booking_for("gitaway-probe-f233", "fam").status == liteapi.FAILED, data
+    monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (200, "application/json", json.dumps({"data": [{**item, "clientReference": "other"}, item]}).encode()))
+    assert liteapi.booking_for("gitaway-probe-f233", "fam").items[0].booking_id == "_5hnX-MI7"

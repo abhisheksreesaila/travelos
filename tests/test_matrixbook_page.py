@@ -222,9 +222,10 @@ def test_too_many_presses_are_slowed_before_liteapi_is_asked(real, client):
     sign_in(client)
     for _ in range(5):
         assert client.post("/plan/matrix/book", data=FORM, headers=FRAG).status_code == 200
+    liteapi.clear()      # nothing kept: were the square read, it would search again
     asked = len(real.asked)
     r = client.post("/plan/matrix/book", data=FORM, headers=FRAG)
-    assert r.status_code == 429 and "a lot of booking tries" in text(r.text) and len(real.asked) == asked
+    assert r.status_code == 429 and "a lot of booking tries" in text(r.text) and len(real.asked) == asked      # no prebook and no search either
     html = client.post("/plan/matrix/book/confirm", data={**FORM, "token": "x", **GUEST}, headers=FRAG)
     assert html.status_code == 429
 

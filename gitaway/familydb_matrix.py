@@ -22,7 +22,7 @@ class MatrixSave:
 
 
 class MatrixBooking:
-    """A stay booked through LiteAPI's sandbox from a matrix square (F-233, D-480). No personal data: the lead guest's name and email go to LiteAPI and are not kept (D-490). One row per stay booked (a two-place square books two)."""
+    """A stay booked through LiteAPI's sandbox from a matrix square (F-233, D-480). No personal data: the lead guest's name and email go to LiteAPI and are not kept (D-494). One row per stay booked (a two-place square books two)."""
     id: str                 # the client reference sent to LiteAPI (the idempotency key), so a second press finds this row
     trip_id: str = ""       # the family trip this stay became ("" if the trip could not be made)
     user_id: str = ""

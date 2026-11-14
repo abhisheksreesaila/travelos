@@ -892,17 +892,21 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
         _BOOK_TURN.release()
 
 
-def _first_booking(doc, fetched: datetime) -> Booking:
-    items = doc.get("data") if isinstance(doc, dict) else None
-    if not isinstance(items, list) or not items or not isinstance(items[0], dict):
-        raise Unreadable("no booking")
-    return read_booking({"data": items[0], "sandbox": True}, fetched)
+def _the_booking(reference: str):
+    """A reader for the lookup: exactly one booking whose clientReference is `reference`, else Unreadable (never another family's booking)."""
+    def read(doc, fetched: datetime) -> Booking:
+        items = doc.get("data") if isinstance(doc, dict) else None
+        mine = [i for i in items if isinstance(i, dict) and i.get("clientReference") == reference] if isinstance(items, list) else []
+        if len(mine) != 1:
+            raise Unreadable("not exactly one booking for the reference")
+        return read_booking({"data": mine[0], "sandbox": True}, fetched)
+    return read
 
 
 def booking_for(reference: str, family: str = "") -> Answer:
     """The booking LiteAPI made for our `clientReference` (GET /bookings?clientReference=): an Answer of one Booking, FAILED when it has none. For a book LiteAPI called a
-    duplicate that we hold no row for: it may have been made by an answer we lost."""
-    return _order("booking lookup", "/bookings?" + urlencode({"clientReference": str(reference)}), None, STAY_TIMEOUT, family, _first_booking, base=API)
+    duplicate that we hold no row for: it may have been made by an answer we lost. Only a booking carrying exactly that reference counts."""
+    return _order("booking lookup", "/bookings?" + urlencode({"clientReference": str(reference)}), None, STAY_TIMEOUT, family, _the_booking(str(reference)), base=API)
 
 
 def prebook(offer_id: str, family: str = "") -> Answer:

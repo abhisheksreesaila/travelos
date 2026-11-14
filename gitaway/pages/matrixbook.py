@@ -15,7 +15,7 @@ from datetime import date
 from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, Li, Ol, P, Span, to_xml
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import catalog, importer, liteapi, matrixbook as mb, session as ses, tripmatrix as tm, tripstart
+from gitaway import catalog, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, tripstart
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan_search, tripmatrix as mx
@@ -26,7 +26,7 @@ SIGNIN = "Sign in to book."
 STEPS = (("room", "Room", "bed", "k-stay"), ("guest", "Guest", "users", "k-flight"), ("booked", "Booked", "check", "k-car"))
 STALE = "That room check has expired or is not for this square. Close this and press Book on the square again."
 SLOW_DOWN = "That is a lot of booking tries. Wait a minute, or try again tomorrow."
-MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-490)
+MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-494)
 
 
 def _steps(at: str):
@@ -182,6 +182,15 @@ def _first_step(request, session, s, lane, w, sq, note=""):
     return _answer(request, s, lane, w, sheet(s, lane, w, prep=prep, note=note))
 
 
+def _slowed(request, s, lane_key, w_key):
+    """Too many presses: the sheet says so (429) from the address alone, with no search and no call."""
+    lane = tm.lane(s.place, lane_key, s.nearby)
+    w = tm.window(s.depart, s.return_, s.flex, catalog.today(), w_key)
+    if lane is None or w is None:
+        return RedirectResponse(mx.href(s), status_code=303)
+    return _answer(request, s, lane, w, sheet(s, lane, w, problem=SLOW_DOWN, sample=showcase.on()), 429)
+
+
 def _signed_out(s, lane_key, w_key):
     return RedirectResponse(ses.signin_href(mx.href(s, mx.SQUARE, lane=lane_key, w=w_key)), status_code=303)
 
@@ -196,11 +205,11 @@ def register(app):
         me = ses.current_traveler(session)
         if not me:
             return _signed_out(s, lane, w)
+        if not mb.allow(me.id):      # before anything is read: a refused press starts no search
+            return _slowed(request, s, lane, w)
         lane_, w_, sq = _read(s, lane, w, _family(session))
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
-        if not mb.allow(me.id):
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SLOW_DOWN, sample=sq.sample), 429)
         return _first_step(request, session, s, lane_, w_, sq)
 
     @app.post(CONFIRM)
@@ -212,12 +221,12 @@ def register(app):
         me = ses.current_traveler(session)
         if not me:
             return _signed_out(s, lane, w)
+        if not mb.allow(me.id):
+            return _slowed(request, s, lane, w)
         family = _family(session)
         lane_, w_, sq = _read(s, lane, w, family)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
-        if not mb.allow(me.id):
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SLOW_DOWN, sample=sq.sample), 429)
         prep = mb.held(family, token, _square_of(s, lane_, w_))
         if prep is None:      # restarted, kept too long, another family's or another square's token: nothing is asked of LiteAPI
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=sq.sample))

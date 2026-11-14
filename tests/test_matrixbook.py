@@ -127,11 +127,30 @@ def test_a_duplicate_reference_we_hold_no_row_for_is_looked_up_and_stored(monkey
             return 200, "application/json", raw("prebook.json")
         if url == BOOK:
             return 400, "application/json", raw("book_duplicate.json")
-        return 200, "application/json", raw("bookings_by_reference.json")
+        asked = url.split("clientReference=")[1]
+        doc = json.loads(raw("bookings_by_reference.json"))
+        doc["data"][0]["clientReference"] = asked      # the recorded booking, under the reference this book sent
+        return 200, "application/json", json.dumps(doc).encode()
     monkeypatch.setattr(liteapi, "TRANSPORT", fake)
     prep = mb.prepare((PART,), DAYS, fam)
     got = mb.book(prep, GUEST, db, fam, "trip-1", "u1")
     assert got.ok and got.done[0].booking_id == "_5hnX-MI7" and seen[-1].startswith("https://api.liteapi.travel/v3.0/bookings?clientReference=" + mb.reference(fam, prep.token, 0))
+
+
+def test_another_familys_booking_under_another_reference_is_never_stored(monkeypatch, family):
+    db, fam = family
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+
+    def fake(url, headers, body, timeout):
+        if url == PREBOOK:
+            return 200, "application/json", raw("prebook.json")
+        if url == BOOK:
+            return 400, "application/json", raw("book_duplicate.json")
+        return 200, "application/json", raw("bookings_by_reference.json")      # its clientReference is gitaway-probe-f233, not ours
+    monkeypatch.setattr(liteapi, "TRANSPORT", fake)
+    got = mb.book(mb.prepare((PART,), DAYS, fam), GUEST, db, fam, "trip-1", "u1")
+    assert (got.status, got.done, got.ok) == (liteapi.DUPLICATE, (), False)
+    assert familydb.rows(db, "SELECT COUNT(*) AS n FROM matrix_bookings")[0]["n"] == 0
 
 
 def test_a_duplicate_with_no_booking_to_find_is_never_said_to_be_done(monkeypatch, family):

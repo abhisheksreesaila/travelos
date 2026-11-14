@@ -8,7 +8,7 @@
 
 Only the sandbox: `liteapi.prebook` and `liteapi.book` refuse any key that is not `sand_...`, so no real card or money is ever involved, and every word on a sheet says
 "Sandbox booking: nothing is charged". On the showcase (sample squares) nothing is sent to LiteAPI: a stand-in prebook and booking say "Sample booking: nothing is booked or
-charged". A guest's name and email are personal data: validated here, sent to LiteAPI and kept nowhere by us (D-490), escaped on output, never logged.
+charged". A guest's name and email are personal data: validated here, sent to LiteAPI and kept nowhere by us (D-494), escaped on output, never logged.
 """
 
 import hashlib
