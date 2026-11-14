@@ -217,3 +217,20 @@ def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_i
             _save(db, ref, trip_id, user_id, row, booking, guest, prep.sample)
         done.append(_stored(familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)[0]))
     return Result(liteapi.OK, tuple(done), 0)
+
+
+def add_to_trip(session, trip_id: str, done) -> None:
+    """Put the booked stays on the family's trip as lodging ("Booked on LiteAPI sandbox"), so the trip's cockpit shows them. Pressing Book again adds nothing twice."""
+    from dataclasses import replace
+    from datetime import datetime, time
+
+    from gitaway import importer, tripimport as ti
+    plan = importer.plan_of(session, trip_id)
+    if plan is None:
+        return
+    have = {h.confirmation for h in plan.hotels}
+    where = "GitAway sample" if any(d.sample for d in done) else "LiteAPI sandbox"
+    new = tuple(ti.Lodging(d.hotel[:80], d.place, datetime.combine(date.fromisoformat(d.checkin), time(15)), datetime.combine(date.fromisoformat(d.checkout), time(11)),
+                           d.booking_id, d.room[:80], 1, "", where) for d in done if d.booking_id not in have)
+    if new:
+        importer.save(session, replace(plan, hotels=plan.hotels + new, booked_on=where if plan.booked_on in ("", "elsewhere") else plan.booked_on), replace=trip_id)

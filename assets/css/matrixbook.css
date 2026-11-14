@@ -1,0 +1,83 @@
+/* The booking sheet on the trip matrix (F-233, D-480 to D-489). The square grows into it (assets/js/matrixbook.js, GA.motion.open); its steps settle on the springs.
+   A bottom sheet on a phone, a card in the middle on a laptop. Colour is for kinds only: stays are the stay colour, flights the flight colour, "booked" the car's green. */
+
+.mxb-scrim { position: fixed; inset: 0; z-index: 70; background: var(--scrim); }
+.mxb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; max-height: 92vh; overflow: auto; overscroll-behavior: contain; border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--card-2); box-shadow: var(--sh3); padding-bottom: env(safe-area-inset-bottom); }
+.mxb-bar { position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-2); touch-action: none; }
+.mxb-bar .mx-grab { margin-left: calc(50% - 1.25rem); }
+@media (min-width: 721px) {
+  .mxb-sheet { inset: 0; margin: auto; width: min(36rem, calc(100% - 2rem)); height: fit-content; max-height: min(92vh, 52rem); border-radius: var(--r-lg); padding-bottom: 0; }
+  .mxb-bar .mx-grab { display: none; }
+  .mxb-bar { justify-content: flex-end; }
+}
+
+.mxb { display: grid; gap: 0.875rem; padding-bottom: 1.25rem; }
+.mxb-page { padding-bottom: 0.5rem; }
+.mxb-head { display: grid; gap: 0.625rem; }
+.mxb-art { height: 7rem; }
+.mxb-head > :not(.mxb-art) { margin-left: 1.125rem; margin-right: 1.125rem; }
+.mxb-top { display: grid; gap: 0.25rem; }
+.mxb-h { margin: 0; font-size: 1.5rem; font-weight: 740; letter-spacing: -0.03em; line-height: 1.12; }
+.mxb-sub { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mxb-sandbox { display: inline-flex; align-items: center; gap: 0.5rem; justify-self: start; min-height: 2rem; padding: 0.25rem 0.75rem; border-radius: var(--r-pill);
+  background: var(--k-flight-t); color: var(--k-flight-i); font-size: max(var(--text-min), 0.875rem); font-weight: 700; margin: 0; }
+.mxb-sandbox.is-booked { background: var(--k-car-t); color: var(--k-car-i); }
+.mxb > :not(.mxb-head) { margin-left: 1.125rem; margin-right: 1.125rem; }
+
+/* the steps: each chip springs up as its step is reached */
+.mxb-steps { display: flex; gap: 0.5rem; list-style: none; padding: 0; margin-top: 0; margin-bottom: 0; }
+.mxb-step { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.75rem 0 0.25rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2);
+  font-size: max(var(--text-min), 0.875rem); font-weight: 650; transition: background var(--motion-spring-dur) var(--motion-spring), color var(--motion-spring-dur) var(--motion-spring); }
+.mxb-chip { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; color: var(--k-on); background: var(--k-neutral);
+  transition: transform var(--motion-spring-dur) var(--motion-spring), background var(--motion-spring-dur) var(--motion-spring); }
+.mxb-chip.k-stay { --kind: var(--k-stay); } .mxb-chip.k-flight { --kind: var(--k-flight); } .mxb-chip.k-car { --kind: var(--k-car); }
+.mxb-step[data-state="todo"] .mxb-chip { transform: scale(0.82); }
+.mxb-step[data-state="active"] { background: var(--paper-2); color: var(--ink); }
+.mxb-step[data-state="active"] .mxb-chip, .mxb-step[data-state="done"] .mxb-chip { background: var(--kind); transform: scale(1); }
+.mxb-step[data-state="done"] { color: var(--ink); }
+.mxb-step[data-state="active"] .mxb-chip { transform: scale(1.12); }
+
+.mxb-body, .mxb-confirm, .mxb-problem { display: grid; gap: 0.75rem; }
+.mxb-row { border-top: 1px solid var(--line); }
+.mxb-sum { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding-top: 0.25rem; }
+.mxb-tl { font-weight: 650; }
+.mxb-total { font-size: 1.5rem; font-weight: 700; }
+.mxb-note { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0; padding: 0.625rem 0.75rem; border-radius: var(--r-md); background: var(--paper-2); color: var(--ink); font-size: 1rem; line-height: 1.4; }
+.mxb-note > svg { flex: none; margin-top: 0.125rem; }
+.mxb-note.is-warn { background: var(--warn-tint); color: var(--warn-ink); }
+
+.mxb-f { display: grid; gap: 0.75rem; padding: 1rem; border-radius: var(--r-md); background: var(--paper-2); margin-left: 0; margin-right: 0; }
+.mxb-q { margin: 0; font-size: 1.25rem; font-weight: 720; letter-spacing: -0.02em; }
+.mxb-hint { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mxb-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
+.mxb-field { display: grid; gap: 0.25rem; min-width: 0; }
+.mxb-l { font-size: max(var(--text-min), 0.875rem); font-weight: 650; color: var(--ink-2); }
+.mxb-field input { width: 100%; min-height: var(--target); padding: 0 0.875rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card-2); color: var(--ink);
+  font: inherit; font-size: max(var(--text-min), 1rem); }
+.mxb-field input:focus-visible { outline: 2px solid var(--k-flight); outline-offset: 1px; }
+.mxb-field.has-err input { border-color: var(--warn-line); }
+.mxb-err { margin: 0; color: var(--warn-ink); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
+.mxb-go { width: 100%; min-height: var(--target); }
+.mxb-fine { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); text-align: center; }
+.mxb-two .mxb-field input { padding: 0 0.625rem; }
+@media (max-width: 380px) { .mxb-two { grid-template-columns: minmax(0, 1fr); } }
+
+/* the confirmation */
+.mxb-booked { display: grid; justify-items: center; gap: 0.375rem; text-align: center; padding-top: 0.5rem; }
+.mxb-big { display: grid; place-items: center; width: 4rem; height: 4rem; border-radius: 50%; background: var(--k-car); color: var(--k-on); }
+.mxb-confirm[data-step="booked"] .mxb-big { animation: mxb-pop var(--motion-spring-dur) var(--motion-spring) both; }
+@keyframes mxb-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.mxb-id { font-family: var(--font-mono); font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.mxb-flight { min-height: var(--target); }
+.mxb-back { justify-self: start; min-height: var(--target); }
+.mxb-confirm .mxb-go { text-decoration: none; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+/* the square's Book button */
+.mx-book-f { margin: 0; }
+.mx-book { width: 100%; min-height: var(--target); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mxb-chip, .mxb-step { transition: none; }
+  .mxb-confirm[data-step="booked"] .mxb-big { animation: none; }
+}

@@ -31,17 +31,19 @@ from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
-TILE, SQUARE, SAVE, WARM = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm"
+TILE, SQUARE, SAVE, WARM, BOOK = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
-        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Script(src="/assets/js/tripmatrix.js", defer=True))
+        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
+        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 LEAD_DAYS = 28                      # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
 CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
-FINE = "Prices are a preview from LiteAPI and change until booked. Booking opens soon: nothing is booked or paid here."
-SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. Nothing is booked or paid here."
+FINE = "Prices are a preview from LiteAPI and change until booked. A stay booked here is a sandbox booking: nothing is charged."
+SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. A stay booked here is a sample booking: nothing is booked or charged."
+BOOK_WORDS, BOOK_SAMPLE = "Sandbox booking: nothing is charged.", "Sample booking: nothing is booked or charged."      # gitaway/matrixbook.py says the same
 MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers.",
            "flex": f"Say give or take 0 to {tm.MAX_FLEX} days, like “give or take 2 days”.", "home": "Say where you fly from, like “from SFO”.",
            "airport": "GitAway does not know that place’s airport yet. Try a place like San Diego, Lake Tahoe or Orlando."}
@@ -231,6 +233,12 @@ def square_el(s: State, lane, w, sq, marks, day=False, style=None, wx=None):
              **({"style": style} if style else {}))
 
 
+def book_form(s: State, lane, w, sq):
+    """The square's Book button (F-233): a form that posts to /plan/matrix/book; assets/js/matrixbook.js opens the answer as a sheet that grows out of the square."""
+    return Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
+                Button(icon("bed", 16, 2.4), "Book the stay" + ("s" if len(sq.stays) > 1 else ""), type="submit", cls="btn btn-ink mx-book"), method="post", action=BOOK, cls="mx-book-f")
+
+
 def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
     """The opened square: what the whole trip is made of (option A's panel). The same function draws the laptop's side, the phone's sheet and the square's page."""
     nights = (f"{w.nights // 2} nights each" if lane.combo and w.nights % 2 == 0 else
@@ -267,7 +275,8 @@ def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
                Div(Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"), Span(vs, cls="mx-vs" + ("" if vs else " is-empty"), data_vs="1"), cls="mx-p-tot"),
                P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), Span(SAMPLE, cls="mx-sample") if sq.sample else "", cls="mx-p-meta"),
                Div(*rows, cls="mx-rows"), Div(sky, cls="mx-p-sky") if sky is not None else "",
-               Div(P(Span("Booking opens soon.", cls="mx-soon-h"), " Save the square to your trip; nothing is booked or paid.", cls="mx-soon"),
+               Div(P(Span(BOOK_SAMPLE if sq.sample else BOOK_WORDS, cls="mx-soon-h"), " Books the stay" + ("s" if len(sq.stays) > 1 else "") + " here; the flight books on its airline’s site.", cls="mx-soon"),
+                   book_form(s, lane, w, sq) if can_save else "",
                    P(saved, cls="mx-saved", role="status") if saved else form, cls="mx-acts"),
                cls="mx-p", data_open=sq.key)
 
@@ -550,7 +559,7 @@ def register(app):
         lane_, w_, sq, asked_sq = _square_of(s, lane, w, _family(session))
         if lane_ is None:
             return RedirectResponse(href(s), status_code=303)
-        note = "Saved to your trip. Booking opens soon; we will say so on the trip." if saved == "1" else ""
+        note = "Saved to your trip." if saved == "1" else ""
         return square_page(s, lane_, w_, sq, asked_sq, note)
 
     @app.post(SAVE)
@@ -575,5 +584,5 @@ def register(app):
         except importer.SaveError as e:
             return square_page(s, lane_, w_, sq, asked_sq, str(e), can_save=False)
         if request.headers.get("x-matrix") == "1":
-            return JSONResponse({"saved": "Saved to your trip. Booking opens soon; we will say so on the trip.", "trip": "/trip/cockpit"})
+            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/cockpit"})
         return RedirectResponse(back + "&saved=1", status_code=303)

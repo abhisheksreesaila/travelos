@@ -753,6 +753,13 @@ def flights(*, legs, adults: int, kid_ages=(), family: str = "", cached_only: bo
     return _search("flights", "/flights/rates", body, FLIGHT_KEEP, FLIGHT_TIMEOUT, family, read_flights, cached_only, stream=True, rank=rank, wait=wait)
 
 
+def forget_stays() -> None:
+    """Drop the kept stay searches (a prebook found a room gone): the next search asks LiteAPI again for today's rooms."""
+    with _LOCK:
+        for k in [k for k in _CACHE if k[0] == "/hotels/rates"]:
+            del _CACHE[k]
+
+
 def about(hotel_id: str, family: str = "") -> str:
     """The hotel's own description, HTML stripped; "" when there is no key, the budget is spent, or it could not be read."""
     hotel_id = str(hotel_id or "").strip()
