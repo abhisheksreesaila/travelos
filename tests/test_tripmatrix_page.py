@@ -192,7 +192,7 @@ def test_each_place_wears_its_art_each_lane_day_its_sky_and_each_card_square_its
     assert "mx-sqw" not in lanes_html.split('class="mx-lanes"', 1)[1]                         # the lane's pill holds the total alone
     for lane_key, place in (("sandiego", "San Diego"), ("losangeles", "Los Angeles"), ("orangecounty", "Orange County")):
         lane = lane_html(lanes_html, lane_key)
-        cells = dict(re.findall(r'data-day="(2026-12-\d\d)"[^>]*>(.*?)</div>', lane, re.S))
+        cells = {day: body for attrs, day, body in re.findall(r'<div ([^>]*data-day="(2026-12-\d\d)"[^>]*)>(.*?)</div>', lane, re.S) if "is-off" not in attrs}      # F-237: the days a longer trip would reach are drawn but hidden
         assert sorted(cells) == [f"2026-12-{d:02d}" for d in range(8, 21)], lane_key        # two days either side of Dec 10 to 18, every one drawn
         for day in (d for d in tw[place].days if d):
             text = " ".join(re.sub(r"<[^>]+>", "", cells[day.date.isoformat()]).split())
@@ -287,3 +287,86 @@ def test_on_the_showcase_a_nearby_place_without_a_sample_is_not_a_lane(sample):
     assert [x.key for x in page.lanes_of(s)] == ["sanfrancisco"]
     sd = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
     assert [x.key for x in page.lanes_of(sd)] == ["sandiego", "losangeles", "orangecounty", "losangeles+sandiego", "orangecounty+sandiego"]
+
+
+# ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
+
+def test_the_nights_slider_is_in_the_sentence_and_on_every_phone_card_two_to_seven(sample, client):
+    html = client.get(MATRIX).text
+    ranges = re.findall(r"<input [^>]*type=\"range\"[^>]*>", html)
+    assert len(ranges) == 6                                                   # the sentence's, and one on each of the five cards
+    for r in ranges:
+        assert 'min="2"' in r and 'max="7"' in r and 'value="4"' in r and 'aria-label="Nights"' in r and 'aria-valuetext="4 nights"' in r
+    assert 'data-dates="1"' in html and ">4 nights<" in html
+    assert html.count("mx-c-nights") == 5
+    assert "<noscript>" in html and all(f">{n} nights<" in html.split("<noscript>", 1)[1] for n in (2, 3, 5, 6, 7))         # without the script: plain links to each nights
+    assert "d=2026-12-12&amp;r=2026-12-18&amp;" in html.split("<noscript>", 1)[1]
+
+
+def test_a_trip_already_longer_in_the_address_widens_the_slider_to_hold_it(sample, client):
+    html = client.get(MATRIX.replace("r=2026-12-16", "r=2026-12-22")).text
+    r = re.search(r"<input [^>]*type=\"range\"[^>]*>", html).group(0)
+    assert 'min="2"' in r and 'max="10"' in r and 'value="10"' in r
+    d = data(html)
+    assert (d["nights"], d["lo"], d["hi"]) == (10, 2, 10) and d["returns"]["10"] == "2026-12-22"
+
+
+def test_the_page_data_says_every_nights_trip_its_last_day_its_words_and_its_calendar_days(sample, client):
+    d = data(client.get(MATRIX).text)
+    assert (d["nights"], d["lo"], d["hi"]) == (4, 2, 7)
+    assert d["returns"] == {str(n): f"2026-12-{12 + n}" for n in range(2, 8)}
+    assert [w["when"] for w in d["windows"]] == ["Dec 10 to 14", "Dec 11 to 15", "Dec 12 to 16", "Dec 13 to 17", "Dec 14 to 18"]
+    assert d["whens"]["6"] == ["Dec 10 to 16", "Dec 11 to 17", "Dec 12 to 18", "Dec 13 to 19", "Dec 14 to 20"]
+    assert d["days"][0] == "2026-12-08" and d["days"][-1] == "2026-12-23"      # the calendar runs to the longest trip: Dec 14 + 7 nights + 2 days
+    assert {n: d["nlast"][str(n)] for n in (2, 4, 7)} == {2: 11, 4: 13, 7: 16}
+
+
+def test_the_laptops_days_run_to_the_longest_trip_and_hide_the_ones_this_one_does_not_reach(sample, client):
+    html = client.get(MATRIX).text
+    lane = lane_html(html, "sandiego")
+    cells = [(attrs, day) for attrs, day in re.findall(r'<div ([^>]*data-day="(2026-12-\d\d)"[^>]*)>', lane)]
+    assert [d for c, d in cells if "is-off" not in c] == [f"2026-12-{d:02d}" for d in range(8, 21)]          # shown: Dec 8 to 20, as before
+    assert [d for c, d in cells if "is-off" in c] == ["2026-12-21", "2026-12-22", "2026-12-23"]               # drawn with their sky, hidden until more nights
+    assert "--mx-days: 13" in html
+    axis = html.split('class="mx-axis"', 1)[1].split("data-lane=", 1)[0]
+    assert len(re.findall(r'class="mx-ad[^"]*is-off', axis)) == 3
+
+
+def test_a_square_says_its_estimate_inputs_the_flight_and_each_stays_nightly_rate(sample, client):
+    d = data(client.get(MATRIX).text)
+    s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    known = page.peek_all(s, page.lanes_of(s), page.windows_of(s))
+    sq, combo = known["sandiego|2026-12-12"], known["losangeles+sandiego|2026-12-12"]
+    assert d["known"]["sandiego|2026-12-12"]["e"] == [sq.flight.cents, round(sq.stays[0].cents / 4)]
+    assert d["known"]["losangeles+sandiego|2026-12-12"]["e"] == [combo.flight.cents, round(combo.stays[0].cents / 2), round(combo.stays[1].cents / 2)]
+    assert d["known"]["sandiego|2026-12-12"]["i"] == f'<span class="mx-v">{tm.dollars(sq.cents)}</span>'
+    assert d["known"]["sandiego|2026-12-12"]["l"].endswith("for the whole trip")
+
+
+def test_peek_answers_every_square_the_showcase_knows_for_other_nights_and_matches_the_page_at_those_nights(sample, client):
+    q = MATRIX.split("?")[1]
+    j = client.get("/plan/matrix/peek?" + q.replace("r=2026-12-16", "r=2026-12-18")).json()["known"]
+    assert sorted(j) == sorted(KEYS)
+    longer = client.get(MATRIX.replace("r=2026-12-16", "r=2026-12-18")).text
+    assert {k: v["c"] for k, v in j.items()} == {k: v["c"] for k, v in data(longer)["known"].items()}
+    assert j["sandiego|2026-12-12"]["c"] != data(client.get(MATRIX).text)["known"]["sandiego|2026-12-12"]["c"]        # six nights cost more than four
+    assert j["sandiego|2026-12-12"]["label"].startswith("San Diego, Dec 12 to 18:")
+
+
+def test_off_the_showcase_peek_reads_only_the_cache_and_never_searches(real, client):
+    q = MATRIX.split("?")[1]
+    first = client.get("/plan/matrix/peek?" + q).json()
+    assert first == {"known": {}} and real.asked == []
+    client.get("/plan/matrix/tile?" + q + "&lane=sandiego&w=2026-12-12")
+    asked = len(real.asked)
+    assert asked
+    again = client.get("/plan/matrix/peek?" + q).json()["known"]
+    assert list(again) == ["sandiego|2026-12-12"] and len(real.asked) == asked                      # the answer came from the cache
+    other = client.get("/plan/matrix/peek?" + q.replace("r=2026-12-16", "r=2026-12-18")).json()
+    assert other == {"known": {}} and len(real.asked) == asked                                     # other nights: not known, not searched
+    assert client.get("/plan/matrix/peek?to=Nowhere+Land").status_code == 400
+
+
+def test_the_tile_carries_the_estimate_inputs_too(sample, client):
+    j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-13").json()
+    assert j["e"] == data(client.get(MATRIX).text)["known"]["sandiego|2026-12-13"]["e"] and len(j["e"]) == 2
