@@ -1479,11 +1479,13 @@ Founder, 2026-11-14 (after signing in locally and landing on "Fork a getaway" an
 
 # World-class journey (brief docs/briefs/world-class-journey.md, approved 2026-11-14, overnight)
 
-## F-232 The cover, world class: colourful and immersive [todo]
-Brief: docs/briefs/world-class-journey.md · Builds on F-227 (D-426..D-460) · Files: gitaway/pages/cover.py, assets/css/cover.css, assets/js/cover.js
-- [ ] the cover is colourful (each part's colour washes the stage, the hero is a living scene, not grey), every arrival a micro-interaction, still no scroll-linked transforms (D-427) and 60 fps at CPU 4x (scripts/cover_fps.py)
-- [ ] the story leads to the matrix (Start a trip) and says the four steps: compare, book, plan together, share
-- [ ] 4.5:1 in light and dark, reduced motion calm, the 28 KB script budget held
+## F-232 The cover, world class: colourful and immersive [done]
+Brief: docs/briefs/world-class-journey.md · Builds on F-227 (D-426..D-460) · Decisions: D-470 to D-476 · reviewer PASS
+- [x] the cover is colourful (each part's colour washes the stage, the hero is a living scene: sky, sun, clouds, waves, postcards), every arrival a micro-interaction (count-ups, confetti on a tap, the find's ring), still no scroll-linked transforms (D-427)
+- [x] the story leads to the matrix (Start a trip) and says the four steps: compare, book, plan together, share
+- [x] 4.5:1 in light and dark (measured under every word, over the gradients), reduced motion calm, 19.5 KB of the 28 KB script budget
+- [ ] frame rate: about 2 fps under the old cover at CPU 4x (51 to 55 against 53 to 56), measured on a busy machine; measure again on a quiet one with scripts/cover_fps.py
+- [ ] should-fix: the dark palette is copied in two blocks of cover.css (move to tokens or test it); the find's ring loop when the frame is out of view
 
 ## F-233 Book a square with LiteAPI's sandbox [done]
 Brief: docs/briefs/world-class-journey.md · Needs: F-220, F-222 · Decisions: D-480 to D-489, review fixes D-510 to D-513 · reviewer PASS, security audit closed

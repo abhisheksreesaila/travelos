@@ -36,5 +36,16 @@
     watch();
     wide.addEventListener('change', watch);
   }
-  window.GA_COVER = { part: () => stage.dataset.part, film: () => root.classList.contains('cv-film') };
+  // every tap is a moment (cover.css): a heart, "This one" and Booked throw confetti when pressed; two class names for one animation, so a second tap starts it again
+  stage.addEventListener('pointerdown', (e) => {
+    const t = e.target.closest('.cv-hf, .cv-pill, .cv-book');
+    if (t) { const a = t.classList.contains('tap-a'); t.classList.toggle('tap-a', !a); t.classList.toggle('tap-b', a); }
+  });
+  // a scene out of sight stands still: the sun, clouds and sea only move while someone can see them
+  const scenes = document.querySelectorAll('.cv-scene');
+  if (scenes.length) {
+    const seen = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('cv-off', !e.isIntersecting)));
+    scenes.forEach((c) => seen.observe(c));
+  }
+  window.GA_COVER ={ part: () => stage.dataset.part, film: () => root.classList.contains('cv-film') };
 })();

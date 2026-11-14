@@ -313,3 +313,86 @@ def test_the_decisions_record_the_cover(client):
     assert re.search(r"^- D-383 · .*D-270", decisions, re.M)
     for n in (426, 427, 428, 429, 443, 444):
         assert re.search(rf"^- D-{n} · F-227", decisions, re.M), n
+
+
+# ---------- F-232: the cover, world class (docs/decisions.md D-470 on) ----------
+
+STEPS = ("Compare", "Book", "Plan together", "Share")
+
+
+def test_the_story_says_its_four_steps_compare_book_plan_together_share(client):
+    """D-470: the brief's journey is four steps. The opening names them in order (a list of numbered chips, not links: the doors stay Start a trip and
+    See how it works) and each screen's bar shows where the story is."""
+    html = _cover(client)
+    hero = _el(html, "section", "cv-hero")
+    steps = _el(hero, "ol", "cv-steps")
+    assert [_text(li) for li in re.findall(r"<li\b.*?</li>", steps, re.S)] == [f"{n} {name}" for n, name in enumerate(STEPS, 1)]
+    assert "<a " not in steps and re.search(r'aria-label="The four steps"', steps)
+    states = []
+    for n in "123":
+        bar = _el(_layer(html, n), "div", "cv-fbar")
+        dots = re.findall(r'<span class="cv-sn d(\d)([^"]*)"', bar)
+        assert [d for d, _ in dots] == ["1", "2", "3", "4"], n
+        states.append([s.strip() for _, s in dots])
+    assert states == [["done", "now", "", ""], ["done", "done", "now", ""], ["done", "done", "done", "now"]]      # compare and book, plan together, share
+
+
+def test_part_one_ends_on_booking_the_find_in_the_sandbox(client):
+    """D-470: Compare ends on the find being booked (F-233: LiteAPI's sandbox). The drawn find has a Book it pill that turns into Booked, and the
+    words say plainly that it is a sandbox and nothing is charged."""
+    html = _cover(client)
+    disc = _el(_layer(html, 1), "div", "cv-disc")
+    book = _el(disc, "span", "cv-book")
+    assert _text(_el(book, "span", "cv-bk1")) == "Book it" and _text(_el(book, "span", "cv-bk2")) == "Booked"
+    words = _text(_part(html, 1))
+    assert "book it" in words.lower() and "sandbox" in words and "nothing is charged" in words
+
+
+def test_the_numbers_that_count_up_say_their_final_value_in_the_page(client):
+    """D-471: the find's total and the family's square count up from $0 in CSS (registered integer properties on --th thousands and --rm
+    remainder); the text in the page is the final value, always, and --th/--rm are exactly its digits."""
+    html = _cover(client)
+    nums = re.findall(r'<span class="cv-num" style="--th:(\d+);--rm:(\d+)"><span class="cv-nr">(\$[\d,]+)</span></span>', html)
+    assert len(nums) == 2
+    for th, rm, text in nums:
+        assert text == f"${int(th)},{int(rm):03d}" and text == "$2,190"
+
+
+def test_the_looping_motion_stands_still_without_motion_allowed():
+    """D-472: every `infinite` loop in the stylesheet sits inside a prefers-reduced-motion: no-preference block (the film's own, or the opening's)."""
+    css = re.sub(r"/\*.*?\*/", "", (ROOT / "assets/css/cover.css").read_text(encoding="utf-8"), flags=re.S)
+    depth, starts, blocks = 0, [], []
+    for i, ch in enumerate(css):
+        if ch == "{":
+            starts.append(i)
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            s = starts.pop()
+            if depth == 0:
+                blocks.append(css[css.rfind("}", 0, s) + 1:i + 1])
+    assert any("infinite" in b for b in blocks)
+    for b in blocks:
+        if "infinite" in re.sub(r"@keyframes[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", b):
+            assert "prefers-reduced-motion: no-preference" in b and b.index("infinite") > b.index("prefers-reduced-motion: no-preference"), b[:100]
+
+
+def test_the_scene_has_a_day_and_a_night_the_same_for_the_system_and_the_person():
+    css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
+    light = dict(re.findall(r"(--(?:sk-day-[abc]|cv-sun|cv-glow|cv-cloud|cv-sea-[12]|cv-star|cv-cell-a)):\s*([^;]+);", css[css.index(".cv-root {\n  /* D-472"):css.index("the scene's palettes, dark")]))
+    chosen = re.search(r'\.cv-root\[data-mode="dark"\] \{([^}]*)\}', css).group(1)
+    system = re.search(r'\.cv-root:not\(\[data-mode="light"\]\) \{([^}]*)\}', css[css.index("the scene's palettes, dark"):]).group(1)
+    assert chosen.strip() == system.strip()
+    dark = dict(re.findall(r"(--[\w-]+):\s*([^;]+);", chosen))
+    assert set(dark) == set(light) and all(dark[k] != light[k] for k in dark), set(dark) ^ set(light)
+
+
+def test_the_script_toggles_classes_for_taps_and_for_a_scene_out_of_sight():
+    js = (ROOT / "assets/js/cover.js").read_text(encoding="utf-8")
+    assert "tap-a" in js and "tap-b" in js and ".cv-scene" in js and "cv-off" in js and js.count("IntersectionObserver") == 3      # the parts, the scenes (the third is its comment)
+
+
+def test_the_decisions_record_the_world_class_cover():
+    decisions = (ROOT / "docs/decisions.md").read_text(encoding="utf-8")
+    for n in range(470, 477):
+        assert re.search(rf"^- D-{n} · ", decisions, re.M), n
