@@ -1521,3 +1521,17 @@ Founder, 2026-11-14: "can you make 4 nights like a slider so that we can change 
 - [x] on release, only the squares in view search (the tiles' rules, the gate, the budgets), kept per nights so going back is instant; the opened square and Book always use real prices for those exact nights
 - [x] on the showcase it is instant from the sample catalog; the phone's place cards get the same control
 - Decisions D-530 to D-535; reviewer PASS (4704 tests). Later, maybe: cap a hand-typed longer trip at about 14 nights on the slider.
+
+# The booking journey, one step at a time (founder, 2026-11-14: cover done → the matrix → the opened square → book; then plan)
+
+## F-238 The matrix, more minimal: nights is a word, no dead text at the bottom [todo]
+Founder, 2026-11-14: "the slider should be part of the sentence: they click 3 nights and a drop-down shows a slider … apply minimalistic features … there are privacy terms at the bottom and lines of text people are not going to see: what is the purpose of wasting that real estate?"
+- [ ] "4 nights" is a word of the sentence like the others; tapping it opens a small popover with the slider (2 to 7), the same behaviour as F-237 (estimates while sliding, real prices on release); no inline slider on the laptop or the phone
+- [ ] the bottom of the matrix is clean: the legend, the weather notes and the sample/booking fine print fold into one quiet "ⓘ About these prices" that opens on tap (the credits weather.notes requires stay, one tap away); the site footer is not drawn on the matrix
+- [ ] a minimal pass: remove what does not earn its place (repeated labels, counts, badges), keeping 4.5:1 and every honest label (sample, typical, estimate)
+
+## F-239 Design: the opened square and the checkout [todo]
+Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on the flight I've chosen, I see the weather for those four days … in the same view … a really fun way of doing it; then we book it (assume LiteAPI gives everything)". The current "Book the stays" sheet reads as an old theme.
+- [ ] 2 or 3 options, phone and laptop, of the opened square: the hotel (photos, room, rating, address), the flight (times, airline, stops; switch to another flight or room right there), the weather for those nights, the total; fun, in the matrix's language
+- [ ] the checkout: modern, short, in one flow (guest, payment as LiteAPI's best case, confirm), with the confirmation showing the hotel's contact and the flight's record locator
+- [ ] a compare page with a pick per option and device; the founder picks before F-240 builds it
