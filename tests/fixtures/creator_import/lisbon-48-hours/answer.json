@@ -1,0 +1,34 @@
+{
+  "_note": "The answer the draft model is asked for (gitaway/creatordraft.py SCHEMA), written by hand from page.html's article text because no ANTHROPIC_API_KEY was set when F-235 was built. Every name is the post's own. Re-record a real one with `pixi run probe-import https://theplanetd.com/48-hours-in-lisbon-itinerary/` and paste its JSON here (drop this _note).",
+  "title": "48 hours in Lisbon",
+  "place": "other",
+  "place_name": "Lisbon, Portugal",
+  "days_count": 3,
+  "days": [
+    {"stops": [
+      {"name": "Belem Tower", "time": "", "note": "Go before the crowds.", "link": ""},
+      {"name": "Jerónimos Monastery", "time": "", "note": "", "link": ""},
+      {"name": "Monument of Discoveries", "time": "", "note": "", "link": ""},
+      {"name": "Pastéis de Belém", "time": "", "note": "Sit inside, the line moves fast.", "link": ""},
+      {"name": "MAAT", "time": "", "note": "", "link": ""},
+      {"name": "LX Factory", "time": "", "note": "", "link": ""},
+      {"name": "Fado show", "time": "", "note": "", "link": ""}
+    ]},
+    {"stops": [
+      {"name": "Alfama", "time": "", "note": "", "link": ""},
+      {"name": "Castelo de São Jorge", "time": "", "note": "", "link": ""},
+      {"name": "Miradouro das Portas do Sol", "time": "", "note": "", "link": ""},
+      {"name": "Tuk Tuk tour", "time": "", "note": "", "link": ""},
+      {"name": "Time Out Market", "time": "", "note": "", "link": ""},
+      {"name": "Rua Augusta", "time": "", "note": "", "link": ""},
+      {"name": "Bairro Alto", "time": "", "note": "", "link": ""}
+    ]},
+    {"stops": [
+      {"name": "Pena Palace", "time": "", "note": "Get there early.", "link": ""},
+      {"name": "Quinta da Regaleira", "time": "", "note": "", "link": ""},
+      {"name": "Moorish Castle", "time": "", "note": "", "link": ""}
+    ]}
+  ],
+  "tips": ["Go to Belém Tower before the crowds.", "Sit inside at Pastéis de Belém: the line moves fast.", "Get to Pena Palace early, or book a timed entrance.", "Ride Tram 28 or hire a tuk-tuk to cover the hills."],
+  "stickers": []
+}

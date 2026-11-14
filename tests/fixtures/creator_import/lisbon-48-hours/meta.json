@@ -1,0 +1,19 @@
+{
+  "url": "https://theplanetd.com/48-hours-in-lisbon-itinerary/",
+  "read": "2026-11-14",
+  "title": "48 Hours in Lisbon, Itinerary",
+  "by": "The Planet D",
+  "lead": "https://theplanetd.com/images/why-visit-portugal-lisbon.jpg",
+  "responses": {
+    "https://theplanetd.com/robots.txt": {
+      "status": 200,
+      "file": "robots.txt",
+      "content-type": "text/plain"
+    },
+    "https://theplanetd.com/48-hours-in-lisbon-itinerary/": {
+      "status": 200,
+      "file": "page.html",
+      "content-type": "text/html"
+    }
+  }
+}
