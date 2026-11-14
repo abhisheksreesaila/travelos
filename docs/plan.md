@@ -1491,10 +1491,11 @@ Brief: docs/briefs/world-class-journey.md · Needs: F-220, F-222 · Risk: person
 - [ ] the booked stay becomes the family's trip and lands on its cockpit
 - [ ] colourful and alive: the square grows into the booking sheet, steps settle on the springs
 
-## F-234 Share the trip to Instagram [todo]
-Brief: docs/briefs/world-class-journey.md · Absorbs F-226's card
-- [ ] a trip card image (1080×1350: the place's art, dates, route, a link back) made on the server or in the page, shared through the phone's share sheet (Web Share with files), downloaded on a laptop
-- [ ] reachable from the cockpit ("Share to Instagram"); the link back opens a public page that tells nothing private
+## F-234 Share the trip to Instagram [done]
+Brief: docs/briefs/world-class-journey.md · Absorbs F-226's card · Decisions: D-490 to D-495 · docs/trip-share.md
+- [x] a trip card image (1080×1350: the place's art, dates, route, a link back) made on the server (cairosvg + Pillow, cached), shared through the phone's share sheet (Web Share with files), downloaded on a laptop
+- [x] reachable from the cockpit ("Share to Instagram"); the link back opens a public page that tells nothing private (/s/<token>, or the published trip)
+- [ ] before deploy: one `docker build` that renders a card (cairo in the image)
 
 ## F-235 A creator's blog becomes a trip like magic [todo]
 Brief: docs/briefs/world-class-journey.md · Needs: F-183 · Design: docs/design/joyful-pages/compare.html (For creators A, Community A)
