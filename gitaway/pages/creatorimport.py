@@ -15,7 +15,7 @@ import json
 import re
 from urllib.parse import quote, urlsplit
 
-from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
+from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Li, Link, Ol, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, RedirectResponse, Response, StreamingResponse
@@ -59,11 +59,24 @@ def paste_page(session, link="", text="", error="", status=200):
         Div(Button(icon("star", 20, 2.4), "Draft my trip", type="submit", name="do", value="draft", cls="btn btn-primary", id="ci-draft"),
             Button("Write it myself", type="submit", name="do", value="manual", cls="btn", id="ci-manual"), cls="ci-actions"),
         action=PATH, method="post", id="ci-form", cls="ci-form card")
-    skeleton = Div(Div(cls="skeleton ci-sk-line ci-sk-title"), Div(cls="skeleton ci-sk-line"), *[Div(cls="skeleton ci-sk-day") for _ in range(3)],
-                   Span("Reading your post and drafting the days…", cls="ci-sk-say"),
-                   cls="ci-skel", id="ci-skel", hidden=True, role="status", aria_busy="true", aria_label="Drafting your trip")
+    stage = Section(
+        Div(Div(Img(alt="", cls="cm-img", referrerpolicy="no-referrer", hidden=True), Span(icon("play", 36, 2), cls="cm-ph", aria_hidden="true"), cls="cm-photo"),
+            Div(Span("", cls="cm-site", id="cm-site"), H2("Opening your post…", id="cm-title", cls="cm-title"), P("", cls="cm-by", id="cm-by"), cls="cm-meta"), cls="cm-post"),
+        Ol(*[Li(Span(icon("check", 16, 3), cls="cm-tick", aria_hidden="true"), label, cls="cm-step", data_step=str(i)) for i, label in enumerate(("Opening your post", "Finding the days and stops", "Laying out your trip"))], cls="cm-steps", id="cm-steps"),
+        P(Span(cls="cm-caret", aria_hidden="true"), Span("Opening your post", id="cm-log"), cls="cm-log", aria_hidden="true"),
+        P(Span("From your post", cls="cm-say-k"), Span("", cls="cm-word", id="cm-word"), cls="cm-say", id="cm-say", aria_hidden="true"),
+        Ol(cls="cm-days", id="cm-days"),
+        Div(Div(Span(icon("check", 22, 2.6), "Your trip is ready", cls="pb-chip pb-chip-live"), P("", cls="cm-count", id="cm-count"), cls="cm-ready"),
+            Form(Label(Input(type="checkbox", name="own", value="1", id="cm-own", required=True, cls="ci-own"), Span("This is my post", cls="ci-own-t"), cls="ci-own-l"),
+                 Input(type="hidden", name="do", value="publish"),
+                 Button(icon("check", 20, 2.6), "Publish", type="submit", id="cm-publish", cls="btn btn-primary"),
+                 A("Preview what strangers see", href=PATH, id="cm-preview", cls="btn"), A("Edit the draft", href=PATH, id="cm-edit", cls="btn"),
+                 action=PATH, method="post", id="cm-form", cls="cm-form"),
+            P("Nothing is public until you tick the box and publish.", cls="ci-hint"), cls="cm-done", id="cm-done", hidden=True),
+        P("", role="status", cls="sr-only", id="cm-live"),
+        cls="cm", id="ci-magic", hidden=True, aria_label="Making your trip")
     body = Section(Div(H1("Turn your post into a trip"), P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
-                   form, skeleton, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
+                   form, stage, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
     return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
 
 
@@ -112,7 +125,7 @@ def _line(**event) -> str:
 def _told(step, value) -> str:
     if step == "read":
         return _line(event="read", title=value.title, by=value.by, image=(value.images[0] if value.images else value.thumb) or "", site=urlsplit(value.url).hostname or "",
-                     kind=value.kind, words=importsource.own_words(value.text))
+                     kind=value.kind, chars=len(value.text), words=importsource.own_words(value.text))
     d = value
     return _line(event="draft", id=d["id"], title=d["title"], place=d["place_name"] or cd.PLACES.get(d["place"], ""), editor=f"{PATH}/{d['id']}", preview=f"{PATH}/{d['id']}/preview",
                  days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"]} for s in day["stops"]]} for day in d["days"]], tips=d["tips"], unsure=cd.UNNAMED)

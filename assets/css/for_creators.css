@@ -1,131 +1,191 @@
-/* The For creators page (F-186): /for-creators in omxqua Travel "Coast" with GitAway's orange. After omxqua.css (gitaway/omxqua.py): colours are the language's --oq-* tokens,
-   kinds carry colour (flight blue, stay violet, car amber, food rose, see sage), the accent is the one loud colour. Phone first (390), then the laptop (1440); sizes are rem off the
-   site's one root (16px phone, 12px laptop: F-030), every phone control is at least 2.75rem (44px), nothing scrolls sideways, and the only times are the --motion-* tokens
-   (tests/test_motion_tokens.py): the phone's entrance rises a little, the laptop only fades (AGENTS.md, F-156). No glass, no blur, no gradients on chrome. */
+/* The For creators page, "Golden hour" (F-186, rebuilt F-235): /for-creators. A sunset wash behind the paste box, the post turning into a trip beside it, content arriving a little at a time, then the
+   call to action. Page-scoped tokens (--fc-*) for light (the default, D-460) and dark, set on .fc the way tokens.css sets the site's: the system's dark unless the person chose light, or the
+   person chose dark; the two dark blocks are the same (tests/test_creator_pages.py). Every text pair is 4.5:1 or better in both. Phone first, then the laptop; rem sizes off the site's one root;
+   phone targets are var(--target); the only times are the --motion-* tokens (the phone's entrance rises a little, the laptop only fades); no glass, no blur. */
 
-.fc { display: grid; gap: clamp(2.5rem, 7vw, 4.5rem); padding-block: 1rem 3rem; min-width: 0; }
+.fc {
+  color-scheme: light;
+  --fc-bg: #FFF7EF; --fc-ink: #3A1640; --fc-ink-2: #5E3A58; --fc-card: #FFFFFF; --fc-tint: #FFF1E8; --fc-line: #EBD3C6;
+  --fc-wash-1: #FFE3CF; --fc-wash-2: #FFC8B8; --fc-wash-3: #FFB5CF; --fc-wash-4: #FFE9F2; --fc-glow: #FFD9A8;
+  --fc-a: #C2410C; --fc-b: #B5174F; --fc-c: #6D28D9; --fc-on: #FFFFFF;
+  --fc-a-t: #FFE2D2; --fc-a-i: #8A2C07; --fc-b-t: #FFDCE8; --fc-b-i: #8E0F3C; --fc-c-t: #EBE2FF; --fc-c-i: #4C1D95; --fc-g-t: #FFEFB8; --fc-g-i: #5C4300;
+  --fc-shadow: 0.0625rem 0.75rem 2.5rem rgb(120 30 60 / 0.2);
+  background: var(--fc-bg); color: var(--fc-ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) .fc {
+    color-scheme: dark;
+    --fc-bg: #1A0E1F; --fc-ink: #FFEFE6; --fc-ink-2: #E7C7D6; --fc-card: #2A1630; --fc-tint: #3A1D3F; --fc-line: #5A3560;
+    --fc-wash-1: #3A1840; --fc-wash-2: #4A1D45; --fc-wash-3: #5C1D4A; --fc-wash-4: #2A1230; --fc-glow: #6B2A3A;
+    --fc-a: #FF8A5C; --fc-b: #FF7FB0; --fc-c: #C4A1FF; --fc-on: #2A0F20;
+    --fc-a-t: #4A2012; --fc-a-i: #FFD0B8; --fc-b-t: #4A1530; --fc-b-i: #FFC4DA; --fc-c-t: #2E1A55; --fc-c-i: #E0D0FF; --fc-g-t: #4A3A0C; --fc-g-i: #FFE89A;
+    --fc-shadow: 0.0625rem 0.75rem 2.5rem rgb(0 0 0 / 0.5);
+  }
+}
+:root[data-mode="dark"] .fc {
+    color-scheme: dark;
+    --fc-bg: #1A0E1F; --fc-ink: #FFEFE6; --fc-ink-2: #E7C7D6; --fc-card: #2A1630; --fc-tint: #3A1D3F; --fc-line: #5A3560;
+    --fc-wash-1: #3A1840; --fc-wash-2: #4A1D45; --fc-wash-3: #5C1D4A; --fc-wash-4: #2A1230; --fc-glow: #6B2A3A;
+    --fc-a: #FF8A5C; --fc-b: #FF7FB0; --fc-c: #C4A1FF; --fc-on: #2A0F20;
+    --fc-a-t: #4A2012; --fc-a-i: #FFD0B8; --fc-b-t: #4A1530; --fc-b-i: #FFC4DA; --fc-c-t: #2E1A55; --fc-c-i: #E0D0FF; --fc-g-t: #4A3A0C; --fc-g-i: #FFE89A;
+    --fc-shadow: 0.0625rem 0.75rem 2.5rem rgb(0 0 0 / 0.5);
+}
+
+.fc { display: grid; gap: clamp(2.5rem, 7vw, 4.5rem); padding-bottom: 3rem; min-width: 0; }
 .fc > * { min-width: 0; }
-.fc h1, .fc h2, .fc h3 { font-family: var(--oq-font); text-wrap: balance; margin: 0; }
+.fc h1, .fc h2, .fc h3 { margin: 0; text-wrap: balance; color: var(--fc-ink); }
 .fc p { margin: 0; text-wrap: pretty; }
+.fc a { text-underline-offset: 0.2rem; }
 
-/* ---------- hero: the box first ---------- */
-.fc-hero { display: grid; gap: 1.75rem; align-items: center; padding-top: 0.75rem; }
+/* ---------- the hero: a sunset wash, the box first, the post turning into a trip ---------- */
+.fc-hero { background: radial-gradient(120% 90% at 85% 10%, var(--fc-glow) 0%, transparent 55%), linear-gradient(160deg, var(--fc-wash-1) 0%, var(--fc-wash-2) 38%, var(--fc-wash-3) 70%, var(--fc-wash-4) 100%);
+  border-radius: 0 0 2rem 2rem; padding-block: 1.5rem 3.5rem; overflow: hidden; }
+.fc-hero-in { display: grid; gap: 2.25rem; align-items: center; }
 .fc-copy { display: grid; gap: 1rem; align-content: start; }
-.fc-eyebrow { justify-self: start; display: inline-flex; align-items: center; min-height: 2rem; padding: 0 0.75rem; border-radius: var(--oq-radius-full); background: var(--oq-tonal);
-  color: var(--oq-ink); font: 500 max(var(--text-min), 0.8125rem) var(--oq-font-mono); letter-spacing: 0.02em; }
-.fc h1 { font-size: clamp(2.375rem, 9.5vw, 5.25rem); font-weight: 650; letter-spacing: -0.05em; line-height: 0.98; }
-.fc-accent { color: var(--oq-accent); white-space: nowrap; }
-.fc-lede { font-size: 1.125rem; line-height: 1.5; color: var(--oq-ink-2); max-width: 36rem; }
+.fc-eyebrow { justify-self: start; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--fc-card); color: var(--fc-ink);
+  font: 700 max(var(--text-min), 0.875rem) var(--font-body, inherit); }
+.fc-eyebrow svg { color: var(--fc-a); }
+.fc h1 { font-size: clamp(2.5rem, 10vw, 5.25rem); font-weight: 800; letter-spacing: -0.045em; line-height: 0.98; }
+.fc-accent { color: var(--fc-a); white-space: nowrap; }
+.fc-lede { font-size: 1.125rem; line-height: 1.5; color: var(--fc-ink-2); max-width: 36rem; }
 
-.fc-paste { display: grid; gap: 0.375rem; padding: 0.5rem; border-radius: 1.25rem; background: var(--oq-surface-2); box-shadow: var(--oq-shadow-2);
-  transition: box-shadow var(--motion-desk); }
-.fc-paste:focus-within { box-shadow: var(--oq-shadow-2), 0 0 0 0.1667rem var(--oq-accent); }
-.fc-input { width: 100%; box-sizing: border-box; min-height: 6.5rem; resize: vertical; padding: 0.875rem 1rem; border: 0; border-radius: 0.875rem; background: transparent; color: var(--oq-ink);
-  font: 450 1.0625rem/1.45 var(--oq-font); outline: 0; }
-.fc-input::placeholder { color: var(--oq-ink-2); opacity: 0.8; }
+.fc-paste { display: grid; gap: 0.375rem; padding: 0.5rem; border-radius: 1.5rem; background: var(--fc-card); box-shadow: var(--fc-shadow); max-width: 36rem; }
+.fc-paste:focus-within { outline: 0.1875rem solid var(--fc-a); outline-offset: 0.125rem; }
+.fc-input { width: 100%; box-sizing: border-box; min-height: 6.5rem; resize: vertical; padding: 0.875rem 1rem; border: 0; border-radius: 1rem; background: transparent; color: var(--fc-ink);
+  font: 500 1.0625rem/1.45 var(--font-body, inherit); outline: 0; }
+.fc-input::placeholder { color: var(--fc-ink-2); opacity: 1; }
 .fc-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.125rem; }
-.fc-bar .btn { min-height: 3rem; }
-.fc-go { flex: 1 1 11rem; font-size: 1.0625rem; }
-.fc-write { flex: 0 1 auto; --oq-bg: var(--oq-tonal); box-shadow: none; }
-.fc-fine { font: 400 max(var(--text-min), 0.875rem)/1.45 var(--oq-font); color: var(--oq-ink-2); }
-.fc-fine a { color: var(--oq-accent); font-weight: 600; text-underline-offset: 0.2rem; }
-#fc-free { font-weight: 500; color: var(--oq-ink); }
+.fc-bar .btn, .fc .btn { min-height: var(--target); justify-content: center; }
+.fc .btn-primary { background: linear-gradient(90deg, var(--fc-a), var(--fc-b)); color: var(--fc-on) !important; box-shadow: none; border: 0; }
+.fc .btn:not(.btn-primary) { background: var(--fc-tint); color: var(--fc-ink) !important; box-shadow: inset 0 0 0 0.0625rem var(--fc-line); }
+.fc .btn:focus-visible { outline: 0.1875rem solid var(--fc-ink); outline-offset: 0.125rem; }
+.fc-go { flex: 1 1 11rem; font-size: 1.0625rem; font-weight: 700; }
+.fc-write { flex: 0 1 auto; }
+.fc-srcs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fc-srcs li { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.25rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--fc-card); color: var(--fc-ink); font-weight: 600; font-size: max(var(--text-min), 0.875rem); }
+.fc-fine { font: 400 max(var(--text-min), 0.875rem)/1.45 var(--font-body, inherit); color: var(--fc-ink-2); }
+.fc-fine a { color: var(--fc-a); font-weight: 700; }
+#fc-free { font-weight: 600; color: var(--fc-ink); }
 
-/* ---------- the live example ---------- */
-.fc-ex { display: grid; overflow: hidden; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-2); }
-.fc-cover { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--oq-tonal); }
-.fc-cover-none, .fc-cover-draw { display: grid; place-items: center; position: relative; color: var(--oq-accent); background: color-mix(in srgb, var(--oq-accent) 11%, var(--oq-surface-1)); }
-.fc-cover-draw::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 1.25rem 1.25rem, color-mix(in srgb, var(--oq-accent) 22%, transparent) 0.125rem, transparent 0.1875rem) 0 0 / 1.5rem 1.5rem; }
-.fc-cover-icon { position: relative; display: grid; place-items: center; width: 4.25rem; height: 4.25rem; border-radius: 1.25rem; background: var(--oq-surface-2); box-shadow: var(--oq-shadow-1); }
+/* the post turns into the trip: a drawn post (never a real person's), a spark between, the trip (the live example, or the drawn one that says it is one) */
+.fc-stage { position: relative; display: grid; gap: 0.5rem; justify-items: center; padding-block: 0.5rem 1rem; }
+.fc-post { width: min(15rem, 70%); justify-self: start; display: grid; gap: 0.5rem; padding: 0.625rem 0.625rem 1rem; border-radius: 1.5rem; background: var(--fc-card); box-shadow: var(--fc-shadow); rotate: -4deg; }
+.fc-post-photo { display: grid; place-items: center; height: 6.5rem; border-radius: 1.125rem; background: linear-gradient(160deg, var(--fc-g-t), var(--fc-b-t) 60%, var(--fc-c-t)); color: var(--fc-b-i); }
+.fc-post-k { font: 700 max(var(--label-min), 0.8125rem) var(--font-body, inherit); letter-spacing: 0.04em; text-transform: uppercase; color: var(--fc-ink-2); padding-inline: 0.25rem; }
+.fc-line { display: block; height: 0.5rem; margin-inline: 0.25rem; border-radius: var(--r-pill); background: var(--fc-line); }
+.fc-line-1 { width: 90%; } .fc-line-2 { width: 70%; } .fc-line-3 { width: 80%; }
+.fc-arrow { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--fc-a); color: var(--fc-on); box-shadow: var(--fc-shadow); }
+.fc-ex { width: 100%; display: grid; overflow: hidden; border-radius: 1.75rem; background: var(--fc-card); box-shadow: var(--fc-shadow); rotate: 2deg; }
+.fc-cover { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--fc-tint); }
+.fc-cover-none, .fc-cover-draw { display: grid; place-items: center; position: relative; color: var(--fc-a-i); background: linear-gradient(150deg, var(--fc-g-t), var(--fc-a-t) 55%, var(--fc-b-t)); }
+.fc-cover-icon { display: grid; place-items: center; width: 4.25rem; height: 4.25rem; border-radius: 1.25rem; background: var(--fc-card); box-shadow: var(--fc-shadow); }
 .fc-cover-icon svg { width: 2rem; height: 2rem; }
 .fc-ex-body { display: grid; gap: 0.625rem; padding: 1rem 1.125rem 1.25rem; align-content: start; }
-.fc-ex h3 { font-size: 1.5rem; font-weight: 650; letter-spacing: -0.03em; line-height: 1.1; }
-.fc-ex h3 a { color: inherit; text-decoration: none; }
-.fc-chip { justify-self: start; display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--oq-radius-xs); background: var(--oq-tonal); color: var(--oq-ink);
-  font: 500 max(var(--text-min), 0.75rem) var(--oq-font-mono); }
-.fc-chip-n { background: var(--oq-k-see-tint); color: var(--oq-k-see); }
-.fc-chip-eg { position: absolute; top: 0.75rem; left: 0.75rem; background: var(--oq-surface-2); box-shadow: var(--oq-shadow-1); }
-.fc-meta { font-size: max(var(--text-min), 0.9375rem); color: var(--oq-ink-2); }
-.fc-eg { font-size: max(var(--text-min), 0.875rem); color: var(--oq-ink-2); border-top: 1px solid var(--oq-line-2); padding-top: 0.625rem; }
-.fc-stops { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
-.fc-stops li { display: flex; align-items: center; gap: 0.75rem; min-height: var(--target); }
-.fc-tile { flex: none; display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.fc-ex h3 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.fc-ex h3 a { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; text-decoration: none; }
+.fc-chip { justify-self: start; display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--fc-g-t); color: var(--fc-g-i); font: 700 max(var(--text-min), 0.75rem) var(--font-body, inherit); }
+.fc-chip-n { background: var(--fc-c-t); color: var(--fc-c-i); }
+.fc-chip-eg { position: absolute; top: 0.75rem; left: 0.75rem; background: var(--fc-card); color: var(--fc-ink); }
+.fc-meta { font-size: max(var(--text-min), 0.9375rem); color: var(--fc-ink-2); }
+.fc-eg { font-size: max(var(--text-min), 0.875rem); color: var(--fc-ink-2); border-top: 1px solid var(--fc-line); padding-top: 0.625rem; }
+.fc-stops { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.375rem; }
+.fc-stops li { display: flex; align-items: center; gap: 0.75rem; min-height: var(--target); padding: 0.25rem 0.75rem 0.25rem 0.375rem; border-radius: 1rem; background: var(--fc-tint); }
+.fc-tile { flex: none; display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; background: var(--fc-card); color: var(--fc-a); }
 .fc-tile svg { width: 1.25rem; height: 1.25rem; }
-.fc-b-sun { background: var(--oq-k-car-tint); color: var(--oq-k-car); }
-.fc-b-sky { background: var(--oq-k-flight-tint); color: var(--oq-k-flight); }
-.fc-b-grape { background: var(--oq-k-stay-tint); color: var(--oq-k-stay); }
-.fc-b-bubble { background: var(--oq-k-food-tint); color: var(--oq-k-food); }
-.fc-stop-x { display: grid; min-width: 0; }
-.fc-stop-t { font-weight: 600; overflow-wrap: anywhere; }
-.fc-stop-m { font: 400 max(var(--text-min), 0.8125rem) var(--oq-font-mono); color: var(--oq-ink-2); }
-.fc-open { justify-self: start; margin-top: 0.25rem; min-height: var(--target); }
+.fc-b-bubble .fc-tile, .fc-b-bubble { color: var(--fc-b); } .fc-b-sky { color: var(--fc-c); }
+.fc-stop-x { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; min-width: 0; flex: 1; }
+.fc-stop-t { font-weight: 700; overflow-wrap: anywhere; }
+.fc-stop-m { font: 600 max(var(--text-min), 0.8125rem) var(--font-body, inherit); color: var(--fc-a-i); }
+.fc-open { justify-self: start; margin-top: 0.25rem; }
+.fc-sticker { position: absolute; padding: 0.5rem 0.875rem; border-radius: var(--r-pill); font: 800 max(var(--text-min), 0.875rem) var(--font-body, inherit); box-shadow: var(--fc-shadow); }
+.fc-st1 { right: 0; top: 0.25rem; rotate: 7deg; background: var(--fc-a); color: var(--fc-on); }
+.fc-st2 { left: 0; bottom: 0; rotate: -5deg; background: var(--fc-ink); color: var(--fc-bg); }
 
-/* ---------- the three promises ---------- */
+/* ---------- three promises, three colours ---------- */
 .fc-promises { display: grid; gap: 0.75rem; }
-.fc-promise { display: grid; gap: 0.5rem; align-content: start; padding: 1.25rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: var(--oq-shadow-1); }
-.fc-promise h3 { font-size: 1.375rem; font-weight: 650; letter-spacing: -0.03em; line-height: 1.15; }
-.fc-promise p { color: var(--oq-ink-2); font-size: 1rem; line-height: 1.5; }
-.fc-pi { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: 0.875rem; margin-bottom: 0.25rem; }
+.fc-promise { display: grid; gap: 0.5rem; align-content: start; padding: 1.5rem; border-radius: 1.75rem; background: var(--fc-card); box-shadow: 0 0.5rem 1.5rem rgb(120 60 30 / 0.1); }
+.fc-promise h3 { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+.fc-promise p { color: var(--fc-ink-2); font-size: 1rem; line-height: 1.5; }
+.fc-pi { display: inline-grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 1rem; margin-bottom: 0.25rem; }
 .fc-pi svg { width: 1.5rem; height: 1.5rem; }
-.fc-p1 { background: var(--oq-k-car-tint); color: var(--oq-k-car); }
-.fc-p2 { background: var(--oq-k-flight-tint); color: var(--oq-k-flight); }
-.fc-p3 { background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.fc-p1 { background: var(--fc-a-t); color: var(--fc-a-i); } .fc-p2 { background: var(--fc-b-t); color: var(--fc-b-i); } .fc-p3 { background: var(--fc-c-t); color: var(--fc-c-i); }
+
+/* ---------- how it goes: three numbered steps ---------- */
+.fc-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; counter-reset: none; }
+.fc-steps li { display: flex; align-items: flex-start; gap: 1rem; padding: 1.25rem; border-radius: 1.5rem; background: var(--fc-tint); }
+.fc-steps h3 { font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.02em; }
+.fc-steps p { color: var(--fc-ink-2); line-height: 1.5; margin-top: 0.25rem; }
+.fc-n { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; font: 800 1.125rem var(--font-body, inherit); color: var(--fc-on); }
+.fc-s1 { background: var(--fc-a); } .fc-s2 { background: var(--fc-b); } .fc-s3 { background: var(--fc-c); }
 
 /* ---------- terms and questions ---------- */
 .fc-sec { display: grid; gap: 1.25rem; align-content: start; }
 .fc-sec-head { display: grid; gap: 0.5rem; justify-items: start; align-content: start; align-self: start; }
-.fc-sec h2 { font-size: clamp(1.75rem, 6vw, 2.75rem); font-weight: 650; letter-spacing: -0.04em; line-height: 1.05; }
-#fc-terms-free { background: var(--oq-k-see-tint); color: var(--oq-k-see); }
+.fc-sec h2 { font-size: clamp(1.75rem, 6vw, 2.75rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
+#fc-terms-free { background: var(--fc-g-t); color: var(--fc-g-i); }
 .fc-terms { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
-.fc-term { display: grid; gap: 0.375rem; padding: 1.125rem 1.25rem; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: inset 0 0 0 1px var(--oq-line); }
-.fc-term h3 { font-size: 1.1875rem; font-weight: 650; letter-spacing: -0.02em; }
-.fc-term p { color: var(--oq-ink-2); line-height: 1.5; }
-.fc-faq { display: grid; border-radius: 1.25rem; background: var(--oq-surface-1); box-shadow: inset 0 0 0 1px var(--oq-line); overflow: hidden; }
-.fc-q { border-top: 1px solid var(--oq-line-2); }
+.fc-term { display: grid; gap: 0.375rem; padding: 1.125rem 1.25rem; border-radius: 1.5rem; background: var(--fc-tint); }
+.fc-term:nth-child(4n+1) h3 { color: var(--fc-a-i); } .fc-term:nth-child(4n+2) h3 { color: var(--fc-b-i); } .fc-term:nth-child(4n+3) h3 { color: var(--fc-c-i); } .fc-term:nth-child(4n) h3 { color: var(--fc-g-i); }
+.fc-term h3 { font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.02em; }
+.fc-term p { color: var(--fc-ink-2); line-height: 1.5; }
+.fc-faq { display: grid; border-radius: 1.5rem; background: var(--fc-card); box-shadow: inset 0 0 0 0.0625rem var(--fc-line); overflow: hidden; }
+.fc-q { border-top: 1px solid var(--fc-line); }
 .fc-q:first-child { border-top: 0; }
-.fc-q summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.25rem; padding: 0.5rem 1.25rem; font-weight: 600; font-size: 1.0625rem; cursor: pointer; list-style: none;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.fc-q summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.25rem; padding: 0.5rem 1.25rem; font-weight: 700; font-size: 1.0625rem; cursor: pointer; list-style: none;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; color: var(--fc-ink); }
 .fc-q summary::-webkit-details-marker { display: none; }
-.fc-q summary::after { content: ""; flex: none; width: 0.625rem; height: 0.625rem; border-right: 0.125rem solid var(--oq-ink-2); border-bottom: 0.125rem solid var(--oq-ink-2); transform: rotate(45deg) translate(-0.125rem, -0.125rem);
+.fc-q summary::after { content: ""; flex: none; width: 0.625rem; height: 0.625rem; border-right: 0.125rem solid var(--fc-a); border-bottom: 0.125rem solid var(--fc-a); transform: rotate(45deg) translate(-0.125rem, -0.125rem);
   transition: transform var(--motion-quick) var(--motion-ease); }
 .fc-q[open] summary::after { transform: rotate(-135deg) translate(-0.125rem, -0.125rem); }
-.fc-q p { padding: 0 1.25rem 1.125rem; color: var(--oq-ink-2); line-height: 1.55; max-width: 44rem; }
+.fc-q summary:focus-visible { outline: 0.1875rem solid var(--fc-a); outline-offset: -0.1875rem; }
+.fc-q p { padding: 0 1.25rem 1.125rem; color: var(--fc-ink-2); line-height: 1.55; max-width: 44rem; }
 
-/* ---------- the last word ---------- */
+/* ---------- the call to action, last ---------- */
 .fc-end { padding: 0; }
-.fc-end-in { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: clamp(1.5rem, 5vw, 2.75rem); border-radius: 1.5rem; background: var(--oq-accent); color: var(--oq-on-accent); box-shadow: var(--oq-shadow-2); }
-.fc-end h2 { flex: 1 1 18rem; font-size: clamp(1.625rem, 5.5vw, 2.5rem); font-weight: 650; letter-spacing: -0.04em; line-height: 1.08; color: var(--oq-on-accent); }
+.fc-end-in { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: clamp(1.5rem, 5vw, 2.75rem); border-radius: 2rem; background: linear-gradient(120deg, var(--fc-a), var(--fc-b) 60%, var(--fc-c)); color: var(--fc-on); }
+.fc-end h2 { flex: 1 1 18rem; font-size: clamp(1.625rem, 5.5vw, 2.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.08; color: var(--fc-on); }
 .fc-end .btn { min-height: 3rem; }
-.fc-end .btn-primary { --oq-bg: var(--oq-surface-2); --oq-fg: var(--oq-accent); box-shadow: none; color: var(--oq-accent) !important; }
-.fc-end .btn:not(.btn-primary) { --oq-bg: transparent; --oq-fg: var(--oq-on-accent); box-shadow: inset 0 0 0 0.125rem color-mix(in srgb, var(--oq-on-accent) 70%, transparent); }
-.fc-end :is(.btn):focus-visible { outline-color: var(--oq-on-accent); }
+.fc-end .btn-primary { background: var(--fc-card); color: var(--fc-ink) !important; }
+.fc-end .btn:not(.btn-primary) { background: transparent; color: var(--fc-on) !important; box-shadow: inset 0 0 0 0.125rem var(--fc-on); }
+.fc-end .btn:focus-visible { outline-color: var(--fc-on); }
 
-/* ---------- the entrance: phone rises a little, laptop only fades ---------- */
+/* ---------- arriving: the hero a little at a time (the phone rises, the laptop fades), then each section as it comes into view ---------- */
 @keyframes fc-in { from { opacity: 0; translate: 0 var(--motion-shift); } to { opacity: 1; translate: 0 0; } }
-.fc-copy > *, .fc-ex, .fc-promise { animation: fc-in var(--motion-dur) var(--motion-ease) both; }
-.fc-copy > :nth-child(2) { animation-delay: var(--motion-fade); }
-.fc-copy > :nth-child(3) { animation-delay: calc(var(--motion-fade) * 2); }
-.fc-copy > :nth-child(4) { animation-delay: calc(var(--motion-fade) * 3); }
-.fc-ex { animation-delay: calc(var(--motion-fade) * 3); }
-.fc-promise:nth-child(2) { animation-delay: var(--motion-fade); }
-.fc-promise:nth-child(3) { animation-delay: calc(var(--motion-fade) * 2); }
-@media (pointer: fine) { @keyframes fc-in { from { opacity: 0; } to { opacity: 1; } } .fc-copy > *, .fc-ex, .fc-promise { animation-duration: var(--motion-desk); } }
-@media (prefers-reduced-motion: reduce) { .fc-copy > *, .fc-ex, .fc-promise { animation: none; } .fc-q summary::after { transition: none; } }
+@keyframes fc-pop { from { opacity: 0; scale: 0.92; translate: 0 var(--motion-shift); } to { opacity: 1; scale: 1; translate: 0 0; } }
+.fc-copy > * { animation: fc-in var(--motion-dur) var(--motion-ease) both; animation-delay: calc(var(--i, 0) * var(--motion-fade)); }
+.fc-copy > :nth-child(1) { --i: 0; } .fc-copy > :nth-child(2) { --i: 1; } .fc-copy > :nth-child(3) { --i: 2; } .fc-copy > :nth-child(4) { --i: 4; } .fc-copy > :nth-child(5) { --i: 5; } .fc-copy > :nth-child(6) { --i: 6; }
+.fc-post, .fc-arrow, .fc-ex, .fc-sticker { animation: fc-pop var(--motion-spring-dur) var(--motion-spring) both; }
+.fc-post { animation-delay: calc(var(--motion-fade) * 4); }
+.fc-arrow { animation-delay: calc(var(--motion-fade) * 6); }
+.fc-ex { animation-delay: calc(var(--motion-fade) * 7); }
+.fc-st1 { animation-delay: calc(var(--motion-fade) * 9); } .fc-st2 { animation-delay: calc(var(--motion-fade) * 10); }
+@supports (animation-timeline: view()) {
+  .fc-promise, .fc-steps li, .fc-term, .fc-faq, .fc-end-in { animation: fc-in var(--motion-dur) var(--motion-ease) both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+}
+@media (pointer: fine) and (min-width: 64rem) {
+  @keyframes fc-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fc-pop { from { opacity: 0; } to { opacity: 1; } }
+  .fc-copy > *, .fc-post, .fc-arrow, .fc-ex, .fc-sticker { animation-duration: var(--motion-desk); animation-timing-function: var(--motion-ease); }
+}
+@media (prefers-reduced-motion: reduce) { .fc *, .fc-end-in { animation: none !important; } .fc-q summary::after { transition: none; } }
 
 /* ---------- wider screens ---------- */
 @media (min-width: 40rem) {
   .fc-promises { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .fc-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .fc-steps li { flex-direction: column; }
   .fc-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 }
 @media (min-width: 64rem) {
-  .fc { padding-block: 1.5rem 4rem; }
-  .fc-hero { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 4rem; padding-top: 2rem; }
+  .fc-hero { padding-block: 2.5rem 5rem; border-radius: 0 0 3rem 3rem; }
+  .fc-hero-in { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 4rem; }
   .fc-lede { font-size: 1.1875rem; }
-  .fc-ex { box-shadow: var(--oq-shadow-3); }
   .fc-input { min-height: 7.5rem; }
+  .fc-stage { min-height: 38rem; align-content: center; }
+  .fc-post { position: absolute; left: 0; top: 0.5rem; width: 17rem; }
+  .fc-arrow { position: absolute; left: 12rem; top: 17rem; z-index: 2; }
+  .fc-ex { width: 22rem; justify-self: end; margin-top: 8rem; }
   .fc-sec { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 3rem; }
   .fc-sec > .fc-fine { grid-column: 2; }
   .fc-end-in { padding-inline: 3rem; }
 }
-
-.fc-ex-body h3 a { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; }      /* F-200: the trip's name is a 48px target on a phone */

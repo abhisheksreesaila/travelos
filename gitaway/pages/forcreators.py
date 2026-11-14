@@ -80,18 +80,34 @@ def _paste(signed_in):
         action=IMPORT, method="post", id="fc-paste", cls="fc-paste", data_signed_in="1" if signed_in else "0")
 
 
+SOURCES = (("play", "YouTube"), ("image", "Instagram"), ("note", "A blog"))
+STEPS = (("1", "fc-s1", "Paste your post", "A blog link, a YouTube video or an Instagram caption."),
+         ("2", "fc-s2", "Watch it become a trip", "You see the title, then the days and stops land one by one."),
+         ("3", "fc-s3", "Publish when it is right", "Fix what is off, tick \"This is my post\", press Publish."))
+
+
+def stage():
+    """The picture of what happens: a post on the left, the trip on the right (the live example, or the drawn one that says it is one). Drawn, never a real person's post."""
+    post = Div(Div(Span(icon("play", 30, 2), cls="fc-post-i"), cls="fc-post-photo"), Span("Your post", cls="fc-post-k"), Span(cls="fc-line fc-line-1"), Span(cls="fc-line fc-line-2"), Span(cls="fc-line fc-line-3"),
+               cls="fc-post", aria_hidden="true")
+    arrow = Span(icon("spark", 28, 2.2), cls="fc-arrow", aria_hidden="true")
+    return Div(post, arrow, example(), Span("under a minute", cls="fc-sticker fc-st1", aria_hidden="true"), Span("links back to you", cls="fc-sticker fc-st2", aria_hidden="true"), cls="fc-stage")
+
+
 def page_body(signed_in):
     return Div(
         Section(
-            Div(Span("For creators", cls="fc-eyebrow"),
-                H1("Turn your post into a trip, ", Span("in under a minute.", cls="fc-accent")),
-                P(LEDE, cls="fc-lede"),
-                _paste(signed_in),
-                P(FREE, " You tick \"This is my post\" before anything goes public.", cls="fc-fine", id="fc-free"),
-                cls="fc-copy"),
-            example(), cls="fc-hero ga-wrap"),
+            Div(Div(Span(icon("spark", 16, 2.4), "For creators", cls="fc-eyebrow"),
+                    H1("Turn your post into a trip, ", Span("in under a minute.", cls="fc-accent")),
+                    P(LEDE, cls="fc-lede"),
+                    _paste(signed_in),
+                    Ul(*[Li(icon(ic, 16, 2.2), label) for ic, label in SOURCES], cls="fc-srcs", aria_label="What you can paste"),
+                    P(FREE, " You tick \"This is my post\" before anything goes public.", cls="fc-fine", id="fc-free"),
+                    cls="fc-copy"),
+                stage(), cls="fc-hero-in ga-wrap"), cls="fc-hero"),
         Section(*[Div(Span(icon(ic, 24, 2.2), cls=f"fc-pi {cls}", aria_hidden="true"), H3(title), P(text), cls="fc-promise") for ic, cls, title, text in PROMISES],
                 cls="fc-promises ga-wrap", aria_label="What you get"),
+        Section(Ol(*[Li(Span(n, cls=f"fc-n {cls}", aria_hidden="true"), Div(H3(t), P(x))) for n, cls, t, x in STEPS], cls="fc-steps"), cls="fc-how ga-wrap", aria_label="How it works"),
         Section(Div(Span(FREE, cls="fc-eyebrow", id="fc-terms-free"), H2("The terms, in plain words"), cls="fc-sec-head"),
                 Ul(*[Li(H3(h), P(t), cls="fc-term") for h, t in TERMS], cls="fc-terms"),
                 P("Your post stays yours. We never claim it, and you confirm it is yours before it is public. ", A("Privacy", href="/privacy"), " · ", A("Terms", href="/terms"), cls="fc-fine"),
