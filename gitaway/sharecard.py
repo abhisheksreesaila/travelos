@@ -79,8 +79,16 @@ def _mark(px: int) -> Image.Image:
 
 def _wrap(text: str, f, width: int, lines: int) -> list:
     """`text` broken at spaces into at most `lines` lines no wider than `width`; a last line that still does not fit is cut at a word and ends in "..."."""
-    out, cur = [], ""
-    for word in text.split():
+    out, cur, words = [], "", []
+    for word in text.split():      # a word wider than the line (an unspaced title) is broken inside, so nothing runs off the card
+        while f.getlength(word) > width and len(word) > 1:
+            n = len(word) - 1
+            while n > 1 and f.getlength(word[:n]) > width:
+                n -= 1
+            words.append(word[:n])
+            word = word[n:]
+        words.append(word)
+    for word in words:
         trial = f"{cur} {word}".strip()
         if f.getlength(trial) <= width or not cur:
             cur = trial
@@ -97,8 +105,18 @@ def _wrap(text: str, f, width: int, lines: int) -> list:
     return out
 
 
-def _pill(d: ImageDraw.ImageDraw, x: int, y: int, text: str, fill: str, f) -> int:
-    """A rounded chip with white text at (x, y); returns the x where it ends."""
+def _fit(text: str, f, width: int) -> str:
+    """`text` on one line: cut to end in "..." when it is wider than `width`."""
+    while text and f.getlength(text) > width:
+        text = text[:-1].rstrip()
+        if f.getlength(text + "...") <= width:
+            return text + "..."
+    return text
+
+
+def _pill(d: ImageDraw.ImageDraw, x: int, y: int, text: str, fill: str, f, room: int = 520) -> int:
+    """A rounded chip with white text at (x, y), at most `room` wide; returns the x where it ends."""
+    text = _fit(text, f, room - 56)
     w = int(f.getlength(text)) + 56
     d.rounded_rectangle((x, y, x + w, y + 72), radius=36, fill=fill)
     d.text((x + 28, y + 36), text, font=f, fill=WHITE, anchor="lm")
@@ -126,22 +144,22 @@ def render(card: Card) -> bytes:
         d.text((x, y + i * int(title_f.size * 1.08)), ln, font=title_f, fill=INK)
     y += len(lines) * int(title_f.size * 1.08) + 18
     sub = " · ".join(p for p in (card.place, card.when) if p)
-    d.text((x, y), sub, font=font(46, 560), fill=INK2)
+    d.text((x, y), _fit(sub, font(46, 560), W - 2 * x), font=font(46, 560), fill=INK2)
     y += 92
     stops = [s for s in card.route if s]
     px = x
     for i, s in enumerate(stops):
-        px = _pill(d, px, y, s, KINDS[1 + i % 3 * 2 if i % 3 else 1], font(36, 640))
+        px = _pill(d, px, y, s, KINDS[1 + i % 3 * 2 if i % 3 else 1], font(36, 640), (W - 2 * x - 56 * (len(stops) - 1)) // len(stops))
         if i < len(stops) - 1:
             d.text((px + 28, y + 36), "→", font=font(40, 600), fill=INK2, anchor="mm")
             px += 56
     if card.names:
-        d.text((x, y + 120), f"With {card.names}", font=font(40, 560), fill=INK, anchor="lm")
+        d.text((x, y + 120), _fit(f"With {card.names}", font(40, 560), W - 2 * x), font=font(40, 560), fill=INK, anchor="lm")
     mark = _mark(76)
     img.paste(mark, (x, H - 150), mark)
     d.text((x + 100, H - 112), "GitAway", font=font(40, 700), fill=INK, anchor="lm")
     if card.link:
-        d.text((W - x, H - 112), card.link, font=font(36, 560), fill=INK2, anchor="rm")
+        d.text((W - x, H - 112), _fit(card.link, font(36, 560), 600), font=font(36, 560), fill=INK2, anchor="rm")
     buf = io.BytesIO()
     img.save(buf, "PNG", optimize=True)
     return buf.getvalue()

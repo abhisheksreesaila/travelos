@@ -16,7 +16,6 @@
     return frag;
   }
   btn.addEventListener('pointerdown', function () { get().catch(function () { frag = null; }); }, { passive: true });
-  btn.addEventListener('focus', function () { get().catch(function () { frag = null; }); });
 
   btn.addEventListener('click', function (e) {
     if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || wrap) return;
@@ -53,16 +52,36 @@
   }
 
   function wire() {
-    wrap.addEventListener('click', function (e) {
-      if (e.target.closest('[data-close]')) close();
-    });
-    wrap.addEventListener('change', function (e) { if (e.target.classList.contains('sh-cb')) update(); });
+    if (!wrap.dataset.wired) {      // (wire runs again when "Create link" swaps the sheet's contents: the sheet's own listeners are added once)
+      wrap.dataset.wired = '1';
+      wrap.addEventListener('click', function (e) {
+        if (e.target.closest('[data-close]')) close();
+      });
+      wrap.addEventListener('change', function (e) { if (e.target.classList.contains('sh-cb')) update(); });
+    }
+    var make = wrap.querySelector('#sh-make');
+    if (make) { make.addEventListener('submit', create); return; }      // a trip that is not shared: one button
     wrap.querySelector('#sh-form').addEventListener('submit', function (e) { e.preventDefault(); update(); });
     wrap.querySelector('#sh-copy').addEventListener('click', copy);
     wrap.querySelector('#sh-off').addEventListener('submit', stop);
     var share = wrap.querySelector('#sh-share');
     share.addEventListener('click', send);
     if (navigator.share && navigator.canShare) share.hidden = false;      // (hidden again if this device cannot share a file: see prefetch)
+  }
+
+  function create(e) {      // "Create link": make the share, then show the sheet it makes
+    e.preventDefault();
+    fetch('/trip/share', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: '', credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('save'); return fetch('/trip/share', { headers: { 'X-Share': '1' }, credentials: 'same-origin' }); })
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        if (!wrap) return;
+        box.innerHTML = html;
+        state = { link: box.querySelector('.sh-body').dataset.link };
+        wire();
+        settle();
+        prefetch();
+      }, function () { say('Could not create the link. Try again.'); });
   }
 
   function say(text) { var n = wrap && wrap.querySelector('#sh-live'); if (n) n.textContent = text; }

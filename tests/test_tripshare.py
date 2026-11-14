@@ -34,9 +34,25 @@ def token_of(html) -> str:
 
 
 def open_sheet(client):
+    """The sheet; a trip that is not shared yet shows "Create link", which is pressed (the way a person makes the share)."""
     r = client.get("/trip/share")
     assert r.status_code == 200
+    if 'id="sh-make"' in r.text:
+        assert client.post("/trip/share", data={}, follow_redirects=False).status_code == 303
+        r = client.get("/trip/share")
     return r.text
+
+
+def rows():
+    """(token, on) of the signed-in family's open trip's share rows (never more than one); none before the first one made."""
+    from gitaway import community
+    from sqlalchemy import text
+    me = person("ari")
+    with community.connect() as c:
+        try:
+            return [tuple(r) for r in c.conn.execute(text("SELECT token, on_ FROM trip_shares WHERE family = :f AND trip = :t"), {"f": me["tenant_id"], "t": tripshare.trip_id(me)})]
+        except Exception:
+            return []
 
 
 # ---- what a share says ----------------------------------------------------------------------------------------------------------------------
@@ -163,3 +179,95 @@ def test_turning_it_off_answers_404_for_the_page_and_the_card(tahoe_trip):
 def test_an_unknown_or_odd_token_is_404(client):
     for t in ("nope", "x" * 16, "..%2f..%2fetc", "a" * 80):
         assert client.get(f"/s/{t}").status_code == 404 and client.get(f"/s/{t}/card.png").status_code == 404
+
+
+# ---- the review's fixes (F-234) ---------------------------------------------------------------------------------------------------------------------
+
+def test_a_get_never_makes_or_revives_a_share(tahoe_trip):
+    old = token_of(open_sheet(tahoe_trip))
+    tahoe_trip.post("/trip/share/off", headers={"Accept": "application/json"})
+    for _ in range(3):      # the sheet opened, prefetched or tabbed past: still stopped
+        html = tahoe_trip.get("/trip/share", headers={"X-Share": "1"}).text
+        assert 'id="sh-make"' in html and "sh-img" not in html and "Create link" in html
+    tahoe_trip.cookies.clear()
+    assert tahoe_trip.get(f"/s/{old}").status_code == 404 and tahoe_trip.get(f"/s/{old}/card.png").status_code == 404
+    assert [on for _, on in rows()] == [0]
+
+
+def test_a_stopped_share_comes_back_under_a_new_token_when_created_again(tahoe_trip):
+    old = token_of(open_sheet(tahoe_trip))
+    tahoe_trip.post("/trip/share/off", headers={"Accept": "application/json"})
+    new = token_of(open_sheet(tahoe_trip))
+    assert new != old and len(new) == 16
+    assert tahoe_trip.get(f"/s/{old}").status_code == 404 and tahoe_trip.get(f"/s/{new}").status_code == 200
+    assert len(rows()) == 1
+
+
+def test_a_viewer_gets_403_everywhere_and_nothing_is_written(tahoe_trip, monkeypatch):
+    from gitaway import access
+    token = token_of(open_sheet(tahoe_trip))
+    before = rows()
+    monkeypatch.setattr(access, "request_role", lambda: "viewer")
+    hdr = {"Accept": "application/json"}
+    assert tahoe_trip.get("/trip/share").status_code == 403
+    assert tahoe_trip.post("/trip/share", data={"names": "1", "exact": "1"}, headers=hdr).status_code == 403
+    assert tahoe_trip.post("/trip/share/off", headers=hdr).status_code == 403
+    assert rows() == before and tripshare.find(token).names == ""      # not changed, not stopped
+    assert 'id="sh-open"' not in tahoe_trip.get("/trip/cockpit").text      # and the cockpit does not offer it
+
+
+def test_a_viewer_cannot_start_a_share_for_a_trip_that_has_none(tahoe_trip, monkeypatch):
+    from gitaway import access
+    before = rows()
+    monkeypatch.setattr(access, "request_role", lambda: "viewer")
+    assert tahoe_trip.post("/trip/share", data={}).status_code == 403
+    assert rows() == before
+
+
+def test_the_same_card_is_drawn_once_and_a_stopped_share_drops_its_picture(tahoe_trip, monkeypatch):
+    from gitaway import sharecard
+    from gitaway.pages import tripshare as page
+    drawn = []
+    real = sharecard.render
+    monkeypatch.setattr(sharecard, "render", lambda c: drawn.append(c) or real(c))
+    token = token_of(open_sheet(tahoe_trip))
+    first = tahoe_trip.get(f"/s/{token}/card.png").content
+    for v in ("1", "2", "3"):      # a varying ?v= is the same picture, drawn once
+        assert tahoe_trip.get(f"/s/{token}/card.png?v={v}").content == first
+    assert len(drawn) == 1
+    tahoe_trip.post("/trip/share/off", headers={"Accept": "application/json"})
+    assert not [k for k in page.CARDS.items if k[0] == token]
+
+
+def test_the_picture_cache_is_capped(monkeypatch):
+    from gitaway import sharecard
+    from gitaway.pages.tripshare import CardCache
+    monkeypatch.setattr(sharecard, "render", lambda c: c.title.encode())
+    cache = CardCache(cap=3)
+    for i in range(10):
+        cache.get("t", sharecard.Card(f"Trip {i}", "Place"))
+    assert [k[0] for k in cache.items] == ["t"] * 3 and list(cache.items.values()) == [b"Trip 7", b"Trip 8", b"Trip 9"]
+
+
+def test_markup_in_a_title_is_text_on_the_page_and_the_sheet(tahoe_trip, monkeypatch):
+    title = 'Fish & "chips" <b>on</b> <script>alert(1)</script>'
+    real = tripshare.snapshot
+    monkeypatch.setattr(tripshare, "snapshot", lambda *a, **k: {**real(*a, **k), "title": title})
+    token = token_of(open_sheet(tahoe_trip))
+    assert tripshare.find(token).title == title
+    sheet = tahoe_trip.get("/trip/share").text
+    tahoe_trip.cookies.clear()
+    page = tahoe_trip.get(f"/s/{token}").text
+    for html in (sheet, page):
+        assert "<script>alert(1)</script>" not in html and "<b>on</b>" not in html and "alert(1)" not in html.replace("&lt;script&gt;alert(1)&lt;/script&gt;", "")
+    assert 'Fish &amp; "chips" &lt;b&gt;on&lt;/b&gt; &lt;script&gt;alert(1)&lt;/script&gt;' in page
+    assert tahoe_trip.get(f"/s/{token}/card.png").status_code == 200
+
+
+def test_a_name_is_said_only_when_the_email_is_first_dot_last(tahoe_trip, monkeypatch):
+    from gitaway import members
+    people = [{"email": "ari.rivera@example.com"}, {"email": "jsmith99@example.com"}, {"email": "maya@example.com"}, {"email": "x_y.z@example.com"}, {"email": ""}, {"email": "a1.b2@example.com"}]
+    monkeypatch.setattr(members, "members", lambda tid: people)
+    assert tripshare.first_names(person("ari")) == "Ari and X"      # a handle, a single word, nothing and digits print nothing
+    monkeypatch.setattr(members, "members", lambda tid: [{"email": "jsmith99@example.com"}, {"email": "traveler@example.com"}])
+    assert tripshare.first_names(person("ari")) == ""

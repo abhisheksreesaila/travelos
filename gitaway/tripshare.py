@@ -75,10 +75,19 @@ def _month(a, b) -> str:
     return f"{a.strftime('%b %Y')} – {b.strftime('%b %Y')}"
 
 
+_REAL_WORD = re.compile(r"[A-Za-z]+")
+
+
 def first_names(session) -> str:
-    """"Ari and Maya": the first names of the family's members (people with an account), at most four."""
+    """"Ari and Maya": the first names of the family's members (people with an account), at most four. A member's name is only ever read off their email address
+    ("ari.rivera@..." is "Ari Rivera"), so it is said only when the address is written first.last, two words of plain letters: "jsmith99@..." is a handle, not a name,
+    and prints nothing (D-494)."""
     tid = (session or {}).get("tenant_id")
-    out = [m["name"].split()[0] for m in members.members(tid) if m["name"].split()] if tid else []
+    out = []
+    for m in members.members(tid) if tid else []:
+        local = re.sub(r"[._+-]+", " ", str(m.get("email") or "").split("@")[0]).split()
+        if len(local) >= 2 and all(_REAL_WORD.fullmatch(w) for w in local[:2]):
+            out.append(local[0].capitalize())
     return publish.join_names(out[:4])
 
 
@@ -116,14 +125,15 @@ def _share(r) -> Share:
 
 
 def save(session, names=False, exact=False) -> Share:
+    """Turn the open trip's share on, or change its switches. A share that was stopped comes back under a new token: an old link never works again."""
     snap = snapshot(session, names, exact)
     family, trip = session.get("tenant_id") or "", trip_id(session)
     now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
     with _db() as conn:
         conn.execute(text("""INSERT INTO trip_shares (token, family, trip, title, place, art, route, month, exact, days, names, slug, on_, created_at, updated_at)
                              VALUES (:token, :f, :t, :title, :place, :art, :route, :month, :exact, :days, :names, :slug, 1, :now, :now)
-                             ON CONFLICT (family, trip) DO UPDATE SET title = :title, place = :place, art = :art, route = :route, month = :month, exact = :exact,
-                             days = :days, names = :names, slug = :slug, on_ = 1, updated_at = :now"""),
+                             ON CONFLICT (family, trip) DO UPDATE SET token = CASE WHEN on_ = 1 THEN token ELSE :token END, title = :title, place = :place, art = :art,
+                             route = :route, month = :month, exact = :exact, days = :days, names = :names, slug = :slug, on_ = 1, updated_at = :now"""),
                      {**snap, "route": json.dumps(snap["route"]), "token": secrets.token_urlsafe(12), "f": family, "t": trip, "now": now})
         token = conn.execute(text("SELECT token FROM trip_shares WHERE family = :f AND trip = :t"), {"f": family, "t": trip}).scalar()      # the row's own token: two opens at once make one
         conn.commit()
@@ -145,9 +155,11 @@ def find(token) -> Share | None:
     return _share(r) if r else None
 
 
-def off(session) -> bool:
+def off(session) -> str:
+    """Turn the open trip's share off; the token it had (so its cached card can be dropped), "" when it was not on."""
+    key = {"f": session.get("tenant_id") or "", "t": trip_id(session)}
     with _db() as conn:
-        n = conn.execute(text("UPDATE trip_shares SET on_ = 0 WHERE family = :f AND trip = :t AND on_ = 1"),
-                           {"f": session.get("tenant_id") or "", "t": trip_id(session)}).rowcount
+        token = conn.execute(text("SELECT token FROM trip_shares WHERE family = :f AND trip = :t AND on_ = 1"), key).scalar() or ""
+        conn.execute(text("UPDATE trip_shares SET on_ = 0 WHERE family = :f AND trip = :t AND on_ = 1"), key)
         conn.commit()
-    return bool(n)
+    return token

@@ -65,3 +65,12 @@ def test_the_font_and_the_art_renderer_ship_in_the_docker_image():
     from tests.test_dockerfile import _ignored
     assert sharecard.FONT.exists() and not _ignored("gitaway/fonts/geist-variable.ttf")
     assert sharecard._art("laketahoe", (120, 60)).size == (120, 60)
+
+
+def test_a_title_with_no_spaces_is_broken_inside_the_word_and_stays_on_the_card():
+    f = sharecard.font(80, 700)
+    lines = sharecard._wrap("A" * 80, f, 700, 2)
+    assert len(lines) == 2 and all(f.getlength(x) <= 700 for x in lines)
+    assert lines[-1].endswith("...") and set(lines[0]) == {"A"}
+    img = png(Card("W" * 80, "P" * 80, ("Q" * 60, "R" * 60), "S" * 80, 3, "N" * 80, "L" * 80, "laketahoe"))
+    assert len(img.crop((1020, 700, 1080, 1250)).getcolors(10**6)) == 1      # nothing is drawn into the paper's right margin: the words stop inside the card

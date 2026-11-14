@@ -42,6 +42,8 @@ def cockpit(browser, base_url, monkeypatch, ctxs):
 def open_sheet(page):
     page.click("#sh-open")
     page.wait_for_selector(".sh-box")
+    if page.locator("#sh-create").count():      # a trip that is not shared yet: one button makes the card
+        page.click("#sh-create")
     page.wait_for_function("() => { const i = document.querySelector('#sh-img'); return i && i.complete && i.naturalWidth > 0; }")
 
 
@@ -156,3 +158,26 @@ def test_screenshots(cockpit):
         if name == "1440":
             png = page.request.get(page.locator("#sh-img").evaluate("e => e.src"))
             open(f"{out}/f234-card.png", "wb").write(png.body())
+
+
+def test_stopping_then_reopening_offers_create_link_and_never_revives_the_old_one(cockpit, browser, base_url, ctxs):
+    page = cockpit(viewport=DESKTOP)
+    open_sheet(page)
+    old = page.locator("#sh-link").input_value().replace("https://gitaway.me", base_url)
+    page.click(".sh-stop")
+    page.wait_for_selector(".sh-box", state="detached")
+    page.focus("#sh-open")      # tabbing onto the button (and past it) asks for nothing that could make a share
+    page.keyboard.press("Tab")
+    stranger = browser.new_context(viewport=PHONE)
+    ctxs.append(stranger)
+    assert stranger.new_page().goto(old).status == 404
+    page.click("#sh-open")
+    page.wait_for_selector("#sh-create")
+    assert page.locator("#sh-img").count() == 0
+    page.click("#sh-create")
+    page.wait_for_selector("#sh-img")
+    page.wait_for_function("() => { const i = document.querySelector('#sh-img'); return i.complete && i.naturalWidth > 0; }")
+    fresh = page.locator("#sh-link").input_value().replace("https://gitaway.me", base_url)
+    assert fresh != old and stranger.new_page().goto(old).status == 404 and stranger.new_page().goto(fresh).status == 200
+    page.locator("input[name=exact]").check(force=True)      # the swapped-in sheet's switches still work (one post each, not two)
+    page.wait_for_function("() => document.querySelector('#sh-img').getAttribute('src').includes('v=')")
