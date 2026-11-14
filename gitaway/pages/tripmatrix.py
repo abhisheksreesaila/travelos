@@ -135,7 +135,10 @@ def from_sentence(q, s: State):
 # ---- the grid of the search ------------------------------------------------------------------------------------------
 
 def lanes_of(s: State):
-    return tm.lanes(s.place, s.nearby)
+    """The rows. On the showcase a nearby lane the sample catalog cannot price is not drawn (F-236, D-521): never a row of "No sample" squares; the asked place stays,
+    and says so in words. Off it every lane is LiteAPI's to price."""
+    lanes = tm.lanes(s.place, s.nearby)
+    return tuple(x for x in lanes if x.asked or not showcase.on() or all(gridsource.has_sample(p) for p in x.places))
 
 
 def windows_of(s: State):

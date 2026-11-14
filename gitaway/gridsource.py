@@ -132,30 +132,76 @@ def _day_clock(when) -> str:
     return f"{when:%a}, {when:%b} {when.day} · " if when else ""
 
 
+@dataclass(frozen=True)
+class SamplePlace:
+    """A showcase place the catalog has no workspace for (F-236): the matrix's nearby lanes sample it too, so no lane says "No sample". Made up, like the catalog's own;
+    prices are for a party of 4 (flights by traveler, stays by night per two rooms) and the page says Sample prices on every square."""
+    iata: str
+    airline: str
+    out: tuple          # depart, arrive in minutes after midnight
+    back: tuple
+    flight_cents: int
+    stay: str
+    area: str
+    room: str
+    rating: str
+    night_cents: int
+    drive: int          # minutes from the airport to the stay
+
+
+SAMPLE_PLACES = {
+    "Orange County": SamplePlace("SNA", "Pacific Hop 52", (475, 560), (1050, 1135), 63_200, "Newport Bay Lodge", "Newport Beach", "2 queens · 6 min walk to the beach", "4.5 · 1.4k reviews", 31_200, 25),
+    "Santa Barbara": SamplePlace("SBA", "Golden Gate Air 144", (430, 520), (1020, 1115), 79_600, "Funk Zone Inn", "Funk Zone", "Family suite · 4 min walk to the pier", "4.6 · 880 reviews", 36_800, 18),
+}
+
+
+def has_sample(place) -> bool:
+    """Can the showcase's sample catalog price this place? The page drops a nearby lane it cannot, never showing "No sample" in a row of squares."""
+    return place.name in SAMPLE_PLACES or any(d.name == place.name for d in catalog.DESTINATIONS)
+
+
+def _sample_flight(sp: SamplePlace, w, adults, kid_ages, home, back_iata):
+    people = adults + len(kid_ages)
+    cents = sample_day(max(1, round(sp.flight_cents * people / 4 / 100)) * 100, w.depart)
+    out = f"{_day_clock(w.depart)}{home} {tripgrid.clock(sp.out[0])} → {sp.iata} {tripgrid.clock(sp.out[1])} · Nonstop"
+    back = f"{_day_clock(w.return_)}{back_iata} {tripgrid.clock(sp.back[0])} → {home} {tripgrid.clock(sp.back[1])}"
+    return tm.FlightPart(sp.airline, out, back, 0, cents)
+
+
 def _catalog_square(lane, w, adults, kid_ages, home):
-    dests = [next((d for d in catalog.DESTINATIONS if d.name == p.name), None) for p in lane.places]
-    if not all(dests):
+    if not all(has_sample(p) for p in lane.places):
         return tm.Square(lane.key, w.key, tm.NO_SAMPLE, sample=True)
     split = tm.stays_for(lane, w)
     if split is None:
         return tm.Square(lane.key, w.key, tm.NONE, sample=True)
     kids = ",".join(map(str, kid_ages))
+    home = home or catalog.ORIGIN[0]
+    back = lane.places[-1].iata
+    dests = [next((d for d in catalog.DESTINATIONS if d.name == p.name), None) for p in lane.places]
     try:
-        trips = [catalog.parse_trip(home or catalog.ORIGIN[0], d.key, a.isoformat(), b.isoformat(), str(adults), kids) for d, (_, a, b) in zip(dests, split)]
-        first = catalog.parse_trip(home or catalog.ORIGIN[0], dests[0].key, w.depart.isoformat(), w.return_.isoformat(), str(adults), kids)
+        trips = [catalog.parse_trip(home, d.key, a.isoformat(), b.isoformat(), str(adults), kids) if d else None for d, (_, a, b) in zip(dests, split)]
+        first = catalog.parse_trip(home, dests[0].key, w.depart.isoformat(), w.return_.isoformat(), str(adults), kids) if dests[0] else None
     except catalog.TripError:
         return tm.Square(lane.key, w.key, tm.NONE, sample=True)
-    f = min(catalog.offers("flight", first), key=lambda o: (o.price_cents, o.id))
-    back = lane.places[-1].iata
-    flight = tm.FlightPart(f.name, f"{_day_clock(w.depart)}{first.origin} {tripgrid.clock(f.depart_min)} → {f.airport} {tripgrid.clock(f.arrive_min)} · {f.stops or 'Nonstop'}",
-                           f"{_day_clock(w.return_)}{back} {tripgrid.clock(f.back_depart_min)} → {first.origin} {tripgrid.clock(f.back_arrive_min)}", _stops(f.stops),
-                           sample_day(f.price_cents, w.depart))
+    if first is not None:
+        f = min(catalog.offers("flight", first), key=lambda o: (o.price_cents, o.id))
+        flight = tm.FlightPart(f.name, f"{_day_clock(w.depart)}{first.origin} {tripgrid.clock(f.depart_min)} → {f.airport} {tripgrid.clock(f.arrive_min)} · {f.stops or 'Nonstop'}",
+                               f"{_day_clock(w.return_)}{back} {tripgrid.clock(f.back_depart_min)} → {first.origin} {tripgrid.clock(f.back_arrive_min)}", _stops(f.stops),
+                               sample_day(f.price_cents, w.depart))
+        first_stay = min(catalog.offers("stay", trips[0]), key=lambda o: (o.price_cents, o.id))
+        drive = catalog.ride_base(f.airport, catalog.ride_area(f.airport, first_stay), "arrive")[1]
+    else:
+        sp = SAMPLE_PLACES[lane.places[0].name]
+        flight, drive = _sample_flight(sp, w, adults, kid_ages, home, back), sp.drive
     stays = []
     for place, trip, (_, a, b) in zip(lane.places, trips, split):
-        st = min(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))
-        stays.append(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)))
-    first_stay = min(catalog.offers("stay", trips[0]), key=lambda o: (o.price_cents, o.id))
-    drive = catalog.ride_base(f.airport, catalog.ride_area(f.airport, first_stay), "arrive")[1]
+        if trip is not None:
+            st = min(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))
+            stays.append(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)))
+        else:
+            sp = SAMPLE_PLACES[place.name]
+            rooms = -(-(adults + len(kid_ages)) // 4)
+            stays.append(tm.StayPart(place.name, (b - a).days, sp.stay, sp.room, "room only", True, 0, "", sp.rating, sample_day(sp.night_cents * rooms * (b - a).days, a)))
     return tm.Square(lane.key, w.key, tm.OK, flight, tuple(stays), drive, None, True)
 
 

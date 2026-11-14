@@ -60,12 +60,13 @@ def test_on_the_showcase_every_square_is_drawn_at_once_with_the_samples_marks(sa
         sq = known[k]
         assert inner == (tm.dollars(sq.cents) if sq.ok else tm.SHORT[sq.status])
         assert {c[3:] for c in cls if c in ("is-low", "is-find", "is-over")} == set(marks.get(k, ()))
-    assert drawn["orangecounty|2026-12-12"][1] == "No sample"                         # a place the catalog lacks says so, in words
+    assert drawn["orangecounty|2026-12-12"][1] == tm.dollars(known["orangecounty|2026-12-12"].cents) and known["orangecounty|2026-12-12"].ok      # F-236: sampled, never "No sample"
+    assert not any(inner == "No sample" for _, inner in drawn.values())
     assert "Sample prices" in html and page.SAMPLE_FINE in html
     assert 'id="mx-count-n">25</span>' in html and data(html)["known"]["sandiego|2026-12-12"]["c"] == known["sandiego|2026-12-12"].cents
     found = tm.find(page.lanes_of(s), page.windows_of(s), page.totals_of(known))
     if found:
-        assert unescape(re.search(r'id="mx-find-w">([^<]+)<', html).group(1)) == found.words
+        assert unescape(re.search(r'id="mx-find-w"[^>]*>([^<]+)<', html).group(1)) == found.words
 
 
 def test_the_sentence_says_or_nearby_and_give_or_take_and_its_menus_are_links(sample, client):
@@ -238,3 +239,11 @@ def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_
 def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):
     html = unescape(client.get("/plan/matrix").text)
     assert "Say where you fly from" in html and "data-sq" not in html and real.asked == []
+
+
+def test_on_the_showcase_a_nearby_place_without_a_sample_is_not_a_lane(sample):
+    """F-236: San Francisco's nearby places (Napa, Monterey) have no sample: their rows would say "No sample" in every square, so they are not drawn; the asked place stays."""
+    s = page.state("San Francisco", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    assert [x.key for x in page.lanes_of(s)] == ["sanfrancisco"]
+    sd = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    assert [x.key for x in page.lanes_of(sd)] == ["sandiego", "losangeles", "orangecounty", "losangeles+sandiego", "orangecounty+sandiego"]
