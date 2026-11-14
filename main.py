@@ -196,5 +196,7 @@ app = make_app()
 if __name__ == "__main__":
     opts = auth.server_options()
     if opts["reload"]:
-        opts["reload_dirs"] = [str(ROOT)]  # the working directory is the data folder, so say where the code is
+        # the working directory is the data folder, so say where the code is; only the code folders, so an agent's worktree under
+        # .claude/worktrees/ (or anything else in the repo) never restarts the dev server (it did, 2026-11-14)
+        opts["reload_dirs"] = [str(ROOT / "gitaway"), str(ROOT / "assets")]
     serve(port=int(os.getenv("PORT", "5002")), **opts)
