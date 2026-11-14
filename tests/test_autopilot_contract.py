@@ -35,9 +35,8 @@ def test_m1_places_have_different_offers(client):
 
 
 def test_m1_search_offers_all_four_places(client):
-    html = client.get("/start").text + client.get("/").text
-    for name in PLACES.values():
-        assert name in html
+    for to, name in PLACES.items():      # F-231: an old Where to? link for each sample city opens the matrix for it
+        assert name in client.get(f"/start?to={to}").text, to
 
 
 def test_m1_catalog_is_deterministic(client):

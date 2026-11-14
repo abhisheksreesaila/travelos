@@ -54,7 +54,7 @@ def test_signed_out_goes_through_sign_in_and_no_trip_goes_to_start(client):
     r = client.get("/trip/map", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].startswith("/signin")
     sign_in(client)
-    assert client.get("/trip/map", follow_redirects=False).headers["location"] == "/start"
+    assert client.get("/trip/map", follow_redirects=False).headers["location"] == "/plan/matrix"
 
 
 def test_the_days_stops_are_numbered_in_order_and_placed_from_the_geocoder(client, maps):

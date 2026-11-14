@@ -130,7 +130,7 @@ def _vanishing_load(monkeypatch, gone_after):
 def _no_500(r):
     assert r.status_code in (200, 303), r.status_code
     if r.status_code == 303:
-        assert r.headers["location"] == "/start"
+        assert r.headers["location"] == "/plan/matrix"
     else:
         assert 'id="cz-dock"' in r.text
 

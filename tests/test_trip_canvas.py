@@ -64,7 +64,7 @@ def run(sql, **kw):
 def test_signed_out_goes_to_sign_in_and_a_family_with_no_trip_to_start(client):
     assert client.get("/trip/canvas", follow_redirects=False).headers["location"].startswith("/signin")
     sign_in(client)
-    assert client.get("/trip/canvas", follow_redirects=False).headers["location"] == "/start"
+    assert client.get("/trip/canvas", follow_redirects=False).headers["location"] == "/plan/matrix"
 
 
 def test_the_canvas_is_inside_the_phone_shell_with_its_tab_current(trip):

@@ -10,9 +10,9 @@
 
 ## Who gets it
 
-- `/trip` opens for anyone signed in with a trip (signed out goes to sign-in, no trip goes to `/start`).
+- `/trip` opens for anyone signed in with a trip (signed out goes to sign-in, no trip goes to the trip matrix, `/plan/matrix`, see docs/decisions.md D-461).
 - `/calendar` is only an old address (F-147): on every screen size it redirects to the trip's day (`/trip/canvas?day=N`), and "Open the whole trip" (on this page) opens the week. See `docs/trip-canvas.md` "Retired: the old calendar".
-- The manifest's `start_url` is `/trip`; the "Continue" card on `/start` links to `/trip` on phones.
+- The manifest's `start_url` is `/trip`; a signed-in `/` opens the family's cockpit (F-231).
 
 ## Today
 

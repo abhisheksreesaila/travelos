@@ -44,7 +44,7 @@ def stub(html, i):
 def test_signed_out_goes_to_sign_in_and_no_trip_to_start(client):
     assert client.get("/trip/cockpit", follow_redirects=False).headers["location"].startswith("/signin")
     sign_in(client)
-    assert client.get("/trip/cockpit", follow_redirects=False).headers["location"] == "/start"
+    assert client.get("/trip/cockpit", follow_redirects=False).headers["location"] == "/plan/matrix"
 
 
 def test_the_page_is_a_gitaway_page_with_its_own_styles_and_scripts(tahoe_trip):

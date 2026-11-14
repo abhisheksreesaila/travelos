@@ -81,7 +81,7 @@ def test_hidden_writes_are_404_in_production(real, client, path):
 
 def test_the_families_own_trip_routes_still_work(real, client):
     sign_in(client)
-    for path in ["/trips/import", "/trips/build", "/start", "/calendar", "/family", "/signin", "/offline"]:
+    for path in ["/trips/import", "/trips/build", "/", "/calendar", "/family", "/signin", "/offline"]:
         assert client.get(path, follow_redirects=False).status_code in (200, 303), path
 
 
@@ -119,33 +119,12 @@ def test_signed_out_pages_have_no_sample_data_or_links_to_hidden_pages(real, cli
     assert_real(r.text, path)
 
 
-def test_the_landing_keeps_its_story_without_community_and_creators(real, client):
-    sign_in(client)                                                                # F-206: a stranger gets the cover; this landing is the signed-in one
-    h = client.get("/").text
-    assert "Fork a" in h and "getaway." in h and "verb" in h                       # the hero and its gloss
-    assert "Everything side by side" in h and "Plan the fun part together" in h    # features and the animated calendar
-    assert 'id="cal"' in h and "community-trips" not in h and 'class="forkline"' not in h
-    assert 'action="/start"' in h and "Plan a trip" in h
-
-
-def _search_form(html):
-    return re.search(r'<form[^>]*class="search".*?</form>', html, re.S).group(0)
-
-
-def test_the_landing_search_fields_are_neutral_in_production_and_the_sample_trip_locally(real, client, monkeypatch):
-    sign_in(client)                                                                # F-206: the search form is on the signed-in landing
-    form = _search_form(client.get("/").text)
-    assert "Los Angeles" not in form and "Where to?" in form
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    assert "Los Angeles" in _search_form(client.get("/").text)
-
-
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
     assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
     sign_in(client)
-    footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/privacy", "/terms"]  # the creators page (F-186) and the legal pages (F-076)
+    footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S).group(0)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
+    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]      # the legal pages (F-076)
 
 
 def test_production_never_shows_the_invented_workspace(real, client):
@@ -158,12 +137,15 @@ def test_production_never_shows_the_invented_workspace(real, client):
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):
     sign_in(client)
-    for path in ["/start", "/calendar", "/trip"]:
+    assert client.get("/", follow_redirects=False).headers["location"] == "/trips/import"      # F-231: no matrix without a LiteAPI key, so the way in is the import of a trip already booked
+    for path in ["/", "/calendar", "/trip"]:
         r = client.get(path, follow_redirects=True)
         assert r.status_code == 200, path
         assert_real(r.text, path)
-    start = client.get("/start").text
-    assert "fr-two" in start and "Plan a trip" in start and "Import a trip you booked" in start
+    from fasthtml.common import to_xml
+    from gitaway import firstrun
+    ways = to_xml(firstrun.paths())
+    assert "fr-two" in ways and "Import a trip you booked" in ways and "Plan a trip" not in ways and "community" not in ways
 
 
 def booked_then_real(client, monkeypatch):
@@ -196,16 +178,12 @@ def test_the_local_copy_still_shows_all_sample_data(client):
     cover = client.get("/").text                                                    # F-206: a stranger's landing is the cover
     assert "Community trips" in cover and 'href="/community"' in cover and "For creators" in cover
     sign_in(client)
-    h = client.get("/").text
-    for word in ["Community trips", "For creators", "No plans yet?", "Been somewhere wonderful?", "Leave a trail"]:
-        assert word in h
-    assert "forks" in h
     for path in ["/community", "/creators", "/forks", f"/trips/{SLUGS[0]}", "/discover"]:
         assert client.get(path).status_code == 200, path
     assert client.get("/plan").text.count('data-pane="community"') == 1
     assert "Preview: sample prices" not in client.get("/plan").text
     sign_in(client)
-    assert "Browse community trips" in client.get("/start").text
+    assert "Browse community trips" in client.get("/forks").text      # a new family's first-run welcome (F-231: Where to? no longer draws it)
     book(client)
     assert client.get("/community").status_code == 200 and client.get("/share").status_code == 200
 
@@ -221,8 +199,7 @@ def test_the_booking_preview_writes_nothing_in_production(real, client):
     r = client.get("/plan/pay?f=f1&h=h1&c=c1", follow_redirects=False)
     assert r.status_code == 200 and msg in r.text
     assert client.get("/booked", follow_redirects=False).status_code == 303
-    assert "Start your first trip" in client.get("/calendar").text
-    assert client.get("/start").text.count("Continue ") == 0
+    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/trips/import"
 
 
 # ---- production: the simulated Uber is gone ----

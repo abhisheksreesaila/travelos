@@ -307,7 +307,7 @@ def test_viewers_are_refused_and_editors_can_build(crew):
 
 def test_the_first_run_welcome_and_the_import_page_link_to_the_builder(client):
     sign_in(client, "newcomer@example.com")
-    html = client.get("/start").text
+    html = client.get("/forks").text      # F-231: the first-run welcome was on Where to? too
     assert 'href="/trips/build"' in html and "Answer a few questions" in html and "Paste the template" in html and 'href="/trips/import"' in html
     assert 'href="/trips/build"' in client.get("/trips/import").text
 

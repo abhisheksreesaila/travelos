@@ -114,8 +114,8 @@ def test_sos_opens_the_emergency_sheet(signed_in):
 def test_the_brand_goes_home(signed_in):
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-brand")
-    page.wait_for_url(lambda u: u.rstrip("/").count("/") == 2)    # the landing: http://host:port/
-    assert page.locator(BAR).count() == 0                            # which keeps its own header
+    page.wait_for_url("**/trip/cockpit*")                            # F-231: / opens the family's trip
+    assert page.locator(BAR).count() == 1
 
 
 def test_the_picker_switches_trips(signed_in):
@@ -136,7 +136,7 @@ def test_the_picker_offers_to_plan_another_trip(signed_in):
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-picker summary")
     page.click(f"{BAR} .ga-tb-pop-trip >> text=Plan another trip")
-    page.wait_for_url("**/start")
+    page.wait_for_url("**/plan/matrix")
 
 
 def test_the_avatar_menu_has_people_and_invites_and_signs_out(signed_in):
@@ -172,7 +172,7 @@ def test_a_family_with_no_trip_gets_start(signed_in):
     expect(nav).to_have_text(["Start", "Family", "Ask/"])
     expect(page.locator(f"{BAR} .ga-tb-picker")).to_have_count(0)
     page.click(f"{BAR} .ga-tb-trip")
-    page.wait_for_url("**/start")
+    page.wait_for_url("**/plan/matrix")
     expect(page.locator(BAR)).to_be_visible()
 
 

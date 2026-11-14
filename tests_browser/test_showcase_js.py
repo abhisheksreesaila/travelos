@@ -45,22 +45,20 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     assert page.get_by_text("Been somewhere wonderful?").count() == 0
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/signin?next=%2Fstart")
+    page.wait_for_url("**/signin")
     page.goto(page.url.split("/signin")[0] + "/community")
     assert page.get_by_text("No one has shared a trip yet").is_visible()
 
 
 @SIZES
-def test_the_signed_in_landing_keeps_its_illustrations_and_a_neutral_door(visit, viewport, base_url):
-    page = visit("/start", viewport)
+def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewport, base_url):
+    """F-231: a signed-in person has no landing. Off the showcase without a LiteAPI key there is no matrix, so / opens the import of a trip already booked."""
+    page = visit("/", viewport)
     page.context.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page.goto(f"{base_url}/")
+    page.wait_for_url("**/trips/import")
     assert no_sideways_scroll(page)
-    assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
-    assert page.locator("#cal").count() == 1 and page.locator(".feature").count() == 4   # the illustrations stay
-    assert page.locator(".search .field-value.is-hint").count() == 4
-    page.get_by_role("button", name="Plan a trip").click()                                # the one door still opens the start page
-    page.wait_for_url("**/start**")
+    assert page.locator("#cal, .feature, .search, .forkline").count() == 0
 
 
 @SIZES

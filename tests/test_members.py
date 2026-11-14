@@ -271,7 +271,7 @@ def test_removing_a_member_ends_their_access_on_their_next_request(owner):
     assert r.status_code == 303
     assert members.role_in(user_id(other), tenant(owner)) is None
     html = other.get("/calendar").text  # their next request
-    assert "LA with the kids" not in html and "Start your first trip" in html
+    assert "LA with the kids" not in html and 'id="mx-import"' in html      # F-231: their own family has no trip: the matrix, with its way to import one
     assert session_data(other)["tenant_id"] != tenant(owner)  # moved to the family they have of their own
     assert other.post("/trip/plans", data={"id": "a1", "day": "1", "start": "10:00", "end": "11:00", "title": "Sneak in"}, follow_redirects=False).status_code in (303, 409)
     assert "Sneak in" not in owner.get("/calendar").text
@@ -367,7 +367,7 @@ def test_someone_in_two_families_gets_a_switcher_that_changes_the_active_family(
     assert 'id="fam-switcher"' in page and "Working here" in page and 'action="/family/switch"' in page
     r = other.post("/family/switch", data={"tenant": own}, follow_redirects=False)
     assert r.status_code == 303 and session_data(other)["tenant_id"] == own and session_data(other)["tenant_role"] == "owner"
-    assert "Start your first trip" in other.get("/calendar").text
+    assert 'id="mx-import"' in other.get("/calendar").text
     other.post("/family/switch", data={"tenant": tenant(owner)})
     assert "LA with the kids" in other.get("/calendar").text
 

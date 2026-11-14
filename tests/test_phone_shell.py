@@ -75,7 +75,7 @@ def test_a_tab_needs_sign_in_and_a_trip(client, key):
     assert r.status_code == 303 and r.headers["location"] == f"/signin?next=%2Ftrip%2F{key}"
     sign_in(client)
     r = client.get(PATHS[key], follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/start"
+    assert r.status_code == 303 and r.headers["location"] == "/plan/matrix"
 
 
 @pytest.mark.parametrize("role", ["viewer", "editor"])

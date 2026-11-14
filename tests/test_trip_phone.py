@@ -54,7 +54,7 @@ def test_signed_out_goes_through_sign_in_and_a_signed_in_family_with_no_trip_goe
         assert client.post(path, data={}, follow_redirects=False).status_code == 303
     sign_in(client)
     r = client.get("/trip?tab=today", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/start"
+    assert r.status_code == 303 and r.headers["location"] == "/plan/matrix"
 
 
 def test_every_screen_size_is_sent_from_the_old_calendar_to_the_trips_day(client):
@@ -65,11 +65,10 @@ def test_every_screen_size_is_sent_from_the_old_calendar_to_the_trips_day(client
             assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas"), (path, headers)
 
 
-def test_the_installed_app_opens_on_the_trip_view_and_the_continue_card_lands_there_on_a_phone(client):
+def test_the_installed_app_opens_on_the_trip_view_and_the_front_door_lands_there(client):
     assert client.get("/manifest.webmanifest").json()["start_url"] == "/trip"
     book(client)
-    assert 'href="/trip"' in client.get("/start").text
-    assert 'href="/trip"' in client.get("/start", headers=IPHONE).text
+    assert client.get("/", headers=IPHONE, follow_redirects=False).headers["location"] == "/trip/cockpit"      # F-231: the Continue card on Where to? is gone
 
 
 # ---- before, during and after ----------------------------------------------------------------------------------------------

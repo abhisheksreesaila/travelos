@@ -60,7 +60,7 @@ def test_the_drive_is_the_one_script_allowed_from_elsewhere(client, monkeypatch)
     """Switched on, the signed-out landing loads Travelpayouts Drive and nothing else from another site; no other page loads it."""
     monkeypatch.setenv("TRAVELPAYOUTS_DRIVE_ID", "596534")
     assert scripts_from_elsewhere(client.get("/").text) == [DRIVE]
-    for path in ("/signin", "/privacy", "/start"):
+    for path in ("/signin", "/privacy", "/plan/matrix"):
         assert scripts_from_elsewhere(client.get(path).text) == [], path
 
 

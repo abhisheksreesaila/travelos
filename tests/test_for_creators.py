@@ -45,11 +45,11 @@ def test_the_roster_at_creators_still_answers_404_in_production_until_the_first_
 
 
 def test_it_is_linked_from_the_header_the_landing_footer_and_the_signed_in_menu(client, mode):
-    assert 'href="/for-creators"' in re.search(r"<header.*?</header>", client.get("/community" if mode == "1" else "/start").text, re.S).group(0)
+    assert 'href="/for-creators"' in re.search(r"<header.*?</header>", client.get("/community" if mode == "1" else "/privacy").text, re.S).group(0)
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
     assert 'href="/for-creators"' in footer and "For creators" in footer
     sign_in(client)
-    assert 'href="/for-creators"' in client.get("/start").text
+    assert 'href="/for-creators"' in client.get("/family").text
 
 
 def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, monkeypatch):

@@ -2,12 +2,12 @@
 
 
 def test_pages_are_gitaway_pages_with_the_main_navigation(client):
-    """The landing is the one page whose header is only the brand and Sign in (F-060, tests/test_landing_v2.py); the rest keep the nav."""
+    """The cover is the one page with a header of its own (tests/test_landing_v2.py); the rest keep the nav. Signed out, Plan a trip signs in first (D-461)."""
     r = client.get("/")
     assert r.status_code == 200
     assert "<title>GitAway" in r.text and "TravelOS" not in r.text
     html = client.get("/community").text
-    for label, href in [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/for-creators")]:
+    for label, href in [("Community trips", "/community"), ("Plan a trip", "/signin"), ("For creators", "/for-creators")]:
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 

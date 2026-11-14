@@ -16,7 +16,7 @@ def new_family(browser, base_url):
         ctx = browser.new_context(viewport=viewport, reduced_motion="reduce")
         ctx.set_default_timeout(5000)
         contexts.append(ctx)
-        ctx.request.post(f"{base_url}/signin", form={"email": NEW, "next": "/start", "intent": "save"}, max_redirects=0)
+        ctx.request.post(f"{base_url}/signin", form={"email": NEW, "next": "/forks", "intent": "save"}, max_redirects=0)
         return ctx.new_page()
 
     yield make
@@ -29,7 +29,7 @@ def no_sideways_scroll(page):
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
-@pytest.mark.parametrize("path", ["/start", "/forks"])
+@pytest.mark.parametrize("path", ["/forks"])
 def test_the_three_ways_in_are_visible_and_fit(new_family, base_url, viewport, path):
     page = new_family(viewport)
     page.goto(f"{base_url}{path}")
@@ -46,24 +46,24 @@ def test_the_three_ways_in_are_visible_and_fit(new_family, base_url, viewport, p
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["desktop", "phone"])
 def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
     page = new_family(viewport)
-    page.goto(f"{base_url}/start")
+    page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Import a trip you booked").get_by_role("link", name="Paste the template").click()
     expect(page.locator("textarea")).to_be_visible()
     no_sideways_scroll(page)
-    page.goto(f"{base_url}/start")
+    page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Import a trip you booked").get_by_role("link", name="Answer a few questions").click()  # F-055
     expect(page.locator("#tb-heading")).to_have_text("Where are you going?")
     no_sideways_scroll(page)
-    page.goto(f"{base_url}/start")
+    page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Browse community trips").click()
     expect(page.locator("h1")).to_have_text("Community trips")
     expect(page.get_by_role("link", name="Share yours").first).to_be_visible()
     expect(page.get_by_role("link", name="Turn a link into a trip").first).to_be_visible()
     no_sideways_scroll(page)
-    page.goto(f"{base_url}/start")
+    page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Plan a trip").click()
-    expect(page.locator("#st-form")).to_be_visible()
-    assert page.url.endswith("#st-form")
+    page.wait_for_url("**/plan/matrix")
+    expect(page.locator("#mx-import")).to_be_visible()      # F-231: planning is the matrix, and a trip already booked has its way in beside it
     no_sideways_scroll(page)
 
 

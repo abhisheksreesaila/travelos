@@ -102,12 +102,6 @@ def test_the_ride_estimate_uses_the_places_airport_and_table(client):
     assert q.rides.legs[0].route == "EWR → New York" and q.rides.detail == "EWR to the city, both ways"
 
 
-def test_start_remembers_the_place_of_saved_picks(client):
-    sign_in(client, "ari")
-    client.get(f"/plan?to=sd&{TRIP}")
-    assert "SD with the kids" in client.get("/start").text
-
-
 # ---- F-222: a hand-made list of nearby places for "or nearby" ----
 
 def test_san_diego_is_near_los_angeles_and_orange_county():

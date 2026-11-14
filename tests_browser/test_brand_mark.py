@@ -37,7 +37,7 @@ def _everywhere(browser, base_url, viewport, mode="light"):
         page.goto(base_url + path)
         found.append((path, _marks(page)))
 
-    for path in ("/", "/signin", "/start", "/community", "/privacy"):
+    for path in ("/", "/signin", "/plan/matrix", "/community", "/privacy"):
         look(path)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
     ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)

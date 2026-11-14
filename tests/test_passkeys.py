@@ -99,7 +99,7 @@ def test_the_session_is_the_dev_sign_ins_session_shape(client, phone):
 def test_next_is_kept_local(phone):
     key, other = phone
     r, _ = face_id(other, key, next="https://evil.example/x")
-    assert r.json()["next"] == "/trip"
+    assert r.json()["next"] == "/"      # F-231: no destination of its own: the front door, which opens the trip or the matrix
 
 
 def test_a_challenge_works_once(phone):

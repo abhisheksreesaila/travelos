@@ -64,8 +64,8 @@ def test_the_menu_fits_the_screen_and_switching_opens_the_other_trip(family_with
 def test_plan_another_and_import_are_in_the_menu(family_with_two_trips, viewport):
     page = family_with_two_trips(viewport)
     open_menu(page)
-    page.click(f'{MENU} a[href="/start"]')
-    page.wait_for_url(re.compile(r"/start$"))
+    page.click(f'{MENU} a[href="/plan/matrix"]')
+    page.wait_for_url(re.compile(r"/plan/matrix$"))
     page.go_back()
     open_menu(page)
     page.click(f'{MENU} a[href="/trips/import"]')
