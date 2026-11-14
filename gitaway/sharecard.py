@@ -136,7 +136,7 @@ def render(card: Card) -> bytes:
             d.text((px + 28, y + 36), "→", font=font(40, 600), fill=INK2, anchor="mm")
             px += 56
     if card.names:
-        d.text((x, y + 104), card.names, font=font(40, 560), fill=INK, anchor="lm")
+        d.text((x, y + 120), f"With {card.names}", font=font(40, 560), fill=INK, anchor="lm")
     mark = _mark(76)
     img.paste(mark, (x, H - 150), mark)
     d.text((x + 100, H - 112), "GitAway", font=font(40, 700), fill=INK, anchor="lm")

@@ -58,3 +58,10 @@ def test_a_long_title_is_cut_at_a_word_with_dots_not_off_the_edge():
 
 def test_a_card_can_hold_no_booking_price_or_email():
     assert {f.name for f in fields(Card)} == {"title", "place", "route", "when", "days", "names", "link", "art_slug"}
+
+
+def test_the_font_and_the_art_renderer_ship_in_the_docker_image():
+    """gitaway/ is copied whole by the Dockerfile; the font must not be dropped by .dockerignore, and cairo must load from the conda environment."""
+    from tests.test_dockerfile import _ignored
+    assert sharecard.FONT.exists() and not _ignored("gitaway/fonts/geist-variable.ttf")
+    assert sharecard._art("laketahoe", (120, 60)).size == (120, 60)

@@ -1,6 +1,6 @@
 """F-234: Share to Instagram on the Tahoe cockpit, in a real browser at 390 and 1440: the button is there and 48px on a phone; a tap grows the sheet out of it (GA.motion on a phone,
 the calm fade on a laptop); the preview is the 1080 x 1350 card; the switches change it; the phone's Share hands the PNG to navigator.share; a laptop downloads it and copies the link;
-the public page opens signed out and says nothing private. Screenshots: F234_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_tripshare.py -k screenshots"""
+the public page opens signed out and says nothing private. Screenshots: F234_SHOTS=<folder> pixi run pytest -p no:randomly tests_browser/test_share_card_flow.py -k screenshots"""
 
 import os
 import re
