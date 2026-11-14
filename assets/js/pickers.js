@@ -353,7 +353,7 @@
         if (start.value !== a) { start.value = a; changed.push(start); }
         if (range && b && end.value !== b) { end.value = b; changed.push(end); }
         changed.forEach(fire);
-        if (range) b = end.value && end.value > a ? end.value : ""; // the form may have moved the return day (start.js keeps it after the leave day)
+        if (range) b = end.value && end.value > a ? end.value : ""; // the form may have moved the return day (the form keeps it after the leave day)
         refreshAll();
       }
       function announce(msg) { live.textContent = ""; setTimeout(function () { live.textContent = msg; }, 30); }

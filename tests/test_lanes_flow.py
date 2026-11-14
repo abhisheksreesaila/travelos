@@ -82,8 +82,7 @@ def test_the_old_no_car_link_means_no_car(client):
 def test_remembered_plan_keeps_the_skips(client):
     sign_in(client)
     client.get(f"/plan?{STAY_ONLY}")
-    assert ses.remembered_plan(person()) == "f=none&h=h1&c=none"
-    assert "f=none&amp;h=h1&amp;c=none" in client.get("/start").text
+    assert ses.remembered_plan(person()) == "f=none&h=h1&c=none"      # (F-231: the Continue card on Where to? showed it; the rides page's "Back to my picks" still reads it)
 
 
 # ---- the slim ledger line and the popover --------------------------------------------------------------------------

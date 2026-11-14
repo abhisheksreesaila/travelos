@@ -76,7 +76,7 @@ def hub_page(session, tags=(), creators=False, q=""):
     body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="hub-grid") if shown else
             Div(H2("No trips match those filters"), P("Try fewer filters, or start again."),
                 A("Show every trip", href="/community", cls="btn btn-primary btn-sm"), cls="hub-empty card", role="status"))
-    share_href = ("/share" if showcase.on() else "/trip/publish") if ses.booking(session) else "/start"  # a trip to share, or the way to start one
+    share_href = ("/share" if showcase.on() else "/trip/publish") if ses.booking(session) else showcase.planning_path()  # a trip to share, or the way to start one
     first = ("" if filtered or hub.has_shared() or not showcase.on() else
              Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"),
                  P("These are sample trips. Share yours and it shows up here for every traveler, ready to fork."),

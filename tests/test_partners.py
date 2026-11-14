@@ -409,7 +409,7 @@ def test_off_the_showcase_a_token_opens_partners_with_a_note_that_statistics_are
 def test_no_page_links_to_a_hidden_partner_page_when_the_showcase_is_off(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     sign_in(client, "ari")
-    for path in ("/", "/start", f"/plan?{HI}", "/trip"):
+    for path in ("/", "/trips/import", f"/plan?{HI}", "/trip"):
         html = client.get(path).text
         assert 'href="/sandbox' not in html and 'href="/partners' not in html and 'href="/go/' not in html, path
 

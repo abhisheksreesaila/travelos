@@ -274,7 +274,7 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
         if not tip.can_import(session):
-            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         return step_page(1, tb.new_draft())
 
     @app.post(PATH)
@@ -282,7 +282,7 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
         if not tip.can_import(session):
-            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         return advance(session, await request.form())
 
     @app.get(f"{PATH}/edit")
@@ -301,7 +301,7 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
         if not tip.can_import(session):
-            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         try:
             parsed = ti.parse(text)
         except ti.ImportProblem as e:
@@ -313,7 +313,7 @@ def register(app):
         if not ses.current_traveler(session):
             return RedirectResponse(f"/signin?next={PATH}&intent=save", status_code=303)
         if not tip.can_import(session):
-            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/start", cls="btn btn-ink"), status=403)
+            return tip._sorry("Build a trip", tip.CANNOT, A("Back to your trips", href="/", cls="btn btn-ink"), status=403)
         if edit and (edit_plan(session, edit) is None or replace not in ("", edit)):  # a stale tab, a deleted trip or a forged id changes nothing
             return gone()
         d = tb.load(draft)  # read again: a posted form is never trusted

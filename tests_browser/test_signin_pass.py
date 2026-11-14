@@ -6,7 +6,7 @@ import pytest
 from tests_browser.helpers import DESKTOP, PHONE
 
 CONTEXTS = {
-    "cold": "/signin?next=/start&intent=save",
+    "cold": "/signin?next=/&intent=save",
     "search": "/signin?next=%2Fplan%3Ff%3Df1%26d%3D2026-10-16%26r%3D2026-10-20%26a%3D2%26k%3D4&intent=pay",
     "fork": "/signin?next=/trips/sun-tacos-and-tide-pools&intent=fork",
 }

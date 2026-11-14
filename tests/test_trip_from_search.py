@@ -1,6 +1,6 @@
-"""F-210 part A: "Where to?" takes any place, and a booking search becomes the family's trip ("Make this a trip"), landing on the cockpit.
+"""F-210 part A: a booking search becomes the family's trip ("Make this a trip"), landing on the cockpit. (F-231: Where to? was the other form that took a typed place; it is gone.)
 
-Off the showcase (how production runs) /start has no sample cities and no sample prices; /plan's any-place lanes and /start both carry a "Make this a trip" form that
+Off the showcase (how production runs) /plan's any-place lanes carry a "Make this a trip" form that
 POSTs /trip/new. Signed out, that form goes to sign-in and comes back to /trip/new to finish; a viewer is refused by the role guard and nothing is written."""
 
 import re
@@ -43,47 +43,10 @@ def trip_count(traveler="ari"):
         return familydb.row(fam.db, "SELECT COUNT(*) AS n FROM trips")["n"]
 
 
-# ---- Where to? takes any place ----------------------------------------------------------------------------------------
+# ---- the booking lanes offer it ---------------------------------------------------------------------------------------------
+# (F-231: Where to? was the other place that took a typed place and made a trip; its tests went with it. An old Where to? link is tests/test_way_in.py's.)
 
-def test_where_to_off_the_showcase_has_a_place_box_and_no_sample_cities_or_prices(real, client):
-    h = client.get("/start").text
-    form = form_html(h, "st-form")
-    assert re.search(r'<input\b[^>]*name="place"[^>]*type="text"|<input\b[^>]*type="text"[^>]*name="place"', form)
-    assert 'name="to"' not in form
-    for sample in ("Los Angeles", "San Diego", "Honolulu", "New York", "Sample prices"):
-        assert sample not in form, sample
-    assert_real(h, "/start")
-
-
-def test_where_to_sends_any_typed_place_to_the_booking_lanes(real, client):
-    r = client.get("/start", params={"go": "1", "place": "Lisbon", "from": "", **WHEN, "n": "1", "k1": "6"}, follow_redirects=False)
-    assert r.status_code == 303
-    loc = urlsplit(r.headers["location"])
-    q = {k: v[0] for k, v in parse_qs(loc.query).items()}
-    assert loc.path == "/plan" and q == {"place": "Lisbon", **WHEN, "k": "6"}
-    page = client.get(r.headers["location"]).text
-    assert "Book your trip to Lisbon" in page
-
-
-def test_where_to_asks_for_a_place_when_none_is_typed(real, client):
-    r = client.get("/start", params={"go": "1", "place": "  ", **WHEN, "n": "0"}, follow_redirects=False)
-    assert r.status_code == 422
-    assert "Type where you want to go" in r.text and 'aria-invalid="true"' in form_html(r.text, "st-form")
-
-
-def test_where_to_keeps_a_typed_place_and_an_old_city_link_names_its_city(real, client):
-    assert re.search(r'name="place"[^>]*value="Lake Tahoe"|value="Lake Tahoe"[^>]*name="place"', client.get("/start?place=Lake+Tahoe").text)
-    assert re.search(r'name="place"[^>]*value="Honolulu"|value="Honolulu"[^>]*name="place"', client.get("/start?to=hi").text)
-
-
-def test_where_to_on_the_showcase_keeps_its_four_sample_places(client):
-    form = form_html(client.get("/start").text, "st-form")
-    assert form.count('name="to"') == 4 and "Sample prices for Los Angeles" in form
-
-
-def test_both_pages_offer_make_this_a_trip(real, client):
-    start = form_html(client.get("/start").text, "st-form")
-    assert re.search(r'<button\b[^>]*formaction="/trip/new"[^>]*>', start) and 'formmethod="post"' in start and "Make this a trip" in start
+def test_the_booking_lanes_offer_make_this_a_trip(real, client):
     lanes = client.get("/plan", params={"place": "Lisbon", **WHEN}).text
     make = form_html(lanes, "ps-make")
     assert 'action="/trip/new"' in make and 'method="post"' in make and "Make this a trip" in make
@@ -118,7 +81,7 @@ def test_making_the_same_trip_twice_makes_one(real, client):
     assert trip_count() == before + 1
 
 
-def test_where_to_makes_a_trip_from_its_own_fields(real, client):
+def test_the_old_where_to_words_still_make_a_trip(real, client):      # (nothing sends them any more; tripstart.read still understands them)
     sign_in(client)
     r = client.post("/trip/new", data={"go": "1", "place": "Lisbon", "from": "SFO", **WHEN, "n": "0"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/trip/cockpit" and open_trip()["title"] == "Trip to Lisbon"
@@ -130,13 +93,13 @@ def test_on_the_showcase_a_sample_city_chip_makes_its_trip(client):
     assert r.status_code == 303 and open_trip()["title"] == "Trip to San Diego"
 
 
-def test_a_bad_search_goes_back_to_where_to_with_what_is_wrong(real, client):
+def test_a_bad_search_goes_back_to_the_booking_lanes_with_what_is_wrong(real, client):
     sign_in(client)
     before = trip_count()
     r = client.post("/trip/new", data={"place": "Lisbon", "d": "2026-12-09", "r": "2026-12-04", "a": "2"}, follow_redirects=False)
-    assert r.status_code == 303 and urlsplit(r.headers["location"]).path == "/start"
+    assert r.status_code == 303 and urlsplit(r.headers["location"]).path == "/plan"
     again = client.get(r.headers["location"])
-    assert again.status_code == 422 and "Lisbon" in again.text
+    assert again.status_code == 200 and "Lisbon" in again.text and 'role="alert"' in again.text and "ps-error" in again.text
     assert trip_count() == before
 
 
@@ -172,9 +135,3 @@ def test_a_us_town_named_after_a_foreign_city_keeps_its_states_clock(typed, zone
     from gitaway import tripstart
     from gitaway.partners import places
     assert tripstart.zone(places.resolve(typed)) == zone
-
-
-@pytest.mark.parametrize("junk", [",,", "\x01"])
-def test_where_to_with_nothing_to_look_up_asks_again_instead_of_failing(real, client, junk):
-    r = client.get("/start", params={"go": "1", "place": junk, **WHEN, "n": "0"}, follow_redirects=False)
-    assert r.status_code == 422 and "Type where you want to go" in r.text

@@ -45,22 +45,25 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     assert page.get_by_text("Been somewhere wonderful?").count() == 0
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/signin?next=%2Fstart")
+    page.wait_for_url("**/signin")
     page.goto(page.url.split("/signin")[0] + "/community")
     assert page.get_by_text("No one has shared a trip yet").is_visible()
 
 
 @SIZES
-def test_the_signed_in_landing_keeps_its_illustrations_and_a_neutral_door(visit, viewport, base_url):
-    page = visit("/start", viewport)
-    page.context.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
-    page.goto(f"{base_url}/")
-    assert no_sideways_scroll(page)
-    assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
-    assert page.locator("#cal").count() == 1 and page.locator(".feature").count() == 4   # the illustrations stay
-    assert page.locator(".search .field-value.is-hint").count() == 4
-    page.get_by_role("button", name="Plan a trip").click()                                # the one door still opens the start page
-    page.wait_for_url("**/start**")
+def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewport, base_url, monkeypatch):
+    """F-231: a signed-in person has no landing. With a LiteAPI key / opens the trip matrix; off the showcase without one there is no matrix, so it opens the import of a trip already booked."""
+    page = visit("/", viewport)
+    page.context.request.post(f"{base_url}/signin", form={"email": "front.door@example.com", "next": "/", "intent": "save"}, max_redirects=0)      # a family with no trip
+    for key, want in ((None, "**/trips/import"), ("a-key", "**/plan/matrix")):
+        if key:
+            monkeypatch.setenv("LITEAPI_KEY", key)
+        else:
+            monkeypatch.delenv("LITEAPI_KEY", raising=False)
+        page.goto(f"{base_url}/")
+        page.wait_for_url(want)
+        assert no_sideways_scroll(page)
+        assert page.locator("#cal, .feature, .search, .forkline").count() == 0
 
 
 @SIZES

@@ -125,7 +125,7 @@ def test_the_hub_is_named_community_trips_and_never_discover(client):
     for who in (None, "ari"):
         if who:
             sign_in(client, who)
-        for path in ("/", "/community", "/start", "/creators", "/forks", "/family", "/signin"):
+        for path in ("/", "/community", "/plan/matrix", "/creators", "/forks", "/family", "/signin"):
             html = client.get(path).text
             assert "Discover" not in html and "discover" not in html.lower().replace("discoverable", ""), path
             if 'id="si-dialog"' not in html:      # F-200: sign-in is a full-screen page (the brand and Cancel only), so it has no nav
@@ -139,7 +139,7 @@ def test_the_page_says_plainly_what_it_is_with_both_calls_to_action(client):
     html = client.get("/community").text
     assert "Trips shared by travelers and creators. Fork one into your calendar." in html
     head = html[:html.index('class="hub-grid"')]  # both are up front, above the trips
-    assert re.search(r'<a [^>]*href="/start"[^>]*>(<svg.*?</svg>)?Share yours<', head, re.S)  # no trip yet: start one
+    assert re.search(r'<a [^>]*href="/plan/matrix"[^>]*>(<svg.*?</svg>)?Share yours<', head, re.S)  # no trip yet: start one
     assert re.search(r'<a [^>]*href="/creators"[^>]*>(<svg.*?</svg>)?Turn a link into a trip<', head, re.S)
 
 

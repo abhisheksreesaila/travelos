@@ -220,16 +220,19 @@ def nav_plan(html):
     return re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S).group(0)
 
 
-def test_plan_a_trip_is_where_to_not_the_matrix_with_or_without_prices(client, monkeypatch):
-    """D-458: until booking opens the front door is Where to? (sign in first when signed out); the matrix is reached from there, key or not."""
-    for showcase, key in (("0", None), ("0", KEY), ("1", None)):
+def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_not(client, monkeypatch):
+    """D-461, D-463: signed out it signs in first (and / then decides); signed in it is the matrix, or off the showcase with no LiteAPI key, the import of a trip already booked."""
+    for showcase, key, signed_in, want in (("0", None, False, "/signin"), ("0", KEY, False, "/signin"), ("1", None, False, "/signin"),
+                                           ("0", None, True, "/trips/import"), ("0", KEY, True, "/plan/matrix"), ("1", None, True, "/plan/matrix")):
         monkeypatch.setenv("GITAWAY_SHOWCASE", showcase)
         if key:
             monkeypatch.setenv("LITEAPI_KEY", key)
         else:
             monkeypatch.delenv("LITEAPI_KEY", raising=False)
-        nav = nav_plan(client.get("/start").text)
-        assert re.search(r'href="/signin\?next=%2Fstart"[^>]*>Plan a trip<', nav) and "/plan/matrix" not in nav, (showcase, key)
+        if signed_in:
+            sign_in(client)
+        nav = nav_plan(client.get("/community").text)
+        assert re.search(rf'href="{want}"[^>]*>Plan a trip<', nav), (showcase, key, signed_in)
 
 
 def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):

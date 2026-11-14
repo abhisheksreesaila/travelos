@@ -130,7 +130,7 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
 
 
 def test_the_first_run_welcome_offers_the_builder_and_the_template(phone, base_url):
-    phone.goto(f"{base_url}/start")
+    phone.goto(f"{base_url}/forks")
     welcome = phone.locator(".fr-path-multi")
     expect(welcome.get_by_role("link", name="Answer a few questions")).to_have_attribute("href", "/trips/build")
     expect(welcome.get_by_role("link", name="Paste the template")).to_have_attribute("href", "/trips/import")

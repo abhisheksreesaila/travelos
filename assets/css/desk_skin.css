@@ -224,27 +224,23 @@
 
 
   /* ---- the same headings on the other pages: the title, then its second phrase in coral, on one line under the eyebrow ---- */
-  :root:has(.ga-topbar) .fam-head, :root:has(.ga-topbar) .ti-head, :root:has(.ga-topbar) .st-hero, :root:has(.ga-topbar) .tp-head-text { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: flex-start; column-gap: 0; }
-  :root:has(.ga-topbar) .fam-head > .fam-ident, :root:has(.ga-topbar) .ti-head > p, :root:has(.ga-topbar) .st-hero > p, :root:has(.ga-topbar) .st-hero > .eyebrow, :root:has(.ga-topbar) .tp-head-text > .tp-head-k, :root:has(.ga-topbar) .tp-head-text > details { flex-basis: 100%; }
-  :root:has(.ga-topbar) .fam h1, :root:has(.ga-topbar) .ti-title, :root:has(.ga-topbar) .ti-detail-page .ti-title, :root:has(.ga-topbar) .st-hero h1, :root:has(.ga-topbar) #tp-title-h { flex: none; margin: 0 0.3em 0 0; font-size: 2.5rem; line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); }
-  :root:has(.ga-topbar) .fam h1::after, :root:has(.ga-topbar) .ti-title::after, :root:has(.ga-topbar) .st-hero h1::after, :root:has(.ga-topbar) #tp-title-h::after { content: none; }
-  :root:has(.ga-topbar) .fam-head .ga-h-two, :root:has(.ga-topbar) .ti-head .ga-h-two, :root:has(.ga-topbar) .st-hero .ga-h-two, :root:has(.ga-topbar) .tp-head-text .ga-h-two { display: inline; margin: 0; font: 800 2.5rem/1.05 var(--font-display); letter-spacing: -0.03em; color: var(--coral-deep); }
-  :root:has(.ga-topbar) .st-hero .eyebrow, :root:has(.ga-topbar) .tp-head-k { font-size: max(var(--text-min), 0.9583rem); font-weight: 700; letter-spacing: 0.02em; color: var(--coral-deep); }
-  :root:has(.ga-topbar) .st-hero .eyebrow { text-transform: uppercase; }
-  :root:has(.ga-topbar) .st-hero h1 { font-size: 3rem; } :root:has(.ga-topbar) .st-hero .ga-h-two { font-size: 3rem; }
-  :root:has(.ga-topbar) .st-hero p { margin-top: 0.8333rem; }
+  :root:has(.ga-topbar) .fam-head, :root:has(.ga-topbar) .ti-head, :root:has(.ga-topbar) .tp-head-text { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: flex-start; column-gap: 0; }
+  :root:has(.ga-topbar) .fam-head > .fam-ident, :root:has(.ga-topbar) .ti-head > p, :root:has(.ga-topbar) .tp-head-text > .tp-head-k, :root:has(.ga-topbar) .tp-head-text > details { flex-basis: 100%; }
+  :root:has(.ga-topbar) .fam h1, :root:has(.ga-topbar) .ti-title, :root:has(.ga-topbar) .ti-detail-page .ti-title, :root:has(.ga-topbar) #tp-title-h { flex: none; margin: 0 0.3em 0 0; font-size: 2.5rem; line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); }
+  :root:has(.ga-topbar) .fam h1::after, :root:has(.ga-topbar) .ti-title::after, :root:has(.ga-topbar) #tp-title-h::after { content: none; }
+  :root:has(.ga-topbar) .fam-head .ga-h-two, :root:has(.ga-topbar) .ti-head .ga-h-two, :root:has(.ga-topbar) .tp-head-text .ga-h-two { display: inline; margin: 0; font: 800 2.5rem/1.05 var(--font-display); letter-spacing: -0.03em; color: var(--coral-deep); }
+  :root:has(.ga-topbar) .tp-head-k { font-size: max(var(--text-min), 0.9583rem); font-weight: 700; letter-spacing: 0.02em; color: var(--coral-deep); }
 
   /* ---- the same surfaces: white, a hairline, no shadow; fields and chips outlined ---- */
-  :root:has(.ga-topbar) .fam-sec, :root:has(.ga-topbar) .st-continue, :root:has(.ga-topbar) .st-card, :root:has(.ga-topbar) .ti-card, :root:has(.ga-topbar) .ti-sec,
+  :root:has(.ga-topbar) .fam-sec, :root:has(.ga-topbar) .ti-card, :root:has(.ga-topbar) .ti-sec,
   :root:has(.ga-topbar) .mp-stage, :root:has(.ga-topbar) .mp-li, :root:has(.ga-topbar) .ak-card, :root:has(.ga-topbar) .ak-prop, :root:has(.ga-topbar) .ar-card, :root:has(.ga-topbar) .hp-card,
   :root:has(.ga-topbar) .hub-card, :root:has(.ga-topbar) .tp-card, :root:has(.ga-topbar) .tp-empty, :root:has(.ga-topbar) .tp-stay, :root:has(.ga-topbar) .tp-tile, :root:has(.ga-topbar) .rd-card,
   :root:has(.ga-topbar) .ft-empty, :root:has(.ga-topbar) .ft-notify, :root:has(.ga-topbar) .tp-share, :root:has(.ga-topbar) .ph-route { border: 1px solid var(--hairline); box-shadow: none; border-radius: var(--r-card); }
   :root:has(.ga-topbar) .fam-link, :root:has(.ga-topbar) .tp-chip, :root:has(.ga-topbar) .tp-back, :root:has(.ga-topbar) .ar-chip, :root:has(.ga-topbar) .mp-daychip,
-  :root:has(.ga-topbar) .fam-select, :root:has(.ga-topbar) .fam-field select, :root:has(.ga-topbar) .fam-field input, :root:has(.ga-topbar) .st-field, :root:has(.ga-topbar) .ft-input { border: 1px solid var(--hairline-2); box-shadow: none; }
+  :root:has(.ga-topbar) .fam-select, :root:has(.ga-topbar) .fam-field select, :root:has(.ga-topbar) .fam-field input, :root:has(.ga-topbar) .ft-input { border: 1px solid var(--hairline-2); box-shadow: none; }
   :root:has(.ga-topbar) .fam-sec { margin-top: 0; padding: 1.5rem 1.6667rem; }
-  :root:has(.ga-topbar) .st-card .st-face { box-shadow: none; }
   :root:has(.ga-topbar) .fam h2, :root:has(.ga-topbar) .ti-h2, :root:has(.ga-topbar) .ak-card h2 { letter-spacing: -0.03em; }
-  :root:has(.ga-topbar) .ak-label, :root:has(.ga-topbar) .st-card legend { text-transform: none; letter-spacing: 0.02em; font-weight: 700; color: var(--ink-3); }
+  :root:has(.ga-topbar) .ak-label { text-transform: none; letter-spacing: 0.02em; font-weight: 700; color: var(--ink-3); }
   :root:has(.ga-topbar) #ak-text { background: var(--sun-tint); border: 1px solid var(--hairline); border-left: 0.1667rem solid var(--k-ride); border-radius: 0 var(--r-card) var(--r-card) 0; font-family: var(--font-body); font-weight: 600; font-size: 1.1667rem; line-height: 1.5; }
   :root:has(.ga-topbar) #ak-day { border: 1px solid var(--hairline-2); }
 

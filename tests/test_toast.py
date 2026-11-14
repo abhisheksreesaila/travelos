@@ -6,7 +6,7 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
 def test_every_page_loads_the_one_toast(client):
-    for path in ("/", "/community", "/start"):
+    for path in ("/", "/community", "/plan/matrix"):
         html = client.get(path).text
         assert "/assets/css/toast.css" in html and "/assets/js/toast.js" in html, path
 

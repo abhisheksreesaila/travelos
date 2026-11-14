@@ -9,8 +9,8 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.look import audit
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
-SIGNED_OUT = (("landing", "/"), ("sign-in", "/signin?next=%2Fstart"), ("creators", "/creators"), ("for creators", "/for-creators"), ("plan for me", "/plan-for-me"))
-SIGNED_IN = (("start", "/start"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
+SIGNED_OUT = (("landing", "/"), ("sign-in", "/signin"), ("creators", "/creators"), ("for creators", "/for-creators"), ("plan for me", "/plan-for-me"))
+SIGNED_IN = (("matrix", "/plan/matrix"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
              ("ask", "/trip/ask"), ("book", "/trip/book"))
 TABLET = {"width": 900, "height": 1000}      # between the phone and the laptop layouts (the tablet keeps the old header; 12px root)
 OWNED_ELSEWHERE = {}      # (the signed-out landing was F-206's to finish; since the merge the cover meets the whole audit)
@@ -95,7 +95,7 @@ def test_light_by_default_and_the_button_switches_to_dark_and_is_remembered_on_t
     ctx = context(browser, DESKTOP, "dark")
     try:
         page = ctx.new_page()
-        page.goto(f"{base_url}/start")
+        page.goto(f"{base_url}/privacy")
         toggle = page.locator(".ga-footer [data-mode-toggle]")
         assert page.evaluate(CANVAS) == "rgb(242, 242, 245)"                              # the system says dark; the site is light
         assert toggle.get_attribute("aria-pressed") == "false"
@@ -118,7 +118,7 @@ def test_on_a_phone_the_footer_is_short_and_keeps_the_button(browser, base_url):
     ctx = context(browser, PHONE, "light")
     try:
         page = ctx.new_page()
-        page.goto(f"{base_url}/start")
+        page.goto(f"{base_url}/privacy")
         assert page.locator(".ga-footer [data-mode-toggle]").is_visible()                 # D-460: no Auto any more, so the phone has the button too
         assert page.locator(".ga-footer > .ga-fine").bounding_box()["height"] < 80       # the fine print is its own lines, not 18rem of empty column
     finally:

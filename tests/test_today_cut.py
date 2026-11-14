@@ -52,7 +52,7 @@ def test_signed_out_and_no_trip_still_go_to_sign_in_and_start(client):
     from tests.test_signin import sign_in
     assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/signin")
     sign_in(client)
-    assert client.get("/trip", follow_redirects=False).headers["location"] == "/start"
+    assert client.get("/trip", follow_redirects=False).headers["location"] == "/plan/matrix"
 
 
 # ---- on today, what is happening now ------------------------------------------------------------------------------------------

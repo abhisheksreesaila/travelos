@@ -30,6 +30,7 @@
 .ck-chips { display: none; flex-wrap: wrap; gap: 0.5rem; }
 .ck-chip { display: inline-flex; align-items: center; gap: 0.4375rem; min-height: 2.25rem; padding: 0.25rem 0.8125rem; border-radius: var(--r-pill); background: var(--ck-card); box-shadow: var(--shadow-sm);
   font: 600 max(var(--text-min), 0.875rem)/1.2 var(--font-body); color: var(--ink); }
+.ck-chip-link { color: var(--ink); font-weight: 700; text-decoration: none; }
 .ck-chip svg { color: var(--ink-2); flex: none; }
 
 /* ---------- section titles (phone) ---------- */

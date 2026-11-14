@@ -1,4 +1,4 @@
-"""F-146: Family, the trip details and Start in the web look (top bar, white cards, trip type), in a real browser.
+"""F-146: Family and the trip details in the web look (Start, the Where to? form, was one of them until F-231 deleted it) (top bar, white cards, trip type), in a real browser.
 
 Each page fits 1440x900 without page scroll, has no sideways scroll at any width, and every button on it is pressed here (lesson 2026-10-01).
 """
@@ -70,13 +70,13 @@ def join_as(contexts, base_url, owner_page, email, role="editor"):
 
 # ---- the look and the fit ----------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("path", ["/family", "/trip/details", "/start"])
+@pytest.mark.parametrize("path", ["/family", "/trip/details"])
 def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_by_900(ari, base_url, path):
     ctx, page = ari
     page.goto(f"{base_url}{path}")
     expect(page.locator(".ga-topbar")).to_be_visible()
     expect(page.locator(".ga-tb-nav")).to_contain_text("Family")
-    card = {"/family": ".fam-sec", "/trip/details": ".ti-sec", "/start": ".st-card"}[path]
+    card = {"/family": ".fam-sec", "/trip/details": ".ti-sec"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and 13 <= style[1] <= 15 and style[2] == "1px", style      # F-158: the calm skin's white card with a hairline edge, radius 14
     assert "Geist" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-200: Geist for everything
@@ -84,7 +84,7 @@ def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_b
     assert scroll_h <= client_h, f"{path} scrolls: {scroll_h} > {client_h}"
 
 
-@pytest.mark.parametrize("path", ["/family", "/trip/details", "/start"])
+@pytest.mark.parametrize("path", ["/family", "/trip/details"])
 @pytest.mark.parametrize("size", WIDTHS, ids=[f"{w}" for w, _ in WIDTHS])
 def test_no_page_scrolls_sideways_at_any_width(ari, base_url, path, size):
     ctx, page = ari
@@ -195,32 +195,24 @@ def test_every_trip_details_button_lands_where_it_says(ari, base_url, button, ur
     page.wait_for_url(url)
 
 
-# ---- /start: every button ----------------------------------------------------------------------------------------------
+# ---- the way in: the matrix and the cockpit ----------------------------------------------------------------------------
 
-def test_start_import_continue_steppers_and_find_my_trip(ari, base_url):
+def test_the_matrix_offers_the_import_and_the_cockpit_offers_another_trip(ari, base_url):
     ctx, page = ari
-    page.goto(f"{base_url}/start")
-    page.click("#st-import")
+    page.goto(f"{base_url}/plan/matrix")
+    page.click("#mx-import")      # F-231: Already booked? Bring your trip in
     page.wait_for_url("**/trips/import")
-    page.goto(f"{base_url}/start")
-    page.click(".st-continue")
-    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
-    page.goto(f"{base_url}/start")
-    expect(page.locator("#st-form input[name=to][value=la]")).to_be_checked()
-    adults = page.locator("[data-field=a] .ga-step-btn.is-more")  # the plus of the Adults stepper
-    adults.click()
-    page.click("#st-form button[type=submit]")  # Find my trip
-    page.wait_for_url("**/plan?*")
-    assert "a=3" in page.url
+    page.goto(f"{base_url}/trip/cockpit")
+    page.click("#ck-plan-another")
+    page.wait_for_url("**/plan/matrix")
+    expect(page.locator("#mx-import")).to_be_visible()
 
 
-def test_start_for_a_family_with_no_trip_shows_the_welcome_beside_the_form_and_still_fits(contexts, base_url):
+def test_a_family_with_no_trip_lands_on_the_matrix_and_it_fits_sideways(contexts, base_url):
     ctx = contexts()
     sign_in(ctx, base_url, f"new.{uuid.uuid4().hex[:6]}@example.com")
     page = ctx.new_page()
-    page.goto(f"{base_url}/start")
-    expect(page.locator(".st .fr")).to_be_visible()
-    expect(page.locator(".st-card")).to_be_visible()
-    assert fits(page)[0] <= fits(page)[1]
-    page.click(".st .fr-path >> nth=0")  # "Plan a trip" scrolls to / focuses the form
+    page.goto(f"{base_url}/")
+    page.wait_for_url("**/plan/matrix")
+    expect(page.locator("#mx-import")).to_be_visible()
     assert no_sideways_scroll(page)

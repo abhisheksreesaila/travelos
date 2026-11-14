@@ -1,5 +1,7 @@
 # Design handoff: landing page (F-013)
 
+> **Retired (F-231, D-461):** the signed-in landing, its "Plan a trip" door to `/start` and the Where to? form are deleted. A signed-in `/` redirects to the trip's cockpit or the trip matrix; the signed-out `/` is the cover (F-227). Kept for history.
+
 **Chosen:** Landing A, "Two doors" (captain, 2026-09-29). Artboard source: `docs/design/canvas/Landing-A.dc.html`. Landing B is reference only.
 **System:** `design-system/DESIGN-SYSTEM.md` and `assets/css/tokens.css`. Re-implement it in FastHTML and plain CSS/JS; don't paste the artboard markup.
 

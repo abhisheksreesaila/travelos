@@ -30,25 +30,24 @@ def new(client):
     return client
 
 
-def test_start_welcomes_a_new_family_with_the_three_ways_in(new):
-    w = welcome_of(new.get("/start").text)
+def test_share_welcomes_a_new_family_with_the_three_ways_in(new):      # F-231: Where to? drew this welcome until it was deleted; /share and /forks still do
+    w = welcome_of(new.get("/share").text)
     assert all(p in w for p in PATHS)
-    assert {"#st-form", "/trips/import", "/community"} <= links(w)
+    assert {"/plan/matrix", "/trips/import", "/community"} <= links(w)
     assert new.get("/trips/import").status_code == 200 and new.get("/community").status_code == 200
 
 
-def test_start_has_no_welcome_for_signed_out_visitors_or_families_with_a_trip(client):
-    assert "Start your first trip" not in client.get("/start").text
+def test_there_is_no_welcome_for_signed_out_visitors_or_families_with_a_trip(client):
+    assert "Start your first trip" not in client.get("/share").text
     book(client)
-    assert "Start your first trip" not in client.get("/start").text
+    assert "Start your first trip" not in client.get("/share").text
 
 
-def test_the_old_calendar_address_welcomes_a_new_family_at_start_instead_of_a_dead_end(new):
-    assert new.get("/calendar", follow_redirects=False).headers["location"] == "/start"
+def test_the_old_calendar_address_sends_a_new_family_to_the_matrix_instead_of_a_dead_end(new):
+    assert new.get("/calendar", follow_redirects=False).headers["location"] == "/plan/matrix"
     html = new.get("/calendar").text
-    w = welcome_of(html)
-    assert all(p in w for p in PATHS) and {"#st-form", "/trips/import", "/community"} <= links(w)
     assert "<h1" in html and "Book a trip first" not in html
+    assert {"/trips/import", "/community"} <= links(html) and 'id="mx-import"' in html
 
 
 def test_the_forks_page_has_next_steps_on_both_sides(new):
@@ -77,7 +76,7 @@ def test_family_with_a_second_person_no_longer_asks(client):
 def test_trip_details_with_no_trip_points_to_the_ways_in(new):
     r = new.get("/trip/details")
     assert r.status_code == 404
-    assert {"/trips/import", "/start", "/community"} <= links(r.text)
+    assert {"/trips/import", "/plan/matrix", "/community"} <= links(r.text)
 
 
 def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
@@ -97,10 +96,10 @@ def test_the_community_page_invites_the_first_share_until_someone_shares(client)
 
 
 def test_every_first_screen_of_a_new_family_has_a_way_forward(new):
-    for path in ("/", "/start", "/calendar", "/forks", "/family", "/trips/import", "/community", "/trip/details"):
+    for path in ("/", "/plan/matrix", "/calendar", "/forks", "/family", "/trips/import", "/community", "/trip/details"):
         r = new.get(path)
         assert r.status_code in (200, 404), path
-        assert links(r.text) & {"/start", "/trips/import", "/community", "#st-form"}, path
+        assert links(r.text) & {"/plan/matrix", "/trips/import", "/community"}, path
 
 
 def test_share_without_a_trip_shows_the_first_run_ways_in(new):

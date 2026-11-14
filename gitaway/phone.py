@@ -19,7 +19,7 @@ from urllib.parse import quote
 from fasthtml.common import A, Div, H1, H2, Header, Link, Nav, P, Script, Span, Title
 from starlette.responses import RedirectResponse
 
-from gitaway import access, session as ses, topbar
+from gitaway import access, session as ses, showcase, topbar
 from gitaway.icons import icon
 from gitaway.layout import preview, styles
 
@@ -81,5 +81,5 @@ def guard(session, path):
     if not ses.current_traveler(session):
         return RedirectResponse(f"/signin?next={quote(path, safe='')}", status_code=303)
     if not ses.booking(session):
-        return RedirectResponse("/start", status_code=303)
+        return RedirectResponse(showcase.planning_path(), status_code=303)
     return None

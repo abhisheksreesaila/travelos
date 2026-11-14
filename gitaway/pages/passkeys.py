@@ -130,8 +130,8 @@ def register(app):
         except passkeys.PasskeyError as e:
             return _fail(str(e), unknown=True) if e.unknown else _fail(str(e))
         auth.make_room(session)
-        next_path = ses.safe_next(data.get("next"), "/start")
-        landing = "/trip" if next_path == "/start" else next_path   # no destination: open Today (it sends someone with no trip on to /start)
+        next_path = ses.safe_next(data.get("next"), "/")
+        landing = next_path      # no destination: / opens the trip, or the trip matrix when there is none
         intent = data.get("intent") if data.get("intent") in ses.INTENTS else ""
         _continue(session, intent, next_path)
         return JSONResponse({"ok": True, "next": landing, "name": ses.current_traveler(session).name.split()[0], "passkey": row["id"]})

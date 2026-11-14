@@ -22,7 +22,7 @@ def test_never_for_a_signed_in_person(client, monkeypatch):
 
 def test_never_on_other_pages(client, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_DRIVE_ID", "596534")
-    for path in ("/start", "/plan", "/signin", "/privacy"):
+    for path in ("/plan/matrix", "/plan", "/signin", "/privacy"):
         assert "https://tp-em.com/" not in client.get(path).text, path      # the script's address: the privacy page names the service (F-196) but never loads it
 
 

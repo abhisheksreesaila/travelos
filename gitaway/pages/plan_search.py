@@ -182,6 +182,17 @@ def _trip_form(search, q, place_raw, typed=None):
 MAX_KIDS = catalog.MAX_TRAVELERS - 1
 
 
+def matrix_href(q) -> str:
+    """The trip matrix for the words of a search or of an old Where to? address (F-231: `/start` is gone): the place (`place`, or a sample city's `to`), `home` or `from`, `d`, `r`, `a`,
+    and the kids as `k` or as a count `n` with one age `k1`.. each. The matrix checks them; what is not said it asks for. Where the matrix does not exist, the way in that does."""
+    if not showcase.matrix_open():
+        return showcase.planning_path()
+    get = lambda name: str(q.get(name) or "").strip()       # noqa: E731
+    k = get("k") or (kids_from(get("n"), [get(f"k{i}") for i in range(1, MAX_KIDS + 1)]) if get("n") else "")
+    words = {"to": place_text(get("to"), get("focus"), get("place")), "home": (get("home") or get("from")).upper(), "d": get("d"), "r": get("r"), "a": get("a"), "k": k}
+    return "/plan/matrix" + ("?" + urlencode({n: v for n, v in words.items() if v}) if any(words.values()) else "")
+
+
 def kids_from(n, ages) -> str:
     """The `k` words for a trip from the form's kid count and one age picker per kid (F-198 review: a phone's number pad has no comma). An age not picked is "?", which the trip's
     own check refuses with its sentence; nothing typed, nothing given."""
@@ -191,7 +202,7 @@ def kids_from(n, ages) -> str:
 
 
 def _kids(k):
-    """A kid count and one age picker per kid, like /start's (plansearch.js shows one per kid; without it the server reads only the first `n`)."""
+    """A kid count and one age picker per kid, as the trip's own forms (plansearch.js shows one per kid; without it the server reads only the first `n`)."""
     ages = [a.strip() for a in str(k).split(",") if a.strip()]
     n = len(ages)
     pickers_ = [Label(Span(f"Kid {i + 1} age", cls="ps-label"),

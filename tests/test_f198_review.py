@@ -393,14 +393,14 @@ def test_the_paste_routes_refuse_a_body_past_their_limit(client):
 
 def test_no_page_promises_a_running_total_or_shows_an_unlabelled_price(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    for path in ("/", "/start", "/plan"):
+    for path in ("/", "/trips/import", "/plan"):
         page = client.get(path).text
         t = words(page).lower()
         for claim in ("one honest total", "running cost ledger", "cheapest combo", "one running total"):
             assert claim not in t, (path, claim)
         assert "$1,912 total" not in page, path
     sign_in(client, "ari")
-    t = words(client.get("/start").text).lower()
+    t = words(client.get("/trips/import").text).lower()
     assert "one honest total" not in t
 
 

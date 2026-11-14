@@ -76,7 +76,7 @@ def test_white_and_old_ink_are_never_written_where_dark_mode_would_lose_them():
 
 
 def test_every_page_loads_the_mode_script_before_paint_and_names_both_bar_colours(client):
-    html = client.get("/start").text
+    html = client.get("/plan/matrix").text
     head = html.split("</head>")[0]
     script = re.search(r'<script src="/assets/js/mode\.js[^"]*"></script>', head)
     assert script, "mode.js without defer or async, in the head: it runs before the body is drawn"
@@ -88,7 +88,7 @@ def test_light_by_default_and_one_button_for_dark(client):
     """D-460 (founder, 2026-11-13: "a simple button to switch between light and dark … for a joyful site it has to be light by default"): every
     page starts light whatever the system says (html[data-mode="light"], which tokens.css's system-dark block steps aside for), and the footer
     has one button, pressed when dark (mode.js keeps the choice on this device: tests_browser/test_direction_a_pages.py)."""
-    html = client.get("/start").text
+    html = client.get("/plan/matrix").text
     assert re.search(r'<html[^>]*data-mode="light"', html)
     switch = re.search(r'<button[^>]*data-mode-toggle[^>]*>.*?</button>', html, re.S).group(0)
     assert 'aria-pressed="false"' in switch and 'aria-label="Dark mode"' in switch and "data-mode-pick" not in html
@@ -116,10 +116,10 @@ def test_the_early_preview_label_is_in_the_shell_signed_out_and_signed_in(client
     and the phone's trip screens. It opens one short line."""
     from tests.test_calendar import book
     line = "Early preview GitAway is new. Things will change; tell us what breaks."
-    for path in ("/", "/signin?next=%2Fstart", "/start", "/creators", "/for-creators", "/plan-for-me", "/plan?to=la&d=2027-03-05&r=2027-03-09&a=2"):
+    for path in ("/", "/signin", "/plan/matrix", "/creators", "/for-creators", "/plan-for-me", "/plan?to=la&d=2027-03-05&r=2027-03-09&a=2"):
         assert preview_on(client.get(path).text) == line, path
     book(client)
-    for path in ("/start", "/family", "/trip/canvas", "/trip/canvas?day=1", "/trip/family", "/trip/ask"):
+    for path in ("/plan/matrix", "/family", "/trip/canvas", "/trip/canvas?day=1", "/trip/family", "/trip/ask"):
         html = client.get(path).text
         assert preview_on(html) == line, path
     canvas = client.get("/trip/canvas").text
@@ -129,7 +129,7 @@ def test_the_early_preview_label_is_in_the_shell_signed_out_and_signed_in(client
 
 def test_tell_us_what_breaks_writes_to_the_contact_address_only_when_there_is_one(client, monkeypatch):
     monkeypatch.delenv("GITAWAY_CONTACT_EMAIL", raising=False)
-    assert "mailto:" not in PREVIEW.search(client.get("/start").text).group(0)
+    assert "mailto:" not in PREVIEW.search(client.get("/plan/matrix").text).group(0)
     monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "hello@gitaway.example")
-    label = PREVIEW.search(client.get("/start").text).group(0)
+    label = PREVIEW.search(client.get("/plan/matrix").text).group(0)
     assert '<a href="mailto:hello@gitaway.example?subject=GitAway%20early%20preview">tell us what breaks</a>' in label

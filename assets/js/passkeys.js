@@ -67,7 +67,7 @@
       var r = cred.response;
       return post("/passkeys/auth", {
         credential: answerOf(cred, { clientDataJSON: b64(r.clientDataJSON), authenticatorData: b64(r.authenticatorData), signature: b64(r.signature), userHandle: r.userHandle ? b64(r.userHandle) : null }),
-        next: button.getAttribute("data-next") || "/start", intent: button.getAttribute("data-intent") || ""
+        next: button.getAttribute("data-next") || "/", intent: button.getAttribute("data-intent") || ""
       }).then(function (j) {
         if (j.passkey) store(KNOWN, j.passkey);
         say("Welcome back, " + j.name, "ok");

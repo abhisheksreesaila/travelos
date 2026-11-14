@@ -219,7 +219,8 @@ def register(app):
         picks = plan.resolve_pick(f, h, c, trip)
         stay, flight = plan.resolve_stay(picks[1], rooms, add, trip), plan.resolve_flight(picks[0], fare, bags, trip)
         if catalog.is_past(trip.depart, trip.return_):  # a stale link must not book the past: back to the form, which says why
-            return RedirectResponse(f"/start?go=1&to={trip.key}&{catalog.trip_query(trip).removeprefix(f'to={trip.key}&')}&n={len(trip.kid_ages)}" + "".join(f"&k{i}={a}" for i, a in enumerate(trip.kid_ages, 1)), status_code=303)
+            return RedirectResponse(plan.plan_search.matrix_href({"to": trip.key, "focus": trip.focus, "home": trip.home, "d": trip.depart.isoformat(), "r": trip.return_.isoformat(),
+                                                                  "a": trip.adults, "k": ",".join(map(str, trip.kid_ages))}), status_code=303)
         try:
             booked = ses.book(session, catalog.quote(*picks, stay, trip, flight))
         except ses.BookingError as e:

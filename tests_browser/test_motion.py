@@ -482,11 +482,13 @@ def anywhere(browser, base_url):
     for c in contexts:
         c.close()
 
+DATES = "/plan-for-me/start?start=2026-10-16&end=2026-10-20&adults=2"      # a page with a date picker (F-231: it was on the deleted /start)
+
 
 @pytest.mark.parametrize("vp", [{"width": 1000, "height": 800}, PHONE], ids=["tablet", "390"])      # (F-156: from 1020px the laptop only fades; tests_browser/test_calm_desktop.py)
 def test_a_picker_popover_grows_out_of_its_field_and_folds_back_into_it(anywhere, vp):
-    page = anywhere("/start", vp)
-    trigger = page.get_by_role("button", name=re.compile("^Leaving:"))
+    page = anywhere(DATES, vp)
+    trigger = page.get_by_role("button", name=re.compile("^From:"))
     page.evaluate("""() => document.addEventListener('click', e => { const n = e.target.closest('.ga-pick-btn, button'); if (n) { const r = n.getBoundingClientRect(); window.__tapped = { x: r.x, y: r.y, w: r.width, h: r.height }; } }, true)""")
     trigger.click()                                                                              # (the field's box where the finger was: it is pressed a little)
     origin = page.evaluate("window.__tapped")
@@ -589,8 +591,8 @@ def test_the_ask_sheet_keeps_its_words_unsquished_while_the_chip_row_opens_and_c
 
 
 def test_reduced_motion_the_pickers_and_the_ledger_popover_do_not_animate(anywhere):
-    page = anywhere("/start", PHONE, motion="reduce")
-    page.get_by_role("button", name=re.compile("^Leaving:")).click()
+    page = anywhere(DATES, PHONE, motion="reduce")
+    page.get_by_role("button", name=re.compile("^From:")).click()
     expect(page.locator(".ga-pop")).to_be_visible()
     calm(page, ".ga-pop")
     page.keyboard.press("Escape")
@@ -679,8 +681,8 @@ def test_the_toast_keeps_its_words_unsquished_while_it_grows_and_folds(phone, ba
 
 @pytest.mark.parametrize("vp", [PHONE, NARROW], ids=["390", "320"])
 def test_a_picker_popover_keeps_its_words_unsquished_while_it_grows_and_folds(anywhere, vp):
-    page = anywhere("/start", vp)
-    page.get_by_role("button", name=re.compile("^Leaving:")).click()
+    page = anywhere(DATES, vp)
+    page.get_by_role("button", name=re.compile("^From:")).click()
     grow_keeps_shape(page, ".ga-pop")
     page.wait_for_timeout(SLOW + 300)
     fold_keeps_shape(page, ".ga-pop", lambda: page.keyboard.press("Escape"))

@@ -96,10 +96,10 @@ def test_the_script_is_on_each_page_once_and_the_welcome_moment_is_on_the_sign_i
     assert client.get("/family").text.count("/assets/js/passkeys.js") == 1
 
 
-def test_a_face_id_sign_in_with_no_destination_opens_today(phone):
+def test_a_face_id_sign_in_with_no_destination_opens_the_front_door(phone):
     key, other = phone
-    r, _ = face_id(other, key, next="/start")
-    assert r.json()["next"] == "/trip"
+    r, _ = face_id(other, key, next="/")
+    assert r.json()["next"] == "/"      # F-231: / opens the family's trip, or the matrix when there is none
 
 
 def test_a_flood_of_sign_in_requests_cannot_grow_the_challenge_table_past_its_cap(client, monkeypatch):

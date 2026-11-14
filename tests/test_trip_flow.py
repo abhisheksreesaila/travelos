@@ -144,10 +144,10 @@ def test_a_one_night_trip_still_works_on_its_days(client):
     assert client.get("/trip/canvas?day=1").status_code == 200 and client.get("/trip?day=1").status_code == 200
 
 
-def test_workspace_change_link_returns_to_start_with_the_trip(client):
+def test_workspace_change_link_opens_the_matrix_with_the_trip(client):
     html = client.get(f"/plan?{PICK}&{THREE_NIGHTS}").text
-    assert f"/start?{THREE_NIGHTS}" in [h.replace("&amp;", "&") for h in hrefs(html)]
-    assert "/start" in hrefs(client.get("/plan").text)
+    assert f"/plan/matrix?to=Los+Angeles&{THREE_NIGHTS}".replace(",", "%2C") in [h.replace("&amp;", "&") for h in hrefs(html)]      # F-231: it was Where to? (/start)
+    assert "/plan/matrix" in hrefs(client.get("/plan").text)
 
 
 def test_a_three_adult_booking_shows_two_rooms_on_booked_and_the_trip(client):

@@ -25,7 +25,7 @@ from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Re
 
 from gitaway import access, blogbutton, phone, placeart, session as ses, sharecard, tripshare
 from gitaway.icons import icon
-from gitaway.layout import join_note, page
+from gitaway.layout import join_note, page, plan_href
 
 PATH = "/trip/share"
 HEAD = (Link(rel="stylesheet", href="/assets/css/share.css"),)
@@ -130,7 +130,7 @@ def public_page(sh):
             Div(Span(f"{sh.days} day{'s' if sh.days != 1 else ''}", cls="sp-pill"), H1(sh.title), P(" · ".join(x for x in (sh.place, sh.month) if x), cls="sp-sub"),
                 Div(*[x for i, s in enumerate(route) for x in ((s, Span("→", cls="sp-arrow", aria_hidden="true")) if i < len(route) - 1 else (s,))], cls="sp-route") if route else "",
                 P("A family planned this trip on GitAway: flights, stays and days on one calendar.", cls="sp-note"),
-                A("Plan your own trip", href="/start", cls="btn btn-ink sp-cta"), cls="sp-body"), cls="sp-card"),
+                A("Plan your own trip", href=plan_href(), cls="btn btn-ink sp-cta"), cls="sp-body"), cls="sp-card"),
         cls="ga-wrap sp-wrap"),
         head=HEAD, noindex=True, description=f"{sh.title}: {sh.days} days in {sh.place or 'a new place'}, planned on GitAway.", image=blogbutton.base_url() + card_path(sh),
         og_type="article")
@@ -169,7 +169,7 @@ def register(app):
     def share_page(token: str):
         sh = tripshare.find(token)
         if not sh:
-            return FtResponse(page("Not shared", Section(Div(H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Plan a trip", href="/start", cls="btn btn-ink"), cls="ga-wrap"),
+            return FtResponse(page("Not shared", Section(Div(H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Plan a trip", href=plan_href(), cls="btn btn-ink"), cls="ga-wrap"),
                                                         cls="ga-soon ga-wrap"), noindex=True), status_code=404)
         return public_page(sh)
 

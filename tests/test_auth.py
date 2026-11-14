@@ -10,7 +10,7 @@ from starlette.testclient import TestClient
 from gitaway import auth, session as ses
 from tests.test_signin import EMAILS, session_data, sign_in, stored_booking, tid
 
-PUBLIC = ["/", "/community", "/plan", "/start", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
+PUBLIC = ["/", "/community", "/plan", "/plan/matrix", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
 
 
 def memberships(user_id):
@@ -226,7 +226,7 @@ def test_the_google_callback_signs_in_makes_the_family_and_returns_to_next(clien
 
 def test_google_next_cannot_be_an_open_redirect(client, google):
     client.get("/login?next=//evil.example", follow_redirects=False)
-    assert session_data(client)["login_next"] == "/start"
+    assert session_data(client)["login_next"] == "/"
 
 
 # ---- review fixes ----------------------------------------------------------------------------------------------------
@@ -255,7 +255,7 @@ def test_cancelling_at_google_shows_a_friendly_page_and_forgets_where_we_were_go
 
 def test_a_very_long_next_is_not_kept_in_the_cookie(client, google):
     client.get("/login?next=/trips/" + "a" * 600, follow_redirects=False)
-    assert session_data(client)["login_next"] == "/start"
+    assert session_data(client)["login_next"] == "/"
 
 
 @pytest.mark.parametrize("header", ["CF-Connecting-IP", "True-Client-IP", "X-Forwarded-Server"])

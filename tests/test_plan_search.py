@@ -11,11 +11,12 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from gitaway import session as ses
 from gitaway.partners import prices, travelpayouts
 from tests.live_trips import live_trip
 from tests.pagebody import without_bar
 from tests.test_affiliate import FakeApi, nokeys, seen_on  # noqa: F401 (the fixture)
-from tests.test_signin import sign_in
+from tests.test_signin import person, sign_in
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
 
@@ -154,7 +155,7 @@ def test_the_honest_page_leaves_no_remembered_picks_behind(client, live):
     _, handle, _ = live
     sign_in(client, "ari")
     client.get(f"/plan?to=la&{TRIP}&via={handle}")
-    assert 'class="st-continue"' not in client.get("/start").text
+    assert not ses.remembered_plan(person("ari"))
 
 
 def test_dates_that_have_passed_become_the_next_ones_worth_searching_with_the_same_length(client, live):
@@ -182,10 +183,12 @@ def test_changing_dates_keeps_a_reader_with_no_cookie_on_the_honest_page(client,
     assert "Search flights to Los Angeles" in text and "Apr 2 – 6 · 3 adults" in text and "Skylark" not in text and all(f"via={handle}" in h for h in go_links(after.text))
 
 
-def test_a_made_up_via_is_not_carried_through_start(client, live):
-    r = client.get("/start", params={"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": "nobody-here"}, follow_redirects=False)
-    assert r.headers["location"] == "/plan?place=Los+Angeles&d=2027-04-02&r=2027-04-06&a=3"      # F-210: off the showcase an old link's sample city is just its name
-    assert 'name="via"' not in client.get("/start?via=nobody-here").text
+def test_an_old_where_to_link_with_a_via_opens_the_matrix_without_it(client, live, monkeypatch):
+    old = {"go": "1", "to": "la", "d": "2027-04-02", "r": "2027-04-06", "a": "3", "n": "0", "via": "nobody-here"}
+    assert client.get("/start", params=old, follow_redirects=False).headers["location"] == "/trips/import"      # off the showcase with no LiteAPI key there is no matrix
+    monkeypatch.setenv("LITEAPI_KEY", "a-key")
+    r = client.get("/start", params=old, follow_redirects=False)
+    assert r.headers["location"] == "/plan/matrix?to=Los+Angeles&d=2027-04-02&r=2027-04-06&a=3"      # F-231: an old link's sample city is just its name, and the matrix has no honest-page mode to keep
 
 
 def test_off_the_showcase_a_place_alone_brings_no_sample_kids(live):

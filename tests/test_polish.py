@@ -78,10 +78,3 @@ def test_stay_card_tags_wrap_instead_of_clipping():
     """F-036: at 1000 wide the tag row clipped "Pool" and "Pet friendly"."""
     rule = re.search(r"(?m)^\.ws-tags\s*\{([^}]*)\}", css("workspace.css")).group(1)
     assert "flex-wrap: wrap" in rule and "overflow: hidden" not in rule
-
-
-def test_landing_clips_sideways_overflow_from_the_pop_in():
-    """F-036: the 1.06 overshoot of the door and feature pop-in must not widen the page."""
-    text = css("landing.css")
-    assert re.search(r"#main\s*\{[^}]*overflow-x:\s*clip", text)
-    assert "scale(1.06)" in text or "scale(1.06)" in css("base.css")  # the overshoot is still there; it is contained, not removed

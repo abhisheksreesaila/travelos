@@ -50,7 +50,7 @@ def test_stay_tags_wrap_inside_their_card_at_1000(browser, base_url):
     assert clipped == []
 
 
-@pytest.mark.parametrize("path", ["/", "/start"])
+@pytest.mark.parametrize("path", ["/", "/plan/matrix"])
 @pytest.mark.parametrize("width", [1000, 800, 390])
 def test_pop_in_never_widens_the_page(browser, base_url, path, width):
     """Animations on (no reduced motion): sample the page width on every frame from the first paint."""

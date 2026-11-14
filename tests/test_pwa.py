@@ -45,7 +45,7 @@ def test_every_page_carries_the_install_tags(client):
     paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
     paths -= {"/plan/explore", "/plan/quote", "/manifest.webmanifest", "/sw.js", "/healthz", "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/auth/callback", "/trips/import/template", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map", "/plan/matrix/tile", "/robots.txt", "/sitemap.xml"}  # the template is a file download and the thread poll is an HTML fragment, robots.txt and the sitemap are files, not pages
     paths |= {"/trips/sun-tacos-and-tide-pools", "/trips/no-such-trip"}
-    assert {"/", "/start", "/offline"} <= paths
+    assert {"/", "/plan/matrix", "/offline"} <= paths
     for path in sorted(paths):
         html = client.get(path).text
         assert html.count('rel="manifest" href="/manifest.webmanifest"') == 1, path
@@ -77,14 +77,14 @@ def test_offline_page_is_a_gitaway_page(client):
 def test_theme_colour_follows_the_pages_ground(client):
     from fasthtml.common import to_xml
     from gitaway.layout import page
-    html = client.get("/start").text      # F-200: Direction A's canvas, one colour per mode (both itinerary themes share it)
+    html = client.get("/plan/matrix").text      # F-200: Direction A's canvas, one colour per mode (both itinerary themes share it)
     assert 'name="theme-color" content="#F2F2F5" media="(prefers-color-scheme: light)"' in html and 'name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"' in html
     assert 'name="theme-color" content="#F2F2F5"' in to_xml(page("x", theme="pacific"))
 
 
 def test_asset_links_carry_a_content_hash(client):
-    html = client.get("/start").text
-    for name in ("css/tokens.css", "css/base.css", "css/start.css", "js/start.js", "js/pwa.js"):
+    html = client.get("/plan/matrix").text
+    for name in ("css/tokens.css", "css/base.css", "css/tripmatrix.css", "js/tripmatrix.js", "js/pwa.js"):
         m = re.search(rf'/assets/{re.escape(name)}\?v=([0-9a-f]{{8}})"', html)
         assert m, name
         assert client.get(f"/assets/{name}?v={m.group(1)}").status_code == 200

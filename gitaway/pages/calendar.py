@@ -11,15 +11,15 @@ from urllib.parse import quote
 
 from starlette.responses import RedirectResponse
 
-from gitaway import session as ses
+from gitaway import session as ses, showcase
 
 
 def to_the_trip(session, day=""):
-    """A redirect to the trip's day view (or to sign-in or Start when there is no trip to show yet)."""
+    """A redirect to the trip's day view (or to sign-in or the way in when there is no trip to show yet)."""
     if not ses.current_traveler(session):
         return RedirectResponse("/signin?next=%2Ftrip", status_code=303)
     if not ses.booking(session):
-        return RedirectResponse("/start", status_code=303)
+        return RedirectResponse(showcase.planning_path(), status_code=303)
     from gitaway.pages import tripcanvas
     return RedirectResponse(tripcanvas.today_url(session, day if day.isdigit() else ""), status_code=303)
 

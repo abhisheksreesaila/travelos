@@ -30,6 +30,7 @@
   color: var(--ink); font-size: 1rem; font-weight: 650; text-decoration: none; }
 .mx-chip.is-on { background: var(--ink); color: var(--on-ink); }
 .mx-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
+.mx-import { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 0.2em; display: inline-flex; align-items: center; min-height: var(--target); }
 .mx-count { font-family: var(--font-mono); color: var(--ink); }
 .mx-preview { display: inline-flex; align-items: center; gap: 0.375rem; }
 .mx-preview::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ok); }

@@ -20,7 +20,7 @@ def stub(html):
 
 
 def test_generic_pass_without_context(client):
-    html = get(client, "/start")
+    html = get(client, "/")
     assert 'data-pass="cold"' in html and "Your next trip starts here." in html and "Anywhere" in html and "You pick" in html
     assert "SFO" in html and "LAX" in html  # the fallback route codes on the sky
 
@@ -64,15 +64,15 @@ def test_context_is_escaped(monkeypatch):
     import gitaway.pages.signin as si
     evil = sc.Pass(**{**sc.GENERIC.__dict__, "head": "<script>alert(1)</script>", "s1": "<b>x</b>"})
     monkeypatch.setattr(si, "context", lambda n, i: evil)
-    card, sky = si.dialog("/start", "save")
+    card, sky = si.dialog("/", "save")
     out = to_xml(card) + to_xml(sky)
     assert "<script>alert" not in out and "&lt;script&gt;" in out and "<b>x</b>" not in out
 
 
 def test_the_dev_form_is_hidden_in_production(client, monkeypatch):
-    assert "Local dev sign-in" in get(client, "/start")
+    assert "Local dev sign-in" in get(client, "/")
     monkeypatch.setenv("GITAWAY_ENV", "production")
-    html = get(client, "/start")
+    html = get(client, "/")
     assert "Local dev sign-in" not in html and 'id="si-dev-form"' not in html and "isn't set up" in html
 
 
@@ -99,7 +99,7 @@ def test_the_google_button_wears_googles_own_g_hidden_from_the_accessible_name(c
     (the brand guidelines' G, the same in light and dark), and the accessible name stays "Continue with Google"."""
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
-    g = re.search(r'<span(?=[^>]*aria-hidden="true")(?=[^>]*class="si-g")[^>]*>(.*?)</span>', get(client, "/start"), re.S).group(1)
+    g = re.search(r'<span(?=[^>]*aria-hidden="true")(?=[^>]*class="si-g")[^>]*>(.*?)</span>', get(client, "/"), re.S).group(1)
     assert "<svg" in g and all(c in g for c in ("#4285F4", "#34A853", "#FBBC05", "#EA4335")), g
 
 
@@ -121,8 +121,8 @@ def test_the_fork_pass_wording_follows_the_intent(client, intent, words):
 
 
 def test_the_stub_says_stay_signed_in(client):
-    assert ">STAY SIGNED IN<" in get(client, "/start")
+    assert ">STAY SIGNED IN<" in get(client, "/")
 
 
 def test_the_dev_summary_has_a_chevron(client):
-    assert re.search(r'<summary class="si-sum">.*?<svg', get(client, "/start"), re.S)
+    assert re.search(r'<summary class="si-sum">.*?<svg', get(client, "/"), re.S)

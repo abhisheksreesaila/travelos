@@ -316,7 +316,7 @@ The captain's web brief (`docs/briefs/web-trip.md`, item 6) retired the old trip
 | Schedule an Uber offers and scheduled rides as grid blocks | The Today list at `/trip?day=N` (offer and ride items) and the now card's Uber button. The scheduled-Uber list waits for the community brief (brief "Not now"). |
 | Weather icon and temperature on each day chip | Dropped: it was a made-up sample number per day, never a forecast. |
 | Viewer banner and the hidden write buttons | The canvas hides the write moves for a viewer (`gitaway.access`); the Today page keeps its banner. |
-| "Your calendar starts with a trip" (no trip yet) | `/start`'s welcome with the three ways in (`/calendar` redirects there). |
+| "Your calendar starts with a trip" (no trip yet) | the trip matrix, `/plan/matrix`, with "Already booked? Bring your trip in" beside it (`/calendar` redirects there; F-231). |
 | Header with the brand, the skip link | The one top bar (F-139). |
 | The 8-button row | Dropped, with the brief. |
 

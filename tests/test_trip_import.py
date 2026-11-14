@@ -287,7 +287,7 @@ def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(clie
         assert secret not in snapshot and secret not in page and secret not in public, secret
     assert "Booked elsewhere" not in public and "Flight to LAX" in public and "AS 1234" not in public  # the plans show, the family's marker and numbers do not
     sign_in(client)
-    for path in ("/calendar", "/start", "/trips/import", "/offline"):
+    for path in ("/calendar", "/plan/matrix", "/trips/import", "/offline"):
         html = client.get(path).text
         metas = " ".join(re.findall(r"<meta[^>]*>", html))
         assert all(s not in metas for s in SECRETS), path

@@ -177,7 +177,7 @@ def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
     html = _cover(client)
     hero = _el(html, "section", "cv-hero")
-    door = "/signin?next=%2Fstart"      # D-458: Start a trip and Plan a trip are one door: sign in, then Where to? (showcase or not)
+    door = "/signin"      # D-458, D-461: Start a trip and Plan a trip are one door: sign in, then / decides (the family's trip, or the matrix; showcase or not)
     assert _links(hero) == [door, "#compare"] and 'id="compare"' in html
     assert _links(_el(html, "section", "cv-close")) == [door]
     assert _links(_el(html, "header", "cv-top")) == ["/", "/for-creators", "/community", door, "/signin"]
@@ -197,15 +197,16 @@ def test_the_cover_sells_one_thing_start_a_trip(client, monkeypatch):
     assert "Booking opens soon" not in html and "booking opens" not in html.lower()
 
 
-def test_a_signed_in_visitor_keeps_the_landing_they_had(client):
+def test_a_signed_in_visitor_never_gets_the_cover(client):
     sign_in(client)
+    r = client.get("/", follow_redirects=False)      # F-231: / sends them on to their trip, or the matrix (tests/test_way_in.py)
+    assert r.status_code == 303 and r.headers["location"] == "/plan/matrix"
     html = client.get("/").text
     assert "cv-root" not in html and "/assets/js/cover.js" not in html and "/assets/css/cover.css" not in html
-    assert "Fork a" in html and "getaway." in html and "/assets/css/landing.css" in html
 
 
 def test_only_the_cover_loads_the_cover(client):
-    for path in ("/start", "/signin", "/for-creators", "/privacy", "/community"):
+    for path in ("/plan/matrix", "/signin", "/for-creators", "/privacy", "/community"):
         html = client.get(path).text
         assert "/assets/js/cover.js" not in html and "/assets/css/cover.css" not in html and "cv-root" not in html, path
 

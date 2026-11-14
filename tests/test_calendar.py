@@ -47,7 +47,7 @@ def test_calendar_signed_out_signs_in_and_without_a_booking_starts_one(client):
     r = client.get("/calendar", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/signin?next=%2Ftrip"
     sign_in(client)
-    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/start"
+    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/plan/matrix"
 
 
 def test_trips_goes_to_the_current_trip_instead_of_a_404(client):
@@ -94,7 +94,7 @@ def test_no_page_or_script_links_to_the_old_calendar():
 def test_the_signed_in_pages_have_no_calendar_link(client):
     book(client)
     add(client)
-    for path in ("/trip", "/trip/canvas", "/trip/canvas?day=1", "/trip?add=1&day=1", "/start", "/family", "/trip/details", "/trip/map", "/trip/ask", "/forks", "/rides"):
+    for path in ("/trip", "/trip/canvas", "/trip/canvas?day=1", "/trip?add=1&day=1", "/plan/matrix", "/family", "/trip/details", "/trip/map", "/trip/ask", "/forks", "/rides"):
         r = client.get(path, follow_redirects=True)
         assert 'href="/calendar' not in r.text, path
 

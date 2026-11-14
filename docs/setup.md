@@ -161,7 +161,7 @@ Sample weather stays only on the showcase's own sample trip. To try the forecast
 
 ## What needs sign-in
 
-Everything public stays browsable signed out: the landing page, hub (`/discover`), trips, creators, `/start`, the demo workspace (`/plan`). Saving, forking, booking and the calendar ask you to sign in and bring you back. `/family` (who you are and your family's id) is the one page that needs sign-in; it is the first page built on fh-saas's `create_auth_beforeware` + `require_tenant_access`.
+Everything public stays browsable signed out: the landing page, hub (`/discover`), trips, creators, the trip matrix (`/plan/matrix`), the demo workspace (`/plan`). Saving, forking, booking and the calendar ask you to sign in and bring you back. `/family` (who you are and your family's id) is the one page that needs sign-in; it is the first page built on fh-saas's `create_auth_beforeware` + `require_tenant_access`.
 
 ## Deploy to Railway
 
