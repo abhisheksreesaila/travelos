@@ -387,3 +387,23 @@ def test_off_the_showcase_peek_reads_only_the_cache_and_never_searches(real, cli
 def test_the_tile_carries_the_estimate_inputs_too(sample, client):
     j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-13").json()
     assert j["e"] == data(client.get(MATRIX).text)["known"]["sandiego|2026-12-13"]["e"] and len(j["e"]) == 2
+
+
+# ---- F-238 review: MET Norway's credit beside a forecast --------------------------------------------------------------------
+
+def test_a_forecast_day_on_screen_shows_met_norways_credit_a_typical_one_does_not(sample, client, monkeypatch):
+    """CC BY 4.0 asks for appropriate credit, a link to the licence and a note of changes, "in any reasonable manner" (D-540). weather.py promises the credit wherever a forecast
+    shows, so a matrix with a forecast day shows one small visible, linked line; typical weather alone shows none (its NOAA label is in the days and the ⓘ)."""
+    from gitaway import weather
+    from gitaway.pages import tripmatrix as page
+    assert 'class="mx-credit"' not in client.get(MATRIX).text
+    real = page.skies_of
+
+    def forecast(lanes, windows, nights=None):
+        out = real(lanes, windows, nights)
+        return {n: weather.TripWeather(tuple(weather.Day(d.date, weather.FORECAST, d.high_f, d.low_f, d.condition, d.word, precip_in=0, wind_mph=5) if d else None for d in tw.days),
+                                       place=tw.place, updated="6:10 AM") for n, tw in out.items()}
+    monkeypatch.setattr(page, "skies_of", forecast)
+    html = client.get(MATRIX).text
+    line = re.search(r'<p class="mx-credit">(.*?)</p>', html, re.S).group(1)
+    assert "based on data from MET Norway" in line and 'href="https://docs.api.met.no/doc/License"' in line and "updated 6:10 AM" in line

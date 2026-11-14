@@ -632,6 +632,8 @@ def test_the_floating_note_sits_above_the_bar_whatever_its_height_not_at_a_magic
     for viewport in (DESKTOP, TABLET):
         page = matrix(viewport, wait=False)
         expect(page.locator("#mx-fact")).to_be_visible()
+        page.wait_for_function("""() => { const s = document.getElementById('mx-side').getBoundingClientRect(), v = parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h'));
+            return Math.abs(v - (innerHeight - s.top)) <= 1; }""")      # the dock settles with the layout (a frame after what is above the bar changes): wait for it, never read it mid-move
         n, b, var, bottom, vh = page.evaluate("""() => { const f = document.getElementById('mx-fact'), s = document.getElementById('mx-side').getBoundingClientRect();
             return [f.getBoundingClientRect(), s, parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h')), parseFloat(getComputedStyle(f).bottom), innerHeight]; }""")
         assert abs(var - (vh - b["top"])) <= 1 and abs(bottom - (var + 9)) <= 1, (viewport, var, b, bottom)      # its stop is the bar's top and 0.75rem
@@ -672,3 +674,28 @@ def test_estimates_and_the_slider_read_and_fit_in_light_and_dark(matrix, viewpor
         out.mkdir(parents=True, exist_ok=True)
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(out / f"f237-{viewport['width']}-{scheme}-sliding.png"))
+
+
+def focused(page, selector):
+    """The focus is on `selector` (waited for: a details' `toggle` event, where the script moves focus, is queued a task after the click or key)."""
+    page.wait_for_function("sel => document.activeElement && document.activeElement.matches(sel)", arg=selector)
+    return True
+
+
+def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_popover_and_tabbing_out_closes_it(matrix, stand):
+    """F-238 review: Enter on "4 nights" lands on the slider (arrows work at once); Tab past the popover closes it and goes on to the next word."""
+    page = matrix(DESKTOP)
+    page.locator(".mx-tk-nights > summary").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator(".mx-pop-nights")).to_be_visible()
+    focused(page, '.mx-tk-nights input[data-nights]')
+    page.keyboard.press("ArrowRight")
+    expect(page.locator(".mx-tk-nights > summary")).to_have_text("5 nights")
+    page.keyboard.press("Tab")
+    expect(page.locator(".mx-pop-nights")).to_be_hidden()
+    focused(page, '.mx-tk-flex > summary')
+    page.keyboard.press("Enter")
+    focused(page, '.mx-tk-flex .mx-chip')        # a words' popover of links: focus lands on its first choice
+    page.keyboard.press("Escape")
+    expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
+    focused(page, '.mx-tk-flex > summary')       # and Escape gives focus back to the word

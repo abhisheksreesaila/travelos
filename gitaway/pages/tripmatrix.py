@@ -527,6 +527,15 @@ def about_el(s: State, skies, sample: bool):
                    cls="mx-tk mx-about", data_pop="about")
 
 
+def credit_el(skies):
+    """MET Norway's credit (F-238 review, D-540): CC BY 4.0 asks for credit, a link to the licence and a note of changes "in any reasonable manner", and weather.py promises it
+    wherever a forecast shows, so while any forecast (not typical) day is on the page one small linked line says it. The full per-place credits stay in the ⓘ."""
+    made = [tw.updated for tw in skies.values() if tw.updated and any(d and d.kind == weather.FORECAST for d in tw.days)]
+    if not made:
+        return ""
+    return P(A(f"Forecast based on data from MET Norway · updated {made[0]}", href=weather.CREDIT_URL, rel="noopener", cls="mx-credit-a"), cls="mx-credit")
+
+
 def card_el(s: State, lane, windows, known, marks, skies, found=None):
     got = [(known[tm.key(lane.key, w.key)].cents, j, w) for j, w in enumerate(windows) if tm.key(lane.key, w.key) in known and known[tm.key(lane.key, w.key)].ok]
     best = min(got) if got else None
@@ -600,7 +609,7 @@ def matrix_page(s: State, family="", typed="", problems=()):
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
                Div(find_el(s, found), cls="mx-news", id="mx-news"),
-               stage, cards,
+               stage, cards, credit_el(skies),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
                cls="mx", id="mx", data_waiting="1" if waiting else "0")

@@ -421,7 +421,10 @@
       shutPops(d);
       var pop = d.querySelector('.mx-pop'), word = d.querySelector('summary');
       if (pop && M()) (M().reduced() ? M().fade(pop) : M().open(pop, word));      // grows out of the word tapped; reduced motion: a fade
+      var first = pop && pop.querySelector('input, a[href], button, summary');      // keyboard: focus moves into the popover (to the slider for the nights) so a key can use it at once
+      if (first) first.focus({ preventScroll: true });
     });
+    d.addEventListener('focusout', function (e) { if (d.open && e.relatedTarget && !d.contains(e.relatedTarget)) d.open = false; });      // Tab on past the popover puts it away
   });
   document.addEventListener('pointerdown', function (e) { if (!e.target.closest('details.mx-tk')) shutPops(null); });      // a tap anywhere else puts the popover away
   document.addEventListener('keydown', function (e) {
@@ -525,6 +528,8 @@
     var dock = function () { root.style.setProperty('--mx-bar-h', Math.max(0, innerHeight - side.getBoundingClientRect().top) + 'px'); }, queued = 0;      // the floating note sits above the bar's top, wherever the bar is
     var later = function () { if (!queued) queued = requestAnimationFrame(function () { queued = 0; dock(); }); };
     if (window.ResizeObserver) { var ro = new ResizeObserver(later); ro.observe(side); ro.observe(root); }      // the bar's top also moves when what is above it changes height (the count going, a find arriving)
+    if (window.MutationObserver) new MutationObserver(later).observe(root, { attributes: true, attributeFilter: ['data-waiting', 'data-busy', 'data-est', 'data-slow'] });      // what is above the bar changes with these (the count goes, a note comes)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);      // the words' own font changes their height
     addEventListener('scroll', later, { passive: true });
     addEventListener('resize', later);
     dock();
