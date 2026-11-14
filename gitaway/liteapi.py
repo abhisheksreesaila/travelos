@@ -47,9 +47,6 @@ API = "https://api.liteapi.travel/v3.0"
 BOOK_API = "https://book.liteapi.travel/v3.0"      # prebook and book live on their own host (F-233)
 GONE, DUPLICATE = "gone", "duplicate"      # a prebook or book the room or rate is no longer there for; a book whose clientReference was already used
 PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
-BOOK_API = "https://book.liteapi.travel/v3.0"      # prebook and book live on their own host (F-233)
-GONE, DUPLICATE = "gone", "duplicate"      # a prebook or book the room or rate is no longer there for; a book whose clientReference was already used
-PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
@@ -57,6 +54,7 @@ FAIL_KEEP = timedelta(minutes=5)
 DATA_KEEP = timedelta(hours=24)          # a hotel's own words
 PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together, everyone signed out) may make in a day
 A_DAY = 2000                             # and the whole site
+PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY = 20, 200      # booking calls (prebook, book, lookup) have their own daily budgets, so booking never spends a family's searches nor the reverse (F-233 review)
 STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
 STAY_ASK = 10                            # seconds LiteAPI is asked to answer a stay search in (its `timeout`; the sandbox does not always keep it)
 HOTEL_LIMIT = 30
@@ -397,26 +395,28 @@ def _day() -> str:
     return now().date().isoformat()
 
 
-def _spend(family: str) -> bool:
-    """Count one uncached call for `family` today, if neither its budget nor the site's is spent."""
+def _spend(family: str, book: bool = False) -> bool:
+    """Count one uncached call for `family` today, if neither its budget nor the site's is spent. `book`: a booking call, counted in its own table against its own budgets."""
     day, who = _day(), family or "guest"
+    table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
     with _LOCK, community.connect() as db:
-        mine = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d"), {"d": day}).scalar()
-        if mine >= PER_FAMILY_A_DAY or everyone >= A_DAY:
+        mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+        if mine >= per or everyone >= total:
             return False
-        db.conn.execute(text("INSERT INTO liteapi_searches (day, family, n) VALUES (:d, :f, 1) ON CONFLICT(day, family) DO UPDATE SET n = n + 1"), {"d": day, "f": who})
+        db.conn.execute(text(f"INSERT INTO {table} (day, family, n) VALUES (:d, :f, 1) ON CONFLICT(day, family) DO UPDATE SET n = n + 1"), {"d": day, "f": who})
         db.conn.commit()
     return True
 
 
-def can_search(family: str) -> bool:
-    """Whether `family` (and the site) still has searches left today: background work asks before it starts (F-229)."""
+def can_search(family: str, book: bool = False) -> bool:
+    """Whether `family` (and the site) still has calls left today: background work asks before it starts (F-229). `book`: the booking budgets."""
     day, who = _day(), family or "guest"
+    table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
     with community.connect() as db:
-        mine = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d"), {"d": day}).scalar()
-    return mine < PER_FAMILY_A_DAY and everyone < A_DAY
+        mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+    return mine < per and everyone < total
 
 
 def searches_today() -> int:
@@ -849,37 +849,60 @@ def read_booking(answer, fetched: datetime) -> Booking:
                    answer.get("sandbox") is True, fetched)
 
 
-def _order(what: str, path: str, body: dict, timeout: float, family: str, read, gone=(), wait: float | None = None) -> Answer:
-    """One booking call: sandbox key only, through the gate and the budgets, never cached, never asked again by itself (the first may have gone through), and a failure
-    logs the call and its HTTP status, never the body (it can hold a guest's email). `gone`: the HTTP statuses that mean the room or rate is no longer there."""
+_BOOK_TURN = threading.BoundedSemaphore(1)      # one booking call in flight on the whole site: it holds one of the AT_ONCE gate places, never two (F-233 review)
+
+
+def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API) -> Answer:
+    """One booking call: sandbox key only, one at a time across the site, through the gate and the booking budgets, never cached, never asked again by itself (the first may
+    have gone through), and a failure logs the call and its HTTP status, never the body (it can hold a guest's email). `gone`: the HTTP statuses that mean the room or rate is
+    no longer there. No `body`: a GET."""
     if mode() != "sandbox":
         return Answer(OFF)
-    if not can_search(family):
+    if not can_search(family, True):
         return Answer(OVER)
-    with _Gate(wait=TILE_WAIT if wait is None else wait) as gate:
-        if not gate.ok:
-            return Answer(BUSY)
-        if not _spend(family):
-            return Answer(OVER)
-        at = now()
-        try:
-            status, ctype, raw = TRANSPORT(BOOK_API + path, _headers(body), json.dumps(body).encode(), timeout)
-            if len(raw) > MAX_BYTES:
-                raise Unreadable("too big")
-            doc = read_body(ctype, raw)
-        except Exception as e:      # a timeout, a dropped line, a body that is not JSON
-            log.warning("LiteAPI %s not read (%s)", what, type(e).__name__)
-            return Answer(FAILED, (), at)
-        if status == 200:
+    wait = TILE_WAIT if wait is None else wait
+    if not _BOOK_TURN.acquire(timeout=wait):
+        return Answer(BUSY)
+    try:
+        with _Gate(wait=wait) as gate:
+            if not gate.ok:
+                return Answer(BUSY)
+            if not _spend(family, True):
+                return Answer(OVER)
+            at = now()
             try:
-                return Answer(OK, (read(doc, at),), at)
-            except Exception as e:      # a shape we never saw
+                status, ctype, raw = TRANSPORT(base + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
+                if len(raw) > MAX_BYTES:
+                    raise Unreadable("too big")
+                doc = read_body(ctype, raw)
+            except Exception as e:      # a timeout, a dropped line, a body that is not JSON
                 log.warning("LiteAPI %s not read (%s)", what, type(e).__name__)
                 return Answer(FAILED, (), at)
-        err = doc.get("error") if isinstance(doc, dict) else None
-        code = err.get("code") if isinstance(err, dict) else None
-        log.warning("LiteAPI %s not done (HTTP %s, code %s)", what, status, code)
-        return Answer(GONE if status in gone or code in (2001, 4002) else DUPLICATE if code == 4005 else FAILED, (), at)
+            if status == 200:
+                try:
+                    return Answer(OK, (read(doc, at),), at)
+                except Exception as e:      # a shape we never saw
+                    log.warning("LiteAPI %s not read (%s)", what, type(e).__name__)
+                    return Answer(FAILED, (), at)
+            err = doc.get("error") if isinstance(doc, dict) else None
+            code = err.get("code") if isinstance(err, dict) else None
+            log.warning("LiteAPI %s not done (HTTP %s, code %s)", what, status, code)
+            return Answer(GONE if status in gone or code in (2001, 4002) else DUPLICATE if code == 4005 else FAILED, (), at)
+    finally:
+        _BOOK_TURN.release()
+
+
+def _first_booking(doc, fetched: datetime) -> Booking:
+    items = doc.get("data") if isinstance(doc, dict) else None
+    if not isinstance(items, list) or not items or not isinstance(items[0], dict):
+        raise Unreadable("no booking")
+    return read_booking({"data": items[0], "sandbox": True}, fetched)
+
+
+def booking_for(reference: str, family: str = "") -> Answer:
+    """The booking LiteAPI made for our `clientReference` (GET /bookings?clientReference=): an Answer of one Booking, FAILED when it has none. For a book LiteAPI called a
+    duplicate that we hold no row for: it may have been made by an answer we lost."""
+    return _order("booking lookup", "/bookings?" + urlencode({"clientReference": str(reference)}), None, STAY_TIMEOUT, family, _first_booking, base=API)
 
 
 def prebook(offer_id: str, family: str = "") -> Answer:

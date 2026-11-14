@@ -94,11 +94,78 @@ def test_no_key_no_call(monkeypatch):
     assert liteapi.prebook("offer-1").status == liteapi.OFF
 
 
-def test_each_call_goes_out_and_counts_against_the_budget_never_kept(sandbox):
+def test_each_call_goes_out_never_kept_and_counts_against_the_booking_budget_not_the_searches(sandbox):
     before = liteapi.searches_today()
     liteapi.prebook("offer-1", family="fam")
     liteapi.prebook("offer-1", family="fam")
-    assert len(sandbox.asked) == 2 and liteapi.searches_today() == before + 2
+    assert len(sandbox.asked) == 2 and liteapi.searches_today() == before          # a search is not spent by booking
+
+
+def test_booking_has_its_own_daily_budget_apart_from_the_searches(sandbox, monkeypatch):
+    monkeypatch.setattr(liteapi, "PER_FAMILY_BOOK_A_DAY", 2)
+    assert [liteapi.prebook("o", family="fam").status for _ in range(3)] == [liteapi.OK, liteapi.OK, liteapi.OVER]
+    assert len(sandbox.asked) == 2 and liteapi.prebook("o", family="other").status == liteapi.OK      # the third was never sent; another family has its own
+    assert liteapi.can_search("fam") is True                                                         # the searches of that family are untouched
+
+
+def test_the_whole_sites_booking_budget_is_one_number(sandbox, monkeypatch):
+    monkeypatch.setattr(liteapi, "BOOK_A_DAY", 1)
+    assert [liteapi.prebook("o", family=f).status for f in ("a", "b")] == [liteapi.OK, liteapi.OVER]
+
+
+def test_a_search_spending_its_budget_does_not_stop_booking(sandbox, monkeypatch):
+    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)
+    assert liteapi.can_search("fam") is False and liteapi.prebook("o", family="fam").status == liteapi.OK
+
+
+def test_only_one_booking_call_is_in_flight_across_the_site(monkeypatch):
+    import threading
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    now_in, most, lock, release = [0], [0], threading.Lock(), threading.Event()
+
+    def slow(url, headers, body, timeout):
+        with lock:
+            now_in[0] += 1
+            most[0] = max(most[0], now_in[0])
+        release.wait(2)
+        with lock:
+            now_in[0] -= 1
+        return 200, "application/json", raw("prebook.json")
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = []
+    threads = [threading.Thread(target=lambda i=i: got.append(liteapi.prebook("o", family=f"f{i}").status)) for i in range(3)]
+    for t in threads:
+        t.start()
+    threading.Event().wait(0.3)
+    release.set()
+    for t in threads:
+        t.join()
+    assert most[0] == 1 and got.count(liteapi.OK) == 3
+
+
+def test_a_booking_waits_its_turn_then_is_busy(sandbox):
+    assert liteapi._BOOK_TURN.acquire()
+    try:
+        assert liteapi._order("x", "/rates/prebook", {}, 5, "fam", liteapi.read_prebook, wait=0.05).status == liteapi.BUSY
+    finally:
+        liteapi._BOOK_TURN.release()
+    assert len(sandbox.asked) == 0
+
+
+def test_a_booking_is_looked_up_by_the_reference_we_sent(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    got = []
+
+    def fake(url, headers, body, timeout):
+        got.append((url, body))
+        return 200, "application/json", raw("bookings_by_reference.json")
+    monkeypatch.setattr(liteapi, "TRANSPORT", fake)
+    ans = liteapi.booking_for("gitaway-probe-f233", "fam")
+    assert ans.status == liteapi.OK
+    assert (ans.items[0].booking_id, ans.items[0].hotel, ans.items[0].cents, ans.items[0].sandbox) == ("_5hnX-MI7", "Margaritaville Hotel San Diego Gaslamp Quarter", 35900, True)
+    assert got == [("https://api.liteapi.travel/v3.0/bookings?clientReference=gitaway-probe-f233", None)]
+    monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (200, "application/json", b'{"data": []}'))
+    assert liteapi.booking_for("none", "fam").status == liteapi.FAILED
 
 
 def test_a_gone_offer_a_gone_room_and_a_repeated_reference_say_so(monkeypatch):
