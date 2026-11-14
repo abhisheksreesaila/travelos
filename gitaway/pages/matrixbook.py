@@ -26,7 +26,7 @@ SIGNIN = "Sign in to book."
 STEPS = (("room", "Room", "bed", "k-stay"), ("guest", "Guest", "users", "k-flight"), ("booked", "Booked", "check", "k-car"))
 STALE = "That room check has expired or is not for this square. Close this and press Book on the square again."
 SLOW_DOWN = "That is a lot of booking tries. Wait a minute, or try again tomorrow."
-MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-494)
+MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-510)
 
 
 def _steps(at: str):
