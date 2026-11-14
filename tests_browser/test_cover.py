@@ -13,6 +13,7 @@ from tests_browser.look import audit
 SIZES = {"390": PHONE, "1440": DESKTOP}
 READY = "!!window.GA_COVER"
 SPRING = "cubic-bezier(0.3, 1.12, 0.4, 1)"
+ZOOM = "cubic-bezier(0.22, 1, 0.36, 1)"
 INDIGO, PINK, ORANGE = "rgb(67, 56, 202)", "rgb(201, 42, 94)", "rgb(194, 65, 12)"      # tokens.css --k-flight, --k-food, --k-tix: each part's colour
 
 
@@ -86,7 +87,7 @@ def test_the_frame_stays_pinned_while_the_parts_pass_and_swaps_its_screen(cover,
     tops = []
     for n in (1, 2, 3, 2, 1):
         _show(page, n)
-        page.wait_for_timeout(700)
+        page.wait_for_timeout(1400)      # D-459: about a second for the change
         tops.append(_box(page, ".cv-frame")[1])
         assert _opacity(page, ".cv-L") == ["1" if k == n else "0" for k in (1, 2, 3)], n
         assert page.evaluate("[...document.querySelectorAll('.cv-L')].map((l) => getComputedStyle(l).visibility)") == [
@@ -112,8 +113,8 @@ def test_the_incoming_screen_settles_in_on_the_spring_and_the_outgoing_one_fades
     _show(page, 2)
     styles = page.evaluate("""() => { const s = (q) => getComputedStyle(document.querySelector(q));
       return [s('.cv-L2').animationName, s('.cv-L2').animationDuration, s('.cv-L2').animationTimingFunction, s('.cv-L1').transitionProperty, s('.cv-L1').transitionDuration]; }""")
-    assert styles == ["cv-settle", "0.38s", SPRING, "opacity, visibility", "0.24s, 0s"], styles
-    page.wait_for_timeout(600)
+    assert styles == ["cv-settle", "1.02s", ZOOM, "opacity, visibility", "1.02s, 0s"], styles      # D-459: one slow, soft length, no overshoot
+    page.wait_for_timeout(1400)
     assert page.evaluate("getComputedStyle(document.querySelector('.cv-L2')).transform") in ("none", "matrix(1, 0, 0, 1, 0, 0)")      # settled, at rest
 
 
@@ -142,7 +143,7 @@ def test_each_screens_moments_play_once_on_the_springs(cover):
 def test_the_screen_changes_when_its_words_arrive_and_the_other_words_wait_dimmed(cover, size):
     """D-456 (founder 2026-11-13: "the text comes a little slowly and the information a little early; it has to be in sync"): the part changes
     when its words (the card, not the tall block around it) reach the line, so at the change they are on the screen in full; the words of the
-    other parts wait at 0.6 on a laptop (still 4.5:1) (stacked, the words come in under the frame and none wait dimmed)."""
+    other parts wait faint on a laptop and brighten as they land (D-459) (stacked, the words come in under the frame and none wait dimmed)."""
     page = cover(SIZES[size])
     vh, part, seen = SIZES[size]["height"], "1", []
     top = page.evaluate("document.querySelector('.cv-stage').getBoundingClientRect().top + scrollY")
@@ -158,8 +159,8 @@ def test_the_screen_changes_when_its_words_arrive_and_the_other_words_wait_dimme
     assert [n for n, _ in seen] == ["2", "3"], seen
     for n, (_, t, _, h) in seen:
         assert 0 <= t and t + h <= vh, (n, t, h, vh)                                   # the new headline is on the screen at the change
-    page.wait_for_timeout(500)
-    assert _opacity(page, ".cv-card") == (["0.6", "0.6", "1"] if size == "1440" else ["1", "1", "1"])
+    page.wait_for_timeout(1400)
+    assert _opacity(page, ".cv-card") == (["0.2", "0.2", "1"] if size == "1440" else ["1", "1", "1"])      # D-459: the words land, they unfade
 
 
 def test_one_trip_carries_the_story_from_part_to_part(cover):
@@ -183,7 +184,7 @@ def test_a_quick_reader_back_and_forth_lands_on_the_part_in_front_of_them(cover)
     _show(page, 1)
     page.evaluate("""() => { const c = (n) => document.querySelector(`.cv-ch${n}`).getBoundingClientRect().top + scrollY;
       window.scrollTo(0, c(2)); setTimeout(() => window.scrollTo(0, c(1)), 30); }""")
-    page.wait_for_timeout(1200)
+    page.wait_for_timeout(1800)
     assert page.evaluate("document.querySelector('.cv-stage').dataset.part") == "1"
     assert _opacity(page, ".cv-L") == ["1", "0", "0"]
 
@@ -277,7 +278,8 @@ def test_scrolling_the_stage_four_times_slower_makes_no_long_task(cover, size):
     cdp = page.context.new_cdp_session(page)
     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
     page.evaluate("window.__lt = []; new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(e.duration))).observe({ entryTypes: ['longtask'] })")
-    end = page.evaluate("(() => { const s = document.querySelector('.cv-stage'); return s.getBoundingClientRect().bottom + scrollY; })()")
+    end = page.evaluate("""(() => { const s = document.querySelector('.cv-stage');      // the stage's end, or the page's if it is shorter
+      return Math.min(s.getBoundingClientRect().bottom + scrollY, document.documentElement.scrollHeight - innerHeight) - 1; })()""")
     while page.evaluate("scrollY") < end:
         page.evaluate("window.scrollBy(0, 40)")
         page.wait_for_timeout(16)
@@ -341,7 +343,7 @@ def test_a_notch_never_covers_the_header_the_story_or_the_close(cover):
 def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover, width):
     page = cover({"width": width, "height": 700})
     boxes = page.evaluate("() => [...document.querySelectorAll('.cv-top > *')].map(e => { const r = e.getBoundingClientRect(); return [e.className.split(' ')[0], r.left, r.top, r.right, r.bottom]; })")
-    assert sorted(b[0] for b in boxes) == ["cv-btn", "cv-tag", "ga-brand"]
+    assert sorted(b[0] for b in boxes) == ["cv-btn", "cv-nav", "cv-tag", "ga-brand"]      # D-458: the nav is a row of its own under the logo
     assert all(0 <= l and r <= width for _, l, _, r, _ in boxes), boxes
     for i, (_, l0, t0, r0, b0) in enumerate(boxes):
         for _, l1, t1, r1, b1 in boxes[i + 1:]:
@@ -364,7 +366,10 @@ def test_the_doors_open_their_pages(cover, base_url, size):
     page.goto(f"{base_url}/")
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/plan/matrix**")
+    page.wait_for_url("**/signin?next=%2Fstart")                     # D-458: sign in, then Where to?
+    page.goto(f"{base_url}/")
+    page.locator(".cv-nav a", has_text="Community trips").click()
+    page.wait_for_url("**/community")
 
 
 @pytest.mark.parametrize("size", [(390, 700), (390, 844), (800, 800), (900, 1000), (1100, 700), (1280, 800), (1440, 900)],

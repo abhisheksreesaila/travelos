@@ -1444,6 +1444,7 @@ Needs: F-221
 - [ ] real screens from the matrix: the frame's screens are drawn HTML from the artboard until F-222 ships; swap them at `cover.SCREENS` (D-430)
 - [x] the founder's look (2026-11-13): the frame changes when the part's words reach the middle, the other words wait dimmed, one trip grows from screen to screen (D-456)
 - [x] each part marks what its headline says, in its own colour, at the moment the words say it (D-457)
+- [x] the founder's second look (2026-11-13): the change is soft, the words unfade as they land (D-459); the header is the way in (For creators, Community trips, Plan a trip) and Start a trip signs in, then Where to?; no Booking opens soon or Plan it for me on the cover; Community trips says when nothing is shared yet (D-458)
 - [ ] the founder looks again on a laptop and a phone
 
 ## F-228 The family test [todo]

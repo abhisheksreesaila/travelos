@@ -349,9 +349,9 @@ def test_the_card_is_not_on_a_trip_page_when_the_offer_is_off(client, monkeypatc
     assert "Want this trip built around your family?" not in text_of(client.get(f"/trips/{row['slug']}").text)
 
 
-def test_the_signed_out_landing_has_a_card_and_a_signed_in_one_does_not(client):
-    html = client.get("/").text
-    assert 'id="plan-for-me"' in html and 'href="/plan-for-me"' in html and "$29" in text_of(html)
+def test_neither_landing_carries_the_card(client):
+    html = client.get("/").text      # D-458: the cover sells one thing, Start a trip (tests/test_cover.py)
+    assert 'id="plan-for-me"' not in html
     sign_in(client)
     assert 'id="plan-for-me"' not in client.get("/").text
 

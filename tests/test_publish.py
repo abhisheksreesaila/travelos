@@ -347,8 +347,9 @@ def test_with_the_showcase_off_nothing_is_public_until_a_real_trip_is_published(
     client, pid = family
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     s = stranger(client)
-    for path in ("/community", "/discover", "/creators", "/creators/sunny-ines", "/forks", "/share", "/trips/sun-tacos"):
+    for path in ("/discover", "/creators", "/creators/sunny-ines", "/forks", "/share", "/trips/sun-tacos"):
         assert s.get(path).status_code == 404, path
+    assert "No one has shared a trip yet" in s.get("/community").text      # D-458: in every header, so it exists and says so
     assert client.get("/trip/publish").status_code == 200   # publishing itself is not hidden: it is how real content starts
 
 
@@ -389,13 +390,14 @@ def test_unpublishing_the_last_trip_puts_the_pages_back_to_404(family, monkeypat
     go_live(client, pid)
     client.post("/trip/publish/unpublish", follow_redirects=False)
     s = stranger(client)
-    assert s.get("/community").status_code == 404 and s.get("/creators").status_code == 404 and s.get("/creators/ari-rivera").status_code == 404
+    assert s.get("/creators").status_code == 404 and s.get("/creators/ari-rivera").status_code == 404
+    assert "No one has shared a trip yet" in s.get("/community").text and "Our Disneyland week" not in s.get("/community").text      # D-458
 
 
-def test_the_nav_links_to_community_trips_only_when_there_is_real_content_or_the_showcase(family, monkeypatch):
+def test_the_nav_links_to_community_trips_before_and_after_real_content(family, monkeypatch):
     client, pid = family
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert 'href="/community"' not in client.get("/trip/publish").text
+    assert 'href="/community"' in client.get("/trip/publish").text      # D-458: always in the header; its page says when nothing is shared yet
     go_live(client, pid)
     assert 'href="/community"' in client.get("/trip/publish").text
 

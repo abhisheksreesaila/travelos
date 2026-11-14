@@ -26,17 +26,17 @@ def _hrefs(fragment):
     return re.findall(r'href="([^"]*)"', fragment)
 
 
-def test_landing_header_has_only_the_brand_and_sign_in(client):
+def test_landing_header_is_the_sites_way_in(client):
+    """D-458 (founder, 2026-11-13): the home page introduces, and its header is the way in: For creators, Community trips, Plan a trip, Sign in."""
     header = _tag(client.get("/").text, "header", "cv-top")       # the signed-out landing is the cover (F-206)
-    assert "ga-nav" not in header
-    assert _hrefs(header) == ["/", "/signin"]
-    assert "Community trips" not in header and "For creators" not in header and "Plan a trip" not in header
+    assert _hrefs(header) == ["/", "/for-creators", "/community", "/signin?next=%2Fstart", "/signin"]
+    assert header.index("For creators") < header.index("Community trips") < header.index("Plan a trip")
 
 
 def test_other_pages_keep_their_header_nav(client):
     for path in ["/community", "/creators"]:      # F-200: sign-in is a full-screen page with the brand and Cancel only
         header = _tag(_get(client, path), "header", "ga-header")
-        assert "/community" in header and "/for-creators" in header and "/plan/matrix" in header, path      # "Plan a trip" opens the matrix where it has prices
+        assert "/community" in header and "/for-creators" in header and "/signin?next=%2Fstart" in header, path      # signed out, Plan a trip signs in first (D-458)
 
 
 def test_footer_carries_the_links_that_left_the_header(client):

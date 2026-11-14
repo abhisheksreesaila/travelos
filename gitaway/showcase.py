@@ -30,6 +30,7 @@ LITEAPI_PAGES = ("/plan/grid", "/plan/matrix")   # the trip grid and the trip ma
 # These exist off the showcase only once a real trip is published (F-181); then they list and fork real content alone.
 REAL = ("/community", "/discover", "/creators", "/forks", "/save", "/unsave", "/fork")
 REAL_ALWAYS = ("/creators/import", "/creators/settings", "/creators/drafts", "/creators/stats")   # (F-190: their drafts and a batch of their posts; F-192: their stats) a creator's import of their own post (F-183) exists off the showcase before anyone has published: it is how the first trip gets published
+COMMUNITY = "/community"   # D-458: in every header, so it exists before anyone has shared; its page says so (communitytrips.empty_page)
 _NOT_ITINERARY = ("build", "import", "switch")  # /trips/<word> routes that are the family's own
 _ITINERARY = re.compile(r"/trips/([^/]+)/?")
 
@@ -72,7 +73,7 @@ def hidden(path: str, query=None, method: str = "GET") -> bool:
     from gitaway import community
     if _under(path, HIDDEN) or _needs_keys(path):
         return True
-    if _under(path, REAL) and not _under(path, REAL_ALWAYS):
+    if _under(path, REAL) and not _under(path, REAL_ALWAYS) and path != COMMUNITY:
         if not community.has_real():
             return True
         if path == "/creators" and method != "GET":  # the paste form posts here: simulated

@@ -139,12 +139,14 @@ def test_sign_in_with_a_specific_next_still_goes_there(client):
     assert sign_in(client, next="/").headers["location"] == "/"
 
 
-def test_header_and_landing_doors_lead_to_the_matrix(client):
-    for path in ["/community", "/start"]:  # the showcase has the matrix's samples, so "Plan a trip" opens it (off it, without LITEAPI_KEY, the form: tests/test_tripmatrix_page.py)
+def test_plan_a_trip_and_start_a_trip_sign_in_then_open_where_to(client):
+    """D-458 (founder, 2026-11-13: "start a trip goes to the login page, you sign up, and then you deal with it"): one door, signed out through sign-in."""
+    for path in ["/community", "/start"]:
         h = client.get(path).text
-        assert re.search(r'<nav[^>]*>.*?href="/plan/matrix"[^>]*>Plan a trip', h, re.S), path
-    assert re.search(r'<a [^>]*href="/plan/matrix"[^>]*>Start a trip', client.get("/").text)    # the cover's door (F-227)
+        assert re.search(r'<nav[^>]*>.*?href="/signin\?next=%2Fstart"[^>]*>Plan a trip', h, re.S), path
+    assert re.search(r'<a [^>]*href="/signin\?next=%2Fstart"[^>]*>Start a trip', client.get("/").text)    # the cover's door (F-227)
     sign_in(client)
+    assert re.search(r'<nav[^>]*>.*?href="/start"[^>]*>Plan a trip', client.get("/community").text, re.S)
     assert 'action="/start"' in client.get("/").text                                      # the signed-in landing keeps its form
 
 

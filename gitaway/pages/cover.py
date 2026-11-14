@@ -8,7 +8,10 @@ The story of the brief (docs/briefs/unified-booking.md "The cover tells this sto
                     1 Compare                  a sentence types itself, the matrix fills, one square lights up, the calendar wears the weather
                     2 Plan it together         hearts with faces land on the square, the thread beside it, the owner's "This one"
                     3 Leave a trail            the trip as a card ready to post; a creator's trip opens into its own matrix
-    the close     the headline again, Start a trip, "Booking opens soon" said plainly, then the footer.
+    the close     the headline again and Start a trip, then the footer.
+
+The header is the site's way in (founder, 2026-11-13): For creators, Community trips and Plan a trip (`layout.NAV`), then Sign in. Start a trip and
+Plan a trip are one door, `layout.plan_href()`: sign in, then Where to? (/start), where a trip already booked comes in too (D-458).
 
 No jitter by construction (D-427): the frame is CSS sticky; assets/js/cover.js only sets data-part on the stage from an IntersectionObserver and adds
 .go to a part the first time it shows. cover.css does the rest on the --motion-* tokens: the outgoing screen fades, the incoming one settles in on
@@ -29,7 +32,7 @@ from fasthtml.common import A, B, Div, Em, Figure, Footer, H1, H2, Header, Link,
 
 from gitaway import session, weather
 from gitaway.icons import icon
-from gitaway.layout import brand, mode_switch, plan_href, preview, seo_meta, styles
+from gitaway.layout import NAV, brand, mode_switch, plan_href, preview, seo_meta, styles
 
 ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
 TITLE = "Compare the whole trip. Choose it together."
@@ -39,7 +42,6 @@ OG_IMAGE = "/assets/cover/og.jpg"
 # the phone layout: cover.css uses this same query
 PHONE_Q = "(max-width: 720px)"
 DISCLOSURE = "Every family, price and trip on this page is made up, to show how it works. The places and their weather are real."
-SOON = "Booking opens soon"
 
 # the three parts: (number, its name, its headline, what it says, an id to link to). A headline is its ink words and its soft words, each a run of
 # phrases; a phrase with a beat (1 to 3) is marked in the part's colour at the moment the screen shows the same thing (D-457): the words and the
@@ -255,19 +257,17 @@ def _stage():
     return Section(_frame(), Div(*[_part(*p) for p in PARTS], cls="cv-chs"), cls="cv-stage", data_part="1", aria_label="How it works")
 
 
-def _close(card):
+def _close():
     return Section(
         H2(LINE[0], Em(LINE[1])),
-        P("Search and compare today. ", B(f"{SOON},"), " after our first families have tried it."),
-        Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"), Span(SOON, cls="cv-soon"), cls="cv-ctas"),
-        *((card,) if card else ()),
+        Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"), cls="cv-ctas"),
         cls="cv-close", id="your-turn")
 
 
 def _footer(links):
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
-        P("Compare the whole trip and choose it together. Until booking opens, you book on each booking site, under its terms."),
+        P("Compare the whole trip and choose it together. You book on each booking site, under its terms; GitAway never takes payment."),
         Nav(*[A(label, href=href) for label, href in [*links, ("Privacy", "/privacy"), ("Terms", "/terms")]], aria_label="More"),
         mode_switch(),
         P("Early preview · the families, prices and trips on this page are made up, to show how it works; the places are real and so is their "
@@ -278,10 +278,7 @@ def _footer(links):
 
 def page(footer_links, drive=()):
     """The whole cover document. `footer_links` are the landing's (home.footer_links); `drive` the Travelpayouts Drive tag when it is switched on (home._drive)."""
-    from gitaway.itinerary_view import plan_for_me_card
-    card = plan_for_me_card("Rather not plan it yourself?", "/plan-for-me", "pf-card cv-pf")
     head = styles(Link(rel="stylesheet", href="/assets/css/cover.css"),
-                  *((Link(rel="stylesheet", href="/assets/css/planforme.css"),) if card else ()),
                   *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE), *drive,
                   Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True))
     return (
@@ -289,7 +286,9 @@ def page(footer_links, drive=()):
         *head,
         NotStr(_sprite()),
         A("Skip to the story", href="#main", cls="ga-skip"),
-        Header(brand(), Div(preview(), cls="cv-tag"), A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
-        Main(_hero(), _stage(), _close(card), id="main", data_phone=PHONE_Q),
+        Header(brand(), Div(preview(), cls="cv-tag"),
+               Nav(*[A(label, href=plan_href() if href == "/start" else href) for label, href in NAV], cls="cv-nav", aria_label="Main"),
+               A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
+        Main(_hero(), _stage(), _close(), id="main", data_phone=PHONE_Q),
         _footer(footer_links),
     )

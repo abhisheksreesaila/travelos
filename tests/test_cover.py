@@ -75,8 +75,8 @@ def test_the_story_is_the_line_three_parts_and_the_line_again(client):
     assert "Bloggers and vloggers welcome" in _text(_part(html, 3))
     close = _el(html, "section", "cv-close")
     assert _text(re.search(r"<h2[^>]*>.*?</h2>", close, re.S).group(0)) == LINE
-    assert "Booking opens soon" in _text(close) and _text(_el(close, "span", "cv-soon")) == "Booking opens soon"
-    order = [_text(html).index(t) for t in (LINE, PARTS[0][1], PARTS[1][1], PARTS[2][1], "Booking opens soon")]
+    assert _text(close).endswith("Start a trip")
+    order = [_text(html).index(t) for t in (LINE, PARTS[0][1], PARTS[1][1], PARTS[2][1])] + [_text(html).rindex(LINE)]
     assert order == sorted(order)
 
 
@@ -177,23 +177,24 @@ def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
     html = _cover(client)
     hero = _el(html, "section", "cv-hero")
-    door = "/plan/matrix" if mode == "1" else "/start"      # the matrix tells the cover's story where it has prices (the samples, or LITEAPI_KEY); else the form
+    door = "/signin?next=%2Fstart"      # D-458: Start a trip and Plan a trip are one door: sign in, then Where to? (showcase or not)
     assert _links(hero) == [door, "#compare"] and 'id="compare"' in html
-    assert _links(_el(html, "section", "cv-close"))[0] == door
-    assert _links(_el(html, "header", "cv-top")) == ["/", "/signin"]
+    assert _links(_el(html, "section", "cv-close")) == [door]
+    assert _links(_el(html, "header", "cv-top")) == ["/", "/for-creators", "/community", door, "/signin"]
     for href in sorted(set(_links(html))):
         if href.startswith(("#", "http", "mailto:")):
             continue
         assert client.get(href).status_code == 200, href
 
 
-def test_the_plan_it_for_me_card_follows_the_close_only_when_offered(client, monkeypatch):
+def test_the_cover_sells_one_thing_start_a_trip(client, monkeypatch):
+    """D-458 (founder, 2026-11-13: "start a trip is start a trip; there's no plan it for me, no booking opens soon"): even when Plan it for me is
+    offered, the cover's close is the line and Start a trip, nothing else."""
     from gitaway import planforme
     monkeypatch.setattr(planforme, "offered", lambda: True)
-    assert 'id="plan-for-me"' in _el(_cover(client), "section", "cv-close")
-    monkeypatch.setattr(planforme, "offered", lambda: False)
     html = _cover(client)
     assert 'id="plan-for-me"' not in html and "/assets/css/planforme.css" not in html
+    assert "Booking opens soon" not in html and "booking opens" not in html.lower()
 
 
 def test_a_signed_in_visitor_keeps_the_landing_they_had(client):

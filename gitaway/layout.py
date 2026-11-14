@@ -99,8 +99,9 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
-NAV = [("Community trips", "/community"), ("Plan a trip", "/start"), ("For creators", "/for-creators")]
-REAL_NAV = [("Plan a trip", "/start"), ("For creators", "/for-creators")]   # F-064: the header when there is no sample or community content (showcase.on() is false)
+# The site's way in, the same everywhere (founder, 2026-11-13, D-458): "/start" is drawn as `plan_href()`. Community trips is always there: off the
+# showcase, before anyone has shared a trip, its page says so.
+NAV = [("For creators", "/for-creators"), ("Community trips", "/community"), ("Plan a trip", "/start")]
 
 
 MARK = ('<svg class="ga-mark" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false">'
@@ -171,7 +172,7 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
     hides this header there; below that width this header is what shows, as before."""
     from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
     links = [A(label, href=plan_href() if href == "/start" else href, aria_current="page" if (plan_href() if href == "/start" else href) == current else None)
-             for label, href in (NAV if showcase.on() else [*REAL_NAV, ("Community trips", "/community")] if showcase.community_open() else REAL_NAV)]
+             for label, href in NAV]
     top = topbar.bar() if nav and traveler is None else ""
     return (top, Header(
         A("Skip to content", href="#main", cls="ga-skip"),
@@ -183,9 +184,9 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
 
 
 def plan_href() -> str:
-    """Where "Plan a trip" goes: the trip matrix (compare the whole trip) wherever it has prices (the showcase's samples, or LITEAPI_KEY), else the older form."""
-    from gitaway import liteapi
-    return "/plan/matrix" if showcase.on() or liteapi.key() else "/start"
+    """Where "Plan a trip" and "Start a trip" go (D-458): Where to? (/start), where a family starts a trip or brings in one already booked; signed
+    out, through sign-in first. The trip matrix is reached from a trip, not from the front door, until booking opens."""
+    return "/start" if session.request_traveler() else session.signin_href("/start")
 
 
 def site_footer(links=()):

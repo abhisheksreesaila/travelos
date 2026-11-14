@@ -13,7 +13,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Lin
 
 from gitaway import hub, session as ses, showcase
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import page, plan_href
 from gitaway.itinerary_view import _icon
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/hub.css"),)
@@ -44,7 +44,22 @@ def card(c, i=0):
         href=f"/trips/{c.slug}", cls="hub-card", style=f"--tilt:{TILTS[i % len(TILTS)]}deg")
 
 
+def empty_page():
+    """Off the showcase, before anyone has shared a trip (D-458): the page is in every header, so it exists and says so, with the two ways a
+    trip gets here."""
+    return page("Community trips", Section(
+        Div(H1("Community trips"),
+            P("Trips shared by families and creators, ready to plan for your own dates."), cls="hub-head"),
+        Div(icon("fork", 28, 2.2), Div(H2("No one has shared a trip yet"),
+            P("Creators turn a post into a trip readers can plan; families share theirs once they are back. The first ones show up here."),
+            Div(A("For creators", href="/for-creators", cls="btn btn-primary btn-sm"), A("Plan a trip", href=plan_href(), cls="btn btn-sm"), cls="hub-cta")),
+            cls="hub-first card", role="status"),
+        cls="hub ga-wrap"), current="/community", head=HEAD)
+
+
 def hub_page(session, tags=(), creators=False, q=""):
+    if not showcase.community_open():
+        return empty_page()
     shown = hub.cards(session, tags=tags, creators=creators, q=q)
     on = set(tags)
     chips = [chip(label, hub_href(on ^ {k}, creators, q), k in on, fill, hub.TAGS[k][2]) for k, label, fill in FILTERS]

@@ -12,9 +12,9 @@ from tests.test_calendar import book
 from tests.test_signin import sign_in
 
 SLUGS = list(itineraries.ITINERARIES)
-SAMPLE_WORDS = ["Community trips", "Your forks", "Trips others loved", "Fork a trip a real family took", "Been somewhere wonderful?",   # the old landing's sample creators panel (F-206 made "Leave a trail" the product's line)
+SAMPLE_WORDS = ["Your forks", "Trips others loved", "Fork a trip a real family took", "Been somewhere wonderful?",   # the old landing's sample creators panel (F-206 made "Leave a trail" the product's line)
                 "Our LA family week", "Forked by", "312 families", "No plans yet?"] + [t.title for t in itineraries.ITINERARIES.values()]
-GONE_HREF = re.compile(r'href="(/community|/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
+GONE_HREF = re.compile(r'href="(/discover|/creators|/forks|/share|/rides|/trips/(?!build|import|switch)[^"/?#]+)')
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def test_production_alone_turns_the_showcase_off_and_keeps_the_dev_sign_in_locke
 
 # ---- production: hidden routes ----
 
-HIDDEN_GET = ["/community", "/discover", "/discover?tag=beach", "/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
+HIDDEN_GET = ["/discover", "/discover?tag=beach", "/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
               "/trip/canvas?demo=long"] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
 HIDDEN_POST = ["/fork", "/save", "/unsave", "/share", "/share/unpublish", "/forks/apply", "/forks/undo", "/creators", "/creators/draft", "/creators/finish"]
 
@@ -86,15 +86,26 @@ def test_the_families_own_trip_routes_still_work(real, client):
 
 
 def test_the_404_page_links_nowhere_hidden(real, client):
-    r = client.get("/community")
+    r = client.get("/forks")
     assert r.status_code == 404
     assert_real(r.text, "404")
 
 
 def test_the_real_production_environment_hides_them_too(prod, client):
-    assert client.get("/community").status_code == 404
+    assert client.get("/forks").status_code == 404
     assert client.get(f"/trips/{SLUGS[0]}").status_code == 404
     assert client.get("/healthz").status_code == 200
+
+
+@pytest.mark.parametrize("env", ["real", "prod"])
+def test_community_trips_says_so_before_anyone_has_shared(env, request, client):
+    """D-458 (founder, 2026-11-13: "the navigation should still say: if you want to look at the community trips, go at it"): Community trips is
+    in every header, so off the showcase, before anyone has shared a trip, its page exists and says so plainly, with no sample trip on it."""
+    request.getfixturevalue(env)
+    r = client.get("/community")
+    assert r.status_code == 200
+    assert "No one has shared a trip yet" in r.text and 'href="/for-creators"' in r.text
+    assert_real(r.text, "/community")
 
 
 # ---- production: nothing links to them, nothing sample shows ----

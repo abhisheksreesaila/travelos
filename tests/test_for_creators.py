@@ -55,7 +55,7 @@ def test_it_is_linked_from_the_header_the_landing_footer_and_the_signed_in_menu(
 def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     html = client.get("/for-creators").text
-    hidden = re.findall(r'href="(/community|/discover|/creators(?!/import|/settings)|/forks|/share|/rides|/sandbox)[^"]*"', without_bar(html))
+    hidden = re.findall(r'href="(/discover|/creators(?!/import|/settings)|/forks|/share|/rides|/sandbox)[^"]*"', without_bar(html))
     assert hidden == []
     for sample in ("Our LA family week", "312 families", "Forked by", *[t.title for t in itineraries.ITINERARIES.values()]):
         assert sample not in html

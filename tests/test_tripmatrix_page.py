@@ -220,16 +220,16 @@ def nav_plan(html):
     return re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S).group(0)
 
 
-def test_plan_a_trip_opens_the_matrix_once_it_has_prices_and_the_old_form_until_then(client, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    monkeypatch.delenv("LITEAPI_KEY", raising=False)
-    assert re.search(r'href="/start"[^>]*>Plan a trip<', nav_plan(client.get("/start").text))       # no key: the matrix is not there, so the form is the way in
-    monkeypatch.setenv("LITEAPI_KEY", KEY)
-    assert re.search(r'href="/plan/matrix"[^>]*>Plan a trip<', nav_plan(client.get("/start").text))
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    monkeypatch.delenv("LITEAPI_KEY", raising=False)
-    nav = nav_plan(client.get("/plan/matrix").text)
-    assert re.search(r'href="/plan/matrix"[^>]*aria-current="page"[^>]*>Plan a trip<|aria-current="page"[^>]*href="/plan/matrix"[^>]*>Plan a trip<', nav)
+def test_plan_a_trip_is_where_to_not_the_matrix_with_or_without_prices(client, monkeypatch):
+    """D-458: until booking opens the front door is Where to? (sign in first when signed out); the matrix is reached from there, key or not."""
+    for showcase, key in (("0", None), ("0", KEY), ("1", None)):
+        monkeypatch.setenv("GITAWAY_SHOWCASE", showcase)
+        if key:
+            monkeypatch.setenv("LITEAPI_KEY", key)
+        else:
+            monkeypatch.delenv("LITEAPI_KEY", raising=False)
+        nav = nav_plan(client.get("/start").text)
+        assert re.search(r'href="/signin\?next=%2Fstart"[^>]*>Plan a trip<', nav) and "/plan/matrix" not in nav, (showcase, key)
 
 
 def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):
