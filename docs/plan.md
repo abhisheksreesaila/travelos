@@ -1512,3 +1512,10 @@ Founder, 2026-11-14, looking at /plan/matrix: "I like the colours and the conten
 - [ ] the opened square as the design's trip bar (art, the find line, who likes it, the flight/stay/drive/weather chips, the total huge, Book) or A's panel kept, whichever the design file shows for the laptop; the phone keeps B's place cards
 - [ ] no "No sample" lanes on the showcase: every nearby place the matrix shows has sample offers (Orange County too), or the lane is not shown
 - [ ] side by side screenshots of the design and the build at 1440 and 390 in docs/report/f236-*.png; tests_browser/test_tripmatrix.py and the F-233 booking sheet still pass
+
+## F-237 Change the nights right on the matrix [todo]
+Founder, 2026-11-14: "can you make 4 nights like a slider so that we can change nights right there?" Needs: F-236
+- [ ] a nights control in the sentence ("4 nights", 2 to 7) that changes every square's trip length and the band
+- [ ] while sliding, each square shows "about $X" at once from what is known (its nightly stay rate, the cheapest return flight already read), labelled as an estimate; no search per step
+- [ ] on release, only the squares in view search (the tiles' rules, the gate, the budgets), kept per nights so going back is instant; the opened square and Book always use real prices for those exact nights
+- [ ] on the showcase it is instant from the sample catalog; the phone's place cards get the same control
