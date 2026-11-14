@@ -226,7 +226,7 @@ def test_the_page_follows_the_sites_light_and_dark(client):
     assert re.search(r'<script src="/assets/js/mode\.js[^"]*"></script>', head)
     assert re.search(r'name="theme-color" content="#F2F2F5" media="\(prefers-color-scheme: light\)"', head)
     assert re.search(r'name="theme-color" content="#000000" media="\(prefers-color-scheme: dark\)"', head)
-    assert re.findall(r'data-mode-pick="(\w+)"', _el(html, "footer", "cv-foot")) == ["auto", "light", "dark"]
+    assert "data-mode-toggle" in _el(html, "footer", "cv-foot") and re.search(r'<html[^>]*data-mode="light"', html)      # D-460: light by default, one button
     css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
     assert "cv-dark" not in css and "--cv-bg" not in css                       # no palette of its own any more
 

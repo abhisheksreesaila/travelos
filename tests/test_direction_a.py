@@ -84,11 +84,14 @@ def test_every_page_loads_the_mode_script_before_paint_and_names_both_bar_colour
     assert re.search(r'name="theme-color" content="#000000" media="\(prefers-color-scheme: dark\)"', head)
 
 
-def test_the_footer_has_the_auto_light_dark_switch(client):
+def test_light_by_default_and_one_button_for_dark(client):
+    """D-460 (founder, 2026-11-13: "a simple button to switch between light and dark … for a joyful site it has to be light by default"): every
+    page starts light whatever the system says (html[data-mode="light"], which tokens.css's system-dark block steps aside for), and the footer
+    has one button, pressed when dark (mode.js keeps the choice on this device: tests_browser/test_direction_a_pages.py)."""
     html = client.get("/start").text
-    switch = re.search(r'<div[^>]*class="ga-mode"[^>]*>.*?</div>', html, re.S).group(0)
-    assert re.findall(r'data-mode-pick="(\w+)"', switch) == ["auto", "light", "dark"]
-    assert switch.count('aria-pressed="false"') == 3 and 'role="group"' in switch      # mode.js presses the one in use (tests_browser/test_direction_a_pages.py)
+    assert re.search(r'<html[^>]*data-mode="light"', html)
+    switch = re.search(r'<button[^>]*data-mode-toggle[^>]*>.*?</button>', html, re.S).group(0)
+    assert 'aria-pressed="false"' in switch and 'aria-label="Dark mode"' in switch and "data-mode-pick" not in html
 
 
 def test_the_mark_is_one_svg_with_three_coloured_nodes():

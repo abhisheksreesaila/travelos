@@ -92,13 +92,13 @@ def test_the_old_header_stays_in_the_page_for_the_tablet(client):
     assert "ga-header" in html and "ga-topbar" in html            # css shows one or the other by width
 
 
-def test_community_is_in_the_avatar_menu_only_with_the_showcase_on(client, monkeypatch):
+def test_community_is_in_the_avatar_menu_on_and_off_the_showcase(client, monkeypatch):
+    """D-458: Community trips is in every header; off the showcase, before anyone shares, its page says so."""
     book(client)
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    assert 'href="/community"' in bar(client.get("/family").text)
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    b = bar(client.get("/family").text)
-    assert "Community" not in b and "/creators" not in b
+    for mode in ("1", "0"):
+        monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
+        b = bar(client.get("/family").text)
+        assert 'href="/community"' in b and 'href="/for-creators"' in b and 'href="/creators"' not in b, mode
 
 
 def test_the_bar_is_in_rem_and_sized_by_its_own_stylesheet(client):

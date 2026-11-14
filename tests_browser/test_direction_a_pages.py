@@ -90,36 +90,36 @@ def test_the_early_preview_label_opens_its_line_and_esc_closes_it(browser, base_
 CANVAS = "getComputedStyle(document.body).backgroundColor"
 
 
-def test_dark_follows_the_system_and_a_choice_on_the_switch_is_remembered_on_this_device(browser, base_url):
+def test_light_by_default_and_the_button_switches_to_dark_and_is_remembered_on_this_device(browser, base_url):
+    """D-460: light whatever the system says; one button turns dark on and off, remembered on this device before the first paint."""
     ctx = context(browser, DESKTOP, "dark")
     try:
         page = ctx.new_page()
         page.goto(f"{base_url}/start")
-        assert page.evaluate(CANVAS) == "rgb(0, 0, 0)"                                    # the system says dark: black canvas
-        assert page.locator(".ga-footer [data-mode-pick=auto]").get_attribute("aria-pressed") == "true"
-        page.locator(".ga-footer [data-mode-pick=light]").click()
-        assert page.evaluate(CANVAS) == "rgb(242, 242, 245)" and page.evaluate("document.documentElement.dataset.mode") == "light"
-        assert page.locator(".ga-footer [data-mode-pick=light]").get_attribute("aria-pressed") == "true"
-        assert page.locator('meta[name="theme-color"]').first.get_attribute("content") == "#F2F2F5"     # the browser bar follows
-        page.goto(f"{base_url}/creators")                                                   # another page: still light, chosen before the first paint
-        assert page.evaluate(CANVAS) == "rgb(242, 242, 245)"
-        assert page.locator(".ga-footer [data-mode-pick=light]").get_attribute("aria-pressed") == "true"
-        page.locator(".ga-footer [data-mode-pick=auto]").click()                           # back to the system's
-        assert page.evaluate(CANVAS) == "rgb(0, 0, 0)" and page.evaluate("document.documentElement.dataset.mode") is None
-        page.locator(".ga-footer [data-mode-pick=dark]").click()
+        toggle = page.locator(".ga-footer [data-mode-toggle]")
+        assert page.evaluate(CANVAS) == "rgb(242, 242, 245)"                              # the system says dark; the site is light
+        assert toggle.get_attribute("aria-pressed") == "false"
+        toggle.click()
+        assert page.evaluate(CANVAS) == "rgb(0, 0, 0)" and page.evaluate("document.documentElement.dataset.mode") == "dark"
+        assert toggle.get_attribute("aria-pressed") == "true"
+        assert page.locator('meta[name="theme-color"]').first.get_attribute("content") == "#000000"     # the browser bar follows
+        page.goto(f"{base_url}/creators")                                                   # another page: still dark, chosen before the first paint
+        assert page.evaluate(CANVAS) == "rgb(0, 0, 0)"
         page.emulate_media(color_scheme="light")                                            # the system changes its mind; the person's choice stays
         page.reload()
         assert page.evaluate(CANVAS) == "rgb(0, 0, 0)"
+        page.locator(".ga-footer [data-mode-toggle]").click()                               # and back
+        assert page.evaluate(CANVAS) == "rgb(242, 242, 245)" and page.evaluate("document.documentElement.dataset.mode") == "light"
     finally:
         ctx.close()
 
 
-def test_on_a_phone_the_footer_is_short_and_leaves_the_switch_to_the_phones_own_setting(browser, base_url):
+def test_on_a_phone_the_footer_is_short_and_keeps_the_button(browser, base_url):
     ctx = context(browser, PHONE, "light")
     try:
         page = ctx.new_page()
         page.goto(f"{base_url}/start")
-        assert not page.locator(".ga-footer .ga-mode").is_visible()                       # Auto follows the phone; the choice is still on a laptop
+        assert page.locator(".ga-footer [data-mode-toggle]").is_visible()                 # D-460: no Auto any more, so the phone has the button too
         assert page.locator(".ga-footer > .ga-fine").bounding_box()["height"] < 80       # the fine print is its own lines, not 18rem of empty column
     finally:
         ctx.close()

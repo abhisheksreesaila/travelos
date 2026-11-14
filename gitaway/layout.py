@@ -135,15 +135,14 @@ def preview(cls="ga-preview"):
     return Details(Summary(Span("Early preview", cls="ga-preview-pill"), cls="ga-preview-sum"), Div(P(PREVIEW_LINE[0], ask, PREVIEW_LINE[2]), cls="ga-preview-pop", role="note"), cls=cls)
 
 
-MODES = (("auto", "Auto"), ("light", "Light"), ("dark", "Dark"))
 
 
 def mode_switch(where="foot"):
-    """Auto, Light, Dark (F-200): assets/js/mode.js keeps the choice on this device and marks the pressed one. Auto follows the phone's or computer's own setting.
-    `where` names this copy (the footer, the avatar menu), so two on one page have their own label ids."""
-    return Div(Span("Appearance", cls="ga-mode-k", id=f"ga-mode-{where}"),
-               *[Button(label, type="button", data_mode_pick=key, aria_pressed="false") for key, label in MODES],      # mode.js marks the one in use as soon as the page loads
-               role="group", aria_labelledby=f"ga-mode-{where}", cls="ga-mode")
+    """One button for dark (D-460, founder 2026-11-13: "a simple button to switch between light and dark … light by default"): pressed when
+    dark; assets/js/mode.js keeps the choice on this device. The moon shows in light, the sun in dark. `where` names this copy (the footer, the
+    avatar menu)."""
+    return Button(Span(icon("moon", 18), "Dark", cls="ga-mode-moon"), Span(icon("sun", 18), "Light", cls="ga-mode-sun"),
+                  type="button", cls="ga-mode", id=f"ga-mode-{where}", data_mode_toggle="1", aria_pressed="false", aria_label="Dark mode", title="Dark mode")
 
 
 def avatar(traveler, cls="ga-avatar"):
@@ -171,8 +170,7 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
     A signed-in person's page (nav=True) also carries the one top bar (F-139, gitaway.topbar) before it: topbar.css shows the bar from 1020px up and
     hides this header there; below that width this header is what shows, as before."""
     from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
-    links = [A(label, href=plan_href() if href == "/start" else href, aria_current="page" if (plan_href() if href == "/start" else href) == current else None)
-             for label, href in NAV]
+    links = [A(label, href=plan_href() if href == "/start" else href, aria_current="page" if href == current else None) for label, href in NAV]
     top = topbar.bar() if nav and traveler is None else ""
     return (top, Header(
         A("Skip to content", href="#main", cls="ga-skip"),

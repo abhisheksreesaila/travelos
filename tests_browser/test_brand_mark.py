@@ -28,6 +28,8 @@ def _creator(page, base_url):
 def _everywhere(browser, base_url, viewport, mode="light"):
     """(path, marks) for every page that shows a logo at this width, signed out first, then signed in."""
     ctx = browser.new_context(viewport=viewport, has_touch=viewport is PHONE, is_mobile=viewport is PHONE, reduced_motion="reduce", color_scheme=mode)
+    if mode == "dark":                                   # D-460: dark is the person's choice (the footer's button), not the system's
+        ctx.add_init_script("try { localStorage.setItem('ga-mode', 'dark'); } catch (e) {}")
     page = ctx.new_page()
     found = []
 

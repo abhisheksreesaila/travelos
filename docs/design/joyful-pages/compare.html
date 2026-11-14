@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joyful pages · For creators and Community trips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1B1420; --ink-2: #5B5363; --line: #EADFD6;
+  --ease: cubic-bezier(.22, 1, .36, 1); --spring: cubic-bezier(.3, 1.12, .4, 1);
+  /* For creators: golden hour */
+  --coral: #FF6B4A; --peach: #FFB27A; --pink: #FF4F97; --gold: #FFC94A; --cream: #FFF7EF; --plum: #3A1640;
+  /* Community: postcard sky and sea */
+  --sky: #8FD3FF; --sky-2: #D8F1FF; --sea: #1FAE9B; --sand: #FFE7B3; --sun: #FFB938; --lagoon: #0E7C86; --paper: #F5FBFF;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #EFEAE6; color: var(--ink); font: 400 16px/1.5 Geist, system-ui, sans-serif; }
+.wrap { max-width: 1760px; margin: 0 auto; padding: 32px 24px 80px; }
+h1.top { font: 800 40px/1.05 Geist; letter-spacing: -.03em; margin: 0 0 6px; }
+.lede { color: var(--ink-2); max-width: 70ch; margin: 0 0 18px; }
+.picks { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 16px; margin: 0 -16px 24px; background: #EFEAE6; border-bottom: 1px solid #DCD3CC; font-weight: 600; }
+.picks b { font-weight: 800; }
+.picks .none { color: var(--ink-2); font-weight: 500; }
+.replay { margin-left: auto; border: 0; border-radius: 999px; padding: 10px 18px; background: var(--ink); color: #fff; font: 600 15px Geist; cursor: pointer; }
+section.page { margin: 40px 0 72px; }
+section.page > h2 { font: 800 30px/1.1 Geist; letter-spacing: -.02em; margin: 0 0 4px; }
+section.page > p { margin: 0 0 20px; color: var(--ink-2); max-width: 80ch; }
+.opt { background: #fff; border-radius: 28px; padding: 22px; margin: 0 0 28px; box-shadow: 0 10px 30px rgb(40 20 10 / .08); }
+.opt-h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.opt-h h3 { margin: 0; font: 800 22px Geist; letter-spacing: -.01em; }
+.opt-h p { margin: 0; color: var(--ink-2); flex: 1 1 400px; }
+.opt-h label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: #F3EEEA; font-weight: 700; cursor: pointer; }
+.opt-h input { width: 20px; height: 20px; accent-color: var(--coral); }
+.row { display: flex; gap: 22px; align-items: flex-start; overflow-x: auto; padding-bottom: 6px; }
+.dev { flex: none; }
+.dev small { display: block; font: 600 12px Geist; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 8px 4px; }
+.desk { width: 1200px; zoom: .62; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 1px #E6DED7; }
+.phone { width: 390px; zoom: .82; border-radius: 44px; overflow: hidden; box-shadow: 0 0 0 10px #1B1420, 0 0 0 11px #3a3340; margin: 10px; }
+.scroll { max-height: 1500px; overflow: hidden; }
+
+/* ---------- the slow arrival: each .in rises and unfades in turn (about 0.9 s each, staggered) ---------- */
+.in { opacity: 0; transform: translateY(22px); animation: arrive .9s var(--ease) forwards; animation-delay: calc(var(--d, 0) * 160ms + 150ms); }
+@keyframes arrive { to { opacity: 1; transform: none; } }
+.pop { opacity: 0; transform: scale(.85) rotate(var(--r, 0deg)); animation: popin .9s var(--spring) forwards; animation-delay: calc(var(--d, 0) * 160ms + 150ms); }
+@keyframes popin { to { opacity: 1; transform: rotate(var(--r, 0deg)); } }
+@media (prefers-reduced-motion: reduce) { .in, .pop { animation: none; opacity: 1; transform: rotate(var(--r, 0deg)); } }
+
+/* ---------- shared bits ---------- */
+.nav { display: flex; align-items: center; gap: 6px; padding: 18px 40px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; font: 800 22px Geist; letter-spacing: -.02em; }
+.logo i { width: 30px; height: 30px; border-radius: 9px; background: conic-gradient(from 200deg, var(--coral), var(--gold), var(--sea), var(--sky), var(--pink), var(--coral)); display: inline-block; }
+.nav a { margin-left: auto; }
+.nav a, .nav span.l { font-weight: 600; padding: 10px 14px; border-radius: 999px; color: inherit; text-decoration: none; }
+.nav a ~ a { margin-left: 0; }
+.nav .cur { background: rgb(255 255 255 / .7); }
+.nav .signin { background: var(--ink); color: #fff; padding: 10px 18px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border-radius: 999px; border: 0; font: 700 17px Geist; cursor: pointer; text-decoration: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; font: 650 14px Geist; }
+.foot { display: flex; align-items: center; gap: 12px; padding: 26px 40px; color: var(--ink-2); font-size: 14px; }
+.foot .mode { margin-left: auto; display: inline-flex; gap: 8px; align-items: center; padding: 10px 16px; border-radius: 999px; background: rgb(0 0 0 / .06); color: var(--ink); font-weight: 600; }
+svg.scene { display: block; width: 100%; height: 100%; }
+
+/* ================= FOR CREATORS · A · Golden hour ================= */
+.ca { background: var(--cream); }
+.ca .hero { position: relative; padding: 30px 40px 70px; background: radial-gradient(120% 90% at 85% 10%, #FFD9A8 0%, transparent 55%), linear-gradient(160deg, #FFE3CF 0%, #FFC8B8 38%, #FFB5CF 70%, #FFE9F2 100%); border-radius: 0 0 48px 48px; overflow: hidden; }
+.ca .hero .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+.ca .kick { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / .75); font: 700 14px Geist; color: var(--plum); }
+.ca h1 { font: 800 76px/.98 Geist; letter-spacing: -.045em; margin: 18px 0 16px; color: var(--plum); }
+.ca h1 em { font-style: normal; background: linear-gradient(90deg, var(--coral), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ca .sub { font-size: 21px; color: #5A3A55; max-width: 34ch; margin: 0 0 24px; }
+.ca .paste { display: flex; gap: 8px; padding: 8px; border-radius: 999px; background: #fff; box-shadow: 0 14px 40px rgb(160 40 80 / .18); max-width: 560px; }
+.ca .paste span { flex: 1; display: flex; align-items: center; padding: 0 18px; color: #9A8494; font-size: 17px; }
+.ca .paste .btn { background: linear-gradient(90deg, var(--coral), var(--pink)); color: #fff; }
+.ca .srcs { display: flex; gap: 8px; margin-top: 14px; }
+.ca .srcs .chip { background: rgb(255 255 255 / .7); color: var(--plum); }
+.ca .stage { position: relative; height: 520px; }
+.ca .post, .ca .trip { position: absolute; width: 300px; border-radius: 26px; background: #fff; box-shadow: 0 30px 60px rgb(120 30 60 / .25); overflow: hidden; }
+.ca .post { left: 10px; top: 20px; --r: -6deg; }
+.ca .trip { right: 0; top: 120px; --r: 5deg; }
+.ca .post .ph { height: 300px; }
+.ca .post .who { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-weight: 700; }
+.ca .post .who i { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--pink); }
+.ca .post .cap { padding: 0 14px 16px; font-size: 14px; color: #5A3A55; }
+.ca .trip .ph { height: 120px; }
+.ca .trip .body { padding: 14px 16px 18px; }
+.ca .trip b { font: 800 19px Geist; display: block; }
+.ca .trip .m { color: #8A7486; font-size: 13px; margin-bottom: 10px; }
+.ca .stop { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: 14px; background: #FFF1E8; margin-top: 6px; font: 600 14px Geist; }
+.ca .stop i { font-style: normal; color: var(--coral); }
+.ca .arrow { position: absolute; left: 190px; top: 300px; width: 120px; height: 80px; }
+.ca .tag { position: absolute; padding: 8px 14px; border-radius: 999px; font: 800 14px Geist; color: #fff; box-shadow: 0 10px 20px rgb(0 0 0 / .15); }
+.ca .tag.t1 { background: var(--coral); right: 30px; top: 70px; --r: 8deg; }
+.ca .tag.t2 { background: var(--plum); left: 0; bottom: 30px; --r: -5deg; }
+.ca .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 50px 40px 10px; }
+.ca .card { border-radius: 28px; padding: 26px; background: #fff; box-shadow: 0 8px 24px rgb(120 60 30 / .08); }
+.ca .card .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 26px; color: #fff; margin-bottom: 14px; }
+.ca .card h4 { margin: 0 0 6px; font: 800 21px Geist; letter-spacing: -.01em; }
+.ca .card p { margin: 0; color: #6B5767; }
+.ca .terms { margin: 40px 40px 0; padding: 30px; border-radius: 32px; background: #fff; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+.ca .terms h3 { grid-column: 1 / -1; margin: 0 0 4px; font: 800 26px Geist; }
+.ca .terms div { padding: 16px; border-radius: 20px; background: #FFF4EC; font-size: 14px; color: #6B5767; }
+.ca .terms div b { display: block; color: var(--plum); font-size: 16px; margin-bottom: 4px; }
+.ca .final { margin: 40px; padding: 44px; border-radius: 36px; background: linear-gradient(120deg, var(--coral), var(--pink) 60%, #B04BFF); color: #fff; display: flex; align-items: center; gap: 24px; }
+.ca .final h3 { margin: 0; font: 800 38px/1.05 Geist; letter-spacing: -.03em; flex: 1; }
+.ca .final .btn { background: #fff; color: var(--plum); }
+
+/* phone variant */
+.phone .ca .hero { padding: 16px 20px 40px; border-radius: 0 0 36px 36px; }
+.phone .ca .hero .grid { grid-template-columns: 1fr; gap: 10px; }
+.phone .ca h1 { font-size: 44px; }
+.phone .ca .sub { font-size: 17px; }
+.phone .ca .paste { flex-direction: column; border-radius: 24px; }
+.phone .ca .paste span { padding: 14px; }
+.phone .ca .stage { height: 430px; zoom: .82; }
+.phone .ca .three { grid-template-columns: 1fr; padding: 30px 20px 0; }
+.phone .ca .terms { grid-template-columns: 1fr 1fr; margin: 30px 20px 0; padding: 20px; }
+.phone .ca .final { margin: 30px 20px; padding: 28px; flex-direction: column; align-items: flex-start; }
+.phone .ca .final h3 { font-size: 30px; }
+.phone .nav { padding: 14px 20px; flex-wrap: wrap; }
+.phone .nav .l { display: none; }
+.phone .foot { padding: 20px; }
+
+/* ================= FOR CREATORS · B · Your grid becomes trips ================= */
+.cb { background: #FFFBF6; }
+.cb .hero { padding: 40px 40px 30px; text-align: center; }
+.cb h1 { font: 800 72px/1 Geist; letter-spacing: -.045em; margin: 14px auto 14px; max-width: 16ch; color: var(--plum); }
+.cb h1 .hl { background: linear-gradient(transparent 60%, #FFD36B 60%); }
+.cb .sub { font-size: 20px; color: #6B5767; max-width: 46ch; margin: 0 auto 22px; }
+.cb .paste { display: flex; gap: 8px; padding: 8px; border-radius: 999px; background: #fff; border: 2px solid var(--ink); max-width: 620px; margin: 0 auto; box-shadow: 6px 6px 0 var(--ink); }
+.cb .paste span { flex: 1; display: flex; align-items: center; padding: 0 18px; color: #9A8494; font-size: 17px; text-align: left; }
+.cb .paste .btn { background: var(--ink); color: #fff; }
+.cb .profile { margin: 40px auto 0; width: 820px; max-width: calc(100% - 40px); border-radius: 34px; background: #fff; box-shadow: 0 20px 50px rgb(80 30 60 / .14); padding: 26px; }
+.cb .ph-h { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; text-align: left; }
+.cb .ph-h i { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--coral), var(--pink)); box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--pink); }
+.cb .ph-h b { font: 800 22px Geist; display: block; }
+.cb .ph-h span { color: #8A7486; }
+.cb .ph-h .stat { margin-left: auto; display: flex; gap: 22px; text-align: center; }
+.cb .ph-h .stat b { font-size: 20px; }
+.cb .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cb .tile { position: relative; aspect-ratio: 1; border-radius: 18px; overflow: hidden; }
+.cb .tile .badge { position: absolute; left: 10px; bottom: 10px; right: 10px; padding: 8px 10px; border-radius: 14px; background: rgb(255 255 255 / .94); font: 700 13px Geist; text-align: left; box-shadow: 0 6px 14px rgb(0 0 0 / .15); }
+.cb .tile .badge em { font-style: normal; color: var(--coral); display: block; font-size: 12px; }
+.cb .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 50px 40px 0; }
+.cb .step { padding: 24px; border-radius: 26px; border: 2px solid var(--ink); background: #fff; box-shadow: 5px 5px 0 var(--ink); }
+.cb .step .n { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 800 18px Geist; color: #fff; margin-bottom: 10px; }
+.cb .step h4 { margin: 0 0 6px; font: 800 20px Geist; }
+.cb .step p { margin: 0; color: #6B5767; }
+.cb .final { margin: 44px 40px; padding: 40px; border-radius: 32px; background: var(--gold); display: flex; align-items: center; gap: 20px; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+.cb .final h3 { margin: 0; font: 800 36px/1.05 Geist; flex: 1; color: var(--plum); }
+.cb .final .btn { background: var(--ink); color: #fff; }
+.phone .cb .hero { padding: 20px 20px 10px; }
+.phone .cb h1 { font-size: 42px; }
+.phone .cb .sub { font-size: 17px; }
+.phone .cb .paste { flex-direction: column; border-radius: 24px; }
+.phone .cb .paste span { padding: 14px; }
+.phone .cb .profile { padding: 16px; margin-top: 26px; }
+.phone .cb .ph-h .stat { display: none; }
+.phone .cb .ph-h i { width: 54px; height: 54px; }
+.phone .cb .tiles { grid-template-columns: 1fr 1fr; }
+.phone .cb .tile .badge { font-size: 11px; padding: 6px 8px; }
+.phone .cb .steps { grid-template-columns: 1fr; padding: 30px 20px 0; }
+.phone .cb .final { margin: 30px 20px; padding: 26px; flex-direction: column; align-items: flex-start; }
+.phone .cb .final h3 { font-size: 28px; }
+
+/* ================= COMMUNITY · A · Postcards ================= */
+.ma { background: var(--paper); }
+.ma .hero { position: relative; padding: 24px 40px 90px; background: linear-gradient(180deg, #9AD8FF 0%, #CFEFFF 55%, #FFF3D6 100%); overflow: hidden; }
+.ma .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .9; animation: drift 40s linear infinite; }
+.ma .cloud::before, .ma .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+.ma .cloud.c1 { width: 140px; height: 40px; top: 90px; left: 8%; }
+.ma .cloud.c1::before { width: 60px; height: 60px; left: 22px; top: -28px; }
+.ma .cloud.c1::after { width: 46px; height: 46px; left: 70px; top: -18px; }
+.ma .cloud.c2 { width: 110px; height: 34px; top: 150px; right: 12%; animation-duration: 55s; }
+.ma .cloud.c2::before { width: 48px; height: 48px; left: 18px; top: -22px; }
+.ma .cloud.c2::after { width: 36px; height: 36px; left: 56px; top: -14px; }
+@keyframes drift { from { transform: translateX(-40px); } to { transform: translateX(80px); } }
+.ma .sunb { position: absolute; right: 9%; top: 60px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, #FFE07A, #FFB938); box-shadow: 0 0 80px #FFD36B; }
+.ma h1 { position: relative; font: 800 70px/1 Geist; letter-spacing: -.045em; margin: 40px 0 14px; color: #0B3A4A; max-width: 15ch; }
+.ma h1 em { font-family: Fraunces, serif; font-style: italic; font-weight: 800; color: var(--lagoon); }
+.ma .sub { position: relative; font-size: 20px; color: #2D5866; max-width: 44ch; margin: 0 0 24px; }
+.ma .search { position: relative; display: flex; gap: 8px; padding: 8px; border-radius: 999px; background: #fff; max-width: 560px; box-shadow: 0 16px 40px rgb(14 124 134 / .22); }
+.ma .search span { flex: 1; display: flex; align-items: center; padding: 0 18px; color: #7A97A0; font-size: 17px; }
+.ma .search .btn { background: var(--lagoon); color: #fff; }
+.ma .chips { position: relative; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.ma .chips .chip { background: #fff; color: #0B3A4A; box-shadow: 0 4px 10px rgb(14 124 134 / .12); }
+.ma .chips .chip.on { background: #0B3A4A; color: #fff; }
+.ma .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; padding: 0 40px; margin-top: -50px; position: relative; }
+.ma .pc { border-radius: 10px; background: #fff; padding: 12px 12px 18px; box-shadow: 0 18px 40px rgb(11 58 74 / .16); }
+.ma .pc .art { position: relative; height: 210px; border-radius: 6px; overflow: hidden; }
+.ma .pc .stamp { position: absolute; right: 10px; top: 10px; width: 54px; height: 62px; background: #fff; border: 3px dotted #fff; outline: 2px solid rgb(255 255 255 / .8); display: grid; place-items: center; font: 800 11px Geist; color: var(--coral); text-align: center; line-height: 1.1; transform: rotate(6deg); box-shadow: 0 4px 10px rgb(0 0 0 / .15); }
+.ma .pc .src { position: absolute; left: 10px; top: 10px; }
+.ma .pc h4 { margin: 14px 4px 4px; font: 800 21px Geist; letter-spacing: -.01em; color: #0B3A4A; }
+.ma .pc .m { margin: 0 4px 10px; color: #5B7A84; font-size: 14px; }
+.ma .pc .who { display: flex; align-items: center; gap: 8px; margin: 0 4px 12px; font: 600 14px Geist; }
+.ma .pc .who i { width: 26px; height: 26px; border-radius: 50%; }
+.ma .pc .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 4px 14px; }
+.ma .pc .bot { display: flex; align-items: center; justify-content: space-between; margin: 0 4px; }
+.ma .pc .bot .btn { min-height: 44px; padding: 0 18px; font-size: 15px; background: var(--lagoon); color: #fff; }
+.ma .pc .bot span { color: #5B7A84; font: 600 13px Geist; }
+.ma .share { margin: 50px 40px 0; padding: 40px; border-radius: 32px; background: linear-gradient(120deg, #FFD36B, #FFB27A); display: flex; gap: 20px; align-items: center; }
+.ma .share h3 { margin: 0; font: 800 36px/1.05 Geist; letter-spacing: -.03em; flex: 1; color: #3A2410; }
+.ma .share .btn { background: #3A2410; color: #fff; }
+.ma .share .btn.l { background: #fff; color: #3A2410; }
+.t-kid { background: #FFE6F0; color: #A01E5A; } .t-pet { background: #E0F7EC; color: #0E6B47; } .t-two { background: #EAE6FF; color: #4A2FB0; } .t-yt { background: #FF3B30; color: #fff; } .t-ig { background: linear-gradient(90deg, #F58529, #DD2A7B, #8134AF); color: #fff; }
+.phone .ma .hero { padding: 14px 20px 70px; }
+.phone .ma h1 { font-size: 42px; margin-top: 20px; }
+.phone .ma .sub { font-size: 17px; }
+.phone .ma .sunb { width: 70px; height: 70px; top: 80px; right: 16px; }
+.phone .ma .grid { grid-template-columns: 1fr; padding: 0 20px; gap: 22px; }
+.phone .ma .share { margin: 34px 20px 0; padding: 26px; flex-direction: column; align-items: flex-start; }
+.phone .ma .share h3 { font-size: 28px; }
+
+/* ================= COMMUNITY · B · Pick a mood ================= */
+.mb { background: #FFFDF8; }
+.mb .hero { padding: 30px 40px 10px; text-align: center; }
+.mb h1 { font: 800 68px/1 Geist; letter-spacing: -.045em; margin: 20px auto 12px; color: #13233A; max-width: 18ch; }
+.mb h1 span { display: inline-block; padding: 0 12px; border-radius: 18px; background: var(--sun); transform: rotate(-2deg); }
+.mb .sub { font-size: 20px; color: #4E5C70; margin: 0 auto 26px; max-width: 46ch; }
+.mb .moods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 0 40px; }
+.mb .mood { position: relative; height: 150px; border-radius: 26px; overflow: hidden; color: #fff; }
+.mb .mood b { position: absolute; left: 16px; bottom: 14px; font: 800 24px Geist; text-shadow: 0 2px 10px rgb(0 0 0 / .3); }
+.mb .mood span { position: absolute; right: 14px; top: 14px; padding: 6px 10px; border-radius: 999px; background: rgb(255 255 255 / .9); color: #13233A; font: 700 13px Geist; }
+.mb .mood.on { box-shadow: 0 0 0 4px #13233A; }
+.mb .rowh { display: flex; align-items: baseline; gap: 12px; padding: 44px 40px 14px; }
+.mb .rowh h3 { margin: 0; font: 800 28px Geist; letter-spacing: -.02em; }
+.mb .rowh span { color: #4E5C70; }
+.mb .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 0 40px; }
+.mb .pol { background: #fff; padding: 10px 10px 16px; border-radius: 6px; box-shadow: 0 14px 30px rgb(19 35 58 / .14); }
+.mb .pol .art { height: 170px; border-radius: 3px; overflow: hidden; }
+.mb .pol h4 { margin: 12px 2px 2px; font: 600 22px/1.1 Fraunces, serif; color: #13233A; }
+.mb .pol p { margin: 0 2px 10px; color: #6A7686; font-size: 13px; }
+.mb .pol .bot { display: flex; align-items: center; gap: 8px; margin: 0 2px; }
+.mb .pol .bot i { width: 24px; height: 24px; border-radius: 50%; }
+.mb .pol .bot span { font: 600 13px Geist; color: #13233A; flex: 1; }
+.mb .pol .bot a { font: 700 13px Geist; color: #fff; background: #13233A; padding: 8px 12px; border-radius: 999px; text-decoration: none; }
+.mb .share { margin: 50px 40px 0; padding: 36px; border-radius: 30px; background: #13233A; color: #fff; display: flex; align-items: center; gap: 20px; }
+.mb .share h3 { margin: 0; font: 800 34px/1.05 Geist; flex: 1; }
+.mb .share .btn { background: var(--sun); color: #13233A; }
+.phone .mb .hero { padding: 16px 20px 0; }
+.phone .mb h1 { font-size: 40px; }
+.phone .mb .sub { font-size: 17px; }
+.phone .mb .moods { grid-template-columns: 1fr 1fr; padding: 0 20px; }
+.phone .mb .mood { height: 110px; }
+.phone .mb .rowh { padding: 30px 20px 12px; }
+.phone .mb .shelf { grid-template-columns: 1fr 1fr; padding: 0 20px; gap: 12px; }
+.phone .mb .pol .art { height: 110px; }
+.phone .mb .pol h4 { font-size: 17px; }
+.phone .mb .share { margin: 34px 20px 0; padding: 24px; flex-direction: column; align-items: flex-start; }
+.phone .mb .share h3 { font-size: 26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="top">Joyful pages: For creators and Community trips</h1>
+  <p class="lede">Light by default, each page its own mood, content arriving slowly before the call to action. Two options a page, phone and laptop.
+    Tick the one you want per page (or both to merge); your picks stay in this browser. "Play again" replays the arrival.</p>
+  <div class="picks" id="picks"><span>Picks:</span><span id="pick-sum" class="none">none yet</span><button class="replay" id="replay">Play again</button></div>
+
+  <section class="page" id="creators">
+    <h2>For creators</h2>
+    <p>For travel bloggers, YouTubers and Instagram creators: it should feel like their world (warm, social, a little glossy), not a tool.</p>
+    <div class="opt">
+      <div class="opt-h"><h3>A · Golden hour</h3><p>A sunset wash; their Instagram post turns into a GitAway trip right beside the paste box. Gradients and stickers, one coral-to-pink button.</p>
+        <label><input type="checkbox" data-pick="For creators · A Golden hour"> Pick A</label></div>
+      <div class="row"><div class="dev"><small>Laptop</small><div class="desk scroll" data-tpl="ca"></div></div><div class="dev"><small>Phone</small><div class="phone scroll" data-tpl="ca"></div></div></div>
+    </div>
+    <div class="opt">
+      <div class="opt-h"><h3>B · Your grid becomes trips</h3><p>Their profile grid, each post wearing a "becomes a trip" badge; a bolder sticker look with ink outlines and a gold highlight.</p>
+        <label><input type="checkbox" data-pick="For creators · B Your grid"> Pick B</label></div>
+      <div class="row"><div class="dev"><small>Laptop</small><div class="desk scroll" data-tpl="cb"></div></div><div class="dev"><small>Phone</small><div class="phone scroll" data-tpl="cb"></div></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="community">
+    <h2>Community trips</h2>
+    <p>The point of the site: trips real families and creators took, ready to plan for your own dates. Sunny, postcard-like, colourful tags you can read.</p>
+    <div class="opt">
+      <div class="opt-h"><h3>A · Postcards</h3><p>A sky that fades to sand, drifting clouds and the sun; trips are postcards with a stamp, overlapping the sky. Search and filter chips up top.</p>
+        <label><input type="checkbox" data-pick="Community · A Postcards"> Pick A</label></div>
+      <div class="row"><div class="dev"><small>Laptop</small><div class="desk scroll" data-tpl="ma"></div></div><div class="dev"><small>Phone</small><div class="phone scroll" data-tpl="ma"></div></div></div>
+    </div>
+    <div class="opt">
+      <div class="opt-h"><h3>B · Pick a mood</h3><p>Start from a feeling: Beach, City, Mountains, Desert tiles, then a shelf of polaroids for that mood. Serif titles like a travel journal.</p>
+        <label><input type="checkbox" data-pick="Community · B Pick a mood"> Pick B</label></div>
+      <div class="row"><div class="dev"><small>Laptop</small><div class="desk scroll" data-tpl="mb"></div></div><div class="dev"><small>Phone</small><div class="phone scroll" data-tpl="mb"></div></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---------- place scenes: simple drawn SVGs (beach, city, mountains, desert, coast road, kids' park) ----------
+function scene(kind) {
+  const S = {
+    beach: `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC8FF"/><stop offset=".55" stop-color="#FFD7B0"/></linearGradient></defs>
+      <rect width="400" height="260" fill="url(#g)"/><circle cx="300" cy="110" r="38" fill="#FFB938"/><rect y="150" width="400" height="60" fill="#1FAE9B"/>
+      <path d="M0 160 Q100 150 200 160 T400 160" stroke="#fff" stroke-width="4" fill="none" opacity=".7"/><rect y="200" width="400" height="60" fill="#FFE2A8"/>
+      <path d="M70 205 C 74 160 80 130 96 110" stroke="#5A3A20" stroke-width="7" fill="none"/><path d="M96 110 q-40 -6 -56 18 M96 110 q36 -14 58 8 M96 110 q-14 -30 -44 -34 M96 110 q20 -30 48 -30" stroke="#2E8B57" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M250 200 l10 -40 h40 l10 40z" fill="#FF6B4A"/><rect x="258" y="150" width="44" height="12" rx="4" fill="#fff"/>`,
+    city: `<defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB27A"/><stop offset="1" stop-color="#FF7FA8"/></linearGradient></defs>
+      <rect width="400" height="260" fill="url(#g2)"/><circle cx="90" cy="90" r="30" fill="#FFE07A"/>
+      <g fill="#3A1640"><rect x="30" y="130" width="50" height="130"/><rect x="90" y="100" width="40" height="160"/><rect x="140" y="140" width="60" height="120"/><rect x="210" y="80" width="36" height="180"/><rect x="226" y="60" width="6" height="24"/><rect x="256" y="120" width="56" height="140"/><rect x="322" y="150" width="60" height="110"/></g>
+      <g fill="#FFD36B" opacity=".9"><rect x="40" y="150" width="8" height="10"/><rect x="60" y="170" width="8" height="10"/><rect x="100" y="120" width="8" height="10"/><rect x="152" y="160" width="8" height="10"/><rect x="216" y="110" width="8" height="10"/><rect x="270" y="140" width="8" height="10"/><rect x="336" y="170" width="8" height="10"/></g>`,
+    mountains: `<defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE6FF"/><stop offset="1" stop-color="#EAF7FF"/></linearGradient></defs>
+      <rect width="400" height="260" fill="url(#g3)"/><path d="M0 200 L90 80 L150 160 L230 60 L320 170 L400 110 V260 H0z" fill="#6E8FB8"/>
+      <path d="M90 80 l-20 26 h40z M230 60 l-24 30 h48z" fill="#fff"/><rect y="190" width="400" height="40" fill="#2B8FCF"/><rect y="226" width="400" height="34" fill="#2E7D4F"/>
+      <g fill="#1F5E3A"><path d="M40 230 l14 -40 l14 40z"/><path d="M330 230 l16 -46 l16 46z"/><path d="M360 230 l12 -34 l12 34z"/></g>`,
+    desert: `<defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC27A"/><stop offset="1" stop-color="#FFE7B3"/></linearGradient></defs>
+      <rect width="400" height="260" fill="url(#g4)"/><circle cx="200" cy="130" r="54" fill="#FF8A3D"/><path d="M0 170 Q120 120 240 160 T400 150 V260 H0z" fill="#E59A5C"/><rect y="200" width="400" height="60" fill="#F4C27F"/>
+      <path d="M90 210 v-60 m0 20 q-18 0 -18 -18 m18 28 q18 0 18 -22" stroke="#2E7D4F" stroke-width="12" stroke-linecap="round" fill="none"/>`,
+    road: `<rect width="400" height="260" fill="#9FDCFF"/><path d="M0 140 Q140 90 260 140 T400 120 V260 H0z" fill="#3E9E6B"/><path d="M220 260 C 240 200 300 170 400 160" stroke="#555" stroke-width="26" fill="none"/>
+      <path d="M220 260 C 240 200 300 170 400 160" stroke="#FFD36B" stroke-width="3" stroke-dasharray="12 10" fill="none"/><rect y="200" width="160" height="60" fill="#1FAE9B"/><circle cx="330" cy="70" r="26" fill="#FFE07A"/>`,
+    park: `<rect width="400" height="260" fill="#FFE3CF"/><circle cx="320" cy="70" r="30" fill="#FFB938"/><rect y="190" width="400" height="70" fill="#7CCB7C"/>
+      <path d="M60 190 a90 90 0 0 1 180 0" stroke="#FF4F97" stroke-width="12" fill="none"/><path d="M80 190 a70 70 0 0 1 140 0" stroke="#FFC94A" stroke-width="12" fill="none"/><path d="M100 190 a50 50 0 0 1 100 0" stroke="#1FAE9B" stroke-width="12" fill="none"/>
+      <circle cx="300" cy="150" r="40" fill="#2E8B57"/><rect x="295" y="160" width="10" height="34" fill="#5A3A20"/>`,
+  };
+  return `<svg class="scene" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${S[kind]}</svg>`;
+}
+const nav = (cur) => `<div class="nav in" style="--d:0"><span class="logo"><i></i>GitAway</span>
+  <a class="${cur === 'cr' ? 'cur' : ''}">For creators</a><a class="${cur === 'co' ? 'cur' : ''}">Community trips</a><a>Plan a trip</a><a class="signin">Sign in</a></div>`;
+const foot = `<div class="foot"><span class="logo" style="font-size:18px"><i style="width:22px;height:22px"></i>GitAway</span><span>Privacy · Terms</span><span class="mode">☾ Dark</span></div>`;
+
+const TPL = {
+  ca: () => `<div class="ca">
+    <div class="hero">${nav('cr')}
+      <div class="grid">
+        <div>
+          <span class="kick in" style="--d:1">✦ For creators</span>
+          <h1 class="in" style="--d:2">Turn your post into a <em>trip people take.</em></h1>
+          <p class="sub in" style="--d:3">Paste your blog, YouTube video or Instagram caption. We draft the days; families plan your trip for their own dates, with your name on it.</p>
+          <div class="paste in" style="--d:5"><span>Paste a link or your caption…</span><a class="btn">Draft my trip</a></div>
+          <div class="srcs in" style="--d:6"><span class="chip">▶ YouTube</span><span class="chip">◎ Instagram</span><span class="chip">✎ Blog</span></div>
+        </div>
+        <div class="stage">
+          <div class="post pop" style="--d:3"><div class="who"><i></i>@mayaandtheo</div><div class="ph">${scene('beach')}</div><div class="cap">5 days of sun, tacos and tide pools in LA with the kids ☀️🌮</div></div>
+          <svg class="arrow pop" style="--d:6" viewBox="0 0 120 80"><path d="M6 60 C 40 10 80 10 110 40" stroke="#3A1640" stroke-width="4" fill="none" stroke-dasharray="7 7" stroke-linecap="round"/><path d="M98 30 l14 10 l-16 6" stroke="#3A1640" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+          <div class="trip pop" style="--d:7"><div class="ph">${scene('beach')}</div><div class="body"><b>Sun, tacos & tide pools</b><div class="m">Los Angeles · 5 days · by you</div>
+            <div class="stop">Venice boardwalk <i>9:00</i></div><div class="stop">Lunch on Abbot Kinney <i>12:30</i></div><div class="stop">Sunset at the pier <i>17:30</i></div></div></div>
+          <span class="tag t1 pop" style="--d:8">under a minute</span><span class="tag t2 pop" style="--d:9">links back to you ↗</span>
+        </div>
+      </div>
+    </div>
+    <div class="three">
+      <div class="card in" style="--d:9"><div class="ic" style="background:var(--coral)">⚡</div><h4>Under a minute</h4><p>Paste, glance at the draft, publish. You only fix what is off.</p></div>
+      <div class="card in" style="--d:10"><div class="ic" style="background:var(--pink)">$</div><h4>Flights pay you</h4><p>Add your Travelpayouts marker; flights booked from your trips carry it.</p></div>
+      <div class="card in" style="--d:11"><div class="ic" style="background:#B04BFF">↗</div><h4>Readers come back to you</h4><p>Every trip opens with your name and a link to your post.</p></div>
+    </div>
+    <div class="terms in" style="--d:12"><h3>The terms, in plain words</h3>
+      <div><b>What we show</b>Your name, the days and stops you approve, two photos, your link.</div><div><b>Take it down</b>Unpublish in one tap; the page and photos go.</div>
+      <div><b>Your marker</b>Paste it once; every trip says who earns.</div><div><b>Later</b>A share of stays for big creators: a plan, not a promise.</div></div>
+    <div class="final in" style="--d:13"><h3>Your trip, ready for families to follow.</h3><a class="btn">Draft my trip →</a></div>${foot}</div>`,
+
+  cb: () => `<div class="cb">${nav('cr')}
+    <div class="hero">
+      <span class="chip in" style="--d:1;background:#FFE3CF;color:var(--plum)">✦ For bloggers, YouTubers and Instagrammers</span>
+      <h1 class="in" style="--d:2">Every post you made is a <span class="hl">trip someone wants.</span></h1>
+      <p class="sub in" style="--d:3">Paste a link. GitAway turns it into days and stops a family can plan for their dates, and sends them back to you.</p>
+      <div class="paste in" style="--d:4"><span>Paste a link or your caption…</span><a class="btn">Draft my trip</a></div>
+    </div>
+    <div class="profile in" style="--d:5">
+      <div class="ph-h"><i></i><div><b>Maya & Theo</b><span>@mayaandtheo · family travel</span></div><div class="stat"><div><b>3</b><br>trips</div><div><b>312</b><br>planned</div><div><b>87</b><br>this week</div></div></div>
+      <div class="tiles">
+        <div class="tile pop" style="--d:6;--r:-1deg">${scene('beach')}<span class="badge"><em>✦ became a trip</em>Sun, tacos & tide pools</span></div>
+        <div class="tile pop" style="--d:7;--r:1deg">${scene('city')}<span class="badge"><em>✦ became a trip</em>LA for two, slow mornings</span></div>
+        <div class="tile pop" style="--d:8;--r:-1deg">${scene('road')}<span class="badge"><em>✦ became a trip</em>Big Sur with the dog</span></div>
+        <div class="tile pop" style="--d:9">${scene('mountains')}</div><div class="tile pop" style="--d:10">${scene('desert')}</div><div class="tile pop" style="--d:11">${scene('park')}</div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step in" style="--d:12"><div class="n" style="background:var(--coral)">1</div><h4>Paste your post</h4><p>A blog link, a YouTube video, an Instagram caption.</p></div>
+      <div class="step in" style="--d:13"><div class="n" style="background:var(--pink)">2</div><h4>Fix the draft</h4><p>Days, stops and tips, drafted for you in under a minute.</p></div>
+      <div class="step in" style="--d:14"><div class="n" style="background:#B04BFF">3</div><h4>Families follow it</h4><p>With your name, a link back, and your marker on flights.</p></div>
+    </div>
+    <div class="final in" style="--d:15"><h3>Turn your first post into a trip.</h3><a class="btn">Draft my trip →</a></div>${foot}</div>`,
+
+  ma: () => `<div class="ma"><div class="hero"><span class="sunb"></span><span class="cloud c1"></span><span class="cloud c2"></span>${nav('co')}
+      <h1 class="in" style="--d:1">Trips real families took. <em>Plan one for your dates.</em></h1>
+      <p class="sub in" style="--d:2">Shared by families and travel creators. Pick one and it becomes your trip, with your dates and your airport.</p>
+      <div class="search in" style="--d:3"><span>Where to? Beach, Los Angeles, a long weekend…</span><a class="btn">Search</a></div>
+      <div class="chips in" style="--d:4"><span class="chip on">All trips</span><span class="chip">🧒 Kid friendly</span><span class="chip">🐾 Pet friendly</span><span class="chip">💞 Couples</span><span class="chip">▶ From creators</span></div>
+    </div>
+    <div class="grid">
+      ${[['beach','Sun, tacos & tide pools','Los Angeles · 5 days','Maya & Theo','#FF6B4A',['t-yt','YouTube'],[['t-kid','Kid friendly'],['t-pet','Pet friendly']],'312',-1.2,'LA'],
+         ['city','LA for two, slow mornings','Los Angeles · 4 days','Jo & Dee','#B04BFF',null,[['t-two','Couples']],'128',1,'LA'],
+         ['road','Dog-friendly Big Sur drive','Monterey to Big Sur · 3 days','@trailsandtails','#1FAE9B',['t-ig','Instagram'],[['t-pet','Pet friendly']],'87',-.6,'BIG SUR'],
+         ['beach','San Diego on a budget','San Diego · 4 days','the Okafors','#FFB938',null,[['t-kid','Kid friendly']],'96',.8,'SD'],
+         ['park','LA with the kids','Los Angeles · 7 days','a family','#FF4F97',null,[['t-kid','Kid friendly']],'54',-.9,'LA'],
+         ['desert','A Palm Springs reset','Palm Springs · 3 days','Carmen on the Go','#FF8A3D',['t-yt','YouTube'],[['t-two','Couples']],'31',1.1,'PS']]
+        .map((t, i) => `<div class="pc pop" style="--d:${5 + i};--r:${t[8]}deg"><div class="art">${scene(t[0])}<span class="stamp">${t[9]}<br>✈</span>${t[5] ? `<span class="chip src ${t[5][0]}">${t[5][1]}</span>` : ''}</div>
+          <h4>${t[1]}</h4><p class="m">${t[2]}</p><div class="who"><i style="background:${t[4]}"></i>${t[3]}</div>
+          <div class="tags">${t[6].map(g => `<span class="chip ${g[0]}">${g[1]}</span>`).join('')}</div>
+          <div class="bot"><span>${t[7]} families planned it</span><a class="btn">Plan this trip</a></div></div>`).join('')}
+    </div>
+    <div class="share in" style="--d:12"><h3>Been somewhere wonderful? Share it.</h3><a class="btn">Share your trip</a><a class="btn l">For creators</a></div>${foot}</div>`,
+
+  mb: () => `<div class="mb">${nav('co')}
+    <div class="hero"><h1 class="in" style="--d:1">Where does your family <span>feel like going?</span></h1>
+      <p class="sub in" style="--d:2">Trips real families and creators took. Pick a mood, pick a trip, plan it for your own dates.</p></div>
+    <div class="moods">
+      ${[['beach','Beach','14 trips'],['city','City','9 trips'],['mountains','Mountains','6 trips'],['desert','Desert','4 trips']].map((m, i) =>
+        `<div class="mood pop${i === 0 ? ' on' : ''}" style="--d:${3 + i};--r:${i % 2 ? 1 : -1}deg">${scene(m[0])}<b>${m[1]}</b><span>${m[2]}</span></div>`).join('')}
+    </div>
+    <div class="rowh in" style="--d:7"><h3>Beach trips</h3><span>sun, sand and slow mornings</span></div>
+    <div class="shelf">
+      ${[['beach','Sun, tacos & tide pools','Los Angeles · 5 days','Maya & Theo','#FF6B4A',-2],['road','Big Sur with the dog','3 days · Instagram','@trailsandtails','#1FAE9B',1.5],
+         ['beach','San Diego on a budget','4 days · kid friendly','the Okafors','#FFB938',-1],['park','LA with the kids','7 days · kid friendly','a family','#FF4F97',2]].map((t, i) =>
+        `<div class="pol pop" style="--d:${8 + i};--r:${t[5]}deg"><div class="art">${scene(t[0])}</div><h4>${t[1]}</h4><p>${t[2]}</p><div class="bot"><i style="background:${t[4]}"></i><span>${t[3]}</span><a>Plan it</a></div></div>`).join('')}
+    </div>
+    <div class="share in" style="--d:13"><h3>Your trip could be the next one here.</h3><a class="btn">Share your trip</a></div>${foot}</div>`,
+};
+
+function draw() {
+  document.querySelectorAll('[data-tpl]').forEach((el) => { el.innerHTML = TPL[el.dataset.tpl](); });
+}
+draw();
+document.getElementById('replay').onclick = draw;
+
+// ---------- picks, remembered in this browser ----------
+const KEY = 'joyful-picks';
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+function save(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
+function sum() {
+  const v = [...document.querySelectorAll('[data-pick]:checked')].map((c) => c.dataset.pick);
+  const s = document.getElementById('pick-sum');
+  s.textContent = v.length ? v.join('  ·  ') : 'none yet'; s.className = v.length ? '' : 'none'; save(v);
+}
+const saved = load();
+document.querySelectorAll('[data-pick]').forEach((c) => { c.checked = saved.includes(c.dataset.pick); c.addEventListener('change', sum); });
+sum();
+</script>
+</body>
+</html>

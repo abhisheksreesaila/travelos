@@ -14,7 +14,7 @@ import logging
 
 from fasthtml.common import A, Button, Details, Div, Form, Header, Input, Kbd, Li, Nav, P, Script, Span, Summary, Ul
 
-from gitaway import session as ses, showcase
+from gitaway import session as ses
 from gitaway.icons import icon
 from gitaway.layout import mark, mode_switch, preview
 
@@ -103,9 +103,10 @@ def trip_menu(*label, sum_cls=""):
 
 
 def _me(who, new=0, admin=False):
-    """The avatar and its menu: who is signed in, People and invites, (the community, only with the showcase on), for the captain Admin with the count of reports not yet read
+    """The avatar and its menu: who is signed in, People and invites, Community trips and For creators, for the captain Admin with the count of reports not yet read
     (F-196: a dot on the avatar says there is one) and Sign out."""
-    extra = ([A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item")] if showcase.community_open() else []) + [A(icon("pencil", 16, 2.2), "For creators", href="/for-creators", cls="ga-tb-item")]   # F-186: the creators' page exists live from day one
+    extra = [A(icon("star", 16, 2.2), "Community trips", href="/community", cls="ga-tb-item"),      # D-458: always; its page says when nothing is shared yet
+             A(icon("pencil", 16, 2.2), "For creators", href="/for-creators", cls="ga-tb-item")]   # F-186: the creators' page exists live from day one
     return Details(
         Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), Span(cls="ga-tb-dot-new") if new else "", cls="ga-tb-sum ga-tb-sum-me",
                 aria_label=f"{who.name}: account menu" + (f", {new} new report{'s' if new != 1 else ''}" if new else "")),

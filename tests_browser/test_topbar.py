@@ -226,11 +226,12 @@ def test_the_avatar_menu_links_to_the_community_and_creators_with_the_showcase_o
     expect(page.locator(BAR)).to_be_visible()
 
 
-def test_the_avatar_menu_has_no_community_with_the_showcase_off(signed_in, monkeypatch):
+def test_the_avatar_menu_has_community_with_the_showcase_off(signed_in, monkeypatch):
+    """D-458: Community trips is in every header; its page says when nobody has shared yet."""
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-account summary")
-    expect(page.locator(f"{BAR} .ga-tb-pop-me")).not_to_contain_text("Community")
+    expect(page.locator(f"{BAR} .ga-tb-pop-me")).to_contain_text("Community trips")
 
 
 FITS = ["/trip/canvas", "/trip/family", "/trip/ask", "/trip?tab=notes", "/trip/help", "/trip/map"]

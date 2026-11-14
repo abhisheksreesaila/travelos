@@ -259,7 +259,7 @@ def test_the_box_has_paste_talk_and_type_and_the_day_picker_opens_on_the_day(cli
     bare = client.get("/trip/ask").text
     assert re.search(r'<option value="" selected', bare)
     assert 'data-mode="paste"' in client.get("/trip/ask?mode=paste").text and 'data-mode="talk"' in client.get("/trip/ask?mode=talk").text
-    assert 'data-mode=' not in client.get("/trip/ask?mode=bogus").text
+    assert 'data-mode=' not in client.get("/trip/ask?mode=bogus").text.split("<head>", 1)[1]      # (the <html> tag carries the site's light/dark, D-460)
 
 
 def test_the_old_add_to_the_trip_link_lands_in_the_box(client):

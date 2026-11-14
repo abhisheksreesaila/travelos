@@ -69,9 +69,9 @@ def test_the_opening_shows_at_once_in_day_or_night(cover, size, scheme):
     assert abs((min(l for l, _ in doors) + max(r for _, r in doors)) / 2 - vw / 2) <= 2, doors
     _, band_top, _, _ = _box(page, ".cv-band")
     assert band_top < vh                                                             # the places are already showing
-    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == ("rgb(0, 0, 0)" if scheme == "dark" else "rgb(242, 242, 245)")
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(242, 242, 245)"      # D-460: light by default, whatever the system says
     sky = page.evaluate("getComputedStyle(document.querySelector('.pa[data-art=\"san-diego\"]')).getPropertyValue('--sky1').trim()")
-    assert sky == ("#0A1830" if scheme == "dark" else "#D9ECFA")                     # the place's night palette in dark mode, its day one in light
+    assert sky == "#D9ECFA"                                                          # the place's day palette (dark is the button's: the next test)
 
 
 def test_the_sites_own_switch_turns_the_cover_and_its_art_dark(cover):
@@ -160,7 +160,7 @@ def test_the_screen_changes_when_its_words_arrive_and_the_other_words_wait_dimme
     for n, (_, t, _, h) in seen:
         assert 0 <= t and t + h <= vh, (n, t, h, vh)                                   # the new headline is on the screen at the change
     page.wait_for_timeout(1400)
-    assert _opacity(page, ".cv-card") == (["0.2", "0.2", "1"] if size == "1440" else ["1", "1", "1"])      # D-459: the words land, they unfade
+    assert _opacity(page, ".cv-card") == (["0", "0", "1"] if size == "1440" else ["1", "1", "1"])      # D-459: the words land, they unfade (never faint: 4.5:1 or not shown)
 
 
 def test_one_trip_carries_the_story_from_part_to_part(cover):
@@ -349,6 +349,10 @@ def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover
         for _, l1, t1, r1, b1 in boxes[i + 1:]:
             assert r0 <= l1 or r1 <= l0 or b0 <= t1 or b1 <= t0, boxes
     assert page.evaluate("document.querySelector('.cv-top .cv-btn').getBoundingClientRect().height") >= 48
+    tops = {b[0]: b[2] for b in boxes}
+    assert abs(tops["cv-btn"] - tops["ga-brand"]) < 16, boxes                          # Sign in stays beside the logo (D-458)
+    links = page.evaluate("[...document.querySelectorAll('.cv-nav a')].map(a => a.getBoundingClientRect().top)")
+    assert max(links) - min(links) < 1, links                                          # the nav is one row: Creators · Community · Plan a trip
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])

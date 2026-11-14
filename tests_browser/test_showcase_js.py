@@ -37,16 +37,17 @@ def no_sideways_scroll(page):
 
 @SIZES
 def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, viewport):
-    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part, no link to Community trips while nobody has
-    published, and its first door opens the start page."""
+    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part; Community trips is in its header (D-458), whose
+    page says nobody has shared yet; its door signs in, then opens the start page."""
     page = visit("/", viewport)
     assert no_sideways_scroll(page)
     assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
-    assert page.get_by_text("Community trips").count() == 0 and page.get_by_text("Been somewhere wonderful?").count() == 0
-    assert page.locator('a[href="/community"]').count() == 0                             # See trips people shared waits until someone has
+    assert page.get_by_text("Been somewhere wonderful?").count() == 0
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/start**")
+    page.wait_for_url("**/signin?next=%2Fstart")
+    page.goto(page.url.split("/signin")[0] + "/community")
+    assert page.get_by_text("No one has shared a trip yet").is_visible()
 
 
 @SIZES
@@ -76,6 +77,6 @@ def test_production_plan_asks_where_and_shows_no_invented_offers(visit, viewport
 
 @SIZES
 def test_a_hidden_page_is_a_plain_404(visit, viewport):
-    page = visit("/community", viewport)
+    page = visit("/forks", viewport)
     assert page.get_by_text("Nothing here").is_visible()
     assert no_sideways_scroll(page)

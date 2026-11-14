@@ -188,13 +188,11 @@ def test_a_creators_trip_leads_to_the_intake_started_from_it(setup, stranger, ba
     expect(page.locator("#pf-like")).to_have_text("Starting from “Three easy days in Santa Monica”.")
 
 
-def test_the_signed_out_landing_has_the_card(setup, stranger, base_url):
+def test_the_signed_out_landing_sells_only_start_a_trip(setup, stranger, base_url):
+    """D-458 (founder, 2026-11-13: "there's no plan it for me"): the cover has no card; Plan it for me stays reachable at its own page."""
     page = stranger(PHONE).new_page()
     page.goto(base_url)
-    card = page.locator("#plan-for-me")
-    expect(card.locator("h2")).to_have_text("Rather not plan it yourself?")
-    card.scroll_into_view_if_needed()
-    assert overflow(page) <= 1 and not too_small(page, "#plan-for-me .btn")
-    shot(page, "landing-390")
-    card.locator("#plan-for-me-go").click()
+    expect(page.locator("#plan-for-me")).to_have_count(0)
+    assert overflow(page) <= 1
+    page.goto(f"{base_url}/plan-for-me")
     expect(page).to_have_url(re.compile(r"/plan-for-me$"))

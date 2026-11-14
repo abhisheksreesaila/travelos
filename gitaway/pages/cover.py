@@ -41,6 +41,7 @@ LEDE = "Flights, stays and the drive, added up for every place and date you migh
 OG_IMAGE = "/assets/cover/og.jpg"
 # the phone layout: cover.css uses this same query
 PHONE_Q = "(max-width: 720px)"
+SHORT = {"For creators": "Creators", "Community trips": "Community"}      # the phone's header row (D-458)
 DISCLOSURE = "Every family, price and trip on this page is made up, to show how it works. The places and their weather are real."
 
 # the three parts: (number, its name, its headline, what it says, an id to link to). A headline is its ink words and its soft words, each a run of
@@ -287,7 +288,8 @@ def page(footer_links, drive=()):
         NotStr(_sprite()),
         A("Skip to the story", href="#main", cls="ga-skip"),
         Header(brand(), Div(preview(), cls="cv-tag"),
-               Nav(*[A(label, href=plan_href() if href == "/start" else href) for label, href in NAV], cls="cv-nav", aria_label="Main"),
+               Nav(*[A(Span(label, cls="cv-nl-full"), Span(SHORT.get(label, label), cls="cv-nl-short", aria_hidden="true"), href=plan_href() if href == "/start" else href,
+                       aria_label=label) for label, href in NAV], cls="cv-nav", aria_label="Main"),
                A("Sign in", href=session.signin_href(), cls="cv-btn tonal"), cls="cv-top"),
         Main(_hero(), _stage(), _close(), id="main", data_phone=PHONE_Q),
         _footer(footer_links),
