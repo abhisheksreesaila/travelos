@@ -163,7 +163,7 @@ def test_phone_cards_open_a_sheet_that_grows_from_the_square_and_folds_back(matr
     sheet = page.locator(".mx-sheet")
     expect(sheet).to_be_visible()
     expect(sheet.locator(".mx-p-h")).to_have_text("Los Angeles · Dec 12 to 16")
-    expect(sheet).to_contain_text("Booking opens soon.")
+    expect(sheet).to_contain_text("Sandbox booking: nothing is charged.")
     expect(sheet.locator(".mx-save")).to_be_visible()
     opened = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').slice(-1)[0]")
     assert opened and not opened.get("calm") and opened["from"]                               # grew out of the square

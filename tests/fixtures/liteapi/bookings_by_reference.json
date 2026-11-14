@@ -1,0 +1,154 @@
+{
+ "data": [
+  {
+   "bookingId": "_5hnX-MI7",
+   "clientReference": "gitaway-probe-f233",
+   "supplierBookingId": "_5hnX-MI7",
+   "supplierBookingName": "nuitee",
+   "supplier": "nuitee",
+   "supplierId": 2,
+   "status": "CONFIRMED",
+   "hotelConfirmationCode": "test",
+   "checkin": "2026-12-14",
+   "checkout": "2026-12-17",
+   "hotel": {
+    "hotelId": "lp369ef",
+    "name": "Margaritaville Hotel San Diego Gaslamp Quarter",
+    "address": "435 Sixth Avenue",
+    "city": "San Diego",
+    "country": "US",
+    "zip": "CA 92101",
+    "starRating": 4,
+    "thumbnail": "https://static.cupid.travel/hotels/thumbnail/511143696.jpg",
+    "location": {
+     "latitude": 32.709735,
+     "longitude": -117.159088
+    },
+    "phone": "+1 619-819-9500",
+    "email": "",
+    "checkinCheckoutTimes": {
+     "checkin_start": "04:00 PM",
+     "checkin_end": "",
+     "checkout": "11:00 AM",
+     "instructions": [],
+     "special_instructions": ""
+    }
+   },
+   "rooms": [
+    {
+     "adults": 1,
+     "children": 2,
+     "rate": {
+      "rateId": "I42FUVCPJZBFOR2FGNDUWTSSKVDVSWKUJ5GVEV2HKFNEIQKOLJJUOWSUIRGVUUSXJVIVUR2HJVJFCR2NLJCEKTKCLBDUKM2UJNHFEVSHLEZFITK2JJJUOQJTIRCU4USWI5MTERCPJUZTIR2FKJKEKTKCKNDVSWKUIVGUUVKQKFNEIQKNKJLUORK2IRBU4MZUJVLFQRRWKZFVIUCSJNLEON2DKZFU4Q2ILFGVGQSHJJBFIT2MJJJEOQRWIREU4SSTJBDDMR2TKVCEQS2WIVEFSTKKLBEEKMSEJVHEEWCHJVMUIUKNJJJEOUSVK5LTMRCNIVGVURCFJVNFQR2JGNJUOTSKKRDVKV2UIVGVEVCHGRNEITZXINHUWSSEIU2DOQSTI5AVURCNJVFFER2FLJKEGT2KKFEEENSEIU3UGU2HIVMVIS2NINBUQRJUKRFVIUSRJNKVSVCFG5BFIR2VGRKECTKCIRFUUSCTI5KFGU2JLJEEGR2NKJIUOSJTIMZE2SSSIZKVSVCHJFBFESCFGVCECT2CIR6DGNJZFYYDA7D4KJHXY7D4PRJXIYLOMRQXEZBAKJXW63JMEAZCAULVMVSW4ICCMVSHG7BQFYYDA7BQFYYDA7D4GAXDAMD4GAXDAMA",
+      "retailRate": {
+       "total": {
+        "amount": 359,
+        "currency": "USD"
+       },
+       "suggestedSellingPrice": {
+        "source": ""
+       },
+       "taxesAndFees": null
+      },
+      "maxOccupancy": 0,
+      "boardType": "",
+      "boardName": "",
+      "remarks": "",
+      "perks": []
+     },
+     "firstName": "Test",
+     "lastName": "Traveler",
+     "childrenAges": [
+      7,
+      10
+     ],
+     "room_id": "I42FUVCPJZBFOR2FGNDUWTSSKVDVSWKUJ5GVEV2HKFNEIQKOLJJUOWSUIRGVUUSXJVIVUR2HJVJFCR2NLJCEKTKCLBDUKM2UJNHFEVSHLEZFITK2JJJUOQJTIRCU4USWI5MTERCPJUZTIR2FKJKEKTKCKNDVSWKUIVGUUVKQKFNEIQKNKJLUORK2IRBU4MZUJVLFQRRWKZFVIUCSJNLEON2DKZFU4Q2ILFGVGQSHJJBFIT2MJJJEOQRWIREU4SSTJBDDMR2TKVCEQS2WIVEFSTKKLBEEKMSEJVHEEWCHJVMUIUKNJJJEOUSVK5LTMRCNIVGVURCFJVNFQR2JGNJUOTSKKRDVKV2UIVGVEVCHGRNEITZXINHUWSSEIU2DOQSTI5AVURCNJVFFER2FLJKEGT2KKFEEENSEIU3UGU2HIVMVIS2NINBUQRJUKRFVIUSRJNKVSVCFG5BFIR2VGRKECTKCIRFUUSCTI5KFGU2JLJEEGR2NKJIUOSJTIMZE2SSSIZKVSVCHJFBFESCFGVCECT2CIR6DGNJZFYYDA7D4KJHXY7D4PRJXIYLOMRQXEZBAKJXW63JMEAZCAULVMVSW4ICCMVSHG7BQFYYDA7BQFYYDA7D4GAXDAMD4GAXDAMA",
+     "occupancy_number": 1,
+     "amount": 359,
+     "currency": "USD",
+     "children_count": 2,
+     "remarks": "",
+     "guests": [
+      {
+       "firstName": "Test",
+       "lastName": "Traveler",
+       "email": "test.traveler@example.com",
+       "phone": "",
+       "remarks": "",
+       "occupancyNumber": 1
+      }
+     ]
+    }
+   ],
+   "holder": {
+    "firstName": "Test",
+    "lastName": "Traveler",
+    "email": "test.traveler@example.com",
+    "phone": ""
+   },
+   "createdAt": "2026-11-14T09:08:37Z",
+   "updatedAt": "2026-11-14T09:08:37Z",
+   "cancellationPolicies": {
+    "cancelPolicyInfos": [],
+    "hotelRemarks": [],
+    "refundableTag": "NRFN"
+   },
+   "specialRemarks": "",
+   "optionalFees": "",
+   "mandatoryFees": "",
+   "knowBeforeYouGo": "",
+   "price": 359,
+   "sellingPriceToUser": 359,
+   "commission": 0,
+   "addonsTotalAmount": 0,
+   "currency": "USD",
+   "remarks": "",
+   "voucherCode": "",
+   "voucherTotalAmount": 0,
+   "addons": null,
+   "guestId": 0,
+   "distributorCommission": 0,
+   "distributorPrice": 0,
+   "trackingId": "",
+   "firstName": "Test",
+   "lastName": "Traveler",
+   "adults": 2,
+   "children": "7,10",
+   "childrenCount": 2,
+   "prebookId": "mxB7A2bfb",
+   "paymentStatus": "succeeded",
+   "paymentTransactionId": "tr_cts_q9jWgROMM3FDocpDtsIJA",
+   "sellingPrice": "359",
+   "exchangeRate": 0.904515364424646,
+   "exchangeRateUsd": 1,
+   "email": "test.traveler@example.com",
+   "tag": "NRFN",
+   "lastFreeCancellationDate": null,
+   "userId": 389588,
+   "nationality": "US",
+   "holderTitle": "",
+   "hotelId": "lp369ef",
+   "hotelName": "Margaritaville Hotel San Diego Gaslamp Quarter",
+   "cancelledAt": null,
+   "refundedAt": null,
+   "loyaltyGuestId": null,
+   "sandbox": 1,
+   "clientCommission": 0,
+   "voucherId": null,
+   "voucherTransationId": null,
+   "processingFee": 14.36,
+   "amountRefunded": 0,
+   "refundType": "",
+   "addonsRedemptions": null,
+   "rebookFrom": "",
+   "agentId": null,
+   "cancelledBy": null,
+   "feed": "liteapionboarding",
+   "goodwillPayment": null,
+   "newCharges": 0,
+   "compensationAmount": 0,
+   "hotelRemarks": "",
+   "payLaterDeadline": null
+  }
+ ]
+}

@@ -1485,11 +1485,12 @@ Brief: docs/briefs/world-class-journey.md · Builds on F-227 (D-426..D-460) · F
 - [ ] the story leads to the matrix (Start a trip) and says the four steps: compare, book, plan together, share
 - [ ] 4.5:1 in light and dark, reduced motion calm, the 28 KB script budget held
 
-## F-233 Book a square with LiteAPI's sandbox [todo]
-Brief: docs/briefs/world-class-journey.md · Needs: F-220, F-222 · Risk: personal data (guest names, email), payments (sandbox only)
-- [ ] the matrix square's Book: prebook the stay (LiteAPI sandbox), guest details, book, a confirmation with LiteAPI's booking id, said plainly "Sandbox booking: nothing is charged"; every new LiteAPI answer recorded from the sandbox before it is parsed (tests/fixtures/liteapi)
-- [ ] the booked stay becomes the family's trip and lands on its cockpit
-- [ ] colourful and alive: the square grows into the booking sheet, steps settle on the springs
+## F-233 Book a square with LiteAPI's sandbox [done]
+Brief: docs/briefs/world-class-journey.md · Needs: F-220, F-222 · Decisions: D-480 to D-489, review fixes D-510 to D-513 · reviewer PASS, security audit closed
+- [x] the matrix square's Book: prebook the stay (LiteAPI sandbox), a made-up test guest (no real personal data while it is a sandbox), book, a confirmation with LiteAPI's booking id, said plainly "Sandbox booking: nothing is charged"; every new LiteAPI answer recorded from the sandbox before it is parsed (tests/fixtures/liteapi)
+- [x] the booked stay becomes the family's trip and lands on its cockpit
+- [x] colourful and alive: the square grows into the booking sheet, steps settle on the springs
+- [ ] later: real payments, cancelling, emailing the confirmation, a bookings page
 
 ## F-234 Share the trip to Instagram [done]
 Brief: docs/briefs/world-class-journey.md · Absorbs F-226's card · Decisions: D-490 to D-495 · docs/trip-share.md

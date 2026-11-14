@@ -1,6 +1,6 @@
 """F-222: the trip matrix's pages. /plan/matrix draws every place and start day the source already knows and a skeleton for the rest; /plan/matrix/tile answers one
 square for the script; /plan/matrix/square is one square as a page (the panel, for a link and without the script); /plan/matrix/save keeps a square on the family's
-trip ("Booking opens soon"), reading the price again. On the showcase the sample catalog drives it and says so; off it the pages exist only with LITEAPI_KEY."""
+trip, reading the price again. On the showcase the sample catalog drives it and says so; off it the pages exist only with LITEAPI_KEY."""
 import json
 import re
 from datetime import date
@@ -91,10 +91,10 @@ def test_a_retyped_sentence_lands_on_its_plain_address_or_says_what_is_missing(s
     assert "does not know that place’s airport" in unescape(html) and 'id="mx-q-err"' in html      # said in the open retype box; the matrix it had stays
 
 
-def test_a_squares_own_page_is_the_panel_with_every_part_and_booking_opens_soon(sample, client):
+def test_a_squares_own_page_is_the_panel_with_every_part_and_a_sample_booking(sample, client):
     html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
     assert "Los Angeles + San Diego · Dec 12 to 16" in html and "2 nights each · a family of 4" in html
-    assert "Booking opens soon." in html and "Save to trip" in html and "Back to the matrix" in html
+    assert "Sample booking: nothing is booked or charged." in html and "Book the stays" in html and 'action="/plan/matrix/book"' in html and "Save to trip" in html and "Back to the matrix" in html
     assert 'action="/plan/matrix/save"' in html and "Sample prices" in html
     assert "2 nights in Los Angeles" in html and "2 nights in San Diego" in html and "Airport drive" in html
     r = client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=nowhere&w=2026-12-12", follow_redirects=False)

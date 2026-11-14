@@ -162,7 +162,7 @@ def _catalog_square(lane, w, adults, kid_ages, home):
 def _stay_part(place, a, b, s: liteapi.Stay) -> tm.StayPart:
     board = "breakfast" if s.board == "breakfast" else s.board
     rating = " · ".join(x for x in (f"{s.rating:g} of 10" if s.rating else "", f"{s.reviews:,} reviews" if s.reviews else "") if x)
-    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents)
+    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents, s.offer_id)
 
 
 def _leg_words(leg) -> str:
