@@ -20,7 +20,7 @@
       .then(function (r) {
         if (r.status === 403) return { refused: true };
         if (r.redirected && r.url.indexOf('/signin') >= 0) { location.href = r.url; return { gone: true }; }
-        if (!r.ok || (r.headers.get('content-type') || '').indexOf('html') < 0) throw new Error(r.status);
+        if ((!r.ok && r.status !== 429) || (r.headers.get('content-type') || '').indexOf('html') < 0) throw new Error(r.status);
         return r.text().then(function (html) { return { html: html }; });
       })
       .catch(function () { return { failed: true }; })

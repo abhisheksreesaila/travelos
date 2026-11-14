@@ -2,13 +2,13 @@
 
     clean_guest(first, last, email)         (liteapi.Guest, {}) or (None, {field: problem}): the lead guest, trimmed, length-limited, letters only in the names
     prepare(parts, dates, family, sample)   a Prep: each stay's offer prebooked (the room checked and its final price read), or why it could not be
-    hold(family, prep) / held(family, token)   the prebooked rooms kept 15 minutes in the process, for the guest form to finish
+    hold(family, prep, square) / held(family, token, square)   the prebooked rooms kept 15 minutes in the process (5 a family), bound to their square, for the guest form to finish
     book(prep, guest, db, family, trip_id, user_id)   a Result: each stay booked once, stored in the family's `matrix_bookings`, a repeated press finds the stored row
-    for_trip(db, trip_id)                   the stays booked for a trip, for its page
+    allow(person)                           the per-person limit on Book presses (counted in community.db)
 
 Only the sandbox: `liteapi.prebook` and `liteapi.book` refuse any key that is not `sand_...`, so no real card or money is ever involved, and every word on a sheet says
 "Sandbox booking: nothing is charged". On the showcase (sample squares) nothing is sent to LiteAPI: a stand-in prebook and booking say "Sample booking: nothing is booked or
-charged". A guest's name and email are personal data: validated here, stored in the family's own database, escaped on output, never logged.
+charged". A guest's name and email are personal data: validated here, sent to LiteAPI and kept nowhere by us (D-490), escaped on output, never logged.
 """
 
 import hashlib
@@ -24,16 +24,17 @@ from gitaway import familydb, liteapi
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
 HOLD = 15 * 60                  # seconds a prebooked room is kept for the guest form
-HELD_MAX = 200
+HELD_PER_FAMILY = 5             # prebooked rooms kept per family, the oldest dropped first
+PER_MINUTE, PER_DAY = 5, 20     # Book presses a person may make (both routes), counted in community.db
 NAME_MAX, EMAIL_MAX = 40, 120
 _NAME = re.compile(r"^[^\W\d_](?:[^\W\d_]|[ '’.\-])*$")      # letters first; letters, spaces, apostrophes, dots and hyphens after
-_EMAIL = re.compile(r"^[^@\s<>\"',;:()\[\]\\]+@[A-Za-z0-9](?:[A-Za-z0-9.\-]*[A-Za-z0-9])?\.[A-Za-z]{2,}$")
+_EMAIL = re.compile(r"^[A-Za-z0-9.!#$%&*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.\-]*[A-Za-z0-9])?\.[A-Za-z]{2,}\Z", re.ASCII)      # printable ASCII before the @: no NUL, DEL, bidi marks or quotes
 SAID = {liteapi.GONE: "That room was just taken. Go back to the matrix and open the square again for today’s rooms.",
         liteapi.OVER: "Today’s searches are used up. Try again tomorrow.",
         liteapi.BUSY: "LiteAPI is busy right now. Try again in a minute.",
         liteapi.OFF: "Booking needs the LiteAPI sandbox key; this site has none (or a live one, which never books).",
         liteapi.FAILED: "LiteAPI did not answer just now. Nothing was booked. Try again in a minute.",
-        liteapi.DUPLICATE: "That was already booked a moment ago."}
+        liteapi.DUPLICATE: "LiteAPI says this room is already booked, but we could not find the booking. Check your bookings with LiteAPI before booking again."}
 
 
 @dataclass(frozen=True)
@@ -85,8 +86,6 @@ class Done:
     due_at_stay_cents: int
     refundable: bool
     confirmation: str
-    guest_name: str
-    guest_email: str
     sample: bool
     trip_id: str = ""
 
@@ -147,24 +146,47 @@ def prepare(parts, dates, family: str = "", sample: bool = False) -> Prep:
     return Prep(liteapi.OK, tuple(rows), sample, secrets.token_urlsafe(12))
 
 
-_HELD: dict = {}
+_HELD: dict = {}      # token -> (family, prep, kept at, the square it was prebooked for)
 _LOCK = threading.Lock()
 
 
-def hold(family: str, prep: Prep) -> str:
+def hold(family: str, prep: Prep, square: tuple) -> str:
+    """Keep the prebooked room for `family`, bound to `square` (its key and the address words it was asked with). At most HELD_PER_FAMILY a family: its oldest goes first."""
     with _LOCK:
-        for k in [k for k, (_, _, at) in _HELD.items() if time.monotonic() - at > HOLD]:
+        for k in [k for k, v in _HELD.items() if time.monotonic() - v[2] > HOLD]:
             del _HELD[k]
-        while len(_HELD) >= HELD_MAX:
-            del _HELD[next(iter(_HELD))]
-        _HELD[prep.token] = (family, prep, time.monotonic())
+        mine = [k for k, v in _HELD.items() if v[0] == family]
+        for k in mine[: max(0, len(mine) - HELD_PER_FAMILY + 1)]:
+            del _HELD[k]
+        _HELD[prep.token] = (family, prep, time.monotonic(), square)
     return prep.token
 
 
-def held(family: str, token: str) -> Prep | None:
+def held(family: str, token: str, square: tuple) -> Prep | None:
+    """The room kept under `token`, only for the family and the very square it was kept for."""
     with _LOCK:
         found = _HELD.get(token or "")
-    return found[1] if found and found[0] == family and time.monotonic() - found[2] <= HOLD else None
+    return found[1] if found and found[0] == family and found[3] == square and time.monotonic() - found[2] <= HOLD else None
+
+
+def allow(person: str) -> bool:
+    """Count one Book press by `person` and say whether it may go on: at most PER_MINUTE a minute and PER_DAY a day, kept in community.db (who and when, nothing else)."""
+    from datetime import timedelta
+
+    from sqlalchemy import text
+
+    from gitaway import community
+    at = liteapi.now()
+    with _LOCK, community.connect() as db:
+        db.conn.execute(text("DELETE FROM book_presses WHERE at < :old"), {"old": (at - timedelta(days=2)).isoformat()})
+        minute = db.conn.execute(text("SELECT COUNT(*) FROM book_presses WHERE person = :p AND at > :t"), {"p": person, "t": (at - timedelta(minutes=1)).isoformat()}).scalar()
+        day = db.conn.execute(text("SELECT COUNT(*) FROM book_presses WHERE person = :p AND at > :t"), {"p": person, "t": (at - timedelta(days=1)).isoformat()}).scalar()
+        if minute >= PER_MINUTE or day >= PER_DAY:
+            db.conn.commit()
+            return False
+        db.conn.execute(text("INSERT INTO book_presses (person, at) VALUES (:p, :t)"), {"p": person or "guest", "t": at.isoformat()})
+        db.conn.commit()
+    return True
 
 
 def forget() -> None:
@@ -181,22 +203,18 @@ def reference(family: str, token: str, i: int) -> str:
 
 def _stored(row) -> Done:
     return Done(row["booking_id"], row["hotel"], row["room"], row["place"], row["checkin"], row["checkout"], row["total_cents"], row["due_at_stay_cents"], bool(row["refundable"]),
-                row["confirmation"], row["guest_name"], row["guest_email"], bool(row["sample"]), row["trip_id"])
+                row["confirmation"], bool(row["sample"]), row["trip_id"])
 
 
-def for_trip(db, trip_id: str) -> list:
-    return [_stored(r) for r in familydb.rows(db, "SELECT * FROM matrix_bookings WHERE trip_id = :t ORDER BY created_at, id", t=trip_id)]
-
-
-def _save(db, ref, trip_id, user_id, row: Row, booking: liteapi.Booking | None, guest: liteapi.Guest, sample: bool) -> None:
+def _save(db, ref, trip_id, user_id, row: Row, booking: liteapi.Booking | None, sample: bool) -> None:
     pre = row.prebook
     id_ = ("SAMPLE-" + ref[:8].upper()) if booking is None else booking.booking_id
     hotel = row.part.name if booking is None else (booking.hotel or row.part.name)
     familydb.run(db, "INSERT INTO matrix_bookings (id, trip_id, user_id, booking_id, place, hotel, room, checkin, checkout, total_cents, due_at_stay_cents, refundable, confirmation, "
-                     "guest_name, guest_email, sample, created_at) VALUES (:i, :t, :u, :b, :p, :h, :r, :a, :o, :c, :d, :f, :k, :g, :e, :s, :now)",
+                     "sample, created_at) VALUES (:i, :t, :u, :b, :p, :h, :r, :a, :o, :c, :d, :f, :k, :s, :now)",
                  i=ref, t=trip_id, u=user_id, b=id_, p=row.place, h=hotel[:120], r=pre.room[:120], a=pre.checkin.isoformat(), o=pre.checkout.isoformat(),
                  c=(booking.cents + pre.due_at_stay_cents) if booking else row.total_cents, d=pre.due_at_stay_cents, f=1 if pre.refundable else 0,
-                 k=("SAMPLE" if booking is None else booking.confirmation)[:60], g=f"{guest.first} {guest.last}", e=guest.email, s=1 if sample else 0, now=familydb.now())
+                 k=("SAMPLE" if booking is None else booking.confirmation)[:60], s=1 if sample else 0, now=familydb.now())
 
 
 def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_id: str) -> Result:
@@ -212,11 +230,15 @@ def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_i
         booking = None
         if not prep.sample:
             got = liteapi.book(row.prebook.prebook_id, guest, ref, family)
+            if got.status == liteapi.DUPLICATE:      # LiteAPI holds a booking under our reference but we hold no row (an answer was lost): ask for it, never say it is done unseen
+                got = liteapi.booking_for(ref, family)
+                if not got.ok:
+                    return Result(liteapi.DUPLICATE, tuple(done), len(prep.rows) - len(done))
             if not got.ok:
                 return Result(got.status, tuple(done), len(prep.rows) - len(done))
             booking = got.items[0]
         with familydb.transaction(db):
-            _save(db, ref, trip_id, user_id, row, booking, guest, prep.sample)
+            _save(db, ref, trip_id, user_id, row, booking, prep.sample)
         done.append(_stored(familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)[0]))
     return Result(liteapi.OK, tuple(done), 0)
 

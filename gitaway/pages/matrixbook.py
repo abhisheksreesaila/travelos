@@ -24,7 +24,9 @@ from gitaway.partners import registry
 CONFIRM = mx.BOOK + "/confirm"
 SIGNIN = "Sign in to book."
 STEPS = (("room", "Room", "bed", "k-stay"), ("guest", "Guest", "users", "k-flight"), ("booked", "Booked", "check", "k-car"))
-STALE = "The room check had timed out, so it was run again. Check the price, then press Book."
+STALE = "That room check has expired or is not for this square. Close this and press Book on the square again."
+SLOW_DOWN = "That is a lot of booking tries. Wait a minute, or try again tomorrow."
+MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-490)
 
 
 def _steps(at: str):
@@ -70,10 +72,10 @@ def _hidden(s, lane, w, **more):
 
 
 def _guest_form(s, lane, w, prep, values=None, errors=None):
-    values, errors = values or {}, errors or {}
+    values, errors = values or dict(zip(("first", "last", "email"), MADE_UP)), errors or {}
     return Form(*_hidden(s, lane, w, token=prep.token),
                 H3("Who is the lead guest?", cls="mxb-q"),
-                P("One name on the booking. The hotel asks for it at the desk.", cls="mxb-hint"),
+                P("A made-up guest is filled in: this is the sandbox, so there is no need to type a real name or email. LiteAPI’s test system gets it and GitAway keeps nothing of it.", cls="mxb-hint"),
                 Div(_field("first", "First name", values.get("first", ""), errors.get("first"), autocomplete="given-name", maxlength=mb.NAME_MAX),
                     _field("last", "Last name", values.get("last", ""), errors.get("last"), autocomplete="family-name", maxlength=mb.NAME_MAX), cls="mxb-two"),
                 _field("email", "Email", values.get("email", ""), errors.get("email"), type="email", autocomplete="email", maxlength=mb.EMAIL_MAX, inputmode="email"),
@@ -102,12 +104,12 @@ def _done_row(d: mb.Done):
                Span(catalog.money(d.total_cents), cls="mx-r-n"), cls="mx-row mxb-row mxb-done")
 
 
-def _confirmation(s, lane, w, res: mb.Result):
+def _confirmation(s, lane, w, res: mb.Result, who: str):
     first = res.done[0]
     flight = _flight_link(s, lane, w)
     sample = any(d.sample for d in res.done)
     return Div(Div(Span(icon("check", 28, 2.6), cls="mxb-big"), H3("Booked" + ("" if len(res.done) == 1 else f", {len(res.done)} stays"), cls="mxb-q"),
-                   P(f"{first.guest_name}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), cls="mxb-booked"),
+                   P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), cls="mxb-booked"),
                Div(*[_done_row(d) for d in res.done], cls="mx-rows"),
                Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"),
                    Div(P("Flights", cls="mx-r-h"), P("They book on their own site, so you choose the fare.", cls="mx-r-s"),
@@ -120,12 +122,12 @@ def _problem(words: str):
     return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
 
 
-def sheet(s, lane, w, *, prep=None, at="guest", values=None, errors=None, note="", res=None, problem="", sample=False):
+def sheet(s, lane, w, *, prep=None, at="guest", values=None, errors=None, note="", res=None, problem="", sample=False, who=""):
     """The booking sheet's inside: the head, the steps, and the one step it is at (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it)."""
     if problem:
         body, at = _problem(problem), "room"
     elif res is not None and res.ok:
-        body, at = _confirmation(s, lane, w, res), "booked"
+        body, at = _confirmation(s, lane, w, res, who), "booked"
     else:
         body = Div(Div(*[_stay_row(r, prep.sample) for r in prep.rows], cls="mx-rows"),
                    P(Span("Total", cls="mxb-tl"), Span(catalog.money(prep.total_cents), cls="mx-r-n mxb-total"), cls="mxb-sum"),
@@ -164,6 +166,11 @@ def _prepare(s, lane, w, sq, family):
     return prep
 
 
+def _square_of(s, lane, w) -> tuple:
+    """What a held room is bound to: the square's key and the address words it was asked with."""
+    return tm.key(lane.key, w.key), tuple(sorted((n, str(v)) for n, v in mx.params(s, lane=lane.key, w=w.key).items()))
+
+
 def _first_step(request, session, s, lane, w, sq, note=""):
     family = _family(session)
     if not sq.ok or not sq.stays:
@@ -171,7 +178,7 @@ def _first_step(request, session, s, lane, w, sq, note=""):
     prep = _prepare(s, lane, w, sq, family)
     if not prep.ok:
         return _answer(request, s, lane, w, sheet(s, lane, w, problem=mb.SAID.get(prep.status, mb.SAID[liteapi.FAILED]), sample=sq.sample))
-    mb.hold(family, prep)
+    mb.hold(family, prep, _square_of(s, lane, w))
     return _answer(request, s, lane, w, sheet(s, lane, w, prep=prep, note=note))
 
 
@@ -186,11 +193,14 @@ def register(app):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
             return RedirectResponse(mx.href(s), status_code=303)
-        if not ses.current_traveler(session):
+        me = ses.current_traveler(session)
+        if not me:
             return _signed_out(s, lane, w)
         lane_, w_, sq = _read(s, lane, w, _family(session))
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
+        if not mb.allow(me.id):
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SLOW_DOWN, sample=sq.sample), 429)
         return _first_step(request, session, s, lane_, w_, sq)
 
     @app.post(CONFIRM)
@@ -206,9 +216,11 @@ def register(app):
         lane_, w_, sq = _read(s, lane, w, family)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
-        prep = mb.held(family, token)
-        if prep is None:      # restarted, or kept too long: the rooms are checked again and nothing is booked on a price the person did not see
-            return _first_step(request, session, s, lane_, w_, sq, STALE)
+        if not mb.allow(me.id):
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SLOW_DOWN, sample=sq.sample), 429)
+        prep = mb.held(family, token, _square_of(s, lane_, w_))
+        if prep is None:      # restarted, kept too long, another family's or another square's token: nothing is asked of LiteAPI
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=sq.sample))
         guest, errors = mb.clean_guest(first, last, email)
         if errors:
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, prep=prep, values={"first": first[:mb.NAME_MAX], "last": last[:mb.NAME_MAX], "email": email[:mb.EMAIL_MAX]},
@@ -218,11 +230,13 @@ def register(app):
         except importer.SaveError as e:
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=str(e), sample=prep.sample))
         with ses.family(session) as fam:
+            if not fam:      # the family went away between the steps: sign in again, nothing was asked of LiteAPI
+                return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SIGNIN, sample=prep.sample))
             res = mb.book(prep, guest, fam.db, family, trip_id, me.id)
         if res.done:
             mb.add_to_trip(session, trip_id, res.done)
         if res.ok:
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, prep=prep, res=res))
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, prep=prep, res=res, who=f"{guest.first} {guest.last}"))
         said = mb.SAID.get(res.status, mb.SAID[liteapi.FAILED])
         left = f" {len(res.done)} of {len(prep.rows)} stays are booked; press Book again for the rest." if res.done else ""
         return _answer(request, s, lane_, w_, sheet(s, lane_, w_, prep=prep, values={"first": guest.first, "last": guest.last, "email": guest.email}, note=said + left))

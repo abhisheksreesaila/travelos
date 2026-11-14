@@ -108,7 +108,7 @@ def test_a_square_on_the_showcase_is_a_sample_booking_and_liteapi_is_never_asked
     assert 'href="/trip/cockpit"' in done.text and "Open your trip" in words
     assert fake.calls(PREBOOK) == [] and fake.calls(BOOK) == []
     rows = stays_booked()
-    assert len(rows) == 1 and rows[0]["sample"] == 1 and rows[0]["guest_email"] == "anne@example.com"
+    assert len(rows) == 1 and rows[0]["sample"] == 1
     assert [(h.name, h.confirmation, h.booked_on) for h in trip_lodging()] == [(rows[0]["hotel"], rows[0]["booking_id"], "GitAway sample")]
 
 
@@ -179,10 +179,74 @@ def test_a_book_liteapi_will_not_take_says_so_and_keeps_the_form(real, client):
     assert "did not answer just now. Nothing was booked." in text(r) and 'value="anne@example.com"' in r and stays_booked() == []
 
 
-def test_a_room_check_that_timed_out_is_run_again_never_booked_on_an_unseen_price(real, client):
+def test_an_unknown_or_expired_room_check_is_refused_with_no_call_to_liteapi(real, client):
     sign_in(client)
     r = client.post("/plan/matrix/book/confirm", data={**FORM, "token": "gone", **GUEST}, headers=FRAG).text
-    assert "had timed out" in text(r) and len(real.calls(PREBOOK)) == 1 and real.calls(BOOK) == [] and token(r) != "gone"
+    assert "That room check has expired" in text(r) and real.calls(PREBOOK) == [] and real.calls(BOOK) == [] and stays_booked() == []
+
+
+def test_another_familys_token_is_refused_and_asks_liteapi_nothing(real, client):
+    from tests.test_members import browser
+    sign_in(client)
+    html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
+    mine = token(html)
+    other = browser(client)
+    sign_in(other, "stranger@example.com")
+    before = len(real.asked)
+    r = other.post("/plan/matrix/book/confirm", data={**FORM, "token": mine, **GUEST}, headers=FRAG).text
+    assert "That room check has expired" in text(r) and "_5hnX-MI7" not in r and real.calls(BOOK) == []
+    assert [u for u, *_ in real.asked[before:] if u in (PREBOOK, BOOK)] == []
+
+
+def test_a_token_posted_with_another_square_is_refused(real, client):
+    sign_in(client)
+    mine = token(client.post("/plan/matrix/book", data=FORM, headers=FRAG).text)
+    for over in ({"w": "2026-12-13"}, {"lane": "losangeles"}, {"a": "3"}):
+        r = client.post("/plan/matrix/book/confirm", data={**FORM, **over, "token": mine, **GUEST}, headers=FRAG).text
+        assert "That room check has expired" in text(r), over
+    assert real.calls(BOOK) == [] and stays_booked() == []
+    ok = client.post("/plan/matrix/book/confirm", data={**FORM, "token": mine, **GUEST}, headers=FRAG).text
+    assert "_5hnX-MI7" in ok                                                                  # the token still books the square it was made for
+
+
+def test_the_form_starts_with_a_made_up_guest_and_says_why(real, client):
+    sign_in(client)
+    html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
+    assert 'value="Test"' in html and 'value="Traveler"' in html and 'value="test.traveler@example.com"' in html
+    assert "made-up guest" in text(html) and "keeps nothing of it" in text(html)
+    done = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), "first": "Test", "last": "Traveler", "email": "test.traveler@example.com"}, headers=FRAG).text
+    assert "Test Traveler, your booking is confirmed." in text(done)
+
+
+def test_too_many_presses_are_slowed_before_liteapi_is_asked(real, client):
+    sign_in(client)
+    for _ in range(5):
+        assert client.post("/plan/matrix/book", data=FORM, headers=FRAG).status_code == 200
+    asked = len(real.asked)
+    r = client.post("/plan/matrix/book", data=FORM, headers=FRAG)
+    assert r.status_code == 429 and "a lot of booking tries" in text(r.text) and len(real.asked) == asked
+    html = client.post("/plan/matrix/book/confirm", data={**FORM, "token": "x", **GUEST}, headers=FRAG)
+    assert html.status_code == 429
+
+
+def test_a_family_that_went_away_between_the_steps_is_told_to_sign_in_not_a_500(real, client, monkeypatch):
+    from contextlib import contextmanager
+    sign_in(client)
+    html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
+    from gitaway.pages import matrixbook as pb
+
+    @contextmanager
+    def nobody(session):
+        yield None
+
+    class Shim:
+        family = staticmethod(nobody)
+
+        def __getattr__(self, name):
+            return getattr(ses, name)
+    monkeypatch.setattr(pb, "ses", Shim())       # only this page's own look at the family: the trip is made with the real one
+    r = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST}, headers=FRAG)
+    assert r.status_code == 200 and "Sign in to book." in text(r.text) and real.calls(BOOK) == []
 
 
 def test_a_moved_price_is_said_before_booking(real, client):
@@ -217,3 +281,8 @@ def test_a_viewer_cannot_book_and_liteapi_is_never_asked(real, client):
 def test_the_panel_says_it_is_a_sandbox_not_that_booking_opens_soon(sample, client):
     html = text(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").text)
     assert "Booking opens soon" not in html and "Sample booking: nothing is booked or charged." in html and page.SAMPLE_FINE.split(".")[0] in html
+
+
+def test_the_privacy_page_names_liteapi_as_a_processor_and_says_what_it_gets(client):
+    words = text(client.get("/privacy").text)
+    assert "LiteAPI (Nuitée)" in words and "GitAway keeps nothing of that name or email" in words and "nothing is charged and no card is used" in words

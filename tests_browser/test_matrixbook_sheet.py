@@ -32,6 +32,16 @@ class BookStand(Stand):
         return replace(sq, sample=self.sample, stays=tuple(replace(st, offer_id="" if self.sample else f"offer-{i}") for i, st in enumerate(sq.stays)))
 
 
+@pytest.fixture(autouse=True)
+def _no_presses_yet():
+    """The per-person limit (5 presses a minute) counts across the session's tests: each starts with none counted."""
+    from sqlalchemy import text
+    from gitaway import community
+    with community.connect() as db:
+        db.conn.execute(text("DELETE FROM book_presses"))
+        db.conn.commit()
+
+
 def priced(box, total_cents):
     """The recorded prebook priced as the Stand's stay (its $160 resort fee on top): the room still costs what the square said."""
     doc = json.loads(box.prebook[1])
