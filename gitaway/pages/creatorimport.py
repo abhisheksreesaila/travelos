@@ -11,13 +11,14 @@ A draft belongs to the person who made it (anyone else gets a 404) and needs no 
 its parameter is called `token` because tests/test_roles.py matches the open prefixes that way.
 """
 
+import json
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import FileResponse, RedirectResponse, Response
+from starlette.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 
 from gitaway import ai, community, creatordraft as cd, importsource, session as ses, stoplinks
 from gitaway.hub import HubError
@@ -66,25 +67,63 @@ def paste_page(session, link="", text="", error="", status=200):
     return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
 
 
-def _read(session, link, text, how):
-    """The draft a paste becomes, or (None, message). `how` is "draft" or "manual" ("Write it myself": nothing is fetched and no model is asked)."""
+def _steps(session, link, text, how):
+    """What a paste becomes, step by step: ("read", material) once the post is read, then ("made", draft). Raises SourceError, ai.AIError or HubError (a sentence fit to show).
+    `how` is "draft" or "manual" ("Write it myself": nothing is fetched and no model is asked)."""
     me = ses.current_traveler(session)
     name = me.name if me else ""
+    if how == "manual" or cd.mode() == "manual":
+        if how != "manual" and not text.strip():
+            raise HubError(cd.NOT_ON)
+        why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
+        material = importsource.offline(link, text)
+        yield "read", material
+        yield "made", cd.blank(me.id, material, name, why)
+        return
+    if (hit := cd.allow(me.id)):
+        raise HubError(cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT)
+    if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
+        material = importsource.offline(link, text)
+        yield "read", material
+        yield "made", cd.sample(me.id, material, name)
+        return
+    material = importsource.gather(link, text)
+    yield "read", material
+    yield "made", cd.make(me.id, me.id, material, name)
+
+
+def _read(session, link, text, how):
+    """The draft a paste becomes, or (None, message)."""
     try:
-        if how == "manual" or cd.mode() == "manual":
-            if how != "manual" and not text.strip():
-                return None, cd.NOT_ON
-            why = "" if how == "manual" else cd.NOT_ON + " Your text is shown beside the editor to write from."
-            return cd.blank(me.id, importsource.offline(link, text), name, why), ""
-        if (hit := cd.allow(me.id)):
-            return None, cd.SITE_LIMIT_HIT if hit == "site" else cd.LIMIT_HIT
-        if cd.mode() == "sample":      # the local showcase's simulated draft: nothing is fetched and no model is asked
-            return cd.sample(me.id, importsource.offline(link, text), name), ""
-        return cd.make(me.id, me.id, importsource.gather(link, text), name), ""
-    except importsource.SourceError as e:
+        made = None
+        for step, value in _steps(session, link, text, how):
+            made = value if step == "made" else made
+        return made, ""
+    except (importsource.SourceError, ai.AIError, HubError) as e:
         return None, str(e)
-    except (ai.AIError, HubError) as e:
-        return None, str(e)
+
+
+# ---- the magic import (F-235): the same steps, told to the page as they happen ---------------------------------------------------
+
+def _line(**event) -> str:
+    return json.dumps(event, ensure_ascii=False) + "\n"
+
+
+def _told(step, value) -> str:
+    if step == "read":
+        return _line(event="read", title=value.title, by=value.by, image=(value.images[0] if value.images else value.thumb) or "", site=urlsplit(value.url).hostname or "",
+                     kind=value.kind, words=importsource.own_words(value.text))
+    d = value
+    return _line(event="draft", id=d["id"], title=d["title"], place=d["place_name"] or cd.PLACES.get(d["place"], ""), editor=f"{PATH}/{d['id']}", preview=f"{PATH}/{d['id']}/preview",
+                 days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"]} for s in day["stops"]]} for day in d["days"]], tips=d["tips"], unsure=cd.UNNAMED)
+
+
+def _stream(session, link, text, how):
+    try:
+        for step, value in _steps(session, link, text, how):
+            yield _told(step, value)
+    except (importsource.SourceError, ai.AIError, HubError) as e:
+        yield _line(event="error", message=str(e))
 
 
 # ---- the editor ---------------------------------------------------------------------------------------------------------
@@ -217,8 +256,11 @@ def register(app):
         link, text, how = str(f.get("link") or "").strip(), str(f.get("text") or ""), "manual" if f.get("do") == "manual" else "draft"
         if not link and _LONE_LINK.fullmatch(text.strip()):   # the For creators page has one box: a lone address in it is the link (F-186)
             link, text = text.strip(), ""
+        told = request.headers.get("x-magic") == "1"      # the page asked to be told as the draft is made (F-235): one line of JSON per step
         if not link and not text.strip() and how == "draft":
-            return paste_page(session, "", "", NOTHING, 422)
+            return (StreamingResponse(iter([_line(event="error", message=NOTHING)]), 422, media_type="application/x-ndjson") if told else paste_page(session, "", "", NOTHING, 422))
+        if told:
+            return StreamingResponse(_stream(session, link, text, how), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
         made, error = await run_in_threadpool(_read, session, link, text, how)     # fetches the page, asks the model: never on the event loop (F-182)
         if made is None:
             return paste_page(session, link, text, error, 422)

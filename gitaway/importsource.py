@@ -79,6 +79,19 @@ def _cut(text, notices):
     return text
 
 
+_MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+
+
+def own_words(text, n=8) -> list:
+    """Up to `n` whole sentences of the post itself, spread from its start to its end, each exactly as the post wrote it (links reduced to their words): what the magic import shows while the
+    draft is being made (F-235). Never a made-up line: a sentence that is not in `text` is never returned."""
+    prose = _MD_LINK.sub(r"\1", text or "")
+    good = [s for line in prose.splitlines() for s in (p.strip() for p in _SENTENCE.split(line))
+            if 40 <= len(s) <= 150 and s[0].isupper() and s[-1] in ".!?" and "http" not in s and "[" not in s]
+    return good if len(good) <= n else [good[i * len(good) // n] for i in range(n)]
+
+
 # ---- HTML helpers ------------------------------------------------------------------------------------------------------------
 
 class _Pictures(HTMLParser):
