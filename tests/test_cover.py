@@ -312,3 +312,46 @@ def test_the_decisions_record_the_cover(client):
     assert re.search(r"^- D-383 · .*D-270", decisions, re.M)
     for n in (426, 427, 428, 429, 443, 444):
         assert re.search(rf"^- D-{n} · F-227", decisions, re.M), n
+
+
+# ---------- F-232: the cover, world class (docs/decisions.md D-470 on) ----------
+
+STEPS = ("Compare", "Book", "Plan together", "Share")
+
+
+def test_the_story_says_its_four_steps_compare_book_plan_together_share(client):
+    """D-470: the brief's journey is four steps. The opening names them in order (a list of numbered chips, not links: the doors stay Start a trip and
+    See how it works) and each screen's bar shows where the story is."""
+    html = _cover(client)
+    hero = _el(html, "section", "cv-hero")
+    steps = _el(hero, "ol", "cv-steps")
+    assert [_text(li) for li in re.findall(r"<li\b.*?</li>", steps, re.S)] == [f"{n} {name}" for n, name in enumerate(STEPS, 1)]
+    assert "<a " not in steps and re.search(r'aria-label="The four steps"', steps)
+    states = []
+    for n in "123":
+        bar = _el(_layer(html, n), "div", "cv-fbar")
+        dots = re.findall(r'<span class="cv-sn d(\d)([^"]*)"', bar)
+        assert [d for d, _ in dots] == ["1", "2", "3", "4"], n
+        states.append([s.strip() for _, s in dots])
+    assert states == [["done", "now", "", ""], ["done", "done", "now", ""], ["done", "done", "done", "now"]]      # compare and book, plan together, share
+
+
+def test_part_one_ends_on_booking_the_find_in_the_sandbox(client):
+    """D-470: Compare ends on the find being booked (F-233: LiteAPI's sandbox). The drawn find has a Book it pill that turns into Booked, and the
+    words say plainly that it is a sandbox and nothing is charged."""
+    html = _cover(client)
+    disc = _el(_layer(html, 1), "div", "cv-disc")
+    book = _el(disc, "span", "cv-book")
+    assert _text(_el(book, "span", "cv-bk1")) == "Book it" and _text(_el(book, "span", "cv-bk2")) == "Booked"
+    words = _text(_part(html, 1))
+    assert "book it" in words.lower() and "sandbox" in words and "nothing is charged" in words
+
+
+def test_the_numbers_that_count_up_say_their_final_value_in_the_page(client):
+    """D-471: the find's total and the family's square count up from $0 in CSS (registered integer properties on --th thousands and --rm
+    remainder); the text in the page is the final value, always, and --th/--rm are exactly its digits."""
+    html = _cover(client)
+    nums = re.findall(r'<span class="cv-num" style="--th:(\d+);--rm:(\d+)"><span class="cv-nr">(\$[\d,]+)</span></span>', html)
+    assert len(nums) == 2
+    for th, rm, text in nums:
+        assert text == f"${int(th)},{int(rm):03d}" and text == "$2,190"

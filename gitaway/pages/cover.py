@@ -28,7 +28,7 @@ from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
-from fasthtml.common import A, B, Div, Em, Figure, Footer, H1, H2, Header, Link, Main, Nav, NotStr, P, Script, Section, Small, Span, Title
+from fasthtml.common import A, B, Div, Em, Figure, Footer, H1, H2, Header, Li, Link, Main, Nav, NotStr, Ol, P, Script, Section, Small, Span, Title
 
 from gitaway import session, weather
 from gitaway.icons import icon
@@ -49,7 +49,8 @@ DISCLOSURE = "Every family, price and trip on this page is made up, to show how 
 # screen say it together.
 PARTS = (
     ("1", "Compare", ((("Every place,", 1), " ", ("every date.", 2), " "), (("One total each.", 3),)),
-     "Say it once. The flight, the stay and the airport drive are added up for every square, and the one you didn’t think to ask for lights up.",
+     "Say it once. The flight, the stay and the airport drive are added up for every square, and the one you didn’t think to ask for lights up. "
+     "Then book it right on the square: a sandbox for now, nothing is charged.",
      "compare"),
     ("2", "Plan it together", ((("Hearts,", 1), " not group texts. "), (("One person decides.", 2),)),
      "Share it with the family and the friends coming along. Everyone hearts what they love and talks on the square; the owner taps “This one”.",
@@ -59,6 +60,9 @@ PARTS = (
      "trail"),
 )
 TRAIL_SUB = "Bloggers and vloggers welcome"
+# the four steps of the journey (D-470): compare, book, plan together, share. Each wears a kind token's colour (indigo, purple, pink, orange),
+# the opening lists them and every screen's bar shows where the story is. Booking is the sandbox's (F-233) and is said so where it is shown.
+STEPS = ("Compare", "Book", "Plan together", "Share")
 
 # ---------- the sample the frame draws (docs/design/trip-matrix/tm.js): a family of 4 from SFO in December ----------
 SENTENCE = (("A family of", False), ("4,", True), ("from", False), ("SFO,", True), ("somewhere warm,", True), ("Dec 12 to 16,", True),
@@ -141,8 +145,41 @@ def _heart_face(pid, k):
     return Span(face(pid), Span(icon("heart", 10, 2), cls="cv-hb"), cls="cv-hf", style=f"--h:{k}")
 
 
-def _bar(ico, words, tag):
-    return Div(icon(ico, 14), Small(words), Span(cls="cv-sp"), Span(tag, cls="cv-sample"), cls="cv-fbar")
+def num(n):
+    """A total that counts up in CSS (D-471): the page says the final value; --th and --rm are its thousands and its last three digits, which cover.css
+    counts from 0 on registered integer properties while the screen plays. Nothing in script."""
+    return Span(Span(money(n), cls="cv-nr"), cls="cv-num", style=f"--th:{n // 1000};--rm:{n % 1000}")
+
+
+def _bar(words, tag, states):
+    """The screen's bar: the four steps as dots (one in each step's colour: done, now, still to come), what this screen is, and that it is a sample."""
+    dots = [Span(cls=f"cv-sn d{k}{' ' + st if st else ''}") for k, st in enumerate(states, 1)]
+    return Div(Span(*dots, cls="cv-stp", aria_hidden="true"), Small(words), Span(cls="cv-sp"), Span(tag, cls="cv-sample"), cls="cv-fbar")
+
+
+# ---------- the living scene behind the opening and the close (D-472): sky, sun or moon, stars, clouds, sea; all drawn, all CSS ----------
+CLOUD = ('<svg class="cv-cloud c{n}" viewBox="0 0 150 64" aria-hidden="true" focusable="false"><circle cx="46" cy="38" r="20"/><circle cx="76" cy="28" r="26"/>'
+         '<circle cx="108" cy="38" r="20"/><rect x="36" y="38" width="82" height="20" rx="10"/></svg>')
+WAVE = ('<svg class="cv-wave {c}" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">'
+        '<path d="M0 60q75-40 150 0t150 0t150 0t150 0t150 0t150 0t150 0t150 0V120H0z"/></svg>')
+STARS = ((8, 9), (19, 22), (31, 7), (44, 17), (58, 6), (67, 24), (79, 11), (90, 20), (95, 5), (13, 38), (84, 33))     # left %, top %
+
+
+def _scene(mood):
+    """The sky behind the opening (mood "day": a sun that rises and breathes, clouds that drift, a sea that rolls, at night a moon and stars) and
+    behind the close (mood "dusk": the story's own colours). Drawn, decorative (aria-hidden), moving only on CSS loops with motion allowed."""
+    return Div(Span(cls="cv-sun"), *[Span(cls="cv-star", style=f"left:{x}%;top:{y}%;--s:{k}") for k, (x, y) in enumerate(STARS)],
+               *[NotStr(CLOUD.format(n=n)) for n in range(1, 5)], NotStr(WAVE.format(c="w1")), NotStr(WAVE.format(c="w2")), NotStr(WAVE.format(c="w3")),
+               cls=f"cv-scene {mood}", aria_hidden="true")
+
+
+def _words(text):
+    """The headline's words, each its own span so they rise in one after another (D-473); the page still reads as the line."""
+    return [x for k, w in enumerate(text.split(" ")) if w for x in (Span(w, cls="cv-hw", style=f"--w:{k}"), " ")]
+
+
+def _steps():
+    return Ol(*[Li(Span(str(k), cls=f"cv-no d{k}"), name, cls=f"cv-st d{k}", style=f"--k:{k}") for k, name in enumerate(STEPS, 1)], cls="cv-steps", aria_label="The four steps")
 
 
 # ---------- the frame's three screens (the F-222 seam: SCREENS) ----------
@@ -179,18 +216,19 @@ def _strip():
 
 
 def screen_compare():
-    return (_bar("spark", "Your trip, compared", "Sample prices"), _sentence(), _matrix(),
+    return (_bar("Your trip, compared", "Sample prices", ("done", "now", "", "")), _sentence(), _matrix(),
             Div(_pair(("los-angeles", "san-diego"), "cv-th cv-dth"), Span(B(FIND_LINE), Span(FIND_SUB, cls="cv-dsub")),
-                Span(money(ROWS[2][3][1]), cls="cv-num"), cls="cv-disc"),
+                Div(num(ROWS[2][3][1]), Span(Span("Book it", cls="cv-bk1"), Span(icon("check", 14, 2), "Booked", cls="cv-bk2"), cls="cv-book"), cls="cv-side"),
+                cls="cv-disc"),
             _strip())
 
 
 def screen_together():
     hearts = [_heart_face(p, k) for k, p in enumerate(("ana", "leela", "dev", "sam"))]
     return (
-        _bar("users", "Ana’s family · 4 of you + 1 guest", "Sample family"),
+        _bar("Ana’s family · 4 of you + 1 guest", "Sample family", ("done", "done", "now", "")),
         Div(_pair(("los-angeles", "san-diego"), "cv-sqart"),
-            Div(Span(B("LA + San Diego"), Small("Dec 12–16 · flight, stay and the drive")), Span(money(2190), cls="cv-num"), cls="cv-sqbody"),
+            Div(Span(B("LA + San Diego"), Small("Dec 12–16 · flight, stay and the drive")), num(2190), cls="cv-sqbody"),
             Div(*hearts, Span("Ana, Leela, Dev and Sam (guest)", cls="cv-who"), cls="cv-hearts"), cls="cv-sq"),
         Div(*[Div(face(p), Span(B(PEOPLE[p][0]), " ", text), cls="cv-bub", style=f"--b:{k}") for k, (p, text) in enumerate(THREAD)], cls="cv-thread"),
         Div(*[Span(B(name), Span(icon("heart", 12), n, cls="cv-hn")) for name, n in SHORTLIST], cls="cv-short"),
@@ -209,7 +247,7 @@ def screen_trail():
             Small("From your airport, for your dates"), cls="cv-crow"),
         Div(Div(icon("link", 16), Span(B("Every post links back"), Small("Readers plan the same trip in one tap")), cls="cv-ctop"), cls="cv-crow cv-more"),
         cls="cv-creator")
-    return (_bar("share", "Ready to post", "Sample trip"), Div(card, creator, cls="cv-trailrow"))
+    return (_bar("Ready to post", "Sample trip", ("done", "done", "done", "now")), Div(card, creator, cls="cv-trailrow"))
 
 
 # F-222 seam: when the matrix ships, a part's drawer can become a real screenshot (a <picture> in the frame); the frame, the cross-fade and the
@@ -247,19 +285,23 @@ def _part(n, name, two, text, anchor):
 
 def _hero():
     return Section(
-        H1(LINE[0], Em(LINE[1])), P(LEDE, cls="cv-lede"),
+        _scene("day"),
+        H1(*_words(LINE[0]), Em(*_words(LINE[1]))), P(LEDE, cls="cv-lede"),
         Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"),
             A("See how it works", href="#compare", cls="cv-btn tonal big"), cls="cv-ctas"),
+        _steps(),
         Div(*[art(p, wx) for p, wx in BAND], cls="cv-band", aria_hidden="true"),
         cls="cv-hero")
 
 
 def _stage():
-    return Section(_frame(), Div(*[_part(*p) for p in PARTS], cls="cv-chs"), cls="cv-stage", data_part="1", aria_label="How it works")
+    return Section(*[Span(cls=f"cv-wash cv-wk{n}", aria_hidden="true") for n in "123"], _frame(), Div(*[_part(*p) for p in PARTS], cls="cv-chs"),
+                   cls="cv-stage", data_part="1", aria_label="How it works")
 
 
 def _close():
     return Section(
+        _scene("dusk"),
         H2(LINE[0], Em(LINE[1])),
         Div(A("Start a trip", icon("arrow-right", stroke=2), href=plan_href(), cls="cv-btn fill big"), cls="cv-ctas"),
         cls="cv-close", id="your-turn")
