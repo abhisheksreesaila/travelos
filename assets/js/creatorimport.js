@@ -28,6 +28,26 @@
 
   function log(text) { var l = $('cm-log'); if (l) l.textContent = text; }
 
+  function reset() {                      // every attempt starts from a clean stage: a retry never adds to what the one before showed
+    var old = $('ci-error'); if (old) old.remove();
+    $('cm-days').textContent = '';
+    $('cm-done').hidden = true;
+    $('cm-count').textContent = '';
+    $('cm-live').textContent = '';
+    $('cm-title').textContent = 'Opening your post\u2026';
+    $('cm-title').classList.remove('in');
+    $('cm-by').textContent = '';
+    $('cm-site').textContent = '';
+    $('cm-word').textContent = '';
+    $('cm-word').classList.remove('go');
+    $('cm-say').hidden = true;
+    var img = stage.querySelector('.cm-img'); img.hidden = true; img.classList.remove('in'); img.removeAttribute('src');
+    stage.querySelector('.cm-ph').hidden = false;
+    stage.classList.remove('is-done');
+    log('Opening your post');
+    for (var n = 0; n < 3; n++) step(n, 'off');
+  }
+
   function read(e, st) {
     stage.dataset.kind = e.kind || '';
     $('cm-site').textContent = e.site || '';
@@ -104,6 +124,7 @@
     e.preventDefault();
     var body = new FormData(form); body.set('do', 'draft');
     var st = {};
+    reset();
     root.classList.add('is-drafting'); stage.hidden = false;
     step(0, 'on');
     stage.scrollIntoView({ block: 'nearest' });
@@ -119,7 +140,7 @@
       }
       return (function pump() {
         return reader.read().then(function (x) {
-          if (x.done) { if (buf) line(buf); if (!ended) fail('The draft was cut short. Try again, or paste the text of your post.'); return; }
+          if (x.done) { if (buf) line(buf); if (!ended) { if (st.stopWords) st.stopWords(); fail('The draft was cut short. Try again, or paste the text of your post.'); } return; }
           buf += dec.decode(x.value, { stream: true });
           var parts = buf.split('\n'); buf = parts.pop();
           parts.forEach(line);

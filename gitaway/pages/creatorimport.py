@@ -12,6 +12,7 @@ its parameter is called `token` because tests/test_roles.py matches the open pre
 """
 
 import json
+import logging
 import re
 from urllib.parse import quote, urlsplit
 
@@ -32,6 +33,8 @@ PATH = "/creators/import"
 HEAD = (Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/creatorimport.css"), Script(src="/assets/js/creatorimport.js", defer=True))
 STOP_MAX = cd.MAX_STOP
 NOTHING = "Paste the link to your post, or the text of it."
+UNEXPECTED = "Something went wrong while making your trip. Try again, or paste the text of your post."
+log = logging.getLogger("gitaway.creatorimport")
 _LONE_LINK = re.compile(r"https?://\S+", re.I)
 
 
@@ -137,6 +140,9 @@ def _stream(session, link, text, how):
             yield _told(step, value)
     except (importsource.SourceError, ai.AIError, HubError) as e:
         yield _line(event="error", message=str(e))
+    except Exception as e:  # noqa: BLE001 - the stream must end with a sentence, never silently; the log line names only the kind of failure (no post text, no message)
+        log.error("creator import stream failed: %s", type(e).__name__)
+        yield _line(event="error", message=UNEXPECTED)
 
 
 # ---- the editor ---------------------------------------------------------------------------------------------------------

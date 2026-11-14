@@ -117,3 +117,32 @@ def test_a_refused_post_says_why_and_gives_the_form_back(lisbon, browser, base_u
     expect(page.locator("#ci-link")).to_have_value(lisbon)
     assert page.locator("#ci-magic").is_hidden()
     ctx.close()
+
+
+def test_a_retry_after_a_cut_short_stream_starts_clean(lisbon, browser, base_url):
+    """The first answer is cut after "read" (a dropped connection); the retry must not show the first attempt's title, ticks or days, and must end with the right three days."""
+    ctx, page = open_import(browser, base_url, PHONE)
+    calls = []
+
+    def first_cut_then_real(route):
+        calls.append(1)
+        if len(calls) == 1:
+            line = '{"event": "read", "title": "First attempt", "by": "Nobody", "image": "", "site": "first.example", "kind": "blog", "chars": 10, "words": ["The first attempt read this sentence of the post."]}\n'
+            route.fulfill(status=200, content_type="application/x-ndjson", body=line)
+        else:
+            route.continue_()
+
+    page.route("**/creators/import", first_cut_then_real, times=2)
+    page.fill("#ci-link", lisbon)
+    page.click("#ci-draft")
+    expect(page.locator("#ci-error")).to_contain_text("The draft was cut short")
+    expect(page.locator("#ci-form")).to_be_visible()
+    page.click("#ci-draft")
+    expect(page.locator("#cm-title")).to_have_text("48 Hours in Lisbon, Itinerary")      # not "First attempt"
+    assert page.locator("#cm-site").inner_text().lower() == "theplanetd.com"
+    assert page.locator("#ci-error").count() == 0
+    expect(page.locator(".cm-day")).to_have_count(3)
+    expect(page.locator(".cm-stop")).to_have_count(17)
+    expect(page.locator(".cm-step.is-done")).to_have_count(3)
+    expect(page.locator("#cm-count")).to_have_text("3 days, 17 stops in Lisbon, Portugal.")
+    ctx.close()

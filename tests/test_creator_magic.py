@@ -112,3 +112,18 @@ def test_signed_out_gets_the_sign_in_not_a_draft(client, lisbon):
     url, _ = lisbon
     r = client.post("/creators/import", data={"do": "draft", "link": url}, headers=MAGIC, follow_redirects=False)
     assert r.status_code in (303, 401) and "ndjson" not in r.headers.get("content-type", "")
+
+
+def test_an_unexpected_failure_is_logged_without_the_post_and_the_page_gets_a_plain_sentence(me, lisbon, monkeypatch, caplog):
+    url, _ = lisbon
+
+    def boom(*a, **k):
+        raise RuntimeError("secret words from the post: Belem Tower")
+
+    monkeypatch.setattr(creatordraft, "make", boom)
+    with caplog.at_level("ERROR", logger="gitaway.creatorimport"):
+        (got,) = [e for e in events(magic(me, link=url)) if e["event"] != "read"]
+    assert got == {"event": "error", "message": "Something went wrong while making your trip. Try again, or paste the text of your post."}
+    (rec,) = [r for r in caplog.records if r.name == "gitaway.creatorimport"]
+    assert rec.getMessage() == "creator import stream failed: RuntimeError"
+    assert "secret words" not in caplog.text and "Belem" not in caplog.text and rec.exc_info is None
