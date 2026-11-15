@@ -1625,7 +1625,7 @@ Founder: "never show side by side … let them get the hotel first, and if they 
 ## F-259 A creator's edit stays in the v2 look [todo]
 Founder: "when I went to edit the details for the creator it went back to the old form … a boring form". Every edit path from the creator pages (the draft's Edit, the book's fix, My drafts) lands on a v2 editor in the book's language (cv2), not the old /creators editor; the old form retires for these paths.
 
-## F-260 Moods: the sky follows the trip (and the sun becomes the moon) [todo]
+## F-260 Moods: the sky follows the trip (and the sun becomes the moon) [review]
 Founder: "when you switch to dark the sun has to become the moon … make them chuckle"; "several themes: snow, hike, beach, a main event … Tahoe in December is snow, New York at New Year is a celebration … just a gradient at the top and one cartoonish object, not to distract."
 - [ ] dark mode turns the sun into a moon (with a few stars), with a small delightful transition
 - [ ] 5 moods for the v2 sky: beach (today's), snow, hike, celebration, city; each a gradient and one simple cartoon object, light and dark, calm and readable (4.5:1 over each)

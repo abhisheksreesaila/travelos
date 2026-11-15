@@ -27,7 +27,7 @@ from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, firstrun, gridsource, importer, interests, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
+from gitaway import catalog, familydb, firstrun, gridsource, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, v2rail, weather_ui
@@ -383,7 +383,7 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     machinery = v2sentence.machinery(spec)
     if s.problems or not windows:
         body = Div(hero_el(spec, problems or s.problems or [MISSING["dates"]]), *machinery, cls="v2-stage mx mx-blank", id="mx", data_v2="results")
-        return page("The trip matrix", H1("The trip matrix", cls="v2-sr"), body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results")
+        return page("The trip matrix", H1("The trip matrix", cls="v2-sr"), body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results", mood=moods.choose(s.place, s.depart, s.return_))
     skies = skies_of(lanes, windows)
     sample = showcase.on()
     total = len(lanes) * len(windows)
@@ -395,7 +395,7 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), results,
                Script(NotStr(page_data(s, lanes, windows, {})), type="application/json", id="mx-data"), fact_el(s), *machinery,
                cls="v2-stage mx", id="mx", data_v2="results", data_waiting="1")
-    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results")
+    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results", mood=moods.choose(s.place, s.depart, s.return_))
 
 
 def warm(s: State, family="") -> int:
@@ -425,7 +425,7 @@ def square_page(s: State, lane, w, sq, asked_sq, saved="", can_save=True):
     body = Div(A(icon("chev-left", 18, 2.4), "Back to the matrix", href=href(s), cls="btn mx-back"),
                H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="dr-wrap dr-alone"),
                Div(P(SAMPLE_FINE if sq is not None and sq.sample else FINE, cls="mx-foot-n"), cls="mx-foot"), cls="mx mx-one")
-    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True)
+    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True, mood=moods.choose(s.place, s.depart, s.return_))
 
 
 def _save_id(trip_id, sq) -> str:

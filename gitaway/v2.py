@@ -11,7 +11,7 @@ from gitaway.icons import icon
 
 log = logging.getLogger(__name__)
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"),
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
@@ -37,10 +37,14 @@ def _shore() -> str:
             '<g transform="translate(860 150)"><path d="M0 0 h60 l-8 10 h-44z" fill="#C2410C"/><path d="M28 0 V-46 L56 -4z" fill="#FFD43B"/><path d="M26 -2 V-38 L6 -4z" fill="#fff"/></g>')
 
 
-def bg() -> Div:
+def bg(mood: str = "") -> Div:
+    """The sky: a gradient, a sun that becomes a moon in the dark, clouds and the mood's one object at the foot (beach: the shore; F-260, gitaway/moods.py). A `?mood=` preview wins on the showcase."""
+    from gitaway import moodart, moods
+    mood = moods.preview(session_.request_path()) or (mood if mood in moods.MOODS else moods.DEFAULT)
     cloud = lambda style: NotStr(f'<svg class="cloud" style="{style}" viewBox="0 0 120 50">{CLOUD}</svg>')      # noqa: E731
-    return Div(Div(cls="sunball"), cloud("left:6%;top:9%;width:170px"), cloud("left:58%;top:22%;width:120px;animation-duration:80s"), cloud("left:28%;top:44%;width:200px;animation-duration:95s"),
-               NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{_shore()}</svg>'), cls="v2-bg", aria_hidden="true")
+    foot = moodart.FEET.get(mood) or _shore()
+    return Div(Div(cls="sunball"), NotStr(moodart.MOON), NotStr(moodart.STARS), cloud("left:6%;top:9%;width:170px"), cloud("left:58%;top:22%;width:120px;animation-duration:80s"), cloud("left:28%;top:44%;width:200px;animation-duration:95s"),
+               NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{foot}</svg>'), cls="v2-bg", aria_hidden="true", data_mood=mood)
 
 
 def section_of(current: str) -> str:
