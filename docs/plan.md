@@ -1580,13 +1580,13 @@ Founder, 2026-11-14: "The cover page is very nicely done, especially the first m
 ## The v2 build (founder approved booking v2's look, 2026-11-14; planning v2 and creators v2 designed to match)
 Build to the prototypes in docs/design/booking-v2, planning-v2 and creators-v2: the sky gradient, restrained frosted-glass cards, Newsreader with Inter, liquid springs. Real data wherever the app has it (LiteAPI squares, NOAA/MET weather, OSRM drives); a widget without a real source is left out in production, never invented (sample only on the showcase). Old pages go once their v2 replacement is live.
 
-## F-250 Design system v2 and booking's first screen [review]
+## F-250 Design system v2 and booking's first screen [done]
 - [ ] `assets/css/v2.css`: the prototype's tokens (sky, glass, ink, kind colours, Newsreader + Inter, radii, springs) in light and dark, plus its base components; pages opt in with one class
 - [ ] `/plan/ask` becomes the prototype's landing: the sentence is the search, every part a tappable word with its picker (who, from, where, day, give or take, nights, budget, interests), no free typing; read by tripsentence; interests kept (gitaway/interests.py)
 - [ ] Search turns the same page into the results: the sentence glides to the top, the skeleton plays, then /plan/matrix's real squares fill in (tiles, marks, band, weather) in the prototype's matrix look; changing a word re-runs it
 - [ ] phone and laptop, light and dark, 4.5:1, 48px targets
 
-## F-251 Booking's widgets and drawer [review]
+## F-251 Booking's widgets and drawer [done]
 Needs: F-250
 - [ ] the frosted widget rail beside the matrix: weather (weather.py), drives to the airport and between places (airportdrive/OSRM), a cheaper airport where places.NEARBY has one, food that fits the family's interests and top places only from sourced data; others hidden off the showcase
 - [ ] a square opens the prototype's drawer: hotel gallery and rooms from LiteAPI (sample on the showcase), flights, focus one to shrink the other, switching in place (F-242's index rules stand)
