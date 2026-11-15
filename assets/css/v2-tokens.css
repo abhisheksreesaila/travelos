@@ -135,7 +135,7 @@
   --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4; --on-ink: #0F1124;
   --card-t: rgb(20 22 44 / .80); --card-solid: #171A33; --card-2: #22264A; --lead-bg: #1A1D39;
   --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
-  --glass: rgb(26 28 56 / .60); --glass-line: rgb(255 255 255 / .10);
+  --glass: rgb(26 28 56 / .80);      /* dark glass a step more solid: the dark sand showed through at .60 (rail words 3.8:1) */ --glass-line: rgb(255 255 255 / .10);
   --word: #9A94FF;
   --flight: #7B73FF; --flight-t: #24215A; --flight-i: #D2CFFF;
   --stay: #C084FC; --stay-t: #321A4A; --stay-i: #EBD4FD;

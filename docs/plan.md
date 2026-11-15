@@ -1633,7 +1633,7 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [x] the mood is chosen by a plain rule from the trip's place and dates (a small table with tests: Tahoe or Denver in winter → snow, a coast in summer → beach, a mountain or park in summer → hike, New York around Dec 31 → celebration, else city or beach); the cover and sign-in keep theirs
 
 ## The v2.1 build (founder approved docs/design/guides-v2, 2026-11-15)
-## F-261 A calm palette, and a quiet sky for reading [review]
+## F-261 A calm palette, and a quiet sky for reading [done]
 - [ ] the pink-to-violet gradient leaves every button, header, the planning hero and the booking pass: ink and indigo carry the UI (the prototype's "Calm"); kind colours only for kinds; the gradient stays only on the Instagram share card
 - [ ] reading pages (a guide, the guide editor, a creator's import) get a quiet sky: no sun, clouds or mood object, a soft gradient that frames the content column; booking and planning keep theirs
 - [ ] 4.5:1 everywhere, light and dark
