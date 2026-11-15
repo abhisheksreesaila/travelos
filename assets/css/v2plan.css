@@ -65,7 +65,7 @@
 .pl.is-arrive .pl-cal { animation: pl-rise var(--v2-sheet-in) var(--spring-soft) var(--v2-arrive-delay) both; }
 .pl .cal-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem 0.875rem; padding: 0.875rem 1rem 0.625rem 1.125rem; }
 .pl .seg { display: inline-flex; padding: 0.25rem; gap: 0.25rem; border-radius: 62.4375rem; background: var(--card-2); }
-.pl .seg button { min-height: 2.5rem; padding: 0 1rem; border-radius: 62.4375rem; border: 0; background: none; cursor: pointer; font: 620 1rem/1 var(--f-ui); color: var(--ink-2); transition: background-color var(--v2-quick), color var(--v2-quick); }
+.pl .seg button { min-height: 3rem; padding: 0 1rem; border-radius: 62.4375rem; border: 0; background: none; cursor: pointer; font: 620 1rem/1 var(--f-ui); color: var(--ink-2); transition: background-color var(--v2-quick), color var(--v2-quick); }
 .pl .seg button[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); box-shadow: var(--sh1); }
 .pl .cal-title { font: var(--d-wt) 1.5rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
 .pl .cal-title small { font: 500 1rem/1 var(--f-ui); letter-spacing: 0; color: var(--ink-2); margin-left: 0.375rem; }
@@ -252,7 +252,7 @@
 .pl .ic svg { width: 1.0625rem; height: 1.0625rem; }
 .pl .wg p { margin: 0.25rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
 .pl .wg .fine { display: block; margin-top: 0.5rem; font-size: 1rem; color: var(--ink-3); }
-.pl .wg a.fine { text-decoration: underline; text-underline-offset: 0.1875rem; }
+.pl .wg a.fine { display: inline-flex; align-items: center; min-height: 3rem; text-decoration: underline; text-underline-offset: 0.1875rem; }
 .pl .days5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr)); gap: 0.25rem; text-align: center; }
 .pl .days5 .d5 { min-height: 3rem; padding: 0.5rem 0; border: 0; border-radius: 0.875rem; background: color-mix(in srgb, var(--card-solid) 55%, transparent); display: grid; gap: 0.25rem; justify-items: center; font: 600 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink); cursor: pointer; transition: transform var(--v2-quick); }
 .pl .days5 .d5:active { transform: scale(.94); }
