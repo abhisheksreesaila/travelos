@@ -4,7 +4,7 @@ shown part. The browser flipping and the total moving are in tests_browser/test_
 import re
 from html import unescape
 
-from gitaway import catalog, gridsource, tripmatrix as tm
+from gitaway import catalog, tripmatrix as tm
 from gitaway.pages import tripmatrix as page
 from tests.test_matrixbook_page import FORM, GUEST, FRAG, _fresh, sample  # noqa: F401 (fixtures)
 from tests.test_signin import sign_in

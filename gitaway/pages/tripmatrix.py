@@ -18,11 +18,11 @@ On the showcase the sample catalog drives every square and says so; off it the r
 
 import hashlib
 import json
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, H3, Img, Input, Label, Link, Nav, Noscript, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, Button, Details, Div, Form, H1, H2, Input, Label, Link, Nav, Noscript, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
@@ -30,7 +30,7 @@ from gitaway import catalog, familydb, firstrun, gridsource, importer, liteapi, 
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, weather_ui
-from gitaway.pages.skystrip import WET, WORDS, sky_strip, weather_for
+from gitaway.pages.skystrip import WET, WORDS, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
