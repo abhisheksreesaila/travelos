@@ -274,3 +274,106 @@ def test_other_airports_have_no_rides(client):
 
 
 # ---- storage -----------------------------------------------------------------------------------------------------------
+
+
+def plan_day(client, day=0):
+    """The planning calendar's markup for a day (F-254: the canvas's day page retired): the booked blocks are links to their booking pages."""
+    r = client.get(f"/trip/plan/cal?view=day&day={day}")
+    assert r.status_code == 200
+    return r
+
+
+def test_save_opens_the_trip_on_the_imported_trip(client):
+    r = imported(client)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/plan"
+    trips = ses.trips(person())
+    assert len(trips) == 1 and trips[0].source == "imported" and trips[0].current and trips[0].title == "LA with the kids"
+    assert "2 adults, 2 kids" in trips[0].detail and "Oct 16 – 20" in trips[0].detail
+    html = client.get("/trip/plan").text
+    assert "LA with the kids" in html and "Oct 16" in html
+
+
+def test_imported_flights_hotel_and_car_are_booked_blocks_marked_where_they_were_booked(client):
+    imported(client)
+    p = person()
+    b = ses.booking(p)
+    t = cal.trip("", b)
+    blocks = {x.id: x for x in cal.booked_blocks(b, t)}
+    assert set(blocks) == {"b-out", "b-back", "b-in", "b-out2", "b-car-pick", "b-car-drop"}
+    assert all(x.locked and x.tag == "Booked on Expedia" and x.kind == "booked" for x in blocks.values())      # F-198: every booking says where it lives
+    assert (blocks["b-out"].day, blocks["b-out"].start, blocks["b-out"].end) == (0, 8 * 60 + 5, 9 * 60 + 32)
+    assert (blocks["b-back"].day, blocks["b-back"].start, blocks["b-back"].end) == (4, 14 * 60 + 10, 15 * 60 + 37)
+    assert (blocks["b-in"].day, blocks["b-in"].start) == (0, 15 * 60) and (blocks["b-out2"].day, blocks["b-out2"].start) == (4, 11 * 60)
+    assert (blocks["b-car-pick"].day, blocks["b-car-pick"].start, blocks["b-car-drop"].day) == (0, 10 * 60, 4)
+    assert blocks["b-out"].title == "Alaska Airlines AS 1234 · SFO → LAX" and blocks["b-in"].title == "Check in · The Example Hotel Santa Monica"
+    assert blocks["b-car-pick"].title == "Pick up Hertz car · LAX"
+    for day in (0, 4):      # every booked block is a line on its day, opening its sheet
+        html = plan_day(client, day).text
+        for bid, x in blocks.items():
+            if x.day == day:
+                assert f"/trip/booking?block={bid}" in html, bid
+    assert "Alaska Airlines AS 1234" in visible(plan_day(client, 0).text)
+
+
+def test_confirmation_numbers_show_on_the_booking_detail_and_the_details_page_only(client):
+    imported(client)
+    day0, week = plan_day(client, 0).text, client.get("/trip/plan").text
+    for secret in SECRETS:
+        assert secret not in day0 and secret not in week, secret  # not in the day itself, nor in any link or meta
+    detail = client.get("/trip/booking?block=b-out")
+    assert "ABCDEF" in detail.text and "Alaska Airlines AS 1234" in visible(detail.text)
+    assert "987654321" in client.get("/trip/booking?block=b-in").text and "H1234567" in client.get("/trip/booking?block=b-car-pick").text
+    assert "ABCDEF" not in client.get("/trip/booking?block=b-nope", follow_redirects=True).text
+    full = visible(client.get("/trip/details").text)
+    for secret in SECRETS:
+        assert secret in full, secret
+    for href in re.findall(r'href="([^"]*)"', day0 + client.get("/trip/details").text):
+        assert not any(s in href for s in SECRETS), href
+
+
+def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(client):
+    from gitaway import community
+    imported(client)
+    share.publish(person())      # the old one-tap /share page retired; the snapshot is the model's
+    rows = community.rows(kind="shared")
+    assert len(rows) == 1
+    page = client.get(f"/trips/{rows[0]['slug']}").text
+    snapshot = repr(rows[0])
+    client.cookies.clear()
+    public = client.get(f"/trips/{rows[0]['slug']}").text
+    for secret in SECRETS:
+        assert secret not in snapshot and secret not in page and secret not in public, secret
+    assert "Booked elsewhere" not in public and "Flight to LAX" in public and "AS 1234" not in public  # the plans show, the family's marker and numbers do not
+    sign_in(client)
+    for path in ("/trip/plan", "/plan/matrix", "/trips/import", "/offline"):
+        html = client.get(path).text
+        metas = " ".join(re.findall(r"<meta[^>]*>", html))
+        assert all(s not in metas for s in SECRETS), path
+    assert not any(s in str(session_data(client)) for s in SECRETS)
+
+
+def test_a_shared_demo_trip_uses_its_own_length_too(client):
+    from tests.test_calendar import book
+    book(client, f="f1", h="h1", c="none", d="2026-11-02", r="2026-11-05", a="2", k="5")
+    b = ses.booking(person())
+    assert b and "2026-11-02" in b["trip"]
+    built = share.build(person())
+    assert len(built.days) == 4 and built.stats[0][0] == "4 days"
+    assert [d.date for d in built.days] == ["DAY 1", "DAY 2", "DAY 3", "DAY 4"]  # its own length, numbered, never dated (F-046)
+
+
+def test_it_survives_a_restart_and_is_stored_only_in_the_family_database(client):
+    imported(client)
+    before = plan_day(client, 0).text
+    familydb.forget_schema_cache()  # what a server restart forgets
+    from main import app
+    from starlette.testclient import TestClient
+    fresh = TestClient(app, client=("127.0.0.1", 50000))
+    fresh.cookies.update(client.cookies)
+    after = plan_day(fresh, 0).text
+    assert "block=b-out" in before and "block=b-out" in after
+    assert "ABCDEF" in fresh.get("/trip/booking?block=b-out").text and "ABCDEF" in fresh.get("/trip/details").text
+    assert not any(s in str(session_data(fresh)) for s in SECRETS)  # the cookie holds only the sign-in
+    with familydb.using(person()) as db:
+        row = familydb.row(db, "SELECT t.source, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id")
+    assert row["source"] == "imported" and "ABCDEF" in row["doc"]

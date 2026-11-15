@@ -337,3 +337,87 @@ def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
 
 
 # ---- review round 2: share, the form guard, rides housekeeping ----------------------------------------------------------
+
+
+def test_trips_bookings_activities_notes_and_friends_are_rows_in_the_family_file(client):
+    book(client)
+    add(client, id="a1")
+    cal.add_note(person(), "Bring hats", id="n2")      # F-254: the notes form retired; the calendar's write is the model's
+    s = person()
+    assert [count(s, t) for t in ("trips", "bookings", "activities", "notes")] == [1, 1, 1, 1]
+    assert set(session_data(client)) <= set(ses.AUTH_KEYS)  # the cookie holds only the sign-in
+
+
+def test_everything_survives_a_restart_of_the_server(client):
+    book(client)
+    add(client, id="a1", title="Venice Canals stroll")
+    cal.add_note(person(), "Bring hats", act="a1", id="n2")
+    before = client.get("/trip/plan").text
+    restart()
+    again = client.get("/trip/plan").text  # same cookie, nothing in memory
+    assert "Venice Canals stroll" in before and "Venice Canals stroll" in again
+    assert [n["t"] for n in stored_calendar()["n"]] == ["Bring hats"]
+
+
+def test_booking_again_with_other_picks_makes_another_trip_instead_of_replacing_the_first(client):
+    book(client)
+    first = ses.booking(person())
+    book(client, **THREE_NIGHTS)
+    s = person()
+    assert len(ses.trips(s)) == 2 and ses.booking(s)["id"] != first["id"]  # the newest is open
+    assert ses.trips(s)[0].current and not ses.trips(s)[1].current
+
+
+def test_the_paid_trip_opens_on_the_calendar_and_pay_again_reopens_it(client):
+    book(client)
+    first = ses.booking(person())
+    book(client, **THREE_NIGHTS)
+    book(client)  # the same picks as the first trip: no new trip, it opens again
+    s = person()
+    assert len(ses.trips(s)) == 2 and ses.booking(s)["id"] == first["id"]
+
+
+def test_every_trip_has_its_own_ids_and_notes(client):
+    book(client)
+    add(client)
+    assert stored_calendar()["a"]
+    book(client, **THREE_NIGHTS)
+    assert stored_calendar()["a"] == [] and stored_calendar()["n"] == []  # nothing carried over
+
+
+def test_a_write_naming_a_trip_the_family_does_not_have_changes_nothing(client):
+    a, b = two_trips(client)
+    r = client.post("/trip/canvas/plan", data={"op": "delete", "act": "a1", "trip": "not-a-trip"}, follow_redirects=False)
+    assert r.status_code in (303, 409)
+    assert titles_of(b) == ["Trip B plan"] and titles_of(a) == ["Trip A plan"]
+    client.post("/trip/plans", data={**FORM, "id": "a8", "title": "Nope", "trip": "not-a-trip"})
+    assert "Nope" not in titles_of(b) + titles_of(a)
+
+
+def test_only_the_last_deleted_activity_is_kept_for_undo_older_ones_are_removed_from_the_file(client):
+    book(client)
+    for i in range(1, 5):
+        add(client, id=f"a{i}", title=f"Plan {i}", start=f"{7 + i}:00", end=f"{7 + i}:30")
+        cal.add_note(person(), f"note {i}", act=f"a{i}", id=f"n{10 + i}")
+    for i in range(1, 5):
+        cal.delete_activity(person(), f"a{i}")
+    s = person()
+    assert count(s, "activities") == 1 and count(s, "notes") == 1  # just a4 and its note, for Undo
+    assert cal.undo_delete(s, "a4").title == "Plan 4"
+    assert cal.undo_delete(s, "a1") is None
+    assert cal.add_activity(s, day=1, start="12:00", end="12:30", title="Revived?", kind="fun", id="a2") is None  # a stale re-post does not bring it back
+
+
+def test_the_notes_ceiling_refuses_more_and_keeps_what_there_is(client, monkeypatch):
+    monkeypatch.setattr(cal, "MAX_NOTES", 3)
+    book(client)
+    refused = []
+    for i in range(6):
+        try:
+            cal.add_note(person(), f"note {i}", id=f"n{i + 1}")
+        except cal.CalendarError as e:
+            refused.append(str(e))
+    assert refused and len(stored_calendar()["n"]) == 3
+    assert "a lot planned" in refused[-1]
+
+

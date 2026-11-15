@@ -16,8 +16,8 @@ def book(client, traveler="ari", **pick):
     from gitaway import catalog, session as ses
     sign_in(client, traveler)
     _LAST["traveler"] = traveler
-    trip = catalog.trip_from_url("", "", "", "", "", "", "")
     picked = {**PICK, **pick}
+    trip = catalog.trip_from_url(picked.get("d", ""), picked.get("r", ""), picked.get("a", ""), picked.get("k", ""), picked.get("to", ""), picked.get("home", ""), picked.get("focus", ""))
     flight, hotel, car = (None if picked[k] in ("", "none") else picked[k] for k in ("f", "h", "c"))      # "none" skips a lane, as the old form did
     stay = catalog.stay_pick(hotel, None, None, trip) if hotel else None
     fare = catalog.flight_pick(flight, None, None, trip) if flight else None

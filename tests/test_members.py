@@ -422,3 +422,31 @@ def test_memberships_and_pending_invites_survive_a_restart(owner):
     assert {m["email"] for m in members.members(tenant(owner))} >= {sam, "ari.rivera@example.com"}
     assert [i["token"] for i in members.pending_invites(tenant(owner))] == [pending["token"]]
     assert owner.get(f"/family").text.count("fam-invite") >= 1
+
+
+def test_the_link_signs_the_person_in_first_then_joins_them(owner):
+    sam = addr()
+    inv = invite(owner, sam, "editor")
+    other = browser(owner)
+    page = other.get(f"/join/{inv['token']}")
+    assert page.status_code == 200 and "Ari Rivera's family" in page.text and "Sign in to join" in page.text
+    assert members.mask_email(sam) in page.text and sam not in page.text  # the full address is not shown to a stranger
+    nxt = f"/join/{inv['token']}"
+    assert sign_in(other, sam, next=nxt, intent="join").headers["location"] == nxt
+    back = other.get(nxt, follow_redirects=False)
+    assert back.status_code == 303 and back.headers["location"] == "/trip/plan"
+    assert session_data(other)["tenant_id"] == tenant(owner)
+
+
+def test_a_signed_in_person_with_the_right_email_joins_with_one_button(owner):
+    sam = addr()
+    other = browser(owner)
+    sign_in(other, sam)  # signed in before the invite exists: the sign-in hook had nothing to join
+    own = tenant(other)
+    inv = invite(owner, sam, "editor")
+    page = other.get(f"/join/{inv['token']}").text
+    assert 'id="join-go"' in page and "Join Ari Rivera" in page
+    r = other.post(f"/join/{inv['token']}", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/plan"
+    assert session_data(other)["tenant_id"] == tenant(owner) != own
+    assert "LA with the kids" in other.get("/calendar").text

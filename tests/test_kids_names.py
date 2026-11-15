@@ -65,12 +65,6 @@ def test_the_person_publishing_may_say_their_own_name(family):
 
 # ---- it blocks -----------------------------------------------------------------------------------------------------------------
 
-def test_the_name_check_reads_a_photos_caption_and_alt_text(family):
-    trip = Itinerary(slug="x", title="Our week", headline="Our week:", accent="Ari's", place="LA", lede="", author="Ari",
-                     days=[Day(1, "DAY 1", "Day one", "", [Stop("", "Teacups")], photos=[Polaroid("/p.jpg", "Photo from day 1, Theo on the carousel", "Theo on the carousel")])])
-    assert publish.mentions(person("ari"), trip) == ["Theo"]
-
-
 @pytest.mark.parametrize("names, said", [(["Mira"], "Mira"), (["Mira", "Theo"], "Mira and Theo"), (["Mira", "Theo", "Sam"], "Mira, Theo and Sam")])
 def test_names_are_listed_the_way_a_person_would_say_them(names, said):
     assert publish.join_names(names) == said

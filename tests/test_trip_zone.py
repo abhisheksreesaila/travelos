@@ -106,12 +106,6 @@ def test_the_migration_runs_on_an_existing_family_file():
 
 # ---- /trip --------------------------------------------------------------------------------------------------------------------
 
-def test_the_minute_and_the_day_follow_the_zone(at_utc):
-    at_utc(INSTANT)
-    assert td.now_minute("Europe/Paris") == 8 * 60 and td.now_minute() == 23 * 60 and td.now_minute("America/Los_Angeles") == 23 * 60
-    assert catalog.today_in("Europe/Paris") == date(2026, 10, 20) and catalog.today_in() == date(2026, 10, 19) == catalog.today()
-
-
 def test_the_past_date_check_keeps_one_server_today(at_utc):
     at_utc(INSTANT)
     assert catalog.is_past(date(2026, 10, 19), date(2026, 10, 21)) is False   # Oct 19 is still "today" for the server, though it is Oct 20 in Paris

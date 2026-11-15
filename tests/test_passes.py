@@ -296,3 +296,70 @@ def test_drawing_a_pdf_works_in_its_own_process(trip):
     img = passes.render_pdf(pdf())
     assert img is not None and max(img.size) == 1600
 
+
+def booking_page(client, ari):
+    """The booking page of the flight added by hand (F-254: where the Help tab's passes section went): /trip/booking?block=fl-<id>."""
+    return client.get(f"/trip/booking?block=fl-{passes.flights(ari)[0]['id'][:12]}")
+
+
+@pytest.mark.parametrize("bad, err", [({"airline": ""}, "flight_name"), ({"number": "12 34 5678"}, "flight_name"), ({"from_code": "LA"}, "flight_route"), ({"to_code": "lax"}, "flight_route"),
+                                      ({"fly_on": "tomorrow"}, "flight_date"), ({"time": ""}, "flight_time")])
+def test_a_flight_that_is_not_filled_in_is_refused_with_a_sentence(trip, ari, bad, err):
+    r = add_flight(trip, **bad)
+    assert r.status_code == 303 and r.headers["location"].startswith(f"/trip/booking?block=b-out&err={err}")
+    assert len(passes.flights(ari)) == 1
+    assert passes.ERRORS[err] in text(trip.get(r.headers["location"]).text)
+
+
+def test_a_pass_keeps_seat_group_gate_and_boarding_time_and_names_the_member(trip, ari, key):
+    r = add_pass(trip, key, "ari rivera")
+    assert r.status_code == 303 and r.headers["location"].startswith("/trip/booking") and "err=" not in r.headers["location"]
+    [p] = passes.listing(ari)[key]
+    assert (p["seat"], p["grp"], p["gate"], p["boards_min"], p["kind"]) == ("21A", "3", "71B", 13 * 60 + 40, "")
+    assert p["traveller"] == "ari rivera"
+
+
+def test_the_airline_link_is_only_kept_when_pasted_and_only_https(trip, ari, key):
+    assert "err=url" in add_pass(trip, key, app_url="javascript:alert(1)").headers["location"]
+    assert "err=url" in add_pass(trip, key, app_url="http://x.example.com/a").headers["location"]
+    assert passes.listing(ari) == {}
+    add_pass(trip, key, "With", app_url="https://www.united.com/app")
+    add_pass(trip, key, "Without")
+    html = booking_page(trip, ari).text
+    assert html.count("Open in airline app") == 1 and 'href="https://www.united.com/app"' in html
+    assert "noopener" in re.search(r'<a[^>]*data-app=[^>]*>', html).group(0)
+
+
+def test_a_viewer_sees_the_passes_but_cannot_change_them(crew, ari, key):
+    owner, editor, viewer = crew
+    add_pass(owner, key, file=("a.pdf", pdf(), "application/pdf"))
+    [p] = passes.listing(ari)[key]
+    html = viewer.get(f"/trip/booking?block=fl-{passes.flights(ari)[0]['id'][:12]}").text
+    shown = text(html)
+    assert "United 1234" in shown and "21A" in shown and "71B" in shown and "1:40 PM" in shown and "Abhi" in shown
+    assert "<form" not in html.split('id="bk-passes"')[1] and "Add a pass" not in html and "Add a flight" not in html
+    assert viewer.get(f"/trip/passes/{p['id']}/thumb").status_code == 200
+    for path, data in (("/trip/help/flight", FLIGHT), ("/trip/help/flight/remove", {"flight_id": passes.flights(ari)[0]["id"]}), ("/trip/help/pass", {"flight": key, "traveller": "X"}),
+                       ("/trip/help/pass/remove", {"pass_id": p["id"]})):
+        assert viewer.post(path, data=data, follow_redirects=False).status_code == 403, path
+    assert len(passes.listing(ari)[key]) == 1 and len(passes.flights(ari)) == 1
+
+
+def test_the_gate_view_needs_sign_in_and_a_known_flight_with_passes(trip, key):
+    assert trip.get("/trip/passes/gate?flight=f:" + "0" * 32, follow_redirects=False).headers["location"] == "/trip/plan"
+    assert trip.get(f"/trip/passes/gate?flight={key}", follow_redirects=False).headers["location"] == "/trip/plan"   # no passes yet
+    trip.cookies.clear()
+    assert trip.get(f"/trip/passes/gate?flight={key}", follow_redirects=False).headers["location"].startswith("/signin")
+
+
+def test_removing_names_the_trip_it_was_drawn_for_like_saving(trip, ari, key):
+    add_pass(trip, key, file=("a.pdf", pdf(), "application/pdf"))
+    [p] = passes.listing(ari)[key]
+    fid = passes.flights(ari)[0]["id"]
+    assert "err=stale" in trip.post("/trip/help/pass/remove", data={"pass_id": p["id"], "trip": "0" * 12, "next": BACK}, follow_redirects=False).headers["location"]
+    assert "err=stale" in trip.post("/trip/help/flight/remove", data={"flight_id": fid, "trip": "0" * 12, "next": BACK}, follow_redirects=False).headers["location"]
+    assert len(passes.listing(ari)[key]) == 1 and len(passes.flights(ari)) == 1
+    tid_ = re.search(r'name="trip" value="([0-9a-f]+)"', booking_page(trip, ari).text).group(1)
+    assert "err=" not in trip.post("/trip/help/pass/remove", data={"pass_id": p["id"], "trip": tid_, "next": BACK}, follow_redirects=False).headers["location"]
+    assert "err=" not in trip.post("/trip/help/flight/remove", data={"flight_id": fid, "trip": tid_, "next": BACK}, follow_redirects=False).headers["location"]
+    assert passes.listing(ari) == {} and passes.flights(ari) == []

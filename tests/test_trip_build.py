@@ -298,3 +298,32 @@ def test_every_step_has_unique_ids_and_every_input_has_a_label(client):
                 continue
             ident = re.search(r'\bid="([^"]+)"', tag)
             assert ident and (re.search(rf'for="{ident.group(1)}"', html) or re.search(rf"<label[^>]*>(?:(?!</label>).)*{re.escape(tag)}", html, re.S)), tag
+
+
+def test_the_questions_build_exactly_the_trip_the_template_does(client):
+    sign_in(client)
+    w = whole_trip(Walk(client))
+    assert "Check your trip" in w.text and 'id="ti-save"' in w.html  # the importer's own preview
+    r = client.post(f"{PATH}/save", data={"draft": draft_of(w.html)}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/plan"
+    built = importer.plan_of(person())
+    assert built == ti.parse(TEMPLATE).plan  # flights, hotel, car, party, confirmation numbers: all of it
+    trips = ses.trips(person())
+    assert len(trips) == 1 and trips[0].source == "imported" and trips[0].title == "LA with the kids"
+
+
+def test_the_trip_shows_the_same_blocks_as_an_imported_template(client):
+    sign_in(client)
+    w = whole_trip(Walk(client))
+    client.post(f"{PATH}/save", data={"draft": draft_of(w.html)})
+    html = client.get("/trip/plan/cal?view=day&day=0").text
+    assert "Alaska Airlines AS 1234" in html
+    assert "block=b-out" in html and "block=b-in" in html
+    assert "ABCDEF" not in html  # confirmation numbers stay out of the page and its blocks
+
+
+def test_the_first_run_welcome_and_the_import_page_link_to_the_builder(client):
+    sign_in(client, "newcomer@example.com")
+    html = client.get("/trips/import").text      # F-254: the first-run welcome on the old pages retired; the import page keeps the way to the builder
+    assert 'href="/trips/build"' in html and "Rather answer a few questions" in html
+    assert 'href="/trips/build"' in client.get("/trips/import").text

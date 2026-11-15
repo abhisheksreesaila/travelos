@@ -161,3 +161,5 @@ def test_tampered_fields_are_still_rechecked_on_save(client):
     r = client.post("/trips/build/save", data={**good, "draft": "{not json"}, follow_redirects=False)
     assert r.status_code == 422 and 'id="tb-form"' in r.text and f'name="edit" value="{trip_id}"' in r.text
     assert [t.title for t in ses.trips(person()) if t.id == trip_id] == ["LA with the kids"]
+
+

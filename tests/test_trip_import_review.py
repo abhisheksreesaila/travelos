@@ -238,3 +238,32 @@ def test_a_late_flight_keeps_its_true_time_in_the_share_and_in_the_overlap_messa
     block = cal.Block("b-back", 0, 23 * 60 + 29, 24 * 60 - 1, "Flight", "booked", True, "plane", label_start=23 * 60 + 50)
     t = tripimport.trip_search(tripimport.parse(TEMPLATE).plan)
     assert cal._clean(t, [cal.Block("b-x", 0, 600, 700, "Flight", "booked", True, "plane", label_start=630)], day=0, start="10:15", end="11:00", title="x", kind="fun")[1:3] == (615, 660)  # saved (F-086)
+
+
+def test_two_hotels_put_both_stays_on_the_calendar_and_rides_go_to_the_hotel_of_that_night(client, clock):
+    imported(client, two_hotels())
+    p = person()
+    b = ses.booking(p)
+    blocks = {x.id: x for x in cal.booked_blocks(b, cal.trip("", b))}
+    assert [(blocks[i].day, blocks[i].title) for i in ("b-in", "b-out2", "b-hin2", "b-hout2")] == [
+        (0, "Check in · First Inn"), (2, "Check out · First Inn"), (2, "Check in · Second Inn"), (4, "Check out · Second Inn")]
+    arrive = rides.leg_plan("arrive", cal.flight_of(b), cal.stay_for(b, "arrive"), cal.trip_of(b))
+    depart = rides.leg_plan("depart", cal.flight_of(b), cal.stay_for(b, "depart"), cal.trip_of(b))
+    assert arrive.dropoff.name == "First Inn" and depart.pickup.name == "Second Inn" and depart.pickup.address.startswith("2 Second St")
+    assert "222" in client.get("/trip/booking?block=b-hout2").text and "111" in client.get("/trip/booking?block=b-out2").text
+    text = visible(client.get("/trip/details").text)
+    assert "First Inn" in text and "Second Inn" in text
+
+
+def test_deleting_a_trip_takes_its_shared_page_down_too(client):
+    from gitaway import community
+    imported(client)
+    trip_id = ses.trips(person())[0].id
+    from gitaway import share
+    share.publish(person())      # the old /share page retired; the shared page is the model's
+    assert len(community.rows(kind="shared")) == 1
+    assert "shared page comes down" in client.get(f"/trip/delete?trip={trip_id}").text
+    assert client.post("/trip/delete", data={"trip": trip_id}, follow_redirects=False).status_code == 303
+    assert community.rows(kind="shared") == []
+
+

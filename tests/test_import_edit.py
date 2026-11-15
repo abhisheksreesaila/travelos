@@ -214,3 +214,4 @@ def test_ten_adults_open_intact():
     plan = plan_of(text)
     assert plan.adults == 10 and tb.build(tb.load(tb.dump(tb.from_plan(plan)))) == plan
 
+
