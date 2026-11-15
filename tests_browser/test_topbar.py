@@ -136,7 +136,7 @@ def test_the_picker_offers_to_plan_another_trip(signed_in):
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-picker summary")
     page.click(f"{BAR} .ga-tb-pop-trip >> text=Plan another trip")
-    page.wait_for_url("**/plan/matrix")
+    page.wait_for_url("**/plan/ask")
 
 
 def test_the_avatar_menu_has_people_and_invites_and_signs_out(signed_in):
@@ -172,7 +172,7 @@ def test_a_family_with_no_trip_gets_start(signed_in):
     expect(nav).to_have_text(["Start", "Family", "Ask/"])
     expect(page.locator(f"{BAR} .ga-tb-picker")).to_have_count(0)
     page.click(f"{BAR} .ga-tb-trip")
-    page.wait_for_url("**/plan/matrix")
+    page.wait_for_url("**/plan/ask")
     expect(page.locator(BAR)).to_be_visible()
 
 

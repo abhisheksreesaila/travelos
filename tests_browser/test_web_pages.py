@@ -204,15 +204,15 @@ def test_the_matrix_offers_the_import_and_the_cockpit_offers_another_trip(ari, b
     page.wait_for_url("**/trips/import")
     page.goto(f"{base_url}/trip/cockpit")
     page.click("#ck-plan-another")
-    page.wait_for_url("**/plan/matrix")
-    expect(page.locator("#mx-import")).to_be_visible()
+    page.wait_for_url("**/plan/ask")
+    expect(page.locator("#ak-import")).to_be_visible()
 
 
-def test_a_family_with_no_trip_lands_on_the_matrix_and_it_fits_sideways(contexts, base_url):
+def test_a_family_with_no_trip_lands_on_the_ask_and_it_fits_sideways(contexts, base_url):
     ctx = contexts()
     sign_in(ctx, base_url, f"new.{uuid.uuid4().hex[:6]}@example.com")
     page = ctx.new_page()
     page.goto(f"{base_url}/")
-    page.wait_for_url("**/plan/matrix")
-    expect(page.locator("#mx-import")).to_be_visible()
+    page.wait_for_url("**/plan/ask")
+    expect(page.locator("#ak-import")).to_be_visible()
     assert no_sideways_scroll(page)

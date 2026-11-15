@@ -27,6 +27,7 @@ OPEN_FOR_VIEWERS = {
     "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # a viewer may talk on a plan: text, photo, voice note (F-091)
     "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
     "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
+    "/plan/ask",                                              # the search before the matrix (F-241): a viewer may search; the route stores the interests only for an editor or admin
     "/plan/matrix/warm",                                      # the trip matrix's head start: starts price searches the page is about to ask for, changes no plan (F-229)
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
     "/admin/draft", "/admin/link", "/admin/revoke", "/admin/drafts/{token}", "/claim/{token}",   # F-188: the captain's drafts for creators (404 unless GITAWAY_ADMIN_EMAILS) and a creator claiming their own post

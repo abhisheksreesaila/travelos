@@ -47,7 +47,7 @@ def test_calendar_signed_out_signs_in_and_without_a_booking_starts_one(client):
     r = client.get("/calendar", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/signin?next=%2Ftrip"
     sign_in(client)
-    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/plan/matrix"
+    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/plan/ask"
 
 
 def test_trips_goes_to_the_current_trip_instead_of_a_404(client):

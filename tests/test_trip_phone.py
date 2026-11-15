@@ -54,7 +54,7 @@ def test_signed_out_goes_through_sign_in_and_a_signed_in_family_with_no_trip_goe
         assert client.post(path, data={}, follow_redirects=False).status_code == 303
     sign_in(client)
     r = client.get("/trip?tab=today", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/plan/matrix"
+    assert r.status_code == 303 and r.headers["location"] == "/plan/ask"
 
 
 def test_every_screen_size_is_sent_from_the_old_calendar_to_the_trips_day(client):

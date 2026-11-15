@@ -10,8 +10,8 @@ from tests_browser.look import audit
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
 SIGNED_OUT = (("landing", "/"), ("sign-in", "/signin"), ("creators", "/creators"), ("for creators", "/for-creators"), ("plan for me", "/plan-for-me"))
-SIGNED_IN = (("matrix", "/plan/matrix"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
-             ("ask", "/trip/ask"), ("book", "/trip/book"))
+SIGNED_IN = (("ask", "/plan/ask"), ("matrix", "/plan/matrix"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
+             ("trip ask", "/trip/ask"), ("book", "/trip/book"))
 TABLET = {"width": 900, "height": 1000}      # between the phone and the laptop layouts (the tablet keeps the old header; 12px root)
 OWNED_ELSEWHERE = {}      # (the signed-out landing was F-206's to finish; since the merge the cover meets the whole audit)
 

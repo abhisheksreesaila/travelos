@@ -116,10 +116,10 @@ def test_the_early_preview_label_is_in_the_shell_signed_out_and_signed_in(client
     and the phone's trip screens. It opens one short line."""
     from tests.test_calendar import book
     line = "Early preview GitAway is new. Things will change; tell us what breaks."
-    for path in ("/", "/signin", "/plan/matrix", "/creators", "/for-creators", "/plan-for-me", "/plan?to=la&d=2027-03-05&r=2027-03-09&a=2"):
+    for path in ("/", "/signin", "/plan/matrix", "/plan/ask", "/creators", "/for-creators", "/plan-for-me", "/plan?to=la&d=2027-03-05&r=2027-03-09&a=2"):
         assert preview_on(client.get(path).text) == line, path
     book(client)
-    for path in ("/plan/matrix", "/family", "/trip/canvas", "/trip/canvas?day=1", "/trip/family", "/trip/ask"):
+    for path in ("/plan/matrix", "/plan/ask", "/family", "/trip/canvas", "/trip/canvas?day=1", "/trip/family", "/trip/ask"):
         html = client.get(path).text
         assert preview_on(html) == line, path
     canvas = client.get("/trip/canvas").text
