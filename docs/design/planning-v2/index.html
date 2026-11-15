@@ -227,6 +227,9 @@ button { font: inherit; color: inherit; }
 .rainband span svg { width: 15px; height: 15px; }
 .rainband.flash { animation: rainflash 1.6s var(--ease-out) 2; }
 @keyframes rainflash { 30% { background-color: color-mix(in srgb, var(--wx) 30%, transparent); } }
+.more { position: absolute; right: 6px; z-index: 4; min-width: 40px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--ink); color: var(--card-solid); font: 700 14px/28px var(--f-num); box-shadow: var(--sh2); cursor: pointer; transition: transform .15s var(--ease-out); }
+.more:active { transform: scale(.92); }
+:root[data-theme="dark"] .more { background: #F4F5FB; color: #0F1124; }
 .hov { position: absolute; left: 4px; right: 4px; height: calc(var(--hh) / 2); border-radius: 10px; background: color-mix(in srgb, var(--flight) 9%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--flight) 35%, transparent); color: var(--flight-i); font: 620 14px/1 var(--f-num); display: flex; align-items: center; gap: 6px; padding: 0 10px; pointer-events: none; opacity: 0; transition: opacity .12s; }
 .hov.on { opacity: 1; }
 .hov svg { width: 14px; height: 14px; }
@@ -918,7 +921,7 @@ const FAMS = [
   { id: 'nguyen', who: 'The Nguyens', mono: 'N', c: '#0369A1', kids: 'kids 5 and 7 · Dec 2025', hearts: 212, title: 'A rainy day, indoors', fit: 2, why: 'Thursday: rain after lunch',
     ev: [[10 * 60, 120, 'see', 't8'], [12 * 60 + 15, 60, 'food', 'f2'], [13 * 60 + 30, 120, 'see', 't5'], [18 * 60 + 30, 90, 'see', 't10']] },
   { id: 'mehta', who: 'The Mehtas', mono: 'M', c: '#8B2FC9', kids: 'kids 6 and 9 · Dec 2025', hearts: 128, title: 'A slow zoo day', fit: 1, why: 'Wednesday: sunny, 76°',
-    ev: [[8 * 60 + 30, 60, 'food', 'f4'], [10 * 60, 180, 'see', 't4'], [13 * 60 + 30, 60, 'food', 'f2'], [15 * 60 + 30, 120, 'stay', 's1'], [19 * 60, 90, 'food', 'f1']] },
+    ev: [[8 * 60 + 30, 60, 'food', 'f4'], [12 * 60 + 30, 60, 'food', 'f2'], [14 * 60, 180, 'see', 't4'], [19 * 60, 90, 'food', 'f1']] },
   { id: 'garcia', who: 'The Garcias', mono: 'G', c: '#C2410C', kids: 'kids 8 and 12 · Jan 2026', hearts: 96, title: 'Joshua Tree, early', fit: 3, why: 'Friday: cool and dry',
     ev: [[7 * 60, 60, 'ride', 'r2'], [8 * 60, 240, 'see', 't3'], [12 * 60 + 30, 60, 'ride', 'r2'], [18 * 60 + 30, 90, 'food', 'f3']] },
 ];
@@ -983,19 +986,27 @@ function setHH() {
   $('#grid').style.setProperty('--hh', HH + 'px');
 }
 const visDays = () => S.view === 'week' ? [0, 1, 2, 3, 4] : [S.day];
-function lanes(list) {
-  const out = new Map(); const sorted = [...list].sort((a, b) => a.s - b.s || b.e - a.e);
+const maxLanes = () => (phone() && S.view === 'week') ? 1 : 2;
+function lanes(list, max = maxLanes()) {
+  const out = new Map(), chips = []; const sorted = [...list].sort((a, b) => a.s - b.s || b.e - a.e);
   let cluster = [], end = -1;
-  const flush = () => { const ends = []; cluster.forEach(e => { let l = ends.findIndex(x => x <= e.s); if (l < 0) { l = ends.length; ends.push(0); } ends[l] = e.e; out.set(e.id, { lane: l }); }); cluster.forEach(e => out.get(e.id).lanes = ends.length); cluster = []; };
+  const flush = () => {
+    const ends = []; const hidden = [];
+    cluster.forEach(e => { let l = ends.findIndex(x => x <= e.s); if (l < 0) { l = ends.length; ends.push(0); } ends[l] = e.e; out.set(e.id, { lane: l, hidden: l >= max }); if (l >= max) hidden.push(e); });
+    cluster.forEach(e => out.get(e.id).lanes = Math.min(ends.length, max));
+    if (hidden.length) { const top = Math.min(...hidden.map(e => e.s)), bot = Math.max(...cluster.map(e => e.e)); chips.push({ s: Math.max(top, bot - 38), ids: hidden.map(e => e.id) }); }
+    cluster = [];
+  };
   sorted.forEach(e => { if (e.s >= end && cluster.length) flush(); cluster.push(e); end = Math.max(end, e.e); });
   if (cluster.length) flush();
+  out.chips = chips;
   return out;
 }
 function evHTML(e, L, opts = {}) {
   const top = (e.s - START * 60) / 60 * HH, h = Math.max((e.e - e.s) / 60 * HH, 24);
   const short = (e.e - e.s) <= 35;
   const other = e.by && e.by !== 'me';
-  const narrow = L && L.lanes >= (S.view === 'week' ? 3 : 4);
+  const narrow = false;
   return `<div class="ev k-${e.k} ${narrow ? 'narrow' : ''} ${L && L.lanes === 2 && S.view === 'week' ? 'l2' : ''} ${short ? 'short' : ''} ${e.lock ? 'lock' : ''} ${other ? 'byother' : ''} ${opts.cls || ''}" data-id="${e.id}" role="button" tabindex="0"
     style="--top:${top}px;--h:${h}px;--lane:${L ? L.lane : 0};--lanes:${L ? L.lanes : 1};--dl:${opts.dl || 0}ms;${other ? `--c:${P[e.by].c}` : ''}"
     aria-label="${e.t}, ${DAYS[e.d].dw} ${fmt(e.s)} to ${fmt(e.e)}${e.lock ? ', booked' : ''}">
@@ -1026,7 +1037,8 @@ function render(opts = {}) {
         return `<div class="col" data-day="${i}">
           ${(OFF[i] || []).map(([a, b]) => `<div class="offwin" style="top:${(a - START * 60) / 60 * HH}px;height:${(b - a) / 60 * HH}px"></div>`).join('')}
           ${D.rainFrom ? `<div class="rainband" style="top:${(D.rainFrom - START * 60) / 60 * HH}px;height:${(D.rainTo - D.rainFrom) / 60 * HH}px"><span>${I.rain}Rain likely</span></div>` : ''}
-          ${evs.map(e => evHTML(e, L.get(e.id), fresh.has(e.id) ? { cls: opts.hide?.has(e.id) ? 'hidden' : 'land', dl: (n++) * (opts.stagger || 0) } : {})).join('')}
+          ${evs.filter(e => !L.get(e.id).hidden).map(e => evHTML(e, L.get(e.id), fresh.has(e.id) ? { cls: opts.hide?.has(e.id) ? 'hidden' : 'land', dl: (n++) * (opts.stagger || 0) } : {})).join('')}
+          ${L.chips.map(c => `<button class="more num" data-ids="${c.ids.join(',')}" style="top:${(c.s - START * 60) / 60 * HH + 4}px" aria-label="${c.ids.length} more at this time">+${c.ids.length}</button>`).join('')}
           <div class="hov"><span>${I.plus}</span><span class="num"></span></div></div>`;
       }).join('')}
     </div></div>`;
@@ -1219,6 +1231,7 @@ $('#pop').addEventListener('click', e => {
     const h = e.target.closest('.heart'); if (h) { const E = byId(id); E.hearted = !E.hearted; h.setAttribute('aria-pressed', E.hearted); h.querySelector('.num').textContent = (E.hearts || 0) + (E.hearted ? 1 : 0); h.classList.remove('bump'); void h.offsetWidth; h.classList.add('bump'); return; }
     if (e.target.closest('[data-booking]')) { closePop(); toast('Flights and the stay change in Booking (opens the booking drawer)'); return; }
   }
+  if (POP === 'more') { const o = e.target.closest('[data-open]'); if (o) { const el = moreEl; closePop(true); openEvent(o.dataset.open, el); } return; }
   if (POP && POP.startsWith('use:')) {
     const b = e.target.closest('[data-useday]'); if (b) { const f = FAMS.find(x => x.id === POP.slice(4)); closePop(); useDay(f, +b.dataset.useday); }
   }
@@ -1256,6 +1269,18 @@ function openEvent(id, el) {
       <button class="btn2" data-thread="${E.d === 2 && E.sug === 't1' ? 'ev-' + id : key}">${I.chat}Talk about it${msgs ? ` · ${msgs}` : ''}</button>
       ${E.lock ? `<button class="btn2" data-booking>Open booking</button>` : `<button class="btn2 danger" data-del aria-label="Remove">${I.trash}Remove</button>`}
     </div>`;
+  if (!RM.matches) $('#pop').animate([{ opacity: 0, transform: 'scale(.96) translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: EASE });
+  placePop(el.getBoundingClientRect());
+}
+
+/* the "+N" chip: the overlaps that do not fit side by side */
+let moreEl = null;
+function openMore(ids, el) {
+  closePop(true); POP = 'more'; moreEl = el;
+  const evs = ids.map(byId).filter(Boolean);
+  $('#pop').innerHTML = `<div class="ph"><div class="t"><h4>Also at this time</h4><b>${evs.length} more on ${DAYS[evs[0].d].dw}</b></div><button class="x" data-x aria-label="Close">${I.close}</button></div>
+    <div class="sugs">${evs.map(x => `<button class="sug" data-open="${x.id}" style="--k:${kv(x.k)};--kt:var(--${x.k}-t)"><span class="ic ${x.k === 'ride' ? 'ride' : ''}" style="--k:${x.k === 'ride' ? 'var(--ride)' : `var(--${x.k})`}">${I[KINDS[x.k].icon]}</span><span class="t"><b>${x.t}</b><small class="num">${fmt(x.s)} to ${fmt(x.e)}${x.sub ? ` · ${x.sub}` : ''}</small></span>${I.right.replace('<svg', '<svg width="18" height="18"')}</button>`).join('')}</div>
+    <p class="fine" style="margin:10px 2px 0;color:var(--ink-3);font-size:15px">Up to two plans sit side by side; drag one to a free hour to see it on the grid.</p>`;
   if (!RM.matches) $('#pop').animate([{ opacity: 0, transform: 'scale(.96) translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: EASE });
   placePop(el.getBoundingClientRect());
 }
@@ -1327,6 +1352,7 @@ document.addEventListener('touchmove', e => { if ((drag && drag.armed) || (sdrag
 $('#grid').addEventListener('click', e => {
   if (suppressClick) { suppressClick = false; return; }
   const dh = e.target.closest('.dh'); if (dh && S.view === 'week') return setView('day', +dh.dataset.day);
+  const mo = e.target.closest('.more'); if (mo) return openMore(mo.dataset.ids.split(','), mo);
   const ev = e.target.closest('.ev'); if (ev && !ev.classList.contains('ghost')) return openEvent(ev.dataset.id, ev);
   const col = e.target.closest('.col'); if (!col) return;
   const r = col.getBoundingClientRect(); const m = clamp(Math.floor(((e.clientY - r.top) / HH * 60 + START * 60) / 30) * 30, START * 60, END * 60 - 30);
@@ -1338,7 +1364,7 @@ $('#grid').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key ==
 function hoverSlot(e) {
   if (phone() || !$('#pop').hidden) return;
   const col = e.target.closest?.('.col'); const on = $('.hov.on');
-  if (!col || e.target.closest('.ev')) { on?.classList.remove('on'); return; }
+  if (!col || e.target.closest('.ev, .more')) { on?.classList.remove('on'); return; }
   const r = col.getBoundingClientRect(); const m = Math.floor(((e.clientY - r.top) / HH * 60 + START * 60) / 30) * 30;
   const h = $('.hov', col); if (on && on !== h) on.classList.remove('on');
   if ((OFF[+col.dataset.day] || []).some(([a, b]) => m >= a && m < b)) { h.classList.remove('on'); return; }
@@ -1399,17 +1425,28 @@ function openUseDay(fid, btn) {
 }
 function useDay(f, d) {
   pushHist();
-  const fresh = new Set(); let skipped = 0;
+  const fresh = new Set(); let skipped = 0; const moved = [], rained = [];
+  const put = (s, e, k, sid) => { const x = SUG[sid]; const id = 'n' + (++uid); fresh.add(id); S.events.push({ id, d, s, e, k, t: x.t, sub: x.sub, by: 'me', sug: sid, from: f.who }); };
+  const wetOnes = [];
   f.ev.forEach(([s, dur, k, sid]) => {
-    const e = s + dur; const x = SUG[sid];
-    if ((OFF[d] || []).some(([a, b]) => s < b && e > a) || S.events.some(o => o.d === d && s < o.e && e > o.s)) { skipped++; return; }
-    const id = 'n' + (++uid); fresh.add(id);
-    S.events.push({ id, d, s, e, k, t: x.t, sub: x.sub, by: 'me', sug: sid, from: f.who });
+    const e = s + dur;
+    if (SUG[sid].out && wet(d, s, e)) { wetOnes.push([s, dur, k, sid]); return; }
+    if (overlaps(d, s, e)) { skipped++; return; }
+    put(s, e, k, sid);
+  });
+  /* an outdoor plan that would land in the rain moves to the nearest dry, free hour that day, or is left out */
+  wetOnes.forEach(([s, dur, k, sid]) => {
+    const tries = [];
+    for (let t = 8 * 60; t + dur <= 20 * 60 + 30; t += 30) tries.push(t);
+    tries.sort((a, b) => Math.abs(a - s) - Math.abs(b - s) || a - b);
+    const t = tries.find(t => !wet(d, t, t + dur) && !overlaps(d, t, t + dur));
+    if (t == null) { rained.push(SUG[sid].t); return; }
+    put(t, t + dur, k, sid); moved.push(`${SUG[sid].t} to ${fmt(t)}`);
   });
   if (S.view === 'day') S.day = d;
   render({ fresh, stagger: 90 });
   const first = Math.min(...f.ev.map(x => x[0])); ensureVisible(first, first + 240);
-  toast(`Copied ${fresh.size} plans into ${DAYS[d].dw}${skipped ? ` · ${skipped} skipped, you have plans then` : ''}`, true);
+  toast(`Copied ${fresh.size} plans into ${DAYS[d].dw}${moved.length ? ` · moved ${moved.join(', ')}, out of the rain` : ''}${rained.length ? ` · left out ${rained.join(', ')}: rain, and no dry hour free` : ''}${skipped ? ` · ${skipped} skipped, you have plans then` : ''}`, true);
   refreshPlusMarks(); drawChips();
 }
 
@@ -1715,7 +1752,7 @@ addEventListener('resize', () => { if (phone() !== lastPhone) { lastPhone = phon
   const go = () => { if (q.get('live') !== '0') setTimeout(liveAdd, RM.matches ? 1500 : 4200); };
   if (q.get('state') === 'calendar') { render(); drawRail(); go(); }
   else arrive().then(go);
-  window.demo = { arrive, liveAdd, openQuickAdd, openSide, closeSide, save: () => save($('#saveBtn')), openSheet, closeSheet, closePop, setView, addSuggestion, openUseDay, useDay: (fid, d) => useDay(FAMS.find(f => f.id === fid), d), showRain, S, openEvent: id => openEvent(id, $(`.ev[data-id="${id}"]`)) };
+  window.demo = { arrive, liveAdd, openQuickAdd, openSide, closeSide, save: () => save($('#saveBtn')), openSheet, closeSheet, closePop, setView, addSuggestion, openUseDay, useDay: (fid, d) => useDay(FAMS.find(f => f.id === fid), d), showRain, S, undo, stack: () => addEvent({ d: 1, s: 12 * 60 + 30, e: 13 * 60 + 30, k: 'food', t: SUG.f2.t, sub: SUG.f2.sub, by: 'me', sug: 'f2' }), openEvent: id => openEvent(id, $(`.ev[data-id="${id}"]`)) };
 })();
 
 </script>
