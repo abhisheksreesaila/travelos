@@ -291,7 +291,7 @@ def test_a_model_that_obeys_the_injected_instructions_still_cannot_change_the_dr
     html = editor(me, draft_id(r))
     assert "evil.example" not in html and "LEAK" not in html and "https://" not in re.sub(r'href="[^"]*"|src="[^"]*"', "", html).split("<main")[1].split("</main>")[0]
     d = creatordraft.get(tid(), draft_id(r))
-    assert set(d) == {"title", "place", "place_name", "days", "tips", "stickers", "name", "source", "images", "picks", "copies", "cover", "notices", "text", "id", "slug", "live"}
+    assert set(d) == {"title", "place", "place_name", "days", "tips", "stickers", "name", "source", "images", "picks", "copies", "cover", "notices", "text", "words", "id", "slug", "live"}
 
 
 def test_the_model_failing_shows_a_friendly_sentence_and_makes_no_draft(me, model, web):

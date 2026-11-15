@@ -89,7 +89,7 @@ def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
 
 def test_the_community_page_invites_the_first_share_until_someone_shares(client):
     html = client.get("/community").text
-    assert "Be the first to share one" in html and "sample trips" in html
+    assert "Be the first to share one" in html and "These are sample books" in html
     book(client)
     share(client)
     assert "Be the first to share one" not in client.get("/community").text

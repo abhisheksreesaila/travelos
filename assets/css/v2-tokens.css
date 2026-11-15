@@ -77,6 +77,33 @@
   --v2-arrive-delay: 120ms; /* the calendar rising after the header */
   --v2-stamp-delay: 300ms; /* the saved stamp thumping onto the pass */
 
+  /* creators v2 (F-253): the book is a physical thing, so its paper and its kind colours stay in both modes (dimmed in dark); the --cv-d* are the prototype's own timings, one token each */
+  --bk-paper: #FBF6EA; --bk-paper-2: #F2EAD8; --bk-card: #FFFDF8; --bk-ink: #2A2420; --bk-ink-2: #574C42; --bk-line: rgb(42 36 32 / .14); --bk-plate: #FFFFFF; --bk-foil: #F6E7C1;
+  --bk-see: #0F766E; --bk-food: #C92A5E; --bk-tix: #C2410C; --bk-ride: #E7B416; --bk-show: #8B2FC9; --bk-walk: #4338CA;
+  --bk-turn: cubic-bezier(.45, .05, .2, 1);
+  --cv-d0: 0ms;
+  --cv-d150: 150ms;
+  --cv-d180: 180ms;
+  --cv-d200: 200ms;
+  --cv-d220: 220ms;
+  --cv-d250: 250ms;
+  --cv-d300: 300ms;
+  --cv-d400: 400ms;
+  --cv-d450: 450ms;
+  --cv-d500: 500ms;
+  --cv-d550: 550ms;
+  --cv-d600: 600ms;
+  --cv-d700: 700ms;
+  --cv-d750: 750ms;
+  --cv-d800: 800ms;
+  --cv-d900: 900ms;
+  --cv-d1000: 1000ms;
+  --cv-d1300: 1300ms;
+  --cv-d1400: 1400ms;
+  --cv-d1600: 1600ms;
+  --cv-d2400: 2400ms;
+  --cv-stag: 45ms; --cv-stag-fine: 30ms;
+
   --r-xl: 2rem; --r-lg: 1.5rem; --r-md: 1.125rem; --r-sm: 0.75rem;
   --lead: 14.125rem; --cw: 6.25rem; --ch: 4.375rem;
   --v2-sheet-w: min(23.75rem, calc(100vw - 1.5rem));
@@ -117,6 +144,7 @@
   --sunset: linear-gradient(120deg, #4F46E5 0%, #9333EA 52%, #DB2777 100%);
   --cloud: rgb(255 255 255 / .06);
   --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A3F5C;
+  --bk-paper: #EDE4D1; --bk-paper-2: #E2D7C1; --bk-card: #F5EFE2;
   /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); v2's own bright kind colours above are for text and rings on the dark sky */
   --k-flight: #4338CA; --k-stay: #8B2FC9; --k-food: #C92A5E; --k-see: #0F766E; --k-tix: #C2410C; --k-wx: #0369A1;
   color-scheme: dark;

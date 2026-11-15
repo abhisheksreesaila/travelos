@@ -22,7 +22,8 @@ def hrefs(html):
 
 
 def header_of(html):
-    return re.search(r"<header.*?</header>", html, re.S).group(0)
+    m = re.search(r"<header.*?</header>", html, re.S) or re.search(r'<div class="v2-top">.*?</nav>', html, re.S)      # F-253: the creator pages wear the v2 top bar
+    return m.group(0)
 
 
 @pytest.fixture

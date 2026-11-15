@@ -1,6 +1,7 @@
-"""F-235: a creator pastes a popular post (The Planet D's "48 Hours in Lisbon", recorded: tests/fixtures/creator_import) and watches it become a trip: its title and lead picture appear as it is
-read, its own sentences keep the wait company, then days and stops land one by one, then Publish. In headless Chromium at phone (390) and laptop (1440) width; the post's picture is served from the
-recording, the model's answer from the recording. Set F235_SHOTS=1 to save docs/report/f235-*.png."""
+"""F-235, F-253: a creator pastes a popular post (The Planet D's "48 Hours in Lisbon", recorded through the app's own safe fetcher and robots check: tests/fixtures/creator_import), watches it
+become a trip (the post's card grows with its title and lead picture, its own sentences arrive highlighted, the days and stops land under the story line, "Your book is ready"), opens the book,
+turns its pages, fixes a word in place and publishes it, and a stranger reads it. In headless Chromium at phone (390) and laptop (1440) width; the post's picture is served from the recording, the
+model's answer from the recording. Set F253_SHOTS=1 to save docs/report/f253-*.png (the prototype-vs-build screenshots are made by scripts/f253_shots.py)."""
 import os
 import time
 from pathlib import Path
@@ -14,12 +15,13 @@ from tests_browser.helpers import DESKTOP, PHONE
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "report"
 IDS = ["390", "1440"]
+expect.set_options(timeout=30000)      # the days land one by one, as slowly as a person reads (the recorded model waits 2.5 s first)
 
 
 def shot(page, name):
-    if os.getenv("F235_SHOTS"):
+    if os.getenv("F253_SHOTS"):
         SHOTS.mkdir(parents=True, exist_ok=True)
-        page.screenshot(path=str(SHOTS / f"f235-{name}.png"), full_page=True)
+        page.screenshot(path=str(SHOTS / f"f253-{name}.png"), full_page=True)
 
 
 def overflow(page):
@@ -44,54 +46,93 @@ def lisbon(monkeypatch):
     return url
 
 
-def open_import(browser, base_url, viewport, **ctx):
+def open_import(browser, base_url, viewport, path="/creators/import", **ctx):
     c = browser.new_context(viewport=viewport, has_touch=viewport is PHONE, is_mobile=viewport is PHONE, **ctx)
-    c.set_default_timeout(9000)
+    c.set_default_timeout(30000)
     c.request.post(f"{base_url}/signin", form={"email": "maya.chen@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     page = c.new_page()
     page.route("https://theplanetd.com/images/**", lambda r: r.fulfill(status=200, content_type="image/jpeg", body=(RECORDED / "lead.jpg").read_bytes()))
-    page.goto(f"{base_url}/creators/import")
+    page.goto(f"{base_url}{path}")
     return c, page
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
-def test_the_trip_is_made_in_front_of_the_creator_then_published(lisbon, browser, base_url, viewport):
-    ctx, page = open_import(browser, base_url, viewport)
-    page.fill("#ci-link", lisbon)
-    page.click("#ci-draft")
-    # while the model works: the post's own title and picture, its own sentences, no days yet
-    expect(page.locator("#cm-title")).to_have_text("48 Hours in Lisbon, Itinerary")
-    expect(page.locator(".cm-img.in")).to_be_visible()
-    assert page.locator(".cm-img").evaluate("i => i.complete && i.naturalWidth > 0")
-    expect(page.locator("#cm-by")).to_have_text("by The Planet D")
-    assert page.locator(".cm-day").count() == 0 and page.locator("#cm-done").is_hidden()
-    expect(page.locator("#cm-word")).to_contain_text("“")
-    sentence = page.locator("#cm-word").inner_text().strip("“”")
+def test_the_post_becomes_a_book_that_is_turned_fixed_and_published(lisbon, browser, base_url, viewport):
+    ctx, page = open_import(browser, base_url, viewport, "/for-creators")
+    page.click("#fc-example-chip")
+    expect(page.locator("#fc-text")).to_have_value(lisbon)       # the example chip is the real post the fixture records
+    page.click("#fc-draft")
+    # while the model works: the post's own title, site and picture, its own sentences highlighted, no days yet
+    expect(page.locator("#postT")).to_have_text("48 Hours in Lisbon, Itinerary")
+    expect(page.locator("#postCard.pic")).to_be_visible()
+    assert page.locator("#postImg").evaluate("i => i.complete && i.naturalWidth > 0")
+    expect(page.locator("#postBy")).to_have_text("by The Planet D")
+    expect(page.locator("#postSite")).to_have_text("theplanetd.com")
+    expect(page.locator("#postOk")).to_be_visible()
+    expect(page.locator("#river .snt q").first).to_contain_text("")
+    assert page.locator("#days .dayb").count() == 0 and page.locator("#ready").is_hidden()
+    sentence = page.locator("#river .snt q").first.inner_text().strip("“”")
     assert len(sentence) >= 30 and "http" not in sentence
-    assert "is-on" in page.locator(".cm-step").nth(1).get_attribute("class")
     assert overflow(page) <= 1
     shot(page, f"import-reading-{viewport['width']}")
-    # then the days and stops land
-    expect(page.locator(".cm-day")).to_have_count(3)
-    expect(page.locator(".cm-stop")).to_have_count(17)
-    expect(page.locator(".cm-day-h").first).to_contain_text("Belem Tower")
-    expect(page.locator("#cm-publish")).to_be_visible()
-    expect(page.locator("#cm-count")).to_have_text("3 days, 17 stops in Lisbon, Portugal.")
-    expect(page.locator(".cm-step.is-done")).to_have_count(3)
-    expect(page.locator("#cm-log")).to_have_text("Laid out 3 days: 17 stops placed")
+    # then the days and stops land, the sentences that name a stop are tagged with it, and the book is ready
+    expect(page.locator("#days .dayb")).to_have_count(3)
+    expect(page.locator("#ready")).to_be_visible()
+    expect(page.locator("#itinCount")).to_have_text("17 stops")
+    expect(page.locator("#days .pc")).to_have_count(17)
+    expect(page.locator("#readyLine")).to_have_text("3 days · 17 stops · 4 tips, from your post")
+    river = page.locator("#river").inner_text()      # the last six: the post's own sentence, then the stop it names
+    assert "Located near Pena Palace is The Moorish Castle." in river and "Day 3 · Moorish Castle" in river
     assert overflow(page) <= 1
-    if viewport is PHONE:
-        small = page.evaluate("""() => [...document.querySelectorAll('#ci-magic .btn, #ci-magic .ci-own-l')].filter(e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 44; }).map(e => e.id)""")
-        assert not small, small
-    shot(page, f"import-landed-{viewport['width']}")
-    # publish without the tick is not possible; with it, the trip is live (unlisted: the creator's email is not at the post's site)
-    page.click("#cm-publish")
-    assert page.locator("#cm-own").evaluate("e => !e.validity.valid")
-    page.check("#cm-own")
-    page.click("#cm-publish")
-    expect(page.locator(".pb-live")).to_contain_text("It's live")
-    expect(page.locator("#pb-view")).to_be_visible()
-    shot(page, f"import-live-{viewport['width']}")
+    shot(page, f"import-ready-{viewport['width']}")
+    page.click("#openBook")
+    # the book: a cover, then page turns by the arrow, the key and a swipe-sized drag
+    expect(page.locator("#bookv .cover .h1").first).to_have_text("48 hours in Lisbon")
+    expect(page.locator("#pageLbl")).to_contain_text("Cover")
+    assert overflow(page) <= 1
+    shot(page, f"book-cover-{viewport['width']}")
+    page.click("#next")
+    expect(page.locator("#pageLbl")).to_contain_text("Before you go" if viewport is DESKTOP else "Before you go")
+    expect(page.locator(".leaf.turned")).to_have_count(1)
+    page.keyboard.press("ArrowRight")
+    expect(page.locator(".leaf.turned")).to_have_count(2)
+    page.keyboard.press("ArrowLeft")
+    expect(page.locator(".leaf.turned")).to_have_count(1)
+    expect(page.locator("#bookv")).to_contain_text("Before you go")
+    page.click("#next")
+    page.click("#next")
+    shot(page, f"book-day-{viewport['width']}")
+    # a word fixed in place, kept by the server
+    page.click("#editBtn")
+    expect(page.locator("#editBtn")).to_have_attribute("aria-pressed", "true")
+    word = page.locator('[data-k="d0.head"]' if viewport is PHONE else '[data-k="d1.head"]')      # the day heading on the page now open (a phone's third page, a laptop's third spread)
+    word.click()
+    page.keyboard.press("Control+A")
+    page.keyboard.type("A better heading")
+    page.keyboard.press("Enter")
+    expect(page.locator("#toast")).to_contain_text("Fixed in the book")
+    page.click("#editDone")
+    # Publish: the tick first, then the stamp, the link and the badge
+    page.click("#pubBtn")
+    expect(page.locator("#pubGo")).to_be_disabled()
+    page.click("#mine")
+    page.click("#pubGo")
+    expect(page.locator("#bookv .cover .stamp").first).to_contain_text("Published")
+    expect(page.locator("#sharep")).to_be_visible()
+    expect(page.locator("#sharep")).to_contain_text("Your book is out")
+    link = page.locator("#shLink").inner_text()
+    assert link.startswith("gitaway.me/trips/") and link.endswith("/book")
+    assert 'src="https://gitaway.me/badge/plan-this-trip.svg"' in page.locator("#shCode").inner_text()
+    shot(page, f"book-published-{viewport['width']}")
+    # a stranger opens it: the same book, as a reader's, with Plan this trip and no editing
+    reader = browser.new_context(viewport=viewport)
+    rp = reader.new_page()
+    rp.goto(f"{base_url}/trips/{link.split('/trips/')[1]}")
+    expect(rp.locator("#bookv")).to_have_attribute("data-mode", "reader")
+    expect(rp.locator("#pageLbl")).to_contain_text("Before you go")       # a reader's book opens itself
+    assert rp.locator("#editBtn").count() == 0 and rp.locator("[data-k]").count() == 0
+    expect(rp.locator("#planBtn")).to_have_attribute("href", "/plan/ask")
+    reader.close()
     ctx.close()
 
 
@@ -99,14 +140,14 @@ def test_with_reduced_motion_the_whole_trip_is_there_at_once(lisbon, browser, ba
     ctx, page = open_import(browser, base_url, PHONE, reduced_motion="reduce")
     page.fill("#ci-link", lisbon)
     page.click("#ci-draft")
-    expect(page.locator("#cm-done")).to_be_visible()
-    animated = page.evaluate("() => [...document.querySelectorAll('#ci-magic *')].filter(e => getComputedStyle(e).animationName !== 'none' && getComputedStyle(e).animationName !== '').map(e => e.className)")
-    assert animated == []
-    assert page.locator(".cm-stop").count() == 17
+    expect(page.locator("#ready")).to_be_visible()
+    still = page.evaluate("() => [...document.querySelectorAll('#imp *')].filter(e => { const s = getComputedStyle(e); return s.animationName !== 'none' && parseFloat(s.animationDuration) > 0; }).map(e => e.className)")
+    assert still == []
+    assert page.locator("#days .pc").count() == 17
     ctx.close()
 
 
-def test_a_refused_post_says_why_and_gives_the_form_back(lisbon, browser, base_url, monkeypatch):
+def test_a_refused_post_says_why_and_gives_the_form_back(lisbon, browser, base_url):
     web = safefetch.TRANSPORT
     web.pages["https://theplanetd.com/robots.txt"] = (200, {"content-type": "text/plain"}, b"User-agent: *\nDisallow: /\n")
     ctx, page = open_import(browser, base_url, PHONE)
@@ -115,7 +156,7 @@ def test_a_refused_post_says_why_and_gives_the_form_back(lisbon, browser, base_u
     expect(page.locator("#ci-error")).to_contain_text("robots.txt asks AI tools not to read this page")
     expect(page.locator("#ci-form")).to_be_visible()
     expect(page.locator("#ci-link")).to_have_value(lisbon)
-    assert page.locator("#ci-magic").is_hidden()
+    assert page.locator("#imp").is_hidden()
     ctx.close()
 
 
@@ -138,11 +179,10 @@ def test_a_retry_after_a_cut_short_stream_starts_clean(lisbon, browser, base_url
     expect(page.locator("#ci-error")).to_contain_text("The draft was cut short")
     expect(page.locator("#ci-form")).to_be_visible()
     page.click("#ci-draft")
-    expect(page.locator("#cm-title")).to_have_text("48 Hours in Lisbon, Itinerary")      # not "First attempt"
-    assert page.locator("#cm-site").inner_text().lower() == "theplanetd.com"
+    expect(page.locator("#postT")).to_have_text("48 Hours in Lisbon, Itinerary")      # not "First attempt"
+    assert page.locator("#postSite").inner_text().lower() == "theplanetd.com"
     assert page.locator("#ci-error").count() == 0
-    expect(page.locator(".cm-day")).to_have_count(3)
-    expect(page.locator(".cm-stop")).to_have_count(17)
-    expect(page.locator(".cm-step.is-done")).to_have_count(3)
-    expect(page.locator("#cm-count")).to_have_text("3 days, 17 stops in Lisbon, Portugal.")
+    expect(page.locator("#days .dayb")).to_have_count(3)
+    expect(page.locator("#itinCount")).to_have_text("17 stops")
+    expect(page.locator("#readyLine")).to_have_text("3 days · 17 stops · 4 tips, from your post")
     ctx.close()

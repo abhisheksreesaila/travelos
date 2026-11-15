@@ -9,15 +9,15 @@ from gitaway.itineraries import Source, safe_href
 
 
 def titles(html):
-    return re.findall(r'class="hub-title">([^<]*)<', html)
+    return re.findall(r'<span class="h1">([^<]*)<', html)      # F-253: a book's cover names the trip
 
 
 def test_the_hub_lists_the_community_and_creator_trips(client):
     html = client.get("/community").text
     assert "Community trips" in html
     assert [t.replace("&amp;", "&") for t in titles(html)] == [t.title for t in itineraries.ITINERARIES.values()]
-    assert 'href="/trips/sun-tacos-and-tide-pools"' in html
-    assert "312 forks" in html and "YouTube" in html
+    assert 'href="/trips/sun-tacos-and-tide-pools/book"' in html     # F-253: a book on the shelf opens as a book
+    assert "YouTube" in html and "312 forks" not in html          # the sample's made-up fork count is not shown
 
 
 def test_community_is_no_longer_a_placeholder():
@@ -132,15 +132,15 @@ def test_the_hub_is_named_community_trips_and_never_discover(client):
                 assert re.search(r'<nav[^>]*>.*?href="/community"[^>]*>Community trips<', html, re.S), path
     html = client.get("/community").text
     assert "<title>GitAway · Community trips</title>" in html
-    assert "<h1>Community trips</h1>" in html
+    assert re.search(r"<h1[^>]*>\s*Trips people <em>have taken</em>\s*</h1>", html)
 
 
 def test_the_page_says_plainly_what_it_is_with_both_calls_to_action(client):
     html = client.get("/community").text
-    assert "Trips shared by travelers and creators. Fork one into your calendar." in html
-    head = html[:html.index('class="hub-grid"')]  # both are up front, above the trips
+    assert "Flip through a trip as its maker lived it. Save the ones you love, and plan your own from any page." in html
+    head = html[:html.index('class="shelf hub-grid"')]  # both are up front, above the trips
     assert re.search(r'<a [^>]*href="/plan/ask"[^>]*>(<svg.*?</svg>)?Share yours<', head, re.S)  # no trip yet: start one
-    assert re.search(r'<a [^>]*href="/creators"[^>]*>(<svg.*?</svg>)?Turn a link into a trip<', head, re.S)
+    assert re.search(r'<a [^>]*href="/for-creators"[^>]*>Turn a post into a book<', head, re.S)
 
 
 def test_share_yours_goes_to_the_calendar_share_when_the_traveler_has_a_trip(client):

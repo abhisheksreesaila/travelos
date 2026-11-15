@@ -6,19 +6,18 @@ link turns it off and keeps the others. All the facts come from gitaway.hub.
 /discover (the old name, kept for old links) redirects here with its filters. The word "Discover" is reserved for deals later.
 """
 
-import re
 from urllib.parse import urlencode
 
 from starlette.responses import RedirectResponse
-from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Link, P, Section, Span
+from fasthtml.common import A, Button, Div, Em, Form, H1, H2, I, Input, Label, Link, P, Script, Span
 
-from gitaway import hub, session as ses, showcase
+from gitaway import creatorbook as cb, hub, session as ses, showcase
 from gitaway.icons import icon
 from gitaway.layout import page, plan_href
 from gitaway.itinerary_view import _icon
+from gitaway.pages import bookview, studio
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/hub.css"),)
-TILTS = (-1, 1, -0.5, 0.8, -1.2, 0.6)
+HEAD = (Link(rel="stylesheet", href="/assets/css/cv2.css"), Link(rel="stylesheet", href="/assets/css/placeart.css"), Script(src="/assets/js/shelf.js", defer=True))
 FILTERS = [("kid", "Kid friendly", "sun"), ("pet", "Pet friendly", "mint"), ("couple", "Couple friendly", "bubble")]
 
 
@@ -28,53 +27,41 @@ def hub_href(tags=(), creators=False, q=""):
 
 
 def chip(label, href, on, fill="", ico=""):
-    return A(_icon(ico, 18, 2.2) if ico else "", label, href=href, aria_current="true" if on else None, cls=f"hub-chip{' fill-' + fill if fill else ''}")
+    return A(_icon(ico, 18, 2.2) if ico else "", label, href=href, aria_current="true" if on else None, cls="chip")
 
 
-def _stamp(place):
-    """The postcard's stamp: the place's initials (Los Angeles is LA) or its first three letters; drawn, so it is hidden from screen readers."""
-    words = [w for w in re.split(r"[\s,]+", place or "") if w]
-    return ("".join(w[0] for w in words[:2]) if len(words) > 1 else (words[0][:3] if words else "")).upper()
+STICKER = {"Blog": "From the post", "YouTube": "From the video", "Instagram": "From Instagram"}
+RIBBON = "Your trip"
 
 
-def _sky(*inside, cls=""):
-    """The postcard sky: a sun and two clouds, drawn in CSS, behind whatever is inside."""
-    return Section(Span(cls="hub-sun", aria_hidden="true"), Span(cls="hub-cloud hub-cloud-1", aria_hidden="true"), Span(cls="hub-cloud hub-cloud-2", aria_hidden="true"),
-                   Div(*inside, cls="hub-hero-in ga-wrap"), cls=f"hub-hero {cls}".strip())
+def _book(c) -> cb.Book:
+    """A shelf card's cover: the trip's own drawing and cloth. A sample says so on its cover."""
+    return cb.Book(c.slug, c.title, c.author, c.place, [], [], cb.cloth_of(c.slug), cb.scene_of(c.place, c.title), sticker="Sample book" if not c.real else STICKER.get(c.source, ""), sample=not c.real)
 
 
 def card(c, i=0):
-    tint = hub.TAGS[c.tags[0]][1] if c.tags else "sun"
-    photo = Img(src=c.photo, alt=c.alt, loading="lazy") if c.photo else Span(icon("pin", 44, 2), cls="hub-pin")
-    badges = [Span(c.source, cls="hub-badge hub-badge-src")] if c.source else []
-    stamp = Span(_stamp(c.place), Span(icon("fork", 14, 2.4)), cls="hub-stamp", aria_hidden="true")
-    count = Span("Your trip", cls="hub-badge hub-badge-forks") if c.mine else "" if c.real else Span(f"{c.forks} forks", cls="hub-badge hub-badge-forks")   # a real trip has no sample fork count
-    return A(
-        Div(photo, *badges, stamp, count, cls=f"hub-photo tint-{tint}"),
-        Div(Span(c.title, cls="hub-title"),
-            Span(f"{c.place} · {c.days} days · {c.author}", cls="hub-meta"),
-            Span(*[Span(hub.TAGS[k][0], cls=f"tag fill-{hub.TAGS[k][1]}") for k in c.tags], cls="hub-tags") if c.tags else "",
-            Span("Plan this trip", icon("chev-right", 16, 2.6), cls="hub-plan"),
-            cls="hub-info"),
-        href=f"/trips/{c.slug}", cls="hub-card", style=f"--tilt:{TILTS[i % len(TILTS)]}deg")
+    """One book on the shelf: its cover, who made it, how long it is. It opens as a book (/trips/<slug>/book), which plays itself. The cover names the trip once: it is the link's name."""
+    return Div(Span(RIBBON, cls="ribbon") if c.mine else "",
+               A(bookview.mini_cover(_book(c)), href=f"/trips/{c.slug}/book", cls="bk-open"),
+               Div(Span(c.author + (f" · {c.source}" if c.source else "")), Span(f"{c.days} day{'s' if c.days != 1 else ''}", cls="hc"), cls="meta"),
+               cls="bk hub-card", style=f"--i:{i};--r:{(-1.6, 1.2, -.6, 1.8, -1.1, .8, -1.4)[i % 7]}deg")
+
+
+def _head(*inside, share_href=""):
+    return Div(Div(Span(I(style="background:var(--see)"), "Community", cls="kicker"), H1("Trips people ", Em("have taken"), cls="disp"),
+                   P("Flip through a trip as its maker lived it. Save the ones you love, and plan your own from any page."),
+                   Div(A(icon("plus", 20, 2.4), "Share yours" if showcase.on() else "Publish yours", href=share_href, cls="tonal"), A("Turn a post into a book", href="/for-creators", cls="tonal"), cls="hub-cta") if share_href else ""),
+               *inside, cls="sh-head")
 
 
 def empty_page():
-    """Off the showcase, before anyone has shared a trip (D-458): the page is in every header, so it exists and says so, with the two ways a
-    trip gets here."""
+    """Off the showcase, before anyone has shared a trip (D-458): the page is in every header, so it exists and says so, with the two ways a trip gets here."""
     return page("Community trips", Div(
-        _sky(Span(icon("fork", 16, 2.4), "Trips others took", cls="hub-eyebrow"), H1("Community trips"),
-             P("Trips shared by families and creators, ready to plan for your own dates.", cls="hub-lede"), cls="hub-head"),
-        Div(Div(icon("fork", 28, 2.2), Div(H2("No one has shared a trip yet"),
+        _head(),
+        Div(icon("fork", 28, 2.2), Div(H2("No one has shared a trip yet"),
             P("Creators turn a post into a trip readers can plan; families share theirs once they are back. The first ones show up here."),
-            Div(A("For creators", href="/for-creators", cls="btn btn-primary btn-sm"), A("Plan a trip", href=plan_href(), cls="btn btn-sm"), cls="hub-cta")),
-            cls="hub-first card", role="status"), cls="hub-body ga-wrap"),
-        cls="hub"), current="/community", head=HEAD)
-
-
-def _ctas(share_href):
-    return Div(A(icon("plus", 20, 2.4), "Share yours" if showcase.on() else "Publish yours", href=share_href, cls="btn btn-primary"),
-               *([A(icon("play", 20, 2.2), "Turn a link into a trip", href="/creators", cls="btn")] if showcase.on() else [A("For creators", href="/for-creators", cls="btn")]), cls="hub-cta")
+            Div(A("For creators", href="/for-creators", cls="go"), A("Plan a trip", href=plan_href(), cls="tonal"), cls="hub-cta")),
+            cls="hub-first v2-glass", role="status"), cls="shelfv"), studio.foot(), current="/community", head=HEAD, v2="cv is-results")
 
 
 def hub_page(session, tags=(), creators=False, q=""):
@@ -85,32 +72,22 @@ def hub_page(session, tags=(), creators=False, q=""):
     chips = [chip(label, hub_href(on ^ {k}, creators, q), k in on, fill, hub.TAGS[k][2]) for k, label, fill in FILTERS]
     if showcase.on():  # the "from a vlog" filter is for the sample creator trips; every real trip is a family's own
         chips.append(chip("From creators", hub_href(on, not creators, q), creators, "", "play"))
-    search = Form(
-        Label(icon("target", 20, 2.2), Span("Where to", cls="sr-only"),
-              Input(type="search", name="q", value=q, placeholder="Where to?", autocomplete="off", maxlength="40"), cls="hub-search"),
-        *[Input(type="hidden", name=k, value="1") for k in tags],
-        *([Input(type="hidden", name="src", value="creators")] if creators else []),
-        Button("Search", type="submit", cls="btn btn-sm"),
-        action="/community", method="get", cls="hub-form", role="search")
+    search = Form(Label(icon("target", 20, 2.2), Span("Where to", cls="v2-sr"), Input(type="search", name="q", value=q, placeholder="Where to?", autocomplete="off", maxlength="40"), cls="hub-search"),
+                  *[Input(type="hidden", name=k, value="1") for k in tags], *([Input(type="hidden", name="src", value="creators")] if creators else []),
+                  Button("Search", type="submit", cls="tonal"), action="/community", method="get", cls="hub-form", role="search")
     filtered = bool(tags or creators or q)
-    body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="hub-grid") if shown else
-            Div(H2("No trips match those filters"), P("Try fewer filters, or start again."),
-                A("Show every trip", href="/community", cls="btn btn-primary btn-sm"), cls="hub-empty card", role="status"))
+    body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="shelf hub-grid") if shown else
+            Div(H2("No trips match those filters"), P("Try fewer filters, or start again."), A("Show every trip", href="/community", cls="go"), cls="hub-empty v2-glass", role="status"))
     share_href = ("/share" if showcase.on() else "/trip/publish") if ses.booking(session) else showcase.planning_path()  # a trip to share, or the way to start one
     first = ("" if filtered or hub.has_shared() or not showcase.on() else
-             Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"),
-                 P("These are sample trips. Share yours and it shows up here for every traveler, ready to fork."),
-                 A("Share yours", href=share_href, cls="btn btn-primary btn-sm")), cls="hub-first card", role="status"))
+             Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"), P("These are sample books. Share yours and it shows up here for every traveler, ready to plan from."),
+                                           A("Share yours", href=share_href, cls="go")), cls="hub-first v2-glass", role="status"))
     return page("Community trips", Div(
-        _sky(Span(icon("fork", 16, 2.4), "Trips others took", cls="hub-eyebrow"), H1("Community trips"),
-             P("Trips shared by travelers and creators. Fork one into your calendar.", cls="hub-lede"),
-             _ctas(share_href), search, Div(*chips, cls="hub-chips", role="group", aria_label="Filter trips"),
-             cls="hub-head"),
-        Div(P(f"{len(shown)} trip{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="hub-count", role="status") if shown else "",
-            body, first,
-            Div(H2("Back from somewhere wonderful?"), _ctas(share_href), cls="hub-share"),
-            cls="hub-body ga-wrap"),
-        cls="hub"), current="/community", head=HEAD)
+        _head(Span("Sample books: made up so you can see the shelf", cls="smp") if showcase.on() else "", share_href=share_href),
+        Div(search, Div(*chips, cls="filters", role="group", aria_label="Filter trips"), cls="hub-tools"),
+        P(f"{len(shown)} trip{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="hub-count", role="status") if shown else "",
+        body, first, Div(Span("Written a trip up? Make it a book."), A("Paste your post", bookview.ico("arrow"), href="/for-creators", cls="go"), cls="sh-cta v2-glass"),
+        cls="shelfv"), studio.foot(), current="/community", head=HEAD, v2="cv is-results")
 
 
 def register(app):

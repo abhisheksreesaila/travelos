@@ -121,9 +121,9 @@ def test_the_public_page_is_on_the_creators_profile_and_community_trips(family):
     row = go_live(client, pid)
     s = stranger(client)
     profile = s.get("/creators/ari-rivera")
-    assert profile.status_code == 200 and "Ari Rivera" in profile.text and f'href="/trips/{row["slug"]}"' in profile.text
+    assert profile.status_code == 200 and "Ari Rivera" in profile.text and f'href="/trips/{row["slug"]}/book"' in profile.text
     hub = s.get("/community").text
-    assert "Our Disneyland week" in hub and f'href="/trips/{row["slug"]}"' in hub
+    assert "Our Disneyland week" in hub and f'href="/trips/{row["slug"]}/book"' in hub
     assert "Ari Rivera" in s.get("/creators").text
 
 
@@ -269,8 +269,8 @@ def test_the_stored_snapshot_has_only_the_allowed_fields(family):
     import json
     snap = json.loads(row["snapshot"])
     assert set(snap) == {"slug", "title", "headline", "accent", "place", "lede", "days", "tags", "stats", "forks", "source", "polaroids", "weather", "route", "author", "theme",
-                         "tips", "real", "handle", "plan_to", "plan_days"}
-    assert set(snap["days"][1]) == {"n", "date", "title", "weather", "stops", "collapsed", "note", "photos"}
+                         "tips", "real", "handle", "plan_to", "plan_days", "quote"}
+    assert set(snap["days"][1]) == {"n", "date", "title", "weather", "stops", "collapsed", "note", "photos", "quote"}
     assert set(snap["days"][0]["stops"][0]) == {"time", "title", "kind", "bubble", "booked", "tag", "tag_color", "meta", "note", "photo", "photo_alt", "link"}
     assert [s["link"] for d in snap["days"] for s in d["stops"]] == [""] * sum(len(d["stops"]) for d in snap["days"])      # a family's trip has no links: F-196's link field is a creator's alone
     assert set(row["meta"]) == {"handle", "name", "place"} and snap["source"] is None

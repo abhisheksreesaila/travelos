@@ -7,14 +7,14 @@ bloggers ask. It lives here and not at /creators because /creators is the roster
 Open to everyone, in both showcase modes, with no sample content in it: every word is about what is built.
 """
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, H3, Img, Label, Li, Link, Ol, P, Script, Section, Span, Summary, Textarea, Ul
+from fasthtml.common import A, Button, Details, Div, Em, Form, I, H1, H2, H3, Img, Label, Li, Ol, P, Section, Span, Summary, Textarea, Ul
 
 from gitaway import affiliate, community, session as ses
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
+from gitaway.pages import bookview, studio
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/for_creators.css"), Script(src="/assets/js/for_creators.js", defer=True))
 IMPORT = "/creators/import"
 FREE = "Free. Terms shown on day one."
 LEDE = "Paste your blog link, YouTube video or Instagram caption. GitAway drafts the days, you fix what is off, and families can fork your trip into their own plans."
@@ -72,54 +72,40 @@ def example():
 
 
 def _paste(signed_in):
+    """The landing's one paste box (the prototype's pill): a link, or the text of the post. Posts to the import; assets/js/creatorimport.js runs it in place."""
     return Form(
-        Label("A link to your blog post, YouTube video or Instagram post, or the text itself", fr="fc-text", cls="sr-only"),
-        Textarea(id="fc-text", name="text", rows="3", maxlength="100000", placeholder="Paste a link to your post, or the text of it", autocomplete="off", spellcheck="false", cls="fc-input"),
-        Div(Button(icon("spark", 20, 2.4), "Draft my trip", type="submit", name="do", value="draft", id="fc-draft", cls="btn btn-primary fc-go"),
-            Button("Write it myself", type="submit", name="do", value="manual", id="fc-manual", cls="btn fc-write"), cls="fc-bar"),
-        action=IMPORT, method="post", id="fc-paste", cls="fc-paste", data_signed_in="1" if signed_in else "0")
+        bookview.ico("link"),
+        Label("A link to your blog post, YouTube video or Instagram post, or the text itself", fr="fc-text", cls="v2-sr"),
+        Textarea(id="fc-text", name="text", rows="1", maxlength="100000", placeholder="Paste your blog, YouTube or Instagram link", autocomplete="off", spellcheck="false"),
+        Button("Make my book", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
+        action=IMPORT, method="post", id="fc-paste", cls="paste", data_signed_in="1" if signed_in else "0")
 
 
-SOURCES = (("play", "YouTube"), ("image", "Instagram"), ("note", "A blog"))
-STEPS = (("1", "fc-s1", "Paste your post", "A blog link, a YouTube video or an Instagram caption."),
-         ("2", "fc-s2", "Watch it become a trip", "You see the title, then the days and stops land one by one."),
-         ("3", "fc-s3", "Publish when it is right", "Fix what is off, tick \"This is my post\", press Publish."))
-
-
-def stage():
-    """The picture of what happens: a post on the left, the trip on the right (the live example, or the drawn one that says it is one). Drawn, never a real person's post."""
-    post = Div(Div(Span(icon("play", 30, 2), cls="fc-post-i"), cls="fc-post-photo"), Span("Your post", cls="fc-post-k"), Span(cls="fc-line fc-line-1"), Span(cls="fc-line fc-line-2"), Span(cls="fc-line fc-line-3"),
-               cls="fc-post", aria_hidden="true")
-    arrow = Span(icon("spark", 28, 2.2), cls="fc-arrow", aria_hidden="true")
-    return Div(post, arrow, example(), Span("under a minute", cls="fc-sticker fc-st1", aria_hidden="true"), Span("links back to you", cls="fc-sticker fc-st2", aria_hidden="true"), cls="fc-stage")
+def hero(signed_in):
+    return Section(
+        Div(Div(Span(I(), "For travel creators", cls="kicker"), H1("Paste your post. ", Em("It becomes a trip"), " families can book.", cls="disp land-h"),
+                P("Your days, your stops and your own sentences, bound into a book anyone can flip through and plan from. Your name on the cover, your link inside.", cls="land-sub"),
+                _paste(signed_in), studio.example_chips(),
+                studio.points(Span(Span(icon("check", 17, 2.4), cls="ic", style="--k:var(--bk-tix)"), FREE, " You tick \"This is my post\" before anything goes public.", cls="point v2-glass", id="fc-free")), cls="land-copy"), studio.art(), cls="land"))
 
 
 def page_body(signed_in):
     return Div(
-        Section(
-            Div(Div(Span(icon("spark", 16, 2.4), "For creators", cls="fc-eyebrow"),
-                    H1("Turn your post into a trip, ", Span("in under a minute.", cls="fc-accent")),
-                    P(LEDE, cls="fc-lede"),
-                    _paste(signed_in),
-                    Ul(*[Li(icon(ic, 16, 2.2), label) for ic, label in SOURCES], cls="fc-srcs", aria_label="What you can paste"),
-                    P(FREE, " You tick \"This is my post\" before anything goes public.", cls="fc-fine", id="fc-free"),
-                    cls="fc-copy"),
-                stage(), cls="fc-hero-in ga-wrap"), cls="fc-hero"),
-        Section(*[Div(Span(icon(ic, 24, 2.2), cls=f"fc-pi {cls}", aria_hidden="true"), H3(title), P(text), cls="fc-promise") for ic, cls, title, text in PROMISES],
-                cls="fc-promises ga-wrap", aria_label="What you get"),
-        Section(Ol(*[Li(Span(n, cls=f"fc-n {cls}", aria_hidden="true"), Div(H3(t), P(x))) for n, cls, t, x in STEPS], cls="fc-steps"), cls="fc-how ga-wrap", aria_label="How it works"),
-        Section(Div(Span(FREE, cls="fc-eyebrow", id="fc-terms-free"), H2("The terms, in plain words"), cls="fc-sec-head"),
-                Ul(*[Li(H3(h), P(t), cls="fc-term") for h, t in TERMS], cls="fc-terms"),
-                P("Your post stays yours. We never claim it, and you confirm it is yours before it is public. ", A("Privacy", href="/privacy"), " · ", A("Terms", href="/terms"), cls="fc-fine"),
-                id="terms", cls="fc-sec ga-wrap"),
-        Section(Div(H2("Questions bloggers ask"), cls="fc-sec-head"),
-                Div(*[Details(Summary(q), P(a), cls="fc-q") for q, a in FAQ], cls="fc-faq"), id="faq", cls="fc-sec ga-wrap"),
-        Section(Div(H2("Your next trip post is a trip someone can use."), A(icon("spark", 20, 2.4), "Start with your post", href="#fc-text", cls="btn btn-primary", id="fc-again"),
-                    A("Your marker", href="/creators/settings", cls="btn", id="fc-marker"), cls="fc-end-in"), cls="fc-end ga-wrap"),
-        cls="fc")
+        Div(hero(signed_in),
+            Section(example(), cls="fc-sec ga-wrap", aria_label="An example"),
+            Section(*[Div(Span(_icon(ic, 24, 2.2), cls=f"fc-pi {cls}", aria_hidden="true"), H3(title), P(text), cls="fc-promise") for ic, cls, title, text in PROMISES],
+                    cls="fc-promises ga-wrap", aria_label="What you get"),
+            Section(Div(Span(FREE, cls="fc-eyebrow", id="fc-terms-free"), H2("The terms, in plain words"), cls="fc-sec-head"),
+                    Ul(*[Li(H3(h), P(t), cls="fc-term") for h, t in TERMS], cls="fc-terms"),
+                    P("Your post stays yours. We never claim it, and you confirm it is yours before it is public. ", A("Privacy", href="/privacy"), " · ", A("Terms", href="/terms"), cls="fc-fine"),
+                    id="terms", cls="fc-sec ga-wrap"),
+            Section(Div(H2("Questions bloggers ask"), cls="fc-sec-head"), Div(*[Details(Summary(q), P(a), cls="fc-q") for q, a in FAQ], cls="fc-faq"), id="faq", cls="fc-sec ga-wrap"),
+            Section(Div(H2("Your next trip post is a trip someone can use."), A(bookview.ico("arrow"), "Start with your post", href="#fc-text", cls="go", id="fc-again"),
+                        A("Your marker", href="/creators/settings", cls="tonal", id="fc-marker"), cls="fc-end-in"), cls="fc-end ga-wrap"), id="landing"),
+        studio.stage(), studio.foot(), cls="fc")
 
 
 def register(app):
     @app.get("/for-creators")
     def for_creators(session):
-        return page("For creators", page_body(bool(ses.current_traveler(session))), current="/for-creators", head=HEAD, description=LEDE)
+        return page("For creators", page_body(bool(ses.current_traveler(session))), current="/for-creators", head=studio.HEAD, description=LEDE, v2="cv")

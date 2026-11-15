@@ -2,7 +2,7 @@
 and the stylesheets and script a v2 page loads. `layout.page(v2=True)` uses it; a page opts in by that one flag, which puts the class `v2` on its wrapper.
 Reference: docs/design/booking-v2/index.html (type pairing C, Newsreader with Inter); the tokens are assets/css/v2-tokens.css."""
 
-from fasthtml.common import A, Button, Div, Link, NotStr, Script, Span
+from fasthtml.common import A, Button, Div, Link, Nav, NotStr, Script, Span
 
 from gitaway import session, showcase
 from gitaway.icons import icon
@@ -39,7 +39,13 @@ def bg() -> Div:
                NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{_shore()}</svg>'), cls="v2-bg", aria_hidden="true")
 
 
-def top() -> Div:
+def cv_nav() -> tuple:
+    """The creator pages' links in the top bar (F-253): For creators, Community, and the site's way in (D-458), Plan a trip."""
+    from gitaway.layout import plan_href      # here: layout imports this module
+    return (("For creators", "/for-creators"), ("Community", "/community"), ("Plan a trip", plan_href()))
+
+
+def top(sample="Sample prices", nav=(), current="") -> Div:
     """The brand, a label saying the prices are samples (on the showcase), the light/dark button and the account: an avatar for a signed-in person, Sign in otherwise."""
     traveler = session.request_traveler()
     account = A(Span(traveler.initials), href="/family", cls="v2-round", aria_label="Your family and who is in it", title=traveler.name) if traveler \
@@ -47,5 +53,6 @@ def top() -> Div:
     mode = Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",
                   aria_pressed="false", aria_label="Dark mode", title="Dark mode")
     from gitaway.layout import preview      # here: layout imports this module
-    return Div(A(NotStr(MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway"), preview(), Span(cls="sp"),
-               Span("Sample prices", cls="v2-pill") if showcase.on() else "", mode, account, cls="v2-top")
+    links = Nav(*[A(label, href=href, aria_current="page" if href == current else None) for label, href in nav], cls="v2-nav", aria_label="Creators") if nav else ""
+    return Div(A(NotStr(MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway"), preview(), Span(cls="sp"), links, Span(cls="sp") if nav else "",
+               Span(sample, cls="v2-pill") if showcase.on() else "", mode, account, cls="v2-top")

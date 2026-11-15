@@ -56,7 +56,7 @@ TAP_TARGETS = {  # file -> selectors that must be at least 2.75rem (44px at the 
     "base.css": [".ga-brand", ".ga-nav a"],
     "workspace.css": [".ws-focus", ".ws-expand", ".ws-fork", ".ws-forklist"],
     "creators.css": [".cr-link", ".cr-hint a"],
-    "hub.css": [".hub-search input"],
+    "cv2.css": [".cv .hub-search input"],
     "forks.css": [".fk-link"],
     "phone.css": [".ph-tab"],
     "trip.css": [".tp-chip", ".tp-tab", ".tp-back", ".tp-go", ".tp-full", ".tp-btn", ".tp-kind"],

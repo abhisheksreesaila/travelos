@@ -1595,7 +1595,7 @@ Needs: F-250
 ## F-252 Planning v2 [done]
 Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) with bookings placed, quick add, drag and resize, the help rail (weather nudges only from a real forecast), planning together (members, threads, hearts), save and share. Replaces the cockpit and the day pages.
 
-## F-253 Creators v2 [todo]
+## F-253 Creators v2 [review]
 Needs: F-250. Build docs/design/creators-v2 over the existing magic import (F-235): the landing, the live import, the book with page turns, edit and publish, the community shelf (real published books only off the showcase).
 
 ## F-254 Subtract the old app [todo]

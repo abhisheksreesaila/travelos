@@ -222,7 +222,7 @@ def test_the_avatar_menu_links_to_the_community_and_creators_with_the_showcase_o
     page.click(f"{BAR} .ga-tb-account summary")
     page.click(f"{BAR} .ga-tb-pop-me >> text={label}")
     page.wait_for_url(url)
-    expect(page.locator(BAR)).to_be_visible()
+    expect(page.locator(".v2-top")).to_be_visible()      # F-253: the creator pages wear the v2 top bar (the avatar goes back to /family)
 
 
 def test_the_avatar_menu_has_community_with_the_showcase_off(signed_in, monkeypatch):
