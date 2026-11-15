@@ -5,7 +5,7 @@ from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 # F-109: EVERY stylesheet and script under assets/ (nothing is skipped); tokens.css is where the durations live.
-CSS = sorted(p.name for p in (ASSETS / "css").glob("*.css") if p.name != "tokens.css")
+CSS = sorted(p.name for p in (ASSETS / "css").glob("*.css") if p.name not in ("tokens.css", "v2-tokens.css"))      # D-610: v2-tokens.css is where v2's durations live
 JS = sorted(p.name for p in (ASSETS / "js").glob("*.js"))
 # What may keep a literal time, and why. None of these is a sheet, menu, popover, toast or screen move.
 ALLOWED_FILES = {}

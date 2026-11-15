@@ -119,6 +119,11 @@ NEARBY = {
 }
 
 
+def known() -> tuple:
+    """Every place in the table, in its order (F-250: the places the sentence's "where" offers)."""
+    return tuple(place for _, place in _TABLE)
+
+
 def clean_iata(text) -> str:
     code = (text or "").strip().upper()
     return code if _IATA.fullmatch(code) else ""

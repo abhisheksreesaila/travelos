@@ -6,7 +6,7 @@ audit(page) returns, for the page as drawn:
     tiny    text under the type scale's floor on the phone: running text (a paragraph, a list item, a label, a button, a field, or anything of
             four words or more) under 16px, fine print (`small`, `.ga-fine`) under 14px, all-caps labels (uppercase, by style or by its letters) and everything else under 13px
     low     text under 4.5:1 against what is painted behind it: "text (ratio, colour on background)"
-    glass   elements drawn with a backdrop blur or a blur filter
+    glass   elements drawn with a backdrop blur or a blur filter (D-610: except inside the one sanctioned frosted widget, `.v2-glass`)
 
 Contrast reads the text's own colour (with its alpha and the opacity of the element and its ancestors) over what is painted behind the text: the
 page is scrolled through and `elementsFromPoint` at the text gives the layers under it (a sliding thumb, a card, the page), composited down to the
@@ -89,7 +89,7 @@ AUDIT = r"""async () => {
   for (const el of document.body.querySelectorAll('*')) {
     if (SKIP.has(el.tagName) || el instanceof SVGElement) continue;
     const s = getComputedStyle(el);
-    if ((s.backdropFilter && s.backdropFilter !== 'none') || (s.webkitBackdropFilter && s.webkitBackdropFilter !== 'none') || /blur\(/.test(s.filter || '')) out.glass.push(name(el));
+    if (!el.closest('.v2-glass') && ((s.backdropFilter && s.backdropFilter !== 'none') || (s.webkitBackdropFilter && s.webkitBackdropFilter !== 'none') || /blur\(/.test(s.filter || ''))) out.glass.push(name(el));
     const field = el.matches(FIELD);
     const node = field ? null : [...el.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
     const text = field ? (el.tagName === 'SELECT' ? (el.selectedOptions[0] || {}).text || '' : el.value) : node ? [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ') : '';

@@ -1,56 +1,12 @@
-/* What are you after? (F-241, gitaway/pages/tripask.py, assets/js/tripask.js): the search before the trip matrix. Colourful and joyful like the cover: a wash of the kinds' tints
-   over the canvas, one big box, nine chips each in its kind's colour, examples to tap. Opaque surfaces, tokens only (light and dark follow the mode), 48px targets on a phone.
-   Motion: on a phone and a tablet a chip pops on the shared spring; the laptop is calm (a colour fade, no zoom, spring or outline-first, the AGENTS.md rule). Reduced motion: none. */
-.ak-wrap { position: relative; min-height: calc(100dvh - 4.5rem); display: flex; flex-direction: column; justify-content: center; padding: 1.5rem max(1rem, env(safe-area-inset-right)) calc(3rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
-  background: radial-gradient(60rem 30rem at 12% -8%, var(--k-flight-t), transparent 70%), radial-gradient(50rem 26rem at 96% 8%, var(--k-food-t), transparent 70%), radial-gradient(46rem 24rem at 60% 108%, var(--k-wx-t), transparent 70%), var(--paper); }
-.ak { width: min(46rem, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; color: var(--ink); }
-.ak-title { margin: 0; font: 760 var(--t-h1)/1.02 var(--font-display); letter-spacing: -0.04em; text-wrap: balance; }
-.ak-sub { margin: 0; font-size: var(--t-body); line-height: 1.45; color: var(--ink-2); }
+/* What are you after? (F-241; v2's landing, F-250, D-610..; gitaway/pages/tripask.py, assets/js/v2.js): the prototype's first screen, docs/design/booking-v2/index.html. The sky, the sentence
+   and the pickers are the shared v2 pieces (v2.css); this is what only the landing has: the kicker, the sub line and the skeleton that plays as the sentence glides up. */
+.v2-kicker { max-width: 100%; text-align: left; display: inline-flex; gap: 0.5rem; align-items: center; padding: 0.5rem 0.875rem; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); font: 600 1rem/1 var(--f-ui); color: var(--ink-2); }
+.v2-kicker .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--see); }
+.v2-hero-sub { margin: -0.875rem 0 0; color: var(--ink-2); font-size: 1.0625rem; max-width: 34rem; }
+@media (max-width: 719px) { .v2-kicker { font-size: 1rem; } .v2-bg .sunball, :root[data-mode="dark"] .v2-bg .sunball { width: 5rem; height: 5rem; right: -1.5rem; top: 4.75rem; } }
 
-.ak-box { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.375rem 0.375rem 1.25rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--sh2); }
-.ak-box:focus-within { box-shadow: var(--sh2), 0 0 0 0.1875rem var(--ink); }
-.ak-q { flex: 1; min-width: 0; min-height: 3.5rem; border: 0; background: none; color: var(--ink); font: 520 var(--t-body) var(--font-body); }
-.ak-q:focus-visible { outline: none; }
-.ak-q::placeholder { color: var(--ink-2); opacity: 1; }
-.ak-go { flex: none; min-height: 3.5rem; padding: 0 1.5rem; gap: 0.5rem; border-radius: var(--r-pill); font-size: var(--t-body); font-weight: 650; }
-.ak-error { margin: 0; padding: 0 1.25rem; font-size: var(--t-2); font-weight: 650; color: var(--danger-ink); }
-.ak-box:has([aria-invalid="true"]) { box-shadow: var(--sh2), 0 0 0 0.1875rem var(--danger); }
-
-.ak-chips, .ak-exs { display: flex; flex-wrap: wrap; gap: 0.625rem; }
-.ak-chip { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 1.125rem 0 0.375rem; border-radius: var(--r-pill); background: var(--card); color: var(--ink);
-  box-shadow: var(--sh1); font: 620 var(--t-2)/1 var(--font-body); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: background var(--motion-quick) var(--motion-ease), color var(--motion-quick) var(--motion-ease); }
-.ak-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.ak-chip-i { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--chip-t, var(--paper)); color: var(--chip, var(--ink)); transition: background var(--motion-quick) var(--motion-ease), color var(--motion-quick) var(--motion-ease); }
-.ak-chip:has(:checked) { background: var(--chip, var(--ink)); color: var(--k-on); }
-.ak-chip:has(:checked) .ak-chip-i { background: color-mix(in srgb, var(--k-on) 22%, transparent); color: var(--k-on); }
-.ak-chip:has(:focus-visible) { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.ak-chip.k-car { --chip: var(--k-car); --chip-t: var(--k-car-t); } .ak-chip.k-food { --chip: var(--k-food); --chip-t: var(--k-food-t); } .ak-chip.k-tix { --chip: var(--k-tix); --chip-t: var(--k-tix-t); } .ak-chip.k-wx { --chip: var(--k-wx); --chip-t: var(--k-wx-t); }
-.ak-chip.k-stay { --chip: var(--k-stay); --chip-t: var(--k-stay-t); } .ak-chip.k-see { --chip: var(--k-see); --chip-t: var(--k-see-t); } .ak-chip.k-flight { --chip: var(--k-flight); --chip-t: var(--k-flight-t); }
-.ak-chip.is-pop { animation: ak-pop var(--motion-spring-dur) var(--motion-spring); }
-@keyframes ak-pop { 0% { transform: scale(0.92); } 100% { transform: scale(1); } }
-@media (min-width: 1020px) and (hover: hover) { .ak-chip.is-pop { animation: none; } }      /* the laptop is calm: the colour change is the whole response */
-
-.ak-exs { gap: 0.5rem; }
-.ak-ex { min-height: var(--target); padding: 0.5rem 1rem; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font: 520 var(--t-2)/1.2 var(--font-body); text-align: left; cursor: pointer; }
-.ak-ex:hover { background: var(--card); }
-.ak-ex:active { transform: scale(0.97); }
-.ak-import { align-self: flex-start; display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink); font: 620 var(--t-2)/1 var(--font-body); text-decoration: underline; text-underline-offset: 0.25rem; }
-.ak-wrap.is-going .ak-import { display: none; }
-.ak a:focus-visible, .ak button:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-
-/* Search: the chips and ideas make way for the matrix's skeleton, three places with a row of days each, while the browser opens the matrix */
-.ak-skel { display: none; width: min(46rem, 100%); margin: 1.25rem auto 0; flex-direction: column; gap: 1rem; }
-.ak-wrap.is-going .ak-skel { display: flex; }
-.ak-wrap.is-going .ak-chips, .ak-wrap.is-going .ak-exs { display: none; }
-.ak-sk-lane { display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem; border-radius: var(--r-md); background: var(--card); box-shadow: var(--sh1); animation: ak-in var(--motion-settle-dur) var(--motion-ease) both; animation-delay: calc(var(--motion-fade) * var(--i, 0)); }
-.ak-sk-lane:nth-child(2) { --i: 1; } .ak-sk-lane:nth-child(3) { --i: 2; }
-.ak-sk-name { width: 40%; height: 1.25rem; border-radius: var(--r-pill); }
-.ak-sk-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
-.ak-sk-day { height: 3.5rem; border-radius: 0.875rem; }
-@keyframes ak-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
-@keyframes ak-fade { from { opacity: 0; } to { opacity: 1; } }
-@media (min-width: 1020px) and (hover: hover) { .ak-sk-lane { animation-name: ak-fade; } }
-@media (prefers-reduced-motion: reduce) {
-  .ak-chip, .ak-chip-i { transition: none; } .ak-chip.is-pop, .ak-sk-lane { animation: none; } .ak-ex:active { transform: none; } .ak .skeleton, .ak-skel .skeleton { animation: none; }
-}
-@media (max-width: 720px) { .ak-box { flex-wrap: wrap; border-radius: var(--r-lg); padding: 0.375rem; } .ak-q { flex-basis: 100%; padding: 0 0.875rem; } .ak-go { flex: 1; } .ak-error { padding: 0 0.5rem; } }
+/* Search: the results' skeleton under the sentence while it glides up (the matrix then opens on the real squares) */
+#v2-skel { display: none; }
+.v2.is-results #v2-skel:not([hidden]) { display: grid; animation: v2-skel-in var(--v2-pick) var(--spring-soft) both; }
+@keyframes v2-skel-in { from { opacity: 0; transform: translateY(-0.375rem) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .v2.is-results #v2-skel:not([hidden]) { animation: none; } }

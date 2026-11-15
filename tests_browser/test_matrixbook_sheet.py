@@ -75,7 +75,7 @@ def open_square(page, viewport):
     if viewport is DESKTOP:
         page.click(f".mx-lane[data-lane='sandiego'] .mx-sq >> nth=2")
         return page.locator("#mx-side")
-    page.locator(".mx-card[data-lane='sandiego'] .mx-sq").nth(2).click()
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq").nth(2).click()
     return page.locator(".mx-sheet")
 
 
@@ -118,7 +118,7 @@ def test_the_square_grows_into_the_checkout_plays_the_booking_and_lands_the_pass
     if viewport is PHONE:
         assert box["y"] + box["height"] >= viewport["height"] - 2 and box["width"] >= viewport["width"] - 2      # a bottom sheet
     else:
-        assert 480 < box["width"] < 600 and box["x"] > 300                                      # a card in the middle
+        assert 480 < box["width"] < 760 and box["x"] > 300                                      # a card in the middle
     shot(page, f"{viewport['width']}-checkout")
     page.fill("#mxb-first", "Anne-Marie")
     page.fill("#mxb-last", "O’Neil")

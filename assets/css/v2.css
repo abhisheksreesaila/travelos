@@ -1,0 +1,144 @@
+/* GitAway design language v2, the shared pieces (F-250, D-610; tokens in v2-tokens.css; reference docs/design/booking-v2/index.html, Newsreader with Inter).
+   The sky behind everything, the top bar, the sentence whose every word opens a picker (a popover on a laptop, a bottom sheet on a phone), and the pickers' parts.
+   A page opts in with one class, `v2`, on its wrapper (layout.page(v2=True)). Frosted glass (backdrop-filter) is for widgets over the sky only; a card holding
+   text you read is near-opaque, so every word stays 4.5:1 in light and dark (tests_browser/test_v2_contrast.py measures the real pixels). Motion: only the --v2-* tokens. */
+.v2 { position: relative; color: var(--ink); font: 450 1.0625rem/1.5 var(--f-ui); font-optical-sizing: auto; background: transparent; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+@media (max-width: 719px) { .v2 { font-size: 1rem; } }
+.v2 :is(h1, h2, h3, h4) { font-family: var(--f-display); text-wrap: balance; }
+.v2 :where(button) { font: inherit; color: inherit; }
+html body .ga-page.v2 { background: transparent; }
+html:has(.v2) { background: var(--sky-3); }
+html:has(.v2) body { background: transparent; }
+.v2 .num { font-family: var(--f-ui); font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; }
+.v2 :focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; border-radius: 0.625rem; }
+.v2-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- the sky behind everything ---------- */
+.v2-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: radial-gradient(60% 42% at 8% 0%, color-mix(in srgb, var(--wx-t) 90%, transparent), transparent 70%),
+              radial-gradient(48% 36% at 96% 8%, color-mix(in srgb, var(--ride-t) 90%, transparent), transparent 70%),
+              radial-gradient(70% 50% at 50% 104%, color-mix(in srgb, var(--flight-t) 95%, transparent), transparent 70%),
+              linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); }
+.v2-bg .sunball { position: absolute; right: 7%; top: 13%; width: 10rem; height: 10rem; border-radius: 50%; background: var(--sun);
+  box-shadow: 0 0 0 2.4rem color-mix(in srgb, var(--sun) 20%, transparent), 0 0 0 5.2rem color-mix(in srgb, var(--sun) 9%, transparent);
+  transition: opacity var(--v2-slow) var(--v2-ease), transform var(--v2-slow) var(--spring-soft); }
+:root[data-mode="dark"] .v2-bg .sunball { background: #F3EBD3; box-shadow: 0 0 0 2.4rem rgb(243 235 211 / .08), 0 0 0 5.2rem rgb(243 235 211 / .04); width: 9rem; height: 9rem; }
+.v2-bg .cloud { position: absolute; fill: var(--cloud); transition: opacity var(--v2-slow) var(--v2-ease); animation: v2-drift var(--v2-drift) linear infinite alternate; }
+@keyframes v2-drift { to { translate: 6vw 0; } }
+.v2-bg .shore { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 30vh; min-height: 11.25rem; transition: transform var(--v2-slow) var(--spring-soft), opacity var(--v2-slow) var(--v2-ease); }
+.v2.is-results .v2-bg .shore, .v2-bg.is-results .shore { transform: translateY(70%); opacity: .55; }
+.v2.is-results .v2-bg .sunball, .v2.is-results .v2-bg .cloud, .v2-bg.is-results .sunball, .v2-bg.is-results .cloud { opacity: 0; }
+.v2.is-results .v2-bg .sunball, .v2-bg.is-results .sunball { transform: translateY(-40%) scale(.6); }
+:root[data-mode="dark"] .v2-bg .shore { filter: brightness(.42) saturate(.8); }
+
+/* ---------- top bar ---------- */
+.v2-top { position: relative; z-index: 20; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 0.75rem; max-width: 90rem; margin: 0 auto; padding: 1.125rem 1.75rem 0; }
+.v2-brand { display: inline-flex; align-items: center; gap: 0.625rem; text-decoration: none; color: var(--ink); font: 560 1.5625rem/1 var(--f-display); letter-spacing: -0.03em; }
+.v2-brand:hover { color: var(--ink); }
+.v2-brand { min-height: 3rem; flex: none; }
+.v2-brand svg { width: 2.125rem; height: 2.125rem; }
+.v2-top .sp { flex: 1; }
+.v2-pill { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.4375rem 0.75rem; border-radius: 62.4375rem; background: var(--ride-t); color: var(--ride-i); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; }
+.v2-round { flex: none; display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--card-solid); box-shadow: var(--sh1); cursor: pointer; color: var(--ink); text-decoration: none; font: 650 1rem/1 var(--f-ui); transition: transform var(--v2-quick) var(--v2-ease); }
+.v2-round:hover { color: var(--ink); }
+.v2-round:active { transform: scale(.94); }
+.v2-round svg { width: 1.25rem; height: 1.25rem; }
+.v2-round .ga-mode-sun, .v2-round[aria-pressed="true"] .ga-mode-moon { display: none; }
+.v2-round[aria-pressed="true"] .ga-mode-sun { display: inline-flex; }
+.v2-round > span { display: inline-flex; }
+.v2-signin { display: inline-flex; align-items: center; height: 2.75rem; padding: 0 1.125rem; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); color: var(--ink); font: 620 1rem/1 var(--f-ui); text-decoration: none; }
+.v2-signin:hover { color: var(--ink); }
+@media (max-width: 719px) { .v2-top { padding: 0.75rem 1rem 0; gap: 0.25rem 0.5rem; flex-wrap: wrap; } .v2-top .ga-preview { order: 5; flex: 1 0 100%; } .v2-top .v2-pill { display: none; } .v2-round { width: 3rem; height: 3rem; } .v2-signin { height: 3rem; } .v2-brand { font-size: 1.375rem; } }
+
+/* ---------- the sentence: every part a word you tap ---------- */
+.v2-sent { margin: 0; max-width: 70rem; font-family: var(--f-display); font-weight: var(--d-wt); letter-spacing: var(--d-track); line-height: 1.16; font-size: clamp(2.1rem, 4.3vw, 4.1rem); text-wrap: balance; color: var(--ink); transform-origin: 0 0; view-transition-name: v2-sent; }
+.v2-sent .fill { color: var(--ink-2); }
+.v2-w { display: inline; padding: 0 .06em; margin: 0; border: 0; background: none; cursor: pointer; font: inherit; letter-spacing: inherit; color: var(--word);
+  text-decoration: underline; text-decoration-thickness: .1em; text-underline-offset: .14em; text-decoration-color: color-mix(in srgb, var(--word) 30%, transparent);
+  border-radius: .18em; transition: background-color var(--v2-quick), text-decoration-color var(--v2-quick); -webkit-tap-highlight-color: transparent; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+@media (min-width: 720px) { .v2-w { white-space: nowrap; } }
+.v2-w:hover, .v2-w[aria-expanded="true"] { text-decoration-color: var(--word); background: color-mix(in srgb, var(--flight) 9%, transparent); }
+.v2-w:active { background: color-mix(in srgb, var(--flight) 16%, transparent); }
+.v2-w.flash { animation: v2-flash var(--v2-flash) var(--v2-ease); }
+@keyframes v2-flash { 0% { background: color-mix(in srgb, var(--ride) 70%, transparent); } 100% { background: transparent; } }
+.v2-go { display: inline-flex; align-items: center; gap: 0.75rem; height: 4rem; padding: 0 1.875rem 0 2.125rem; border: 0; border-radius: 62.4375rem; cursor: pointer; background: var(--pill-on); color: var(--pill-fg);
+  font: 650 1.25rem/1 var(--f-ui); box-shadow: var(--sh2); transition: transform var(--v2-quick) var(--v2-ease), box-shadow var(--v2-quick); }
+.v2-go:hover { transform: translateY(-1px); box-shadow: var(--sh3); color: var(--pill-fg); }
+.v2-go:active { transform: scale(.96); }
+.v2-go svg { width: 1.375rem; height: 1.375rem; }
+@media (max-width: 719px) { .v2-w { display: inline-block; padding-block: 1rem; margin-block: -1rem; min-width: 3rem; text-align: center; white-space: normal; }      /* a 3rem target that keeps the line's rhythm */
+  .v2-sent { font-size: 2rem; line-height: 1.2; } .v2-go { width: 100%; justify-content: center; } }
+
+/* ---------- the stage: the sentence centred on the landing, glided to the top on the results ---------- */
+.v2-stage { position: relative; max-width: 90rem; margin: 0 auto; padding: 0 1.75rem; }
+.v2-form { display: contents; }
+.v2-hero { min-height: calc(100svh - 5rem); display: grid; align-content: center; justify-items: center; text-align: center; gap: 2.125rem; padding: 0 0 22vh; }
+.v2.is-results .v2-hero { min-height: 0; padding: 0.875rem 0 1.125rem; justify-items: start; text-align: left; gap: 0; align-content: start; }
+.v2.is-results .v2-sent { font-size: clamp(1.35rem, 1.9vw, 1.85rem); max-width: 73.75rem; line-height: 1.28; text-wrap: pretty; }
+.v2.is-results :is(.v2-kicker, .v2-go, .v2-hero-sub) { display: none; }
+.v2-import { display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink-2); font: 620 1rem/1 var(--f-ui); text-decoration: underline; text-underline-offset: 0.25rem; }
+.v2-import:hover { color: var(--ink); }
+.v2-error { margin: 0; max-width: 34rem; padding: 0.75rem 1.125rem; border-radius: 1.125rem; background: var(--food-t); color: var(--food-i); font: 620 1rem/1.4 var(--f-ui); }
+.v2-error[hidden] { display: none; }
+@media (max-width: 719px) { .v2-stage { padding: 0 1rem; } .v2-hero { gap: 1.625rem; padding-bottom: 26vh; } .v2.is-results .v2-sent { font-size: 1.22rem; line-height: 1.38; } }
+
+/* ---------- pickers: a popover under its word on a laptop, a sheet from the bottom on a phone ---------- */
+.v2-pop { position: fixed; z-index: 60; width: var(--v2-sheet-w); max-height: calc(100svh - 1.5rem); overflow-y: auto; padding: 1.25rem; border-radius: 1.5rem; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh3), 0 0 0 1px var(--line);
+  text-align: left; font: 450 1.0625rem/1.4 var(--f-ui); letter-spacing: 0; overscroll-behavior: contain; }
+.v2-pop[hidden] { display: none; }
+.v2-pop h4 { margin: 0 0 0.25rem; font: 650 1rem/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.v2-pop .big { font: var(--d-wt) 2.125rem/1.1 var(--f-display); letter-spacing: var(--d-track); margin: 0.375rem 0 0.875rem; }
+.v2-pop .row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.625rem 0; }
+.v2-pop .row + .row { border-top: 1px solid var(--line); }
+.v2-pop .row b { font-weight: 620; }
+.v2-pop .row small { display: block; color: var(--ink-3); font-size: 1rem; }
+.v2-pop .note { margin: 0.875rem 0 0; color: var(--ink-2); font-size: 1rem; }
+.v2-step { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 62.4375rem; background: var(--card-2); }
+.v2-step button { width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: var(--card-solid); box-shadow: var(--sh1); cursor: pointer; font-size: 1.375rem; line-height: 1; display: grid; place-items: center; }
+.v2-step button:active { transform: scale(.9); }
+.v2-step button:disabled { opacity: .4; cursor: default; }
+.v2-step output { min-width: 2rem; text-align: center; font: 700 1.25rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.v2-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.v2-chip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 1rem; border-radius: 62.4375rem; border: 0; cursor: pointer; background: var(--card-2); color: var(--ink); font: 560 1rem/1 var(--f-ui); box-shadow: inset 0 0 0 1px var(--line); transition: background-color var(--v2-quick), color var(--v2-quick), transform var(--v2-quick); }
+.v2-chip:active { transform: scale(.95); }
+.v2-chip[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); box-shadow: none; }
+.v2-chip svg { width: 1rem; height: 1rem; }
+.v2-cal-h { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.v2-cal-h .big { margin: 0.375rem 0 0.625rem; }
+.v2-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; text-align: center; }
+.v2-cal span { font: 600 max(var(--label-min), 0.8125rem)/2 var(--f-ui); color: var(--ink-3); letter-spacing: .05em; }
+.v2-cal button { aspect-ratio: 1; border: 0; border-radius: 0.75rem; background: var(--card-2); cursor: pointer; font: 600 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.v2-cal button:disabled { background: none; color: var(--ink-3); opacity: .5; cursor: default; }
+.v2-cal button[aria-pressed="true"] { background: var(--flight); color: var(--on); }
+.v2-cal button.wk:not([aria-pressed="true"]):not(:disabled) { background: color-mix(in srgb, var(--flight-t) 70%, var(--card-2)); }
+.v2-range { width: 100%; margin: 0.5rem 0 0.25rem; accent-color: var(--flight); height: 2.25rem; }
+.v2-ticks { display: flex; justify-content: space-between; color: var(--ink-3); font: 500 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.v2-switch { position: relative; width: 3.25rem; height: 2rem; border-radius: 62.4375rem; border: 0; background: var(--line-2); cursor: pointer; transition: background-color var(--v2-quick); flex: none; }
+.v2-switch::after { content: ""; position: absolute; top: 0.1875rem; left: 0.1875rem; width: 1.625rem; height: 1.625rem; border-radius: 62.4375rem; background: var(--on); box-shadow: var(--sh1); transition: left var(--v2-pop) var(--spring), width var(--v2-quick); }
+.v2-switch:active::after { width: 2rem; }
+.v2-switch[aria-checked="true"] { background: var(--see); }
+.v2-switch[aria-checked="true"]::after { left: 1.4375rem; }
+.v2-switch[aria-checked="true"]:active::after { left: 1.0625rem; }
+.v2-done { margin-top: 1rem; width: 100%; height: 3.125rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); font: 650 1.0625rem/1 var(--f-ui); cursor: pointer; }
+.v2-scrim { position: fixed; inset: 0; z-index: 55; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--v2-pop); }
+.v2-scrim.on { opacity: 1; pointer-events: auto; }
+@media (min-width: 720px) { .v2-scrim.on { background: transparent; pointer-events: none; } }      /* a laptop: a tap elsewhere is caught by the script, so another word opens at once */
+@media (pointer: coarse) { .v2-range { height: 3rem; } }
+@media (max-width: 719px) { .v2-pop.as-sheet { left: 0.5rem !important; right: 0.5rem; top: auto !important; bottom: 0.5rem; width: auto; border-radius: 1.75rem; padding: 1.375rem; } }
+
+/* ---------- a spinner, and the quiet pieces both pages use ---------- */
+.v2-spin { width: 1.125rem; height: 1.125rem; border-radius: 50%; border: 0.15625rem solid color-mix(in srgb, var(--flight) 22%, transparent); border-top-color: var(--flight); animation: v2-spin var(--v2-spin-t) linear infinite; flex: none; }
+@keyframes v2-spin { to { rotate: 360deg; } }
+
+/* the sentence glides: a cross-document view transition when the browser has them (the old and the new sentence are one named element) */
+::view-transition-group(v2-sent) { animation-duration: var(--v2-glide); animation-timing-function: var(--spring-soft); }
+::view-transition-old(v2-sent), ::view-transition-new(v2-sent) { height: 100%; width: 100%; object-fit: contain; object-position: 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .v2 *, .v2 *::before, .v2 *::after { animation: none !important; transition: none !important; }
+  ::view-transition-group(v2-sent) { animation: none; }
+}
+
+/* frosted glass: the one place it is allowed (D-610), a widget over the sky; tests/test_direction_a.py holds this to .v2-glass */
+.v2-glass { background: var(--glass); -webkit-backdrop-filter: blur(1.375rem) saturate(170%); backdrop-filter: blur(1.375rem) saturate(170%); border-radius: 1.625rem;
+  box-shadow: inset 0 0 0 1px var(--glass-line), var(--glass-sh); }

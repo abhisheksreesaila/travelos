@@ -1,307 +1,226 @@
-/* The trip matrix (F-222): places down, start days across, each square the whole trip. Direction A: opaque tiles, one soft shadow, colour for kinds only, the find in ink.
-   Phone and tablet: a card per place (option B), its start days as squares, the opened square in a sheet. From 1020px: calendar lanes (option C), each place a row
-   of days, its nights a band, the total under each start day, and the opened square in the panel beside (option A's panel).
-   Motion is liquid at every width (D-439, the matrix's own exception to the calm desktop): a square settles into its answer (scale and opacity on the spring tokens),
-   the panel and the sheet grow out of the square tapped (GA.motion, assets/js/tripmatrix.js). Reduced motion: fades only. Sizes are rem off the one root. */
-.mx { padding: 0.75rem 1.25rem 6rem; display: grid; gap: 1rem; }
-
-/* F-245 (D-590): the whole matrix is one card, like the cover's frame (docs/report/f245-*.png). The card is translucent over a soft wash of sky, sun and indigo: the founder asked
-   for it by name, a recorded exception to "no glass" (alpha only, no blur; every word still 4.5:1 in light and dark). One lit square carries the emphasis: the find, or the
-   square you opened. Everything else is a quiet tint of the flight indigo (--mx-cell). */
-.mx-wrap { position: relative; isolation: isolate; padding: 0.5rem 0.75rem 5rem; }
-.mx-wrap::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(70% 38% at 12% 0%, color-mix(in srgb, var(--k-wx-t) 95%, transparent), transparent),
-              radial-gradient(60% 34% at 92% 14%, color-mix(in srgb, var(--k-ride-t) 85%, transparent), transparent),
-              radial-gradient(80% 44% at 50% 100%, color-mix(in srgb, var(--k-flight-t) 90%, transparent), transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 4rem); }
-.mx-wrap > .mx { --up-bg: var(--k-flight); --up-fg: var(--k-on); --up-fg2: color-mix(in srgb, var(--k-on) 82%, var(--k-flight)); --mx-cell: color-mix(in srgb, var(--k-flight-t) 55%, transparent);
-  max-width: 120rem; margin: 0 auto; box-sizing: border-box; padding: 1rem 1rem 1.25rem; gap: 0.875rem; border-radius: var(--r-xl);
-  background: color-mix(in srgb, var(--card) 78%, transparent); box-shadow: var(--sh3), inset 0 0 0 1px color-mix(in srgb, var(--card) 70%, transparent); }
+/* The trip matrix (F-222; redrawn in design language v2, F-250, D-610..): the prototype's results, docs/design/booking-v2/index.html (Newsreader with Inter). The tokens and the shared
+   pieces (the sky, the sentence, the pickers) are v2-tokens.css and v2.css; this is the results card: the status and legend, the pick bar, and the grid (a place a row, a start day a column,
+   each square the whole trip with its start day's sky above its total). One grid at every width: on a phone it scrolls sideways under a sticky place column. The opened square's trip
+   view (tripview.css) sits under the card on a laptop (a frosted widget over the sky) and in a sheet on a phone. Motion is liquid at every width (D-439), only --v2-* and --motion-* tokens.
+   Reduced motion: fades only. */
 .mx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.mx-label { font-size: max(var(--label-min), 0.75rem); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.mx-results { max-width: 90rem; margin: 0 auto; padding: 0 0 8.75rem; }
+.mx-main { max-width: 68.75rem; margin: 0 auto; min-width: 0; display: grid; gap: 1.125rem; }
 
-/* the sentence */
-.mx-lead { position: relative; display: grid; gap: 0.625rem; }
-.mx-sent { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.4rem; font-size: 1.5rem; font-weight: 700; line-height: 1.25; letter-spacing: -0.03em; text-wrap: balance; }
-.mx-tk { position: relative; }
-.mx-tok, .mx-pen { display: inline-flex; align-items: center; min-height: var(--target); cursor: pointer; list-style: none; border-radius: 0.5rem; }
-.mx-tok::-webkit-details-marker, .mx-pen::-webkit-details-marker { display: none; }
-.mx-tok { text-decoration: underline; text-decoration-thickness: 0.1875rem; text-underline-offset: 0.375rem; text-decoration-color: var(--line); }
-.mx-tok:hover, .mx-tk[open] > .mx-tok { text-decoration-color: var(--ink); }
-.mx-pen { justify-content: center; width: var(--target); color: var(--ink-2); }
-.mx-edit { margin-left: auto; }
-.mx-pop { position: absolute; z-index: 50; top: 100%; left: 0; display: grid; gap: 0.75rem; margin: 0.25rem 0 0; padding: 1rem; border-radius: var(--r-md); background: var(--card-2); box-shadow: var(--sh3);
-  font-size: 1rem; font-weight: 500; letter-spacing: 0; min-width: min(22rem, calc(100vw - 2.5rem)); box-sizing: border-box; }      /* F-238: a popover floats over the page (it never pushes the matrix down) and grows from its word */
-.mx-edit .mx-pop, .mx-about .mx-pop { left: auto; right: 0; }
-.mx-about { position: static; margin-left: auto; }      /* its popover hangs from the top row's edge, whichever word is where */
-@media (max-width: 720px) {      /* a phone: every popover is the sentence's width, so none can run off the screen */
-  .mx-wrap { padding: 0.25rem 0.5rem 5rem; }
-  .mx-wrap > .mx { padding: 0.875rem 0.875rem 1rem; border-radius: var(--r-lg); }
-  .mx-sent { font-size: 1.25rem; }      /* F-245: denser: the sentence is three lines, not five (the cover's phone frame sets it small too) */
-  .mx-meta { align-items: center; }
-  .mx-meta > .mx-sample { order: 0; }
-  .mx-meta > .mx-about { order: 1; margin-left: auto; }
-  .mx-meta > .mx-import { order: 2; flex-basis: 100%; }      /* "Sample prices" and "About these prices" share a row; the import link has the next one */
-  .mx-tk { position: static; }
-  .mx-pop, .mx-edit .mx-pop, .mx-about .mx-pop { left: 0; right: 0; min-width: 0; }
-}
-.mx-pop-h { margin: 0; font-size: 1.125rem; font-weight: 700; }
-.mx-pop-note, .mx-p-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; text-wrap: pretty; }
-.mx-err { margin: 0; color: var(--danger); font-size: 1rem; font-weight: 650; }
-.mx-pop-edit label { display: grid; gap: 0.5rem; }
-.mx-pop-edit input { box-sizing: border-box; width: 100%; min-height: var(--target); padding: 0 1rem; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font: inherit; }
-.mx-pop-edit input[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--danger); }
-.mx-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.mx-chip { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); padding: 0 1rem; border-radius: var(--r-pill); background: var(--paper-2);
-  color: var(--ink); font-size: 1rem; font-weight: 650; text-decoration: none; }
-.mx-chip.is-on { background: var(--ink); color: var(--on-ink); }
-.mx-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
-.mx-import { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 0.2em; display: inline-flex; align-items: center; min-height: var(--target); }
-.mx-count { font-family: var(--font-mono); color: var(--ink); }
-.mx[data-waiting="0"] .mx-count { display: none; }      /* F-238: a count of squares is for while they are coming in; once all are in it says nothing */
-.mx-preview { display: inline-flex; align-items: center; gap: 0.375rem; }
-.mx-preview::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ok); }
-.mx-sample { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--warn-tint); color: var(--warn-ink);
-  font-size: max(var(--label-min), 0.75rem); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+/* the card */
+.mx-card { position: relative; border-radius: var(--r-xl); background: var(--card-t); box-shadow: var(--sh3), inset 0 0 0 1px color-mix(in srgb, var(--card-solid) 60%, transparent); padding: 1.125rem 0 0.375rem; overflow: hidden; }
+.mx-top { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0 1.375rem 0.625rem; }
+.mx-status { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2rem; color: var(--ink-2); font-weight: 560; }
+.mx-st { display: inline-flex; align-items: center; gap: 0.625rem; }
+.mx-st > span:last-child { min-width: 0; }
+.mx-status b { color: var(--ink); font-weight: 680; }
+.mx[data-waiting="0"] .mx-st-wait, .mx[data-waiting="1"] .mx-st-done { display: none; }
+.mx-legend { display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
+.lg { display: inline-flex; align-items: center; gap: 0.4375rem; height: 2rem; padding: 0 0.625rem; border-radius: 62.4375rem; background: var(--card-2); font: 560 1rem/1 var(--f-ui); color: var(--ink-2); }
+.lg i, .lg span:first-child { width: 0.875rem; height: 0.875rem; border-radius: 0.3125rem; flex: none; }
+.lg .i-pick { background: var(--pick); }
+.lg .i-cheap { background: var(--see); }
+.lg .i-over { background: repeating-linear-gradient(135deg, var(--line-2) 0 0.1875rem, transparent 0.1875rem 0.375rem); box-shadow: inset 0 0 0 1px var(--line-2); }
+.lg .i-band { background: color-mix(in srgb, var(--stay) 20%, transparent); box-shadow: inset 0 0 0 0.125rem var(--stay); }
+.mx-slow, .mx-est-note { display: none; margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mx[data-slow="1"] .mx-slow, .mx[data-est="1"] .mx-est-note { display: inline; }
 
-/* the nights slider (F-237, F-238): "4 nights" is a word of the sentence and its popover holds the one range input. The track fills in ink to the thumb (--fill, set by the page
-   and the script); the thumb is a ring that clears the 3:1 against the canvas; the target is the full height of the control (the --target floor, 48px on a phone) so a thumb
-   finds it, and `touch-action: pan-y` leaves the page's own scroll to a vertical drag. */
-.mx-pop-nights { min-width: min(18rem, calc(100vw - 2.5rem)); }
-.mx-range { -webkit-appearance: none; appearance: none; width: 100%; height: var(--target); margin: 0; padding: 0; background: transparent; cursor: pointer; touch-action: pan-y; --fill: 50%; }
-.mx-range::-webkit-slider-runnable-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
-.mx-range::-moz-range-track { height: 0.5rem; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ink) var(--fill), var(--paper-2) var(--fill)); box-shadow: inset 0 0 0 1px var(--hairline-2); }
-.mx-range::-webkit-slider-thumb { -webkit-appearance: none; width: 1.75rem; height: 1.75rem; margin-top: -0.625rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
-.mx-range::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 0.25rem solid var(--card); background: var(--ink); box-shadow: var(--sh2); }
-.mx-range:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.125rem; border-radius: var(--r-pill); }
-.mx:not(.is-live) .mx-range { opacity: 0.5; pointer-events: none; }      /* before the script is ready it cannot be moved; the links beside it work meanwhile */
-.mx-range-ends { display: flex; justify-content: space-between; margin-top: -0.5rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 650; font-variant-numeric: tabular-nums; }
-.mx-est-note { display: none; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
-.mx[data-est="1"] .mx-est-note { display: inline; }
-.mx-day.is-off, .mx-ad.is-off { display: none; }      /* a longer trip's days: drawn with their sky, shown when the nights reach them */
-
-/* ⓘ About these prices (F-238): one quiet control in the top row; its popover holds the legend, the sample fine print, the weather's credit and Privacy and Terms */
-.mx-about-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.5rem; border-radius: 0.5rem; list-style: none; cursor: pointer; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
+/* ⓘ About these prices: one quiet control in the top row; its popover holds the sample fine print, the weather's credit and Privacy and Terms (F-238) */
+.mx-about { position: relative; }
+.mx-about-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.5rem; border-radius: 0.625rem; list-style: none; cursor: pointer; color: var(--ink-2); font: 560 1rem/1 var(--f-ui); }
 .mx-about-btn::-webkit-details-marker { display: none; }
 .mx-about-btn:hover, .mx-about[open] > .mx-about-btn { color: var(--ink); }
-.mx-pop-about { gap: 0.625rem; width: min(34rem, calc(100vw - 2.5rem)); }
-.mx-pop-about .mx-key-band { margin-top: 0.1875rem; align-self: flex-start; }
-.mx-legend { display: flex; align-items: center; gap: 0.625rem; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); line-height: 1.35; }
-.mx-key-band { flex: none; width: 1.75rem; height: 1rem; border-radius: 0.375rem; box-shadow: inset 0 0 0 0.125rem var(--ink); }
-.mx-about-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.25rem; border-top: 1px solid var(--line); }
-.mx-credit { margin: 0; text-align: center; font-size: max(var(--text-min), 0.875rem); }
-.mx-credit-a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.2em; display: inline-flex; align-items: center; min-height: var(--target); }
+.mx-pop { position: absolute; z-index: 50; top: 100%; right: 0; display: grid; gap: 0.625rem; margin: 0.25rem 0 0; padding: 1.125rem; border-radius: 1.5rem; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line);
+  width: min(34rem, calc(100vw - 2rem)); font: 450 1rem/1.4 var(--f-ui); }
+.mx-legend-n, .mx-foot-n { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
+.mx-about-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.375rem; border-top: 1px solid var(--line); }
 .mx-about-nav { display: flex; gap: 0.5rem; }
-.mx-about-nav a { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 0.5rem; color: var(--ink); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; }
+.mx-about-nav a { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 0.5rem; color: var(--ink); font-weight: 650; text-decoration: underline; text-underline-offset: 0.1875rem; }
+.mx-wx { display: flex; flex-direction: column; gap: 0.25rem; }
+.mx-wx-n { color: var(--ink-2); font-size: 1rem; }
+.mx-credit { margin: 0; padding: 0.25rem 1.375rem 0.5rem; text-align: center; font-size: 1rem; }
+.mx-credit-a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.1875rem; display: inline-flex; align-items: center; min-height: 2.75rem; }
 
-/* the news: the find, and a fact about the place while squares are searched */
-.mx-news { display: grid; gap: 0.75rem; }
-.mx-news:has(> .mx-find.is-empty) { display: none; }
-.mx-find { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; padding: 0.375rem 1.125rem; border-radius: var(--r-md); background: var(--up-bg); color: var(--up-fg); }
+/* the pick bar: the find (a nearby trip that beats or nearly matches the asked place), the focal point of the card */
+.mx-find { position: relative; margin: 0 1.375rem 0.5rem; display: flex; align-items: center; gap: 1rem; padding: 0.625rem 0.75rem 0.625rem 0.625rem; border-radius: 1.375rem; background: var(--pick); color: var(--on); text-decoration: none;
+  box-shadow: var(--sh2); transition: transform var(--v2-quick) var(--v2-ease); width: calc(100% - 2.75rem); box-sizing: border-box; }
+.mx-find:hover { color: var(--on); }
+.mx-find:active { transform: scale(.985); }
 .mx-find.is-empty { display: none; }
-.mx-found { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--k-ride); color: var(--k-ride-on);
-  font-size: max(var(--label-min), 0.8125rem); font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
-.mx-find-a { display: inline-flex; flex-wrap: wrap; align-items: center; min-height: var(--target); color: var(--up-fg); text-decoration: none; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
-.mx-find-a:hover, .mx-find-a:focus-visible { color: var(--up-fg); text-decoration: underline; text-underline-offset: 0.25rem; }
-.mx-find-d { color: var(--up-fg2); font-weight: 600; }
-/* while the first squares load (F-230): a small floating island with a sourced fact about the place, not a band; it settles in on the spring
-   (GA.motion) and leaves calmly once the first squares land. Sticky as the last thing in the matrix: it floats at the bottom of the screen while the
-   matrix is in view and stops above the footer, so it never sits on the footer's links or switches. Opaque, like every tile (translucency stays on the nav
-   pill and the tab bar). */
-.mx-isle { position: sticky; z-index: 40; bottom: calc(1rem + env(safe-area-inset-bottom)); justify-self: center; width: min(24rem, 100%);
-  box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start; padding: 0.75rem 1rem;
-  border-radius: var(--r-lg); background: var(--card-2); color: var(--ink); box-shadow: var(--sh3);
-  transition: opacity var(--motion-dur) var(--motion-out), translate var(--motion-dur) var(--motion-out); }
-.mx-isle.is-gone { display: none; }
-.mx-isle.is-leaving { opacity: 0; translate: 0 0.5rem; pointer-events: none; }
-.mx-isle-ic { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--paper-2); color: var(--ink); }
-.mx-isle-b { display: grid; gap: 0.125rem; min-width: 0; }
-.mx-isle-b > p { margin: 0; }
-.mx-fact-k { font-size: max(var(--label-min), 0.75rem); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
-.mx-fact-t { margin: 0; font-size: max(var(--text-min), 0.9375rem); font-weight: 600; line-height: 1.35; text-wrap: pretty; }
-.mx-fact-src { justify-self: start; color: var(--ink-2); font-size: max(var(--text-min), 0.8125rem); }
-@media (max-width: 720px) {      /* the founder: "minimal real estate": on a phone the note is the fact and its source, no icon or heading */
-  .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; }
-  .mx-isle-ic, .mx-isle-b > p:first-child { display: none; }
-  .mx-fact-t { font-weight: 500; }
-}
-.mx-slow { display: none; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
-.mx[data-slow="1"] .mx-slow { display: inline; animation: mx-fade var(--motion-dur) var(--motion-ease) both; }
+.mx[data-waiting="1"] .mx-find.is-empty, .mx-find.is-skel { display: flex; min-height: 4.25rem; background: var(--card-2); box-shadow: none; pointer-events: none; }
+.mx[data-waiting="1"] .mx-find.is-empty > *, .mx-find.is-skel > * { visibility: hidden; }
+.mx-pk-art { width: 4rem; height: 3rem; border-radius: 0.75rem; overflow: hidden; flex: none; }
+.mx-pk-art .mx-thumb { width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
+.mx-pk-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.mx-pk-h { font: var(--d-wt) 1.3125rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
+.mx-pk-s { color: color-mix(in srgb, var(--on) 86%, transparent); font-size: 1rem; }
+.mx-pk-badge { flex: none; background: var(--ride); color: var(--ride-on); font: 700 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 0.4375rem 0.625rem; border-radius: 62.4375rem; }
+.mx-pk-p { font: 760 1.875rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.02em; }
+.mx-pk-open { display: inline-flex; align-items: center; gap: 0.375rem; height: 2.5rem; padding: 0 0.875rem; border-radius: 62.4375rem; background: color-mix(in srgb, var(--on) 12%, transparent); font-weight: 620; }
 
-/* a square: the whole trip for one place and one start day */
-.mx-sq { position: relative; display: grid; place-items: center; align-content: center; gap: 0.125rem; min-height: var(--target); padding: 0.25rem 0.375rem; border-radius: 1rem;
-  background: var(--mx-cell, var(--paper-2)); color: var(--ink); text-decoration: none; text-align: center; transition: box-shadow var(--motion-quick) var(--motion-ease); }
-.mx-sq:active { transform: scale(0.96); }
-.mx-v { font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
-.mx-sqw { display: inline-flex; align-items: center; gap: 0.1875rem; color: var(--ink-2); font-size: max(var(--text-min), 0.75rem); font-weight: 550; line-height: 1.1; }
-.mx-sqw-i { flex: none; color: var(--k-wx); }
-.mx-sqw.is-typ .mx-sqw-t { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the notes under the matrix say so) */
-.mx-sqw.is-wet .mx-sqw-i { color: var(--k-wx-i); }
-.mx-sq.is-wait .mx-sqw { visibility: hidden; }
-.mx-sq:is(.is-find, .is-open) .mx-sqw { color: var(--up-fg2); }
-.mx-sq:is(.is-find, .is-open) .mx-sqw-i { color: var(--up-fg); }
-.mx-w { font-size: max(var(--label-min), 0.75rem); font-weight: 650; color: var(--ink-2); line-height: 1.15; }
-.mx-sq.is-low .mx-v { color: var(--ok-ink); }
-.mx-sq.is-over { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.mx-sq.is-over .mx-v { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 0.0625rem; }
-/* the lit square (F-245): the find, or the one opened; when you open another the find steps back to a ringed tint, so only one square is lit */
-.mx-wrap .mx .mx-sq:is(.is-find, .is-open) { background: var(--up-bg); color: var(--up-fg); box-shadow: 0 0 0 0.25rem var(--k-flight-t), var(--sh2); }
-.mx-wrap .mx .mx-sq:is(.is-find, .is-open) .mx-v { color: var(--up-fg); text-decoration: none; }
-.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) { background: var(--k-flight-t); color: var(--k-flight-i); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }
-.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) :is(.mx-v, .mx-sqw, .mx-sqw-i, .mx-d) { color: var(--k-flight-i); }
-.mx-sq.is-wait { color: transparent; }
+/* the grid */
+.mx-cal { min-width: 0; }
+.mx-scroll { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; padding: 0 1rem 0.875rem 0; }
+.mx-lanes { width: 100%; min-width: max-content; }
+.mx-head, .mx-lane { position: relative; display: grid; grid-template-columns: var(--lead) repeat(var(--n), minmax(var(--cw), 1fr)); }
+.mx-head { z-index: 4; }
+.mx-lane { padding-top: 0.75rem; }
+.mx-lead { position: sticky; left: 0; z-index: 5; grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 0.75rem; padding: 0 0.625rem 0 1.375rem; background: var(--lead-bg); box-shadow: 0.625rem 0 0.875rem -0.75rem rgb(20 20 60 / .25); clip-path: inset(0 -1.5rem 0 0); }
+.mx-head .mx-lead { align-items: end; padding-bottom: 0.5rem; flex-direction: column; align-items: flex-start; justify-content: end; gap: 0.25rem; }
+.mx-ah { font: 650 max(var(--label-min), 0.8125rem)/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.mx-ah-n { flex-basis: 100%; margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.25; }
+.mx-ah-n:empty { display: none; }
+.mx-thumb { width: 3rem; height: 3rem; border-radius: 1rem; overflow: hidden; flex: none; box-shadow: var(--sh1); }
+.mx-nm { min-width: 0; display: grid; gap: 0.1875rem; }
+.mx-l-n { display: block; font: var(--d-wt) 1.125rem/1.12 var(--f-display); letter-spacing: var(--d-track); }
+.mx-l-best { display: block; color: var(--ink-2); font: 600 1rem/1.25 var(--f-ui); font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; }
+.mx-day { grid-row: 1; display: grid; justify-items: center; align-content: end; padding: 0.25rem 0.25rem 0.5rem; border-radius: 1rem 1rem 0 0; position: relative; }
+.mx-dw { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.mx-dn { font: var(--d-wt) 1.375rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.mx-mo { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.mx-day.is-wkend { background: color-mix(in srgb, var(--flight-t) 45%, transparent); }
+.mx-day.is-ask .mx-dn::after { content: ""; display: block; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--food); margin: 0.125rem auto 0; }
+.mx-day.is-skel { background: none; }
+.mx-day.is-skel::after { content: ""; width: 1.5rem; height: 1.75rem; border-radius: 0.375rem; background: var(--card-2); }
+
+/* a square: the whole trip for one place and one start day, its start day's sky above the total */
+.mx-sq { position: relative; z-index: 1; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.375rem; height: var(--ch); margin: 0 0.25rem; padding: 0.5625rem 0.25rem 0.3125rem; border-radius: 1.125rem; background: var(--cell);
+  color: var(--ink); text-decoration: none; text-align: center; -webkit-tap-highlight-color: transparent; transition: background-color var(--v2-quick), box-shadow var(--v2-quick), transform var(--v2-quick) var(--v2-ease); }
+.mx-sq:hover { background: var(--cell-hover); color: var(--ink); }
+.mx-sq:active { transform: scale(.95); }
+.mx-sqw { display: inline-flex; align-items: center; gap: 0.25rem; font: 560 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink-2); }
+.mx-sqw-i { width: 1.125rem; height: 1.125rem; flex: none; color: var(--sun-ink); }
+.mx-sqw.is-wet .mx-sqw-i { color: var(--wx); }
+.mx-sqw.is-typ .mx-sqw-t { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the head cell and the ⓘ say so) */
+.mx-v { font: 720 1.25rem/1 var(--f-ui); font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; letter-spacing: -0.015em; }
+.mx-w { font: 650 max(var(--label-min), 0.8125rem)/1.15 var(--f-ui); color: var(--ink-2); }
+.mx-sq.is-low .mx-v { color: var(--see-i); }
+.mx-sq.is-on { box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--flight) 60%, transparent); }
+.mx-sq.is-over { background: repeating-linear-gradient(135deg, transparent 0 0.4375rem, var(--hatch) 0.4375rem 0.875rem), color-mix(in srgb, var(--card-2) 60%, transparent); color: var(--ink-3); }
+.mx-sq.is-over .mx-v { font-weight: 560; color: var(--ink-3); }
+.mx-sq.is-over .mx-sqw { color: var(--ink-3); }
+/* the lit square: the find, or the one opened; open another and the find steps back to a ringed tint, so only one square is lit */
+.mx-sq:is(.is-find, .is-open) { background: var(--pick); color: var(--on); box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--pick) 22%, transparent), var(--sh2); }
+.mx-sq:is(.is-find, .is-open) :is(.mx-v, .mx-sqw) { color: var(--on); }
+.mx-sq:is(.is-find, .is-open) .mx-sqw-i { color: var(--ride); }
+.mx-sq.is-find::after, .mx-sq.is-find.is-low::after { content: "Our pick"; position: absolute; top: -0.75rem; left: 50%; translate: -50% 0; white-space: nowrap; padding: 0.3125rem 0.5625rem; border-radius: 62.4375rem; background: var(--ride); color: var(--ride-on);
+  font: 700 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; box-shadow: var(--sh1); z-index: 2; }
+.mx-sq.is-find.is-low::after { content: "Pick · cheapest"; }
+.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) { background: var(--flight-t); color: var(--flight-i); box-shadow: inset 0 0 0 0.125rem var(--flight); }
+.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) :is(.mx-v, .mx-sqw) { color: var(--flight-i); }
+.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open)::after { display: none; }
+.mx-sq.is-wait { background: var(--card-2); overflow: hidden; color: transparent; }
+.mx.is-live .mx-sq.is-wait { pointer-events: none; }      /* with the script a waiting square is not a button; without it every square is a link to its own page */
+.mx-sq.is-wait > * { visibility: hidden; }
+.mx-sq.is-wait::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--card-solid) 75%, transparent) 50%, transparent 80%); background-size: 220% 100%;
+  animation: mx-shimmer var(--v2-shimmer) ease-in-out infinite; animation-delay: var(--sd, 0s); }
+@keyframes mx-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.mx-lead .mx-thumb:empty { background: var(--card-2); box-shadow: none; }
+.mx-lane:has(.is-wait) .mx-l-best { color: var(--ink-3); }
 /* an estimate while the slider moves (F-237): "about" and a plainer number, never a mark; the answer settles over it */
-.mx-est { display: inline-flex; flex-direction: column; align-items: center; gap: 0; color: var(--ink-2); font-weight: 600; }
-.mx-about { font-size: max(var(--label-min), 0.75rem); font-weight: 650; line-height: 1.1; }
-.mx-sq.is-est .mx-est-n { font-size: 0.8em; }
-.mx-lane .mx-sq.is-est .mx-est { color: var(--ink-2); }
-@keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
+.mx-est { display: inline-flex; flex-direction: column; align-items: center; color: var(--ink-2); font-weight: 600; }
+.mx-about-w { font: 650 max(var(--label-min), 0.8125rem)/1.1 var(--f-ui); }
+.mx-sq.is-est .mx-est-n { font-size: 1rem; }
+
+/* the nights: a ringed band across the lane's start days, labelled on its top edge (it moves to the square you tap) */
+.mx-band { position: relative; z-index: 0; grid-row: 1; align-self: stretch; margin: -0.375rem 0; border-radius: 1.375rem; pointer-events: none; background: color-mix(in srgb, var(--stay) 11%, transparent);
+  box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--stay) 70%, transparent); }
+.mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.6875rem; padding: 0.3125rem 0.625rem; border-radius: 62.4375rem; background: var(--band-label); color: var(--on); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); white-space: nowrap; }
+.mx-lane.is-lit .mx-band { background: color-mix(in srgb, var(--pick) 12%, transparent); box-shadow: inset 0 0 0 0.1875rem var(--pick); }
+.mx-lane.is-lit .mx-band::after { background: var(--ride); color: var(--ride-on); }
 
 /* the art: the place's own drawing (gitaway/placeart.py), or its plain tint */
-.mx-arts { display: flex; overflow: hidden; background: var(--paper-2); }
+.mx-arts { display: flex; overflow: hidden; background: var(--card-2); }
 .mx-art-i { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; }
 .mx-art-i > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mx-art-i.is-plain { background: var(--k-wx-t); }
-.mx-art-i.is-plain[data-kind="snow"], .mx-art-i.is-plain[data-kind="hike"] { background: var(--k-see-t); }
-.mx-art-i.is-plain[data-kind="desert"] { background: var(--k-tix-t); }
-.mx-arts.n2 .mx-art-i + .mx-art-i { box-shadow: -0.125rem 0 0 var(--card); }
+.mx-art-i.is-plain { background: var(--wx-t); }
+.mx-art-i.is-plain[data-kind="snow"], .mx-art-i.is-plain[data-kind="hike"] { background: var(--see-t); }
+.mx-art-i.is-plain[data-kind="desert"] { background: var(--tix-t); }
+.mx-arts.n2 .mx-art-i + .mx-art-i { box-shadow: -0.125rem 0 0 var(--card-solid); }
 
-/* the weather's notes (credit, "not a forecast"): one line each, in the ⓘ About these prices (F-238) */
-.mx-wx { display: flex; flex-direction: column; gap: 0.25rem; }
-.mx-wx-n { color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
+/* while the first squares load (F-230): a small floating island with a sourced fact about the place; it settles in on the spring (GA.motion) and leaves calmly once the first squares land */
+.mx-isle { position: sticky; z-index: 40; bottom: calc(1rem + env(safe-area-inset-bottom)); justify-self: center; width: min(24rem, 100%); box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start;
+  padding: 0.75rem 1rem; border-radius: 1.5rem; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh3), 0 0 0 1px var(--line); transition: opacity var(--motion-dur) var(--motion-out), translate var(--motion-dur) var(--motion-out); }
+.mx-isle.is-gone { display: none; }
+.mx-isle.is-leaving { opacity: 0; translate: 0 0.5rem; pointer-events: none; }
+.mx-isle-ic { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--card-2); color: var(--ink); }
+.mx-isle-b { display: grid; gap: 0.125rem; min-width: 0; }
+.mx-isle-b > p { margin: 0; }
+.mx-fact-k { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.mx-fact-t { margin: 0; font-size: 1rem; font-weight: 560; line-height: 1.35; text-wrap: pretty; }
+.mx-fact-src { justify-self: start; color: var(--ink-2); font-size: 1rem; }
+@media (min-width: 1020px) { .mx-isle { justify-self: start; bottom: calc(var(--mx-bar-h, 12rem) + 0.75rem); } }
+@media (max-width: 719px) { .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; } .mx-isle-ic, .mx-isle-b > p:first-child { display: none; } .mx-fact-t { font-weight: 450; } }
 
-/* the phone and the tablet: a card per place */
-.mx-stage { display: none; }
-.mx-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
-.mx-card { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto; grid-template-areas: "art name best" "art sub best" "wins wins wins"; align-items: center; gap: 0 0.75rem; }      /* F-245: a place is a row of the one card: its art, name and best total, then its start days */
-.mx-c-top, .mx-c-bd, .mx-c-best { display: contents; }
-.mx-c-art { grid-area: art; align-self: stretch; height: auto; min-height: 3.25rem; border-radius: 0.875rem; }
-.mx-c-n { grid-area: name; align-self: end; margin: 0; font-size: 1.25rem; font-weight: 720; letter-spacing: -0.03em; line-height: 1.15; }
-.mx-wins { grid-area: wins; margin-top: 0.625rem; }
-.mx-c-v { grid-area: best; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }      /* a total in the body font with even digits: in the mono a comma takes a whole cell ("$1 , 536") */
-.mx-c-s { grid-area: sub; align-self: start; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.2; }
-.mx-wins { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr)); gap: 0.5rem; }
-.mx-wins .mx-sq { min-height: 5.25rem; padding: 0.375rem 0.25rem; gap: 0.25rem; border-radius: 0.875rem; }
-.mx-wins .mx-v { font-size: 1.375rem; }
-.mx-wins .mx-sq.is-on { background: var(--k-flight-t); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }      /* the start whose days this place shows */
-.mx-d { font-size: max(var(--label-min), 0.75rem); font-weight: 650; color: var(--ink-2); }
-.mx-sq:is(.is-find, .is-open) .mx-d { color: var(--up-fg2); }
-.mx-sq.is-asked .mx-d { color: var(--ink); font-weight: 800; }
-.mx-sq:is(.is-find, .is-open).is-asked .mx-d { color: var(--up-fg); }
-.mx-dd { display: none; }
-.mx-sq.is-wait .mx-d { color: var(--ink-2); }
-
-/* the opened square (option A's panel): the side on a laptop, the sheet on a phone, the square's own page */
+/* the opened square: under the card on a laptop (a frosted widget over the sky, the one place glass is used here), a sheet on a phone, its own page */
+.mx-side { display: none; min-width: 0; padding-bottom: 0.375rem; overflow: hidden; }
+@media (min-width: 1020px) { .mx-side { display: block; } }
 .mx-p-top { display: grid; gap: 0.25rem; }
-.mx-p-h { margin: 0; font-size: 1.375rem; font-weight: 720; letter-spacing: -0.03em; line-height: 1.15; }
+.mx-p-h { margin: 0; font: var(--d-wt) 1.625rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
 .mx-p-sub { margin: 0; color: var(--ink-2); font-size: 1rem; }
-.mx-p-n { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
-.mx-vs { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--ok-tint); color: var(--ok-ink); font-size: max(var(--text-min), 0.875rem); font-weight: 650; }
+.mx-p-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; text-wrap: pretty; }
+.mx-b { padding: 1rem 1.25rem; }
+.mx-p-n { font: 780 2.5rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.035em; }
+.mx-vs { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: 62.4375rem; background: var(--see-t); color: var(--see-i); font: 650 1rem/1 var(--f-ui); }
 .mx-vs.is-empty { display: none; }
-.mx-p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: -0.25rem; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
+.mx-p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: -0.25rem; color: var(--ink-2); font-size: 1rem; }
+.mx-preview { display: inline-flex; align-items: center; gap: 0.375rem; }
+.mx-preview::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--see); }
 .mx-rows { display: grid; }
 .mx-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: start; padding: 0.625rem 0; border-top: 1px solid var(--line); }
-.mx-kt { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; color: var(--k-on); }
-.mx-kt.k-flight { background: var(--k-flight); } .mx-kt.k-stay { background: var(--k-stay); } .mx-kt.k-car { background: var(--k-car); }
+.mx-kt { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; color: var(--on); }
+.mx-kt.k-flight { background: var(--flight); } .mx-kt.k-stay { background: var(--stay); } .mx-kt.k-car { background: var(--see); }
 .mx-r-h { margin: 0; font-size: 1rem; font-weight: 650; line-height: 1.25; }
-.mx-r-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.35; }
-.mx-r-due { color: var(--warn-ink); }
-.mx-r-n { font-family: var(--font-mono); font-size: 1rem; font-weight: 650; }
+.mx-r-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.35; }
+.mx-r-due { color: var(--tix-i); }
+.mx-r-n { font: 650 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
 .mx-soon { margin: 0; font-size: 1rem; line-height: 1.4; color: var(--ink-2); }
 .mx-soon-h { color: var(--ink); font-weight: 700; }
 .mx-save-f { margin: 0; }
 .mx-save { width: 100%; min-height: var(--target); }
-.mx-saved { margin: 0; font-weight: 650; color: var(--ok-ink); font-size: 1rem; }
-.mx-one { max-width: 34rem; margin: 0 auto; }
+.mx-saved { margin: 0; font-weight: 650; color: var(--see-i); font-size: 1rem; }
+.mx-one { max-width: 34rem; margin: 0 auto; padding: 1rem; }
 .mx-back { justify-self: start; min-height: var(--target); }
-.mx-alone { border-radius: var(--r-lg); background: var(--card); box-shadow: var(--sh2); overflow: hidden; }
-.mx-foot-n { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
+.mx-alone { border-radius: var(--r-lg); background: var(--card-solid); box-shadow: var(--sh2); overflow: hidden; }
 
 /* the phone's sheet */
 .mx-scrim { position: fixed; inset: 0; z-index: 60; background: var(--scrim); }
-.mx-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 88vh; overflow: auto; overscroll-behavior: contain; border-radius: var(--r-lg) var(--r-lg) 0 0;
-  background: var(--card-2); box-shadow: var(--sh3); padding-bottom: env(safe-area-inset-bottom); }
-.mx-sheet-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-2); touch-action: none; }
-.mx-grab { width: 2.5rem; height: 0.3125rem; margin-left: calc(50% - 1.25rem); border-radius: var(--r-pill); background: var(--line); }
-.mx-x { display: grid; place-items: center; width: var(--target); height: var(--target); border: 0; border-radius: 50%; background: var(--paper-2); color: var(--ink); cursor: pointer; }
+.mx-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 88vh; overflow: auto; overscroll-behavior: contain; border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--card-solid); box-shadow: var(--sh3); padding-bottom: env(safe-area-inset-bottom); }
+.mx-sheet-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-solid); touch-action: none; }
+.mx-grab { width: 2.5rem; height: 0.3125rem; margin-left: calc(50% - 1.25rem); border-radius: 62.4375rem; background: var(--line-2); }
+.mx-x { display: grid; place-items: center; width: var(--target); height: var(--target); border: 0; border-radius: 50%; background: var(--card-2); color: var(--ink); cursor: pointer; }
+@keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
 
-@media (min-width: 721px) {
-  .mx-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* the phone: a narrower place column and smaller squares (the grid is the same and scrolls sideways) */
+@media (max-width: 719px) {
+  .mx-results { padding: 0 0.75rem 7.5rem; }
+  .mx-card { border-radius: 1.625rem; padding-top: 0.875rem; }
+  .mx-top { padding: 0 0.875rem 0.625rem; }
+  .mx-legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -0.875rem; padding: 0 0.875rem; width: calc(100% + 1.75rem); order: 3; }
+  .mx-legend::-webkit-scrollbar { display: none; }
+  .lg { flex: none; font-size: 1rem; height: 1.875rem; }
+  .mx-about { margin-left: auto; }
+  .mx-pop { position: fixed; left: 0.75rem; right: 0.75rem; top: auto; bottom: 0.75rem; width: auto; }
+  .mx-find { margin: 0 0.75rem 0.625rem; width: calc(100% - 1.5rem); gap: 0.75rem; flex-wrap: wrap; padding-top: 0.875rem; }
+  .mx-pk-art { width: 3.25rem; height: 2.75rem; }
+  .mx-pk-h { font-size: 1.125rem; }
+  .mx-pk-s { font-size: 1rem; }
+  .mx-pk-open { display: none; }
+  .mx-pk-p { font-size: 1.625rem; }
+  .mx-pk-badge { position: absolute; top: -0.625rem; left: 1rem; }
+  .mx-lead { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.375rem; padding: 0 0.5rem 0 0.75rem; }
+  .mx-thumb { width: 2.5rem; height: 2rem; border-radius: 0.625rem; }
+  .mx-l-n { font-size: 1rem; }
+  .mx-l-best { font-size: 1rem; }
+  .mx-v { font-size: 1.125rem; }
+  .mx-sqw { font-size: 1rem; }
 }
 
-/* the laptop (F-236, docs/design/trip-matrix/matrix-c.html, D-520): calendar lanes over the trip bar. Each place a lane of days that wear their sky; its nights a ringed band
-   that holds those days, labelled on its top edge; under each start day its total in a bold pill (ink: the nights shown, yellow: the find, green: the cheapest start).
-   Days are never coloured: neutral cells, the asked day's head in ink. Sizes are rem off the 12px desktop root (design px / 12). */
-@media (min-width: 1020px) {
-  .mx-wrap { padding: 0.5rem 1.5rem 3rem; }
-  .mx-wrap > .mx { padding: 1.25rem 1.5rem 1.5rem; gap: 0.75rem; }
-  .mx-lead { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
-  .mx-sent { font-size: 2rem; }
-  .mx-meta { justify-content: flex-end; }
-  .mx-cards { display: none; }
-  .mx-stage { display: grid; gap: 1rem; }
-  .mx-cal { min-width: 0; }
-  .mx-lanes { display: grid; overflow-x: auto; }
-  .mx-axis, .mx-lane { display: grid; grid-template-columns: 18rem repeat(var(--mx-days), minmax(4.75rem, 1fr)); column-gap: 0.25rem; }
-  .mx-axis { padding: 0.25rem 0; }
-  .mx-ah { display: grid; align-content: end; gap: 0.25rem; padding: 0 0.5rem; }
-  .mx-ah-n { color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
-  .mx-ah-n:empty { display: none; }
-  .mx-ad { display: grid; justify-items: center; gap: 0.125rem; padding: 0.375rem 0; border-radius: 0.75rem; }
-  .mx-adw { font-size: max(var(--label-min), 0.75rem); font-weight: 650; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
-  .mx-adn { font-size: 1.25rem; font-weight: 700; }
-  .mx-ad.is-ask { background: var(--k-flight-t); color: var(--k-flight-i); }
-  .mx-ad.is-ask .mx-adw { color: var(--k-flight-i); }
-  .mx-lane { position: relative; grid-template-rows: 2.5rem auto; row-gap: 0.25rem; padding: 0.875rem 0 0.4375rem; }
-  .mx-lh { grid-row: 1 / 3; grid-column: 1; display: flex; align-items: center; gap: 0.75rem; padding-right: 0.5rem; }
-  .mx-thumb { flex: none; width: 4.5rem; height: 3.75rem; border-radius: 0.875rem; }
-  .mx-l-n { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-  .mx-l-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
-  .mx-l-s:empty, .mx-l-best:empty { display: none; }
-  .mx-l-best { margin: 0.25rem 0 0; font-size: 1.75rem; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
-
-  /* a day wearing its sky */
-  .mx-day { grid-row: 1; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; padding-top: 0.25rem; border-radius: 0.625rem; color: var(--ink-2); }      /* the sky is kept but quiet: small, plain */
-  .mx-day-i { flex: none; width: 1.0833rem; height: 1.0833rem; color: var(--k-wx); }
-  .mx-day.is-wet .mx-day-i { color: var(--k-wx-i); }
-  .mx-day-t { font-size: max(var(--text-min), 0.9167rem); font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
-  .mx-day.is-typ .mx-day-t { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the notes under the matrix say so) */
-
-  /* the nights: a ringed band holding its days, its words on the top edge, never past the grid (its columns are the grid's) */
-  .mx-band { position: relative; grid-row: 1; z-index: 0; align-self: stretch; margin: -0.25rem -0.125rem; border-radius: 1rem; background: var(--mx-cell);
-    box-shadow: inset 0 0 0 0.125rem color-mix(in srgb, var(--k-flight) 45%, transparent); pointer-events: none; }
-  .mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.875rem; padding: 0.3125rem 0.625rem; border-radius: var(--r-pill); background: var(--k-flight-t); color: var(--k-flight-i);
-    font-size: max(var(--label-min), 0.75rem); font-weight: 650; line-height: 1; white-space: nowrap; }
-  .mx-lane.is-lit .mx-band { background: color-mix(in srgb, var(--k-flight) 12%, transparent); box-shadow: inset 0 0 0 0.1875rem var(--k-flight); }
-  .mx-lane.is-lit .mx-band::after { background: var(--k-ride); color: var(--k-ride-on); }
-
-  /* the start prices: the big numbers */
-  .mx-lane > .mx-sq { grid-row: 2; z-index: 1; align-self: start; min-height: 3rem; padding: 0 0.25rem; border-radius: 1rem; gap: 0; }
-  .mx-lane .mx-v { font-size: 1.5rem; font-weight: 750; letter-spacing: -0.03em; line-height: 1; }
-  .mx-lane .mx-w { font-size: max(var(--label-min), 0.75rem); }
-  .mx-lane .mx-sq.is-low .mx-v { color: var(--ok-ink); }
-  .mx-lane .mx-sq.is-on { background: var(--k-flight-t); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }      /* the start whose nights the band shows */
-  .mx-lane .mx-sq.is-over { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-  .mx-lane .mx-sq.is-over.is-on { box-shadow: inset 0 0 0 0.125rem var(--k-flight); }
-
-}
-
-@media (min-width: 1020px) {
-  .mx-isle { justify-self: start; bottom: calc(var(--mx-bar-h, 12rem) + 0.75rem); }      /* above the trip bar, wherever it is (assets/js/tripmatrix.js sets --mx-bar-h: the distance from the bar's top to the screen's bottom) */
-}
-
-@media (min-width: 1020px) and (pointer: coarse) {      /* a touch screen this wide (a tablet on its side): the start prices are 48px targets, the slider too (F-236 review) */
-  .mx-lane > .mx-sq { min-height: 4rem; }      /* 4rem is 48px off the 12px laptop root */
-  .mx-range { height: 4rem; }
-}
-
-@media (min-width: 1020px) and (max-width: 1279px) {      /* narrower days: the totals step down so a total never reaches its neighbour */
-  .mx-lane .mx-v { font-size: 1.25rem; }
-}
+@media (min-width: 1020px) and (pointer: coarse) { .mx-sq { min-height: 3rem; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .mx-sq.skeleton { animation: none; }
-  .mx-sq:active { transform: none; }
+  .mx-sq.is-wait::after { animation: none; }
+  .mx-sq:active, .mx-find:active { transform: none; }
   .mx-isle { transition: opacity var(--motion-fade) linear; }
   .mx-isle.is-leaving { translate: none; }
 }
