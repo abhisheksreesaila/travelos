@@ -37,4 +37,4 @@ def register(app):
         if not ses.current_traveler(session):      # F-206: a stranger gets the cover story (gitaway/pages/cover.py)
             htmlkw["cls"] = "cv-root"
             return cover.page(footer_links(), _drive())
-        return RedirectResponse(COCKPIT if ses.booking(session) else showcase.planning_path(), status_code=303)
+        return RedirectResponse(showcase.planning_path(), status_code=303)      # D-600: always the journey's first step (What are you after?); the trip is reached from Plan this trip and the bar

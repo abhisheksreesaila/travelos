@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from starlette.responses import RedirectResponse
 
-from gitaway import session as ses, tripcal as cal
+from gitaway import session as ses, showcase, tripcal as cal  # noqa: F401 (cal: href() is still used by older pages)
 
 
 def href(t) -> str:
@@ -20,5 +20,4 @@ def register(app):
     def trip_book(session):
         if not ses.current_traveler(session):
             return RedirectResponse(ses.signin_href("/trip/book"), status_code=303)
-        b = ses.booking(session) if ses.trips(session) else None
-        return RedirectResponse(href(cal.trip("", b)) if b else "/plan", status_code=303)
+        return RedirectResponse(showcase.planning_path(), status_code=303)      # D-600: Book is the journey (What are you after?, then the matrix), never the old /plan lanes

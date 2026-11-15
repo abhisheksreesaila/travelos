@@ -46,11 +46,11 @@ def test_a_family_with_no_trip_lands_on_the_matrix(client):
     assert r.status_code == 303 and where(r) == "/plan/ask"
 
 
-def test_a_family_with_a_trip_lands_on_its_cockpit(client):
+def test_a_family_with_a_trip_still_comes_in_at_the_journeys_first_step(client):
+    """D-600 (was D-461's cockpit): the founder signed in with a booked test trip and landed on the old trip page instead of the journey."""
     assert book(client).status_code == 303
-    r = client.get("/", follow_redirects=False)
-    assert r.status_code == 303 and where(r) == "/trip/cockpit"
-    assert client.get("/").status_code == 200
+    assert client.get("/trip/cockpit").status_code == 200      # the trip is still there, reached from Plan this trip and the bar
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"      # D-600: the front door is always the journey's first step, booked or not
 
 
 def test_signing_in_with_no_next_comes_to_the_front_door(client):
@@ -142,7 +142,7 @@ def test_saving_a_square_still_makes_the_family_a_trip_and_lands_it_on_the_cockp
     assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
     r = client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-05", "r": "2027-03-09", "a": "2", "k": "", "home": "SFO"}, follow_redirects=False)
     assert where(r) == "/trip/cockpit"
-    assert where(client.get("/", follow_redirects=False)) == "/trip/cockpit"
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"      # D-600: the trip is reached from Plan this trip and the bar, not the front door
 
 
 def test_a_search_that_does_not_hold_up_goes_back_to_the_booking_lanes(client):
@@ -244,7 +244,7 @@ def test_a_family_whose_trip_a_matrix_save_made_lands_on_its_cockpit_with_a_book
     form = {"to": "San Diego", "home": "SFO", "d": "2026-12-12", "r": "2026-12-16", "a": "2", "k": "7,10", "x": "2", "lane": "losangeles+sandiego", "w": "2026-12-12"}
     assert client.post("/plan/matrix/save", data=form, follow_redirects=False).status_code == 303
     assert ses.trips(person("ari")) and ses.booking(person("ari"))      # a trip without a booking cannot be made this way
-    assert where(client.get("/", follow_redirects=False)) == "/trip/cockpit" and client.get("/trip/cockpit").status_code == 200
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask" and client.get("/trip/cockpit").status_code == 200      # D-600
 
 
 def test_a_trip_made_from_a_search_has_a_booking_so_the_cockpit_opens(client):

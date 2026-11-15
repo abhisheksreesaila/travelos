@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from gitaway import showcase
 from gitaway.partners import links, places, prices, travelpayouts
 from tests.pagebody import without_bar
 from tests.test_signin import sign_in
@@ -164,10 +165,8 @@ def test_a_signed_in_click_is_logged_with_its_subid_and_no_price(client, monkeyp
 def test_the_open_trip_books_through_the_lanes(client):
     import_tahoe(client)
     r = client.get("/trip/book", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/plan?place=Lake+Tahoe&d=2026-12-19&r=2026-12-26&a=2&k=8%2C11"
+    assert r.status_code == 303 and r.headers["location"] == showcase.planning_path()      # D-600: Book is the journey, never the old lanes
     assert 'id="ga-tb-book"' in client.get("/trip/canvas").text
-    text = words(client.get(r.headers["location"]).text)
-    assert "Book your trip to Lake Tahoe" in text and "Dec 19 – 26 · 2 adults, 2 kids" in text
 
 
 def test_links_match_the_link_builders():

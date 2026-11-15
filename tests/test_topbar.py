@@ -3,6 +3,7 @@ Where it shows (desktop only) and what each link does are checked in a browser: 
 
 import re
 
+from gitaway import showcase
 from tests.test_calendar import book
 from tests.test_roles import crew  # noqa: F401 - a fixture
 from tests.test_signin import sign_in
@@ -84,7 +85,7 @@ def test_signed_out_pages_keep_their_own_header(client):
 def test_the_front_door_opens_a_signed_in_visitors_trip_and_its_bar(client):      # F-231: no signed-in landing keeps a header of its own any more
     book(client)
     r = client.get("/", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/cockpit"
+    assert r.status_code == 303 and r.headers["location"] == showcase.planning_path()      # D-600: the journey's first step, booked or not
     assert bar(client.get("/").text)
 
 
@@ -116,7 +117,7 @@ def test_trip_opens_day_one_before_the_trip_and_today_during_it(client, monkeypa
     """The bar's Trip link is /trip, the trip's home: the cockpit (F-201), open on the first day before the trip and on today's during it (F-092's rule, which the bar relies on)."""
     from datetime import date
 
-    from gitaway import catalog
+    from gitaway import showcase, catalog
     from tests.test_family_storage import THREE_NIGHTS
     book(client, **THREE_NIGHTS)
     assert 'href="/trip"' in bar(client.get("/family").text)
