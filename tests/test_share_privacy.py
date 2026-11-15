@@ -21,7 +21,8 @@ def public_text(client, slug):
     page = client.get(f"/trips/{slug}").text.split("<main")[1].split("</main>")[0]
     hub = client.get("/community").text.split("<main")[1].split("</main>")[0]
     row = community.get(slug)
-    return unescape(page + hub + repr(row))
+    drawn = re.compile(r"<svg.*?</svg>", re.S)      # F-253: a book's cover is a drawing; the numbers in its path data are not words a stranger reads
+    return unescape(drawn.sub("", page + hub) + repr(row))
 
 
 def assert_no_dates(text):

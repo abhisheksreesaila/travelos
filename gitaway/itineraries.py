@@ -37,6 +37,7 @@ class Day:
     collapsed: bool = False
     note: str = ""              # a creator's own words about the day (F-181)
     photos: list = field(default_factory=list)   # Polaroids a creator picked for the day (F-181)
+    quote: str = ""             # a sentence of the creator's own post that names one of the day's stops, exactly as they wrote it (F-253: the book's day page)
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,7 @@ class Itinerary:
     handle: str = ""            # the creator's profile handle: set only on a real published trip (F-181)
     plan_to: str = ""           # the catalog place "Plan this trip" goes to ("la"), "" when there is none
     plan_days: int = 0          # how many days "Plan this trip" plans
+    quote: str = ""             # the post's own sentence that opens its book (F-253), exactly as the creator wrote it
 
 
 SAMPLE_BADGE = ("74°F", "mostly sunny")   # the sample trips' weather badge (showcase only)

@@ -100,7 +100,7 @@ def forks(session):
 
 
 def trip_slug(path):
-    m = re.fullmatch(r"/trips/([A-Za-z0-9][A-Za-z0-9_-]*)/?", urlsplit(path or "").path)
+    m = re.fullmatch(r"/trips/([A-Za-z0-9][A-Za-z0-9_-]*)(?:/book)?/?", urlsplit(path or "").path)
     return m.group(1) if m else None
 
 

@@ -213,7 +213,7 @@ def test_publish_puts_the_trip_in_the_hub_with_its_own_page(client):
     done = client.get("/creators/done").text
     assert f'href="/trips/{slug}"' in done and 'href="/community"' in done and "live" in done.lower()
     hubhtml = client.get("/community").text
-    assert "Sun, tacos &amp; tides" in hubhtml and f'href="/trips/{slug}"' in hubhtml and "Your trip" in hubhtml
+    assert "Sun, tacos &amp; tides" in hubhtml and f'href="/trips/{slug}/book"' in hubhtml and "Your trip" in hubhtml
     assert "Sun, tacos &amp; tides" in client.get("/community?src=creators").text
     page = client.get(f"/trips/{slug}")
     assert page.status_code == 200 and "Sun, tacos &amp; tides" in page.text and "From the vlog" in page.text

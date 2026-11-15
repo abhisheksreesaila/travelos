@@ -76,7 +76,7 @@ def test_a_family_with_no_trip_gets_start_instead_of_trip(client):
 
 
 def test_signed_out_pages_keep_their_own_header(client):
-    for path in ("/", "/signin", "/community", "/privacy"):
+    for path in ("/", "/signin", "/privacy"):
         html = client.get(path).text
         assert "ga-topbar" not in html, path
         assert ('class="cv-top"' if path == "/" else "ga-header") in html, path      # the signed-out landing is the cover, with its own header (F-206)

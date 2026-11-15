@@ -66,7 +66,7 @@ def tap(page, viewport, locator):
 def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor, base_url, viewport):
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/for-creators")
-    expect(page.locator("h1")).to_contain_text("Turn your post into a trip")
+    expect(page.locator("h1")).to_contain_text("Paste your post. It becomes a trip families can book.")
     box = page.locator("#fc-text").bounding_box()
     assert box["y"] + box["height"] <= viewport["height"], "the paste box is on the first screen"
     assert overflow(page) <= 1

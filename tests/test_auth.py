@@ -165,7 +165,7 @@ def test_logout_removes_the_sign_in_and_keeps_the_trip_state(client):
 
 def test_the_header_sign_out_form_posts_to_signout_which_is_the_same_as_logout(client):
     sign_in(client, "ari")
-    assert 'action="/signout"' in client.get("/community").text  # assets/js/pwa.js (F-044) hooks this form to clear its page cache
+    assert 'action="/signout"' in client.get("/family").text  # assets/js/pwa.js (F-044) hooks this form to clear its page cache
     r = client.post("/signout", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/" and "Sign out" not in client.get("/").text
 

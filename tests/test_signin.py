@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 
 import pytest
 
@@ -135,9 +136,10 @@ def test_fork_helpers():
 def test_header_signed_out_and_in(client):
     assert 'href="/signin"' in client.get("/").text
     sign_in(client)
-    html = client.get("/community").text
+    html = client.get("/family").text
     assert "AR" in html and "Sign out" in html and 'action="/signout"' in html
     assert 'href="/signin"' not in html
+    assert 'href="/family"' in client.get("/community").text and 'href="/signin"' not in re.search(r'<div class="v2-top">.*?(?=<main)', client.get("/community").text, re.S).group(0)      # F-253: the creator pages' v2 bar
 
 
 def test_signout(client):

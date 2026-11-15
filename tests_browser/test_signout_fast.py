@@ -42,7 +42,7 @@ def test_pressing_sign_out_reaches_the_landing_fast_and_forgets_the_family(brows
         controlled(page, base_url)
         page.goto(f"{base_url}/calendar")
         assert page.evaluate(PAGE_CACHES), "the family's pages were saved"
-        page.goto(f"{base_url}/community")  # a page with the site header
+        page.goto(f"{base_url}/family")  # a page with the site header (F-253: the shelf wears the v2 bar, whose avatar goes here)
         page.evaluate("localStorage.setItem('ga-test', 'previous family')")
         button = sign_out_button(page)
         start = time.perf_counter()
@@ -81,7 +81,7 @@ def test_back_after_sign_out_never_shows_the_previous_persons_pages(browser, bas
         if sw == "allow":
             controlled(page, base_url)
         page.goto(f"{base_url}/calendar")
-        page.goto(f"{base_url}/community")
+        page.goto(f"{base_url}/family")
         sign_out_button(page).click()
         page.wait_for_url(f"{base_url}/")
         page.wait_for_load_state("load")

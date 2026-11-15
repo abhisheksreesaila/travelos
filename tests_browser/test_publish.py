@@ -176,7 +176,7 @@ def test_the_public_and_publish_pages_wear_the_coast_look_with_no_blur(family, b
         page.goto(base_url + path)
         look = page.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and not look["blur"], path
-    for path in (href, "/creators/ari", "/creators", "/community"):
+    for path in (href, "/creators/ari", "/creators"):      # F-253: /community wears design language v2 (its frosted glass is the one the lint allows)
         p.goto(base_url + path)
         look = p.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), accent: getComputedStyle(document.documentElement).getPropertyValue('--oq-accent').trim(), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and look["accent"].upper() == "#0B0B0D" and not look["blur"], path      # F-200: Coast on Direction A, the ink accent (it was the orange #c0401c, D-60)

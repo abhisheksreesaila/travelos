@@ -32,7 +32,7 @@ def stranger(client):
 def test_the_page_is_open_to_everyone_before_anyone_has_published(client, mode):
     assert not community.has_real()
     r = client.get("/for-creators")
-    assert r.status_code == 200 and "Turn your post into a trip" in words(r.text)
+    assert r.status_code == 200 and "Paste your post. It becomes a trip families can book." in words(r.text)
     sign_in(client)
     assert client.get("/for-creators").status_code == 200
 
@@ -45,7 +45,8 @@ def test_the_roster_at_creators_still_answers_404_in_production_until_the_first_
 
 
 def test_it_is_linked_from_the_header_the_landing_footer_and_the_signed_in_menu(client, mode):
-    assert 'href="/for-creators"' in re.search(r"<header.*?</header>", client.get("/community" if mode == "1" else "/privacy").text, re.S).group(0)
+    top = re.search(r'<div class="v2-top">.*?</nav>', client.get("/community").text, re.S).group(0)         # F-253: the shelf's top bar carries the three links
+    assert 'href="/for-creators"' in top and 'href="/community"' in top
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
     assert 'href="/for-creators"' in footer and "For creators" in footer
     sign_in(client)
@@ -65,7 +66,7 @@ def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, 
 
 def test_the_box_comes_first_then_the_example_the_promises_the_terms_and_the_questions(client, mode):
     html = client.get("/for-creators").text
-    order = [html.index(x) for x in ('id="fc-paste"', 'id="fc-example"', 'class="fc-promises', 'id="terms"', 'id="faq"')]
+    order = [html.index(x) for x in ('id="fc-paste"', 'id="fc-example"', 'class="fc-promises', 'id="terms"', 'id="faq"')]      # F-253: the landing's box first, then what it always had
     assert order == sorted(order)
 
 
@@ -73,8 +74,8 @@ def test_the_paste_box_posts_to_the_import(client, mode):
     html = client.get("/for-creators").text
     form = re.search(r'<form[^>]*id="fc-paste"[^>]*>', html).group(0)
     assert 'action="/creators/import"' in form and 'method="post"' in form
-    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>(?:<svg.*?</svg>)?Draft my trip<', html)
-    assert re.search(r'<button[^>]*value="manual"[^>]*>Write it myself<', html)
+    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>Make my book(?:<svg.*?</svg>)?<', html)
+    assert re.search(r'<button[^>]*value="manual"[^>]*>Or write it yourself<', html)
 
 
 def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, mode):

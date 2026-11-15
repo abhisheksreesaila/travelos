@@ -1,6 +1,6 @@
-"""F-235: For creators ("Golden hour") and Community trips ("Postcards") in a real browser at 390 and 1440, in light (the default, D-460) and dark, on and off the showcase: no sideways scroll,
-phone targets 48px, text 4.5:1 (tests_browser/look.py; gradients are skipped there, so the hero's own pairs are measured in tests/test_creator_pages.py), the page's arrival finishes
-on its own and reduced motion draws nothing animated. Set F235_SHOTS=1 to save docs/report/f235-*.png."""
+"""F-235, F-253: For creators and Community trips (the creator pages, design language v2) in a real browser at 390 and 1440, in light (the default, D-460) and dark, on and off the showcase: no
+sideways scroll, phone targets 48px and words 16px, text 4.5:1 (tests_browser/look.py; gradients are skipped there, so the paper's own pairs are measured in tests/test_creator_pages.py), the page's
+arrival finishes on its own and reduced motion draws nothing that moves. Set F235_SHOTS=1 to save docs/report/f235-*.png."""
 import os
 from pathlib import Path
 
@@ -65,7 +65,7 @@ def test_reduced_motion_draws_nothing_animated(browser, base_url, monkeypatch, n
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     ctx, page = open_page(browser, PHONE, "light", path, base_url)
     try:
-        moving = page.evaluate("""() => [...document.querySelectorAll('.fc *, .hub *')].filter(e => { const a = getComputedStyle(e).animationName; return a && a !== 'none'; }).map(e => e.className)""")
+        moving = page.evaluate("""() => [...document.querySelectorAll('.cv *')].filter(e => { const c = getComputedStyle(e); return c.animationName !== 'none' && parseFloat(c.animationDuration) > 0; }).map(e => e.className)""")
         assert moving == []
     finally:
         ctx.close()

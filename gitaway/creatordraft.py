@@ -27,7 +27,7 @@ from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
-from gitaway import ai, community, creators, hub, photos, publish as pub, safefetch, session as ses, showcase, stoplinks
+from gitaway import ai, community, creatorbook, creators, hub, importsource, photos, publish as pub, safefetch, session as ses, showcase, stoplinks
 from gitaway.hub import HubError
 from gitaway.importsource import Material
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop, Tag
@@ -43,6 +43,7 @@ MAX_DAYS, MAX_STOPS, MAX_TIPS, MAX_PICKS = 14, 12, 5, 2
 MAX_TITLE, MAX_NAME, MAX_PLACE, MAX_STOP, MAX_STOP_NOTE, MAX_TIP, MAX_NOTE, MAX_DAY_TITLE = 60, 40, 60, 80, 140, 140, 300, 60
 MAX_KEPT_TEXT = 20_000    # of a pasted text kept beside the editor, when there is no draft to fill it
 UNNAMED = "Unnamed stop"
+WORDS_KEPT = 80           # of the post's own sentences kept on the draft (F-253): the book quotes them, never a word of ours
 PLACES = hub.PLACES
 KICKER = {"blog": "From the blog", "youtube": "From the vlog", "instagram": "From Instagram"}
 BYLINE = {"blog": "Blog", "youtube": "YouTube", "instagram": "Instagram"}
@@ -316,7 +317,8 @@ def _source(m: Material) -> dict:
 
 
 def _base(m: Material, content, name) -> dict:
-    return {**content, "name": name, "source": _source(m), "images": list(m.images[:12]), "picks": [], "copies": {}, "cover": "", "notices": list(m.notices), "text": ""}
+    return {**content, "name": name, "source": _source(m), "images": list(m.images[:12]), "picks": [], "copies": {}, "cover": "", "notices": list(m.notices), "text": "",
+            "words": importsource.own_words(m.text, WORDS_KEPT)}
 
 
 def make(owner, family, m: Material, name="", job="") -> dict:
@@ -420,6 +422,47 @@ def apply(owner, d, form, action="save") -> dict:
     return _store(owner, new)
 
 
+_WORD_KEY = re.compile(r"title|d(\d{1,2})\.(?:(head)|s(\d{1,2}))")
+
+
+def word(owner, d, key, value) -> dict:
+    """Fix one word of the book in place (F-253), giving (the draft, the cleaned word): the trip's title (`title`), a day's heading (`d0.head`) or a stop's name (`d0.s1`, counted among the day's named stops, as the book draws them).
+    The same cleaning and checks as the editor's form; raises HubError (a sentence fit to show) and changes nothing when it is refused."""
+    m = _WORD_KEY.fullmatch(str(key or ""))
+    if not m:
+        raise HubError("That is not something to fix here.")
+    new = {**d, "days": [{**day, "stops": [dict(s) for s in day["stops"]]} for day in d["days"]]}
+    limit = MAX_TITLE if key == "title" else MAX_DAY_TITLE if m.group(2) else MAX_STOP
+    v = _plain(value, limit)
+    if not v:
+        raise HubError("It cannot be empty. Press Escape to keep what it said.")
+    try:
+        if key == "title":
+            new["title"] = v
+        elif m.group(2):
+            new["days"][int(m.group(1))]["title"] = v
+        else:
+            [x for x in new["days"][int(m.group(1))]["stops"] if x["name"]][int(m.group(3))]["name"] = v
+    except IndexError:
+        raise HubError("That is not in the book any more. Reload the page.") from None
+    _check_text(new)
+    return _store(owner, new), v
+
+
+def lead(owner, d) -> dict:
+    """Use the post's lead picture (its first) in the book's Before you go page: picked, copied and re-encoded as the editor does it, with no place or camera kept (the same limits).
+    Raises HubError when the post has none or it could not be copied."""
+    if not d.get("images"):
+        raise HubError("The post has no picture to use.")
+    if 0 in d["picks"]:
+        return d
+    picks = [0, *d["picks"]][:MAX_PICKS]
+    copies, kept = _photos(owner, d, picks)
+    if 0 not in kept:
+        raise HubError("GitAway could not copy the post's picture. You can still add your own pictures in the editor.")
+    return _store(owner, {**d, "copies": copies, "picks": kept, "cover": "0"})
+
+
 def _photos(owner, d, picks) -> tuple:
     """(copies, picks) after fetching the newly picked pictures from the post and re-encoding them; the ones un-picked lose their files. A picture that cannot be fetched
     or opened, or past the day's PICTURE_LIMIT, is left out (and the creator is told on the page by it being unticked)."""
@@ -494,10 +537,11 @@ def build(d, src, handle="", verified=True) -> Itinerary:
     booking sites' links stay), since nobody has checked yet that the site is theirs (F-194)."""
     place = PLACES.get(d["place"]) or d["place_name"]
     name = d["name"] or "a traveler"
-    days = []
+    days, words, used = [], d.get("words") or [], set()
     for n, day in enumerate(d["days"], start=1):
         stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "") if verified else stoplinks.clean(s.get("link", ""))) for s in day["stops"] if s["name"]]
-        days.append(Day(n, f"DAY {n}", day["title"] or (stops[0].title if stops else "Free day"), "", stops, collapsed=False, note=day["note"]))
+        days.append(Day(n, f"DAY {n}", day["title"] or (stops[0].title if stops else "Free day"), "", stops, collapsed=False, note=day["note"],
+                        quote=creatorbook.day_quote(words, [s.title for s in stops], used)))
     order = ([int(d["cover"])] if d["cover"] != "" else []) + [p for p in d["picks"] if str(p) != d["cover"]]
     shots = [d["copies"][str(n)] for n in order if str(n) in d["copies"]]
     pols = [Polaroid(src(f), f"A photo from {name.split()[0]}'s post", "") for f in shots[:2]]
@@ -511,7 +555,8 @@ def build(d, src, handle="", verified=True) -> Itinerary:
         lede=f"{len(days)} day{'s' if len(days) != 1 else ''} in {place}, from {name}'s own post.", days=days,
         tags=[Tag(hub.TAGS[k][0], hub.TAGS[k][1], hub.TAGS[k][2], (-3, 2, -1.5)[n % 3]) for n, k in enumerate(k for k in hub.TAGS if k in d["stickers"])],
         stats=[(f"{len(days)} day{'s' if len(days) != 1 else ''}", "from the post"), (f"{count} stop{'s' if count != 1 else ''}", "across the days")], source=source, polaroids=pols, route=place,
-        author=name, real=True, handle=handle, plan_to=d["place"] if d["place"] in PLACES else "", plan_days=len(days), tips=list(d["tips"]))
+        author=name, real=True, handle=handle, plan_to=d["place"] if d["place"] in PLACES else "", plan_days=len(days), tips=list(d["tips"]),
+        quote=next((w for w in words if w not in used), ""))
 
 
 def private_src(did):

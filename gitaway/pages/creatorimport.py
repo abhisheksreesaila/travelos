@@ -16,17 +16,17 @@ import logging
 import re
 from urllib.parse import quote, urlsplit
 
-from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, Img, Input, Label, Legend, Li, Link, Ol, Option, P, Script, Section, Select, Span, Summary, Textarea
+from fasthtml.common import A, Button, Details, Div, Fieldset, Form, H1, H2, I, Img, Input, Label, Legend, Link, Option, P, Script, Section, Select, Span, Summary, Textarea
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+from starlette.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
-from gitaway import ai, community, creatordraft as cd, importsource, session as ses, stoplinks
+from gitaway import ai, community, creatorbook, creatordraft as cd, importsource, session as ses, stoplinks
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, _icon, itinerary_body
 from gitaway.layout import page
-from gitaway.pages import creatordrafts
+from gitaway.pages import creatordrafts, studio
 from gitaway import hub
 
 PATH = "/creators/import"
@@ -61,26 +61,13 @@ def paste_page(session, link="", text="", error="", status=200):
         P(error, role="alert", cls="ci-error", id="ci-error") if error else "",
         Div(Button(icon("star", 20, 2.4), "Draft my trip", type="submit", name="do", value="draft", cls="btn btn-primary", id="ci-draft"),
             Button("Write it myself", type="submit", name="do", value="manual", cls="btn", id="ci-manual"), cls="ci-actions"),
-        action=PATH, method="post", id="ci-form", cls="ci-form card")
-    stage = Section(
-        Div(Div(Img(alt="", cls="cm-img", referrerpolicy="no-referrer", hidden=True), Span(icon("play", 36, 2), cls="cm-ph", aria_hidden="true"), cls="cm-photo"),
-            Div(Span("", cls="cm-site", id="cm-site"), H2("Opening your post…", id="cm-title", cls="cm-title"), P("", cls="cm-by", id="cm-by"), cls="cm-meta"), cls="cm-post"),
-        Ol(*[Li(Span(icon("check", 16, 3), cls="cm-tick", aria_hidden="true"), label, cls="cm-step", data_step=str(i)) for i, label in enumerate(("Opening your post", "Finding the days and stops", "Laying out your trip"))], cls="cm-steps", id="cm-steps"),
-        P(Span(cls="cm-caret", aria_hidden="true"), Span("Opening your post", id="cm-log"), cls="cm-log", aria_hidden="true"),
-        P(Span("From your post", cls="cm-say-k"), Span("", cls="cm-word", id="cm-word"), cls="cm-say", id="cm-say", aria_hidden="true"),
-        Ol(cls="cm-days", id="cm-days"),
-        Div(Div(Span(icon("check", 22, 2.6), "Your trip is ready", cls="pb-chip pb-chip-live"), P("", cls="cm-count", id="cm-count"), cls="cm-ready"),
-            Form(Label(Input(type="checkbox", name="own", value="1", id="cm-own", required=True, cls="ci-own"), Span("This is my post", cls="ci-own-t"), cls="ci-own-l"),
-                 Input(type="hidden", name="do", value="publish"),
-                 Button(icon("check", 20, 2.6), "Publish", type="submit", id="cm-publish", cls="btn btn-primary"),
-                 A("Preview what strangers see", href=PATH, id="cm-preview", cls="btn"), A("Edit the draft", href=PATH, id="cm-edit", cls="btn"),
-                 action=PATH, method="post", id="cm-form", cls="cm-form"),
-            P("Nothing is public until you tick the box and publish.", cls="ci-hint"), cls="cm-done", id="cm-done", hidden=True),
-        P("", role="status", cls="sr-only", id="cm-live"),
-        cls="cm", id="ci-magic", hidden=True, aria_label="Making your trip")
-    body = Section(Div(H1("Turn your post into a trip"), P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
-                   form, stage, creatordrafts.bulk_card() if mode != "manual" else "", P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), cls="ci ga-wrap")
-    return FtResponse(page("Turn your post into a trip", body, current="/creators", head=HEAD), status_code=status)
+        action=PATH, method="post", id="ci-form", cls="ci-form")
+    body = Div(Section(Div(Span(I(), "For travel creators", cls="kicker"), H1("Turn your post into a trip", cls="disp ci-h"),
+                            P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
+                       form, creatordrafts.bulk_card() if mode != "manual" else "",
+                       P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), id="landing", cls="ci ga-wrap"),
+               studio.stage(), studio.foot(), cls="cv-paste")
+    return FtResponse(page("Turn your post into a trip", body, current="/for-creators", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv"), status_code=status)
 
 
 def _steps(session, link, text, how):
@@ -128,10 +115,12 @@ def _line(**event) -> str:
 def _told(step, value) -> str:
     if step == "read":
         return _line(event="read", title=value.title, by=value.by, image=(value.images[0] if value.images else value.thumb) or "", site=urlsplit(value.url).hostname or "",
-                     kind=value.kind, chars=len(value.text), words=importsource.own_words(value.text))
+                     kind=value.kind, chars=len(value.text), words=importsource.own_words(value.text), robots=value.kind == "blog" and bool(value.url) and cd.mode() == "ai")
     d = value
+    heard = iter(creatorbook.said(d.get("words") or [], [s["name"] for day in d["days"] for s in day["stops"]]))      # the post's own sentence that names each stop, "" when it names none
     return _line(event="draft", id=d["id"], title=d["title"], place=d["place_name"] or cd.PLACES.get(d["place"], ""), editor=f"{PATH}/{d['id']}", preview=f"{PATH}/{d['id']}/preview",
-                 days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"]} for s in day["stops"]]} for day in d["days"]], tips=d["tips"], unsure=cd.UNNAMED)
+                 book=f"{PATH}/{d['id']}/book", days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"], "kind": creatorbook.kind_of(s["name"]), "said": next(heard)} for s in day["stops"]]} for day in d["days"]],
+                 tips=d["tips"], unsure=cd.UNNAMED)
 
 
 def _stream(session, link, text, how):
@@ -256,6 +245,32 @@ def preview_page(session, d, error=""):
     return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme)
 
 
+async def _book_act(session, me, d, do, f):
+    """What the book's script asks of the draft: fix a word, add the post's picture, publish. JSON {ok, ...} or {ok: false, error: a sentence fit to show}."""
+    def no(error, status=422):
+        return JSONResponse({"ok": False, "error": error}, status_code=status, headers={"Cache-Control": "no-store"})
+    try:
+        if do == "word":
+            _, value = await run_in_threadpool(cd.word, me.id, d, str(f.get("key") or ""), str(f.get("value") or ""))
+            return JSONResponse({"ok": True, "value": value}, headers={"Cache-Control": "no-store"})
+        if do == "lead":
+            await run_in_threadpool(cd.lead, me.id, d)
+            return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
+        row = await run_in_threadpool(cd.publish, session, d, f.get("own") == "1")
+    except HubError as e:
+        return no(str(e), 409 if do == "publish" and f.get("own") == "1" else 422)
+    return JSONResponse(await run_in_threadpool(_published, me, d, row), headers={"Cache-Control": "no-store"})
+
+
+def _published(me, d, row) -> dict:
+    """What the book's script shows once a draft is published: its link, the blog badge's code, the stamp, and whether it is listed or waits for the captain (D-189)."""
+    from gitaway import blogbutton
+    from gitaway.pages import creatorbook
+    state = community.review_state(d["slug"])
+    return {"ok": True, "slug": d["slug"], "link": f"{blogbutton.base_url()}/trips/{d['slug']}/book", "code": blogbutton.html_snippet(d["slug"], (community.creator_of(me.id) or {}).get("handle", "")),
+            "stamp": creatorbook.stamp_of(row["updated_at"]), "listed": state != "pending", "state": state, "host": cd.domain_of(d)}
+
+
 def register(app):
     @app.get(PATH)
     def paste(session, link: str = ""):
@@ -303,6 +318,8 @@ def register(app):
             return _gone()
         f = await request.form()
         do = str(f.get("do") or "save")
+        if request.headers.get("x-book") == "1" and do in ("word", "lead", "publish"):      # the book (F-253): the same rules, answered as JSON for the page's own script
+            return await _book_act(session, me, d, do, f)
         if do == "unpublish":
             await run_in_threadpool(cd.unpublish, session, d)
             return RedirectResponse(f"{PATH}/{token}", status_code=303)

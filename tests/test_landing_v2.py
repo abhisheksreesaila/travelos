@@ -32,22 +32,23 @@ def test_landing_header_is_the_sites_way_in(client):
 
 
 def test_other_pages_keep_their_header_nav(client):
-    for path in ["/community", "/creators"]:      # F-200: sign-in is a full-screen page with the brand and Cancel only
-        header = _tag(_get(client, path), "header", "ga-header")
-        assert "/community" in header and "/for-creators" in header and 'href="/signin"' in header, path      # signed out, Plan a trip signs in first, and / then decides (D-458, D-461)
+    header = _tag(_get(client, "/creators"), "header", "ga-header")      # F-200: sign-in is a full-screen page with the brand and Cancel only
+    assert "/community" in header and "/for-creators" in header and 'href="/signin"' in header      # signed out, Plan a trip signs in first, and / then decides (D-458, D-461)
+    for path in ["/community", "/for-creators"]:       # F-253: the creator pages wear the v2 top bar, which carries the same way in
+        top = re.search(r'<div class="v2-top">.*?(?=<main)', _get(client, path), re.S).group(0)
+        assert _hrefs(top)[1:4] == ["/for-creators", "/community", "/signin"] and _hrefs(top)[4].startswith("/signin?next="), path      # Plan a trip signs in first; so does Sign in
 
 
 def test_footer_carries_the_links_that_left_the_header(client):
     footer = _tag(client.get("/").text, "footer", "cv-foot")      # the signed-out landing is the cover (F-206)
     assert [h for h in _hrefs(footer) if h.startswith("/")] == ["/community", "/for-creators", "/signin", "/privacy", "/terms"]   # (and the map data's credit, tests/test_cover.py)
-    other = _tag(_get(client, "/community"), "footer", "ga-footer")
-    assert "/creators" not in other  # only the landing gets the extra links
+    other = _tag(_get(client, "/community"), "footer", "cb-foot")      # F-253: the creator pages' foot
+    assert _hrefs(other) == ["/privacy", "/terms"]
 
 
 def test_signed_in_visitor_sees_their_account_and_no_sign_in_link(client):
     sign_in(client)
     h = _get(client, "/community")
-    header = _tag(h, "header", "ga-header")
-    assert "ga-account" in header and 'href="/family"' in header and "Sign out" in header and 'href="/signin' not in header
-    footer = _tag(h, "footer", "ga-footer")
-    assert _hrefs(footer) == ["/privacy", "/terms"]
+    top = re.search(r'<div class="v2-top">.*?(?=<main)', h, re.S).group(0)      # F-253: the v2 top bar's account is the avatar to /family
+    assert 'href="/family"' in top and 'href="/signin' not in top
+    assert _hrefs(_tag(h, "footer", "cb-foot")) == ["/privacy", "/terms"]

@@ -248,7 +248,7 @@ def test_while_squares_wait_a_sourced_fact_floats_in_a_small_note_not_a_band(rea
 
 
 def nav_plan(html):
-    return re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S).group(0)
+    return (re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S) or re.search(r'<nav [^>]*class="v2-nav"[^>]*>.*?</nav>', html, re.S)).group(0)      # F-253: the creator pages' v2 bar
 
 
 def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_not(client, monkeypatch):
