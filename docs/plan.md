@@ -1535,3 +1535,9 @@ Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on t
 - [ ] 2 or 3 options, phone and laptop, of the opened square: the hotel (photos, room, rating, address), the flight (times, airline, stops; switch to another flight or room right there), the weather for those nights, the total; fun, in the matrix's language
 - [ ] the checkout: modern, short, in one flow (guest, payment as LiteAPI's best case, confirm), with the confirmation showing the hotel's contact and the flight's record locator
 - [ ] a compare page with a pick per option and device; the founder picks before F-240 builds it
+
+## F-245 The matrix is the cover's card [review]
+Founder, 2026-11-14: "The cover page is very nicely done, especially the first matrix. That's how the matrix has to be designed: like a card, very simply put, with some translucency; minimalistic yet denser information. Click, check the hotels out, get the information, boom, done."
+- [x] the whole matrix sits in one card like the cover's frame: sentence, lanes with art and names, start-day columns, big totals, one lit square (the find or the opened one), the days' sky quiet
+- [x] translucency allowed for this card (D-590), every word 4.5:1 in light and dark (pixel test)
+- [x] nothing F-236..F-238 shows is lost; phone and laptop designed together; screenshots in docs/report/f245-*.png
