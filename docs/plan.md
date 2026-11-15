@@ -1576,3 +1576,27 @@ Founder, 2026-11-14: "The cover page is very nicely done, especially the first m
 - [x] the whole matrix sits in one card like the cover's frame: sentence, lanes with art and names, start-day columns, big totals, one lit square (the find or the opened one), the days' sky quiet
 - [x] translucency allowed for this card (D-590), every word 4.5:1 in light and dark (pixel test)
 - [x] nothing F-236..F-238 shows is lost; phone and laptop designed together; screenshots in docs/report/f245-*.png
+
+## The v2 build (founder approved booking v2's look, 2026-11-14; planning v2 and creators v2 designed to match)
+Build to the prototypes in docs/design/booking-v2, planning-v2 and creators-v2: the sky gradient, restrained frosted-glass cards, Newsreader with Inter, liquid springs. Real data wherever the app has it (LiteAPI squares, NOAA/MET weather, OSRM drives); a widget without a real source is left out in production, never invented (sample only on the showcase). Old pages go once their v2 replacement is live.
+
+## F-250 Design system v2 and booking's first screen [todo]
+- [ ] `assets/css/v2.css`: the prototype's tokens (sky, glass, ink, kind colours, Newsreader + Inter, radii, springs) in light and dark, plus its base components; pages opt in with one class
+- [ ] `/plan/ask` becomes the prototype's landing: the sentence is the search, every part a tappable word with its picker (who, from, where, day, give or take, nights, budget, interests), no free typing; read by tripsentence; interests kept (gitaway/interests.py)
+- [ ] Search turns the same page into the results: the sentence glides to the top, the skeleton plays, then /plan/matrix's real squares fill in (tiles, marks, band, weather) in the prototype's matrix look; changing a word re-runs it
+- [ ] phone and laptop, light and dark, 4.5:1, 48px targets
+
+## F-251 Booking's widgets and drawer [todo]
+Needs: F-250
+- [ ] the frosted widget rail beside the matrix: weather (weather.py), drives to the airport and between places (airportdrive/OSRM), a cheaper airport where places.NEARBY has one, food that fits the family's interests and top places only from sourced data; others hidden off the showcase
+- [ ] a square opens the prototype's drawer: hotel gallery and rooms from LiteAPI (sample on the showcase), flights, focus one to shrink the other, switching in place (F-242's index rules stand)
+- [ ] Book my trip: the prototype's stepped questions, review, spinning steps, confirmation pass and Plan this trip, over F-233's sandbox booking (its rules stand)
+
+## F-252 Planning v2 [todo]
+Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) with bookings placed, quick add, drag and resize, the help rail (weather nudges only from a real forecast), planning together (members, threads, hearts), save and share. Replaces the cockpit and the day pages.
+
+## F-253 Creators v2 [todo]
+Needs: F-250. Build docs/design/creators-v2 over the existing magic import (F-235): the landing, the live import, the book with page turns, edit and publish, the community shelf (real published books only off the showcase).
+
+## F-254 Subtract the old app [todo]
+Needs: F-251, F-252, F-253. Remove the pages the v2 journey replaced (the /plan lanes, /plan/grid, the old checkout, Where to?, forks, the cockpit, day pages, canvas, add screens, partner log …), redirecting their addresses into the journey; Direction A's tokens retire.
