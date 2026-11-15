@@ -62,19 +62,26 @@ def _form(d):
 
 # ---- the hub ------------------------------------------------------------------------------------------------------------------------
 
-def test_the_hub_lists_the_creator_samples_labelled_and_filters_only_by_what_a_guide_knows(client):
+def titles(html):
+    return re.findall(r"<h3>(.*?)</h3>", html)
+
+
+def test_the_hub_lists_the_samples_labelled_and_filters_only_by_what_a_guide_knows(client):
     html = client.get("/guides").text
-    assert [w for w in re.findall(r'<h3>(.*?)</h3>', html)] == ["Sun, tacos &amp; tide pools", "Dog-friendly Big Sur drive"]
-    assert html.count(">Sample<") == 2
+    assert titles(html) == ["Sun, tacos &amp; tide pools", "LA for two, slow mornings", "Dog-friendly Big Sur drive", "San Diego on a budget"]
+    assert html.count(">Sample<") == 4
     for label in ("Families", "Couples", "With a pet", "A weekend", "3 to 4 days", "A week or more"):
         assert f">{label}<" in html
     for label in ("Budget", "Season", "Winter", "Summer"):      # a guide has no season or budget in its data, so the hub has no such filter
         assert f">{label}<" not in html
-    assert [w for w in re.findall(r'<h3>(.*?)</h3>', client.get("/guides?who=pet").text)] == ["Sun, tacos &amp; tide pools", "Dog-friendly Big Sur drive"]
-    assert [w for w in re.findall(r'<h3>(.*?)</h3>', client.get("/guides?who=couple").text)] == []
-    assert [w for w in re.findall(r'<h3>(.*?)</h3>', client.get("/guides?len=short").text)] == ["Dog-friendly Big Sur drive"]      # 3 days
-    assert [w for w in re.findall(r'<h3>(.*?)</h3>', client.get("/guides?q=big+sur").text)] == ["Dog-friendly Big Sur drive"]
+    assert titles(client.get("/guides?who=pet").text) == ["Sun, tacos &amp; tide pools", "Dog-friendly Big Sur drive"]
+    assert titles(client.get("/guides?who=couple").text) == ["LA for two, slow mornings"]
+    assert titles(client.get("/guides?len=short").text) == ["LA for two, slow mornings", "Dog-friendly Big Sur drive", "San Diego on a budget"]      # 3 and 4 days
+    assert titles(client.get("/guides?len=week").text) == ["Sun, tacos &amp; tide pools"]
+    assert titles(client.get("/guides?who=pet&len=short").text) == ["Dog-friendly Big Sur drive"]
+    assert titles(client.get("/guides?q=big+sur").text) == ["Dog-friendly Big Sur drive"]
     assert "No guides match that" in client.get("/guides?q=atlantis").text
+    assert "Be the first to share one" in html and "These are sample guides" in html      # until a real guide is published
 
 
 def test_the_hub_has_the_search_with_autocomplete_and_make_a_guide_with_two_ways(client):
@@ -114,7 +121,7 @@ def test_the_guide_is_the_run_sheet_of_the_posts_own_words(lisbon):
     assert publish(client, d)["ok"]
     html = stranger(client).get(f"/trips/{d['slug']}").text
     assert 'id="gpage"' in html and 'data-mode="reader"' in html
-    assert [t for t in re.findall(r'<small>(Days|Suits|Tips|From)</small><span class="gl-v">(.*?)</span>', html)] == [("Days", "3 days"), ("Tips", "4 tips"), ("From", "theplanetd.com")]
+    assert [t for t in re.findall(r'<small>(Days|Suits|Tips|From[^<]*)</small><span class="gl-v">(.*?)</span>', html)] == [("Days", "3 days"), ("Tips", "4 tips"), ("From the blog", "theplanetd.com")]
     assert re.findall(r'<span class="dn">(Day \d)</span>', html) == ["Day 1", "Day 2", "Day 3"]      # the sticky day strip
     first = re.search(r'<li [^>]*id="g-d0s0"[^>]*>.*?</li>', html, re.S).group(0)
     assert "Belem Tower" in first and f'<p class="g-why">{BELEM}</p>' in unescape(first) and ">Tip<" in first
@@ -136,7 +143,7 @@ def test_a_creators_link_on_a_stop_is_labelled_as_theirs_and_adds_nothing_to_the
     assert publish(client, d)["ok"]
     html = client.get(f"/trips/{d['slug']}").text
     assert re.search(r"<a [^>]*class=\"bdg lnk\"[^>]*>(?:<svg.*?</svg>)?The creator's link</a>", html, re.S)      # nobody has vouched for the creator yet (D-189): the byline is the site, so it is "the creator's"
-    assert 'rel="noopener noreferrer sponsored"' in html and "This is the creator's own link. GitAway adds nothing to the price." in html
+    assert 'rel="sponsored noopener"' in html and "This is the creator's own link. GitAway adds nothing to the price." in html
     assert 'href="https://www.viator.com/tours/Lisbon/Belem-Tower/d538-1"' in html
 
 

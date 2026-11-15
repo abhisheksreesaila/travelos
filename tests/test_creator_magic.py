@@ -58,7 +58,7 @@ def test_the_draft_is_the_stored_one_and_nothing_is_public(me, lisbon):
     assert draft["editor"] == f"/creators/import/{draft['id']}" and draft["preview"] == draft["editor"] + "/preview"
     page = me.get(draft["editor"]).text
     assert "Pastéis de Belém" in page and "Draft: nobody can see this yet" in page
-    assert me.get("/community").status_code == 200 and draft["id"] not in me.get("/community").text
+    assert me.get("/guides").status_code == 200 and draft["id"] not in me.get("/guides").text.replace(f"/creators/import/{draft['id']}/guide", "")      # only the person's own list links their draft
 
 
 def test_the_words_it_shows_while_waiting_are_the_posts_own(me, lisbon):

@@ -33,8 +33,8 @@ def new(client):
 def test_share_welcomes_a_new_family_with_the_three_ways_in(new):      # F-231: Where to? drew this welcome until it was deleted; /share and /forks still do
     w = welcome_of(new.get("/share").text)
     assert all(p in w for p in PATHS)
-    assert {"/plan/ask", "/trips/import", "/community"} <= links(w)
-    assert new.get("/trips/import").status_code == 200 and new.get("/community").status_code == 200
+    assert {"/plan/ask", "/trips/import", "/guides"} <= links(w)
+    assert new.get("/trips/import").status_code == 200 and new.get("/guides").status_code == 200
 
 
 def test_there_is_no_welcome_for_signed_out_visitors_or_families_with_a_trip(client):
@@ -52,14 +52,14 @@ def test_the_old_calendar_address_sends_a_new_family_to_the_matrix_instead_of_a_
 
 def test_the_forks_page_has_next_steps_on_both_sides(new):
     html = new.get("/forks").text
-    assert all(p in html for p in ("Plan a trip", "Import a trip you booked")) and "/community" in links(html)
+    assert all(p in html for p in ("Plan a trip", "Import a trip you booked")) and "/guides" in links(html)
     assert "Nothing forked or saved yet" in html
 
 
 def test_the_forks_page_of_a_family_with_a_trip_but_no_forks_still_points_on(client):
     book(client)
     html = client.get("/forks").text
-    assert "Nothing forked or saved yet" in html and "/community" in links(html)
+    assert "Nothing forked or saved yet" in html and "/guides" in links(html)
 
 
 def test_family_with_only_the_owner_invites_someone(new):
@@ -76,7 +76,7 @@ def test_family_with_a_second_person_no_longer_asks(client):
 def test_trip_details_with_no_trip_points_to_the_ways_in(new):
     r = new.get("/trip/details")
     assert r.status_code == 404
-    assert {"/trips/import", "/plan/ask", "/community"} <= links(r.text)
+    assert {"/trips/import", "/plan/ask", "/guides"} <= links(r.text)
 
 
 def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
@@ -87,12 +87,12 @@ def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
     assert "/trips/switch" not in pop  # nothing to switch to yet
 
 
-def test_the_community_page_invites_the_first_share_until_someone_shares(client):
-    html = client.get("/community").text
-    assert "Be the first to share one" in html and "These are sample books" in html
+def test_the_guides_page_invites_the_first_share_until_someone_shares(client):
+    html = client.get("/guides").text
+    assert "Be the first to share one" in html and "These are sample guides" in html
     book(client)
     share(client)
-    assert "Be the first to share one" not in client.get("/community").text
+    assert "Be the first to share one" not in client.get("/guides").text
 
 
 def test_every_first_screen_of_a_new_family_has_a_way_forward(new):

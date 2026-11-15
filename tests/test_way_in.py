@@ -229,7 +229,7 @@ def test_a_stale_pay_link_cannot_book_the_past_and_opens_the_matrix_with_what_is
 
 
 def test_the_pages_stylesheets_still_load_tokens_then_base_then_page(client):
-    h = client.get("/trips/sun-tacos-and-tide-pools").text
+    h = client.get("/trips/la-for-two-slow-mornings").text      # F-262: a creator's trip is a guide (guides.css); this one keeps its trip page
     idx = [h.index(f"/assets/css/{n}") for n in ("tokens.css", "base.css", "itinerary.css")]
     assert idx == sorted(idx)
 

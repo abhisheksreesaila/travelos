@@ -10,7 +10,7 @@ from starlette.testclient import TestClient
 from gitaway import auth, session as ses
 from tests.test_signin import EMAILS, session_data, sign_in, stored_booking, tid
 
-PUBLIC = ["/", "/community", "/plan", "/plan/matrix", "/plan/ask", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
+PUBLIC = ["/", "/guides", "/plan", "/plan/matrix", "/plan/ask", "/creators", "/signin", "/trips/sun-tacos-and-tide-pools"]
 
 
 def memberships(user_id):

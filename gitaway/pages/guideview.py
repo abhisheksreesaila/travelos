@@ -13,6 +13,7 @@ from fasthtml.common import A, Aside, Blockquote, Button, Div, H1, H2, H3, I, Im
 
 from gitaway import guide as gd
 from gitaway.icons import icon
+from gitaway.itinerary_view import _from_gitaway
 from gitaway.pages import bookview
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/cv2.css"), Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/guides.css"),
@@ -25,8 +26,11 @@ def kt(kind: str) -> Span:
     return Span(bookview.ico(KIND_ICON[kind]), cls=f"kt{' dark' if kind == 'ride' else ''}", style=f"--k:var(--bk-{kind})", aria_hidden="true")
 
 
-def tile(t: gd.Tile) -> Div:
-    return Div(icon(t.icon, 22, 2), Small(t.label), Span(t.value, cls="gl-v"), Span(t.sub, cls="gl-s") if t.sub else "", cls="gl")
+def tile(t: gd.Tile):
+    box = Div(icon(t.icon, 22, 2), Small(t.label), Span(t.value, cls="gl-v"), Span(t.by, cls="src-by") if t.by else "", Span(t.sub, cls="gl-s") if t.sub else "", cls="gl")
+    if not t.href:
+        return box
+    return A(box, href=_from_gitaway(t.href), rel="noopener", referrerpolicy="origin", target="_blank", cls="src-link")      # the origin, not the page: the creator sees GitAway traffic (F-196)
 
 
 def maps_href(stop: gd.GStop, place: str) -> str:
@@ -42,14 +46,14 @@ def details(g: gd.Guide, s: gd.GStop) -> Div:
         Div(*[f for f in facts if f], cls="g-facts") if any(facts) else "",
         Div(Span(icon("spark", 18, 2), cls="g-ti"), Small(f"{g.Poss} tip"), P(s.tip), cls="g-tipbox") if s.tip else "",
         Div(icon("pin", 20, 2), Div(Small("Where"), Span(f"{s.name}, {g.place}")), A("Maps", href=maps_href(s, g.place), target="_blank", rel="noopener noreferrer", cls="g-maps"), cls="g-where"),
-        Div(Small(f"{g.Poss} link"), A(bookview.ico("link"), f"{g.Poss} link", Span(s.link_host, cls="g-host") if s.link_host else "", href=s.link, target="_blank", rel="noopener noreferrer sponsored", cls="g-linkrow"),
+        Div(Small(f"{g.Poss} link"), A(bookview.ico("link"), f"{g.Poss} link", Span(s.link_host, cls="g-host") if s.link_host else "", href=s.link, target="_blank", rel="sponsored noopener", cls="g-linkrow"),
             P("This is the creator's own link. GitAway adds nothing to the price.", cls="g-fine"), cls="g-link") if s.link else "",
         cls="g-more")
 
 
 def stop_li(g: gd.Guide, s: gd.GStop, last: bool, owner: bool, add: str) -> Li:
     badges = [Span(s.cost, cls="bdg cost") if s.cost else "", Span(icon("spark", 14, 2.2), "Tip", cls="bdg tip") if s.tip else "",
-              A(bookview.ico("link"), f"{g.Poss} link", href=s.link, target="_blank", rel="noopener noreferrer sponsored", cls="bdg lnk", aria_label=f"{g.Poss} link for {s.name}, opens their site") if s.link else ""]
+              A(bookview.ico("link"), f"{g.Poss} link", href=s.link, target="_blank", rel="sponsored noopener", cls="bdg lnk", aria_label=f"{g.Poss} link for {s.name}, opens their site") if s.link else ""]
     name = Span(s.name, cls="ed", data_k=f"d{s.day - 1}.s{s.n - 1}", title="Tap to fix the name") if owner else Span(s.name, cls="g-nm")
     cover = "" if owner else Button(Span(f"Open {s.name}", cls="v2-sr"), type="button", cls="g-open g-cover", aria_expanded="false", aria_controls="g-panel", data_k=s.key)      # the whole card is the press
     sub = " · ".join(x for x in (s.label, f"stop {s.n} of {s.of}") if x)
@@ -131,6 +135,20 @@ def share_template() -> Template:
                         Div(A(bookview.ico("shelf"), "See it in Guides", href="/guides", cls="go"), cls="sh-foot"), P("", id="shFine", cls="sh-fine")), id="t-share")
 
 
+def trust(g: gd.Guide, st: dict) -> Div:
+    """What is true about the money and the words, in plain sentences (F-184, F-185, F-196): who earns from Plan this trip (affiliate.earning_line, the one place those words live), that a stop's link is the
+    creator's own and may earn them a commission and that GitAway adds nothing to its price, and Report this trip for a guide that is live."""
+    from gitaway import affiliate      # here: affiliate reads the community database
+    if g.sample:
+        return Div(P("A sample guide: the people and prices in it are made up so you can see how it reads.", cls="g-disclose"), cls="g-trust")
+    own = f"{g.author}'s" if g.author else g.poss
+    has_links = any(s.link for d in g.days for s in d.stops)
+    return Div(P(f"The words, the times and the links are {g.poss} own. GitAway adds nothing to the price of their links.", cls="g-disclose"),
+               P(affiliate.earning_line(g.author, False, bool(st.get("plannable", True))), id="who-earns", cls="g-disclose"),
+               P(f"Links on a stop are {own} own. They may earn them a commission.", id="own-links", cls="g-disclose") if has_links else "",
+               A(icon("flag", 18, 2.2), "Report this guide", href=f"/report?trip={g.slug}", cls="tonal", id="report-this") if st.get("report") else "", cls="g-trust")
+
+
 def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     """The page's content. mode "reader" (Plan this trip, Add to my plan, Save) or "owner" (their draft or live guide: fix a word in place, Edit details, Publish)."""
     st = state or {}
@@ -138,12 +156,12 @@ def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     add = st.get("add", "no") if not owner else "no"
     sample = Span("Sample guide", Span(": made up so you can see the guides", cls="long2"), cls="smp") if g.sample else ""
     kick = Div(Span(f"{g.place} · Guide", cls="g-kick"), sample, cls="g-kr")
-    by = Div(Span(g.by[:1].upper() or "?", cls="g-av", aria_hidden="true"), Span(g.by, cls="g-by"), Span(g.host, cls="g-host2") if g.host and g.host != g.by else "", Span(f"Published {g.stamped}", cls="g-host2") if g.stamped else "", cls="g-byline")
+    by = Div(Span((g.author or g.by)[:1].upper() or "?", cls="g-av", aria_hidden="true"), (A(f"By {g.author or g.by}", href=f"/creators/{g.handle}", cls="by g-by") if g.handle else Span(f"By {g.author or g.by}", cls="g-by")), Span(f"Published {g.stamped}", cls="g-host2") if g.stamped else "", cls="g-byline")
     head = Div(art(g), Div(kick, H1(Span(g.title, cls="ed", data_k="title") if owner else g.title), by, cls="g-hmain"), _actions(g, mode, {**st, "add": add}), cls="g-head")
     back = A(icon("chev-left", 18, 2.4), "Guides", href="/guides", cls="g-back")
     privates = (Div(icon("lock", 18, 2.2), Div(Small("Kept private, never published"), Span(" · ".join(f"{p[1]}" for p in g.private[:6]))), cls="g-private", role="note") if owner and g.private else "")
     days = [day_section(g, d, owner, add) for d in g.days]
-    disclose = P(f"The words, the times and the links are {g.poss} own. GitAway adds nothing to the price of their links." if not g.sample else "A sample guide: the people and prices in it are made up so you can see how it reads.", cls="g-disclose")
+    disclose = trust(g, st)
     main = Div(back, head, owner_bar(g, st) if owner else "", privates, Div(*[tile(t) for t in g.tiles], cls="g-tiles"), strip(g), *days, disclose, cls="g-main")
     return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights), data_title=g.title,
                     data_days=str(len(g.days)), data_stops=str(g.stops), data_by=g.by, data_host=g.host, data_live="1" if st.get("live") else "0", data_first=g.first, data_post=st.get("post", ""), data_sample="1" if g.sample else "0", data_signed="1" if st.get("signed") else "0"),

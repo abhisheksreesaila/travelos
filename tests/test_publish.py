@@ -116,14 +116,14 @@ def test_plan_this_trip_has_dates_ahead_for_as_many_days_as_the_trip(family):
     assert q["to"] == "la" and q["a"] == "2" and d.weekday() == 4 and (d - date(2026, 9, 30)).days >= 45 and (r - d).days == 4
 
 
-def test_the_public_page_is_on_the_creators_profile_and_community_trips(family):
+def test_the_public_page_is_on_the_creators_profile_and_guides(family):
     client, pid = family
     row = go_live(client, pid)
     s = stranger(client)
     profile = s.get("/creators/ari-rivera")
-    assert profile.status_code == 200 and "Ari Rivera" in profile.text and f'href="/trips/{row["slug"]}/book"' in profile.text
-    hub = s.get("/community").text
-    assert "Our Disneyland week" in hub and f'href="/trips/{row["slug"]}/book"' in hub
+    assert profile.status_code == 200 and "Ari Rivera" in profile.text and f'href="/trips/{row["slug"]}"' in profile.text
+    hub = s.get("/guides").text
+    assert "Our Disneyland week" in hub and f'href="/trips/{row["slug"]}"' in hub
     assert "Ari Rivera" in s.get("/creators").text
 
 
@@ -235,7 +235,7 @@ def public_everything(client, row):
     """Every place a stranger can read it, and what is stored: the page, the hub card, the profile, the snapshot row, and every public photo's bytes."""
     s = stranger(client)
     page = s.get(f"/trips/{row['slug']}").text
-    hub = s.get("/community").text
+    hub = s.get("/guides").text
     prof = s.get("/creators/ari-rivera").text
     stored = repr({k: v for k, v in community.get(row["slug"]).items() if k not in ("created_at", "updated_at")})   # when it was published is not a date of the trip
     text = unescape(re.sub(r'/(?:plan|go/search-todo)\?[^"]*', "", main_of(page) + main_of(hub) + main_of(prof)) + stored)   # "Plan this trip" and the Tickets card (F-195) carry dates ahead, not the trip's own
@@ -271,7 +271,7 @@ def test_the_stored_snapshot_has_only_the_allowed_fields(family):
     assert set(snap) == {"slug", "title", "headline", "accent", "place", "lede", "days", "tags", "stats", "forks", "source", "polaroids", "weather", "route", "author", "theme",
                          "tips", "real", "handle", "plan_to", "plan_days", "quote"}
     assert set(snap["days"][1]) == {"n", "date", "title", "weather", "stops", "collapsed", "note", "photos", "quote"}
-    assert set(snap["days"][0]["stops"][0]) == {"time", "title", "kind", "bubble", "booked", "tag", "tag_color", "meta", "note", "photo", "photo_alt", "link"}
+    assert set(snap["days"][0]["stops"][0]) == {"time", "title", "kind", "bubble", "booked", "tag", "tag_color", "meta", "note", "photo", "photo_alt", "link", "said"}
     assert [s["link"] for d in snap["days"] for s in d["stops"]] == [""] * sum(len(d["stops"]) for d in snap["days"])      # a family's trip has no links: F-196's link field is a creator's alone
     assert set(row["meta"]) == {"handle", "name", "place"} and snap["source"] is None
     assert "Priya" not in repr(row) and "Zelda" not in repr(row)
@@ -347,9 +347,9 @@ def test_with_the_showcase_off_nothing_is_public_until_a_real_trip_is_published(
     client, pid = family
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     s = stranger(client)
-    for path in ("/discover", "/creators", "/creators/sunny-ines", "/forks", "/share", "/trips/sun-tacos"):
+    for path in ("/creators", "/creators/sunny-ines", "/forks", "/share", "/trips/sun-tacos"):
         assert s.get(path).status_code == 404, path
-    assert "No one has shared a trip yet" in s.get("/community").text      # D-458: in every header, so it exists and says so
+    assert "No guides yet" in s.get("/guides").text      # D-458: in every header, so it exists and says so
     assert client.get("/trip/publish").status_code == 200   # publishing itself is not hidden: it is how real content starts
 
 
@@ -358,7 +358,7 @@ def test_with_the_showcase_off_only_real_content_shows(family, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     row = go_live(client, pid)
     s = stranger(client)
-    hub = s.get("/community")
+    hub = s.get("/guides")
     assert hub.status_code == 200
     body = unescape(main_of(hub.text))
     assert "Our Disneyland week" in body and "Ari Rivera" in body
@@ -391,15 +391,15 @@ def test_unpublishing_the_last_trip_puts_the_pages_back_to_404(family, monkeypat
     client.post("/trip/publish/unpublish", follow_redirects=False)
     s = stranger(client)
     assert s.get("/creators").status_code == 404 and s.get("/creators/ari-rivera").status_code == 404
-    assert "No one has shared a trip yet" in s.get("/community").text and "Our Disneyland week" not in s.get("/community").text      # D-458
+    assert "No guides yet" in s.get("/guides").text and "Our Disneyland week" not in s.get("/guides").text      # D-458
 
 
-def test_the_nav_links_to_community_trips_before_and_after_real_content(family, monkeypatch):
+def test_the_nav_links_to_guides_before_and_after_real_content(family, monkeypatch):
     client, pid = family
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert 'href="/community"' in client.get("/trip/publish").text      # D-458: always in the header; its page says when nothing is shared yet
+    assert 'href="/guides"' in client.get("/trip/publish").text      # D-458: always in the header; its page says when nothing is shared yet
     go_live(client, pid)
-    assert 'href="/community"' in client.get("/trip/publish").text
+    assert 'href="/guides"' in client.get("/trip/publish").text
 
 
 def test_on_the_showcase_the_samples_stay_and_real_creators_join_them(family):
@@ -407,7 +407,7 @@ def test_on_the_showcase_the_samples_stay_and_real_creators_join_them(family):
     go_live(client, pid)
     s = stranger(client)
     sample = next(iter(itineraries.ITINERARIES.values())).title
-    assert unescape(sample) in unescape(s.get("/community").text) and "Our Disneyland week" in s.get("/community").text
+    assert unescape(sample) in unescape(s.get("/guides").text) and "Our Disneyland week" in s.get("/guides").text
     roster = s.get("/creators").text
     assert "sunny-ines" in roster and "ari-rivera" in roster and "Paste" in roster
     assert s.get("/creators/sunny-ines").status_code == 200

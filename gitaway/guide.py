@@ -56,6 +56,8 @@ class Tile:
     label: str
     value: str
     sub: str = ""
+    href: str = ""           # the creator's own post, for the tile that links back to it (itinerary_view._from_gitaway adds utm_source)
+    by: str = ""             # the source card's byline, said in that tile ("Maya Chen · Blog")
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,9 @@ class Guide:
     url: str = ""
     photo: tuple | None = None        # (address, description): a picture the creator picked from their own post; never a drawing
     sample: bool = False
+    source_by: str = ""      # the source card's byline as the trip says it ("Maya Chen · Blog", or the site's name until the creator is vouched for, D-189)
+    author: str = ""         # who the trip says made it ("By Maya Chen"): the page's own byline, as the trip page has always said it
+    handle: str = ""         # the creator's profile page (/creators/<handle>), "" while the trip waits for the captain's yes or has none
     real: bool = True
     stamped: str = ""
     private: list = field(default_factory=list)      # [(kind, title)] of an owner's booked flights and stays: kept out of the guide, said to its owner only
@@ -119,7 +124,7 @@ def _stops(day, i, trip, first, tips, used) -> list:
     return out
 
 
-def tiles(trip: Itinerary, days: list, tips: list, host: str) -> list:
+def tiles(trip: Itinerary, days: list, tips: list, host: str, url: str = "") -> list:
     """The at-a-glance tiles: only for what the guide knows (days always; who it suits when the creator marked it; tips when it has any; the post when it came from one)."""
     n, stops = len(days), sum(len(d.stops) for d in days)
     out = [Tile("calendar", "Days", f"{n} day{'s' if n != 1 else ''}", f"{stops} stop{'s' if stops != 1 else ''}")]
@@ -127,14 +132,17 @@ def tiles(trip: Itinerary, days: list, tips: list, host: str) -> list:
     suits = [word for key, word in SUITS if key in kinds]
     if suits:
         out.append(Tile("users", "Suits", " and ".join(suits[:2]), "As the creator marks it"))
+    season = next((m.group(1) for t in trip.tags if (m := re.fullmatch(r"Best in (\w+)", t.label))), "")      # the creator's own answer, drawn as a tag
+    if season:
+        out.append(Tile("sun", "Best season", season.capitalize(), "As the creator says"))
     if tips:
         out.append(Tile("spark", "Tips", f"{len(tips)} tip{'s' if len(tips) != 1 else ''}", "In the creator's words"))
     if host:
-        out.append(Tile("link", "From", host, "Their original post"))
+        out.append(Tile("link", (trip.source.kicker if trip.source else "") or "From", host, (trip.source.link_label if trip.source else "") or "Read the original post", url, trip.source.byline if trip.source else ""))
     return out
 
 
-def from_trip(trip: Itinerary, *, stamped: str = "", private: list | None = None) -> Guide:
+def from_trip(trip: Itinerary, *, stamped: str = "", private: list | None = None, handle: str = "") -> Guide:
     """The guide of an itinerary. The byline is the source card's (a trip nobody has vouched for yet names its site, not the person: D-189)."""
     src = trip.source
     by = (src.byline.split(" · ")[0] if src and src.byline else "") or trip.author
@@ -145,8 +153,8 @@ def from_trip(trip: Itinerary, *, stamped: str = "", private: list | None = None
     url = safe_href(src.url) if src and src.url else ""
     host = _host(url)
     shot = trip.polaroids[0] if trip.polaroids else None
-    return Guide(trip.slug, trip.title, place, by, first, days, tiles(trip, days, tips, host), tips, cb.scene_of(place, trip.title), host, url, (shot.src, shot.alt) if shot else None,
-                 not trip.real, trip.real, stamped, list(private or []))
+    return Guide(trip.slug, trip.title, place, by, first, days, tiles(trip, days, tips, host, url), tips, cb.scene_of(place, trip.title), host, url, (shot.src, shot.alt) if shot else None,
+                 not trip.real, src.byline if src else "", trip.author, handle if first and "." not in first else "", trip.real, stamped, list(private or []))      # no profile link while the byline is only the site (D-189)
 
 
 def plan_href(place: str, nights: int = 0) -> str:

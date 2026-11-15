@@ -63,8 +63,10 @@ def test_the_keyboard_opens_walks_and_leaves_the_menu(plan):  # noqa: F811
     page.focus(ME)
     page.keyboard.press("Enter")
     expect(page.locator(f"{MENU} a").first).to_be_focused()
-    page.keyboard.press("ArrowDown")
-    expect(page.locator(f"{MENU} a").nth(1)).to_be_focused()
+    page.keyboard.press("ArrowDown")      # F-262: the menu is one link (Family members) and Sign out
+    expect(page.locator(f"{MENU} button")).to_be_focused()
+    page.keyboard.press("Home")
+    expect(page.locator(f"{MENU} a").first).to_be_focused()
     page.keyboard.press("End")
     expect(page.locator(f"{MENU} button")).to_be_focused()
     page.keyboard.press("ArrowDown")      # wraps to the first

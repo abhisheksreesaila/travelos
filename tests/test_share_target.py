@@ -70,5 +70,5 @@ def test_the_route_exists_in_production_mode_too(client, monkeypatch):
     assert client.get("/share-to-gitaway", params={"url": POST}, follow_redirects=False).status_code == 303
 
 
-def test_for_creators_says_what_iphone_cannot_do(client):
-    assert "iPhone does not let web apps receive shares yet" in client.get("/for-creators").text
+def test_make_a_guide_says_what_iphone_cannot_do(client):
+    assert "iPhone does not let web apps receive shares yet" in client.get("/guides/make").text

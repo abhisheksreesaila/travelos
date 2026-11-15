@@ -12,7 +12,7 @@ POST /guides/add                      Add to my plan: stops of a guide (`k` = "d
 
 from datetime import datetime, timezone
 
-from fasthtml.common import A, Div, H1, P, Section
+from fasthtml.common import A, Div, H1, Meta, P, Section
 from fasthtml.core import FtResponse
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
@@ -45,10 +45,13 @@ def add_state(session) -> str:
 def reader_page(session, slug, found):
     waiting = found.real and community.review_state(slug) == "pending"
     row = community.get(slug) if found.real else None
-    g = gd.from_trip(found, stamped=stamp_of(row["updated_at"]) if row else "")
-    state = {"saved": slug in ses.saved(session), "signed": bool(ses.current_traveler(session)), "add": add_state(session), "signin": ses.signin_href(f"/trips/{slug}"), "start": showcase.planning_path()}
-    body = page(g.title, *guideview.guide_markup(g, mode="reader", state=state), current="/guides", head=guideview.HEAD, v2="cv g is-results", mood=moods.of_text(found.place),
-                description=f"{g.title}: a guide by {g.by}, laid out stop by stop to plan from.", noindex=waiting or (found.real and seo.imported(slug)))
+    g = gd.from_trip(found, stamped=stamp_of(row["updated_at"]) if row else "", handle="" if waiting else found.handle)      # a trip waiting for the captain has no profile page yet (F-194)
+    state = {"saved": slug in ses.saved(session), "signed": bool(ses.current_traveler(session)), "add": add_state(session), "signin": ses.signin_href(f"/trips/{slug}"), "start": showcase.planning_path(),
+             "report": found.real and community.is_real(slug), "plannable": bool(found.plan_to)}
+    head = (*guideview.HEAD, Meta(name="robots", content="noindex, nofollow")) if waiting else guideview.HEAD
+    body = page(g.title, *guideview.guide_markup(g, mode="reader", state=state), current="/guides", head=head, v2="cv g is-results", mood=moods.of_text(found.place),
+                description=found.lede or f"{g.title}: a guide by {g.by}, laid out stop by stop to plan from.", image=found.polaroids[0].src if found.polaroids else "", og_type="article",
+                noindex=not waiting and found.real and seo.imported(slug))      # a copy of a creator's post is not for search (F-196); a trip waiting for the captain is "noindex, nofollow" (F-194)
     return FtResponse(body, headers={"X-Robots-Tag": "noindex, nofollow"}) if waiting else body
 
 

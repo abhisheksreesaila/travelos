@@ -1,4 +1,5 @@
-"""The scrapbook itinerary page at /trips/{slug}."""
+"""The scrapbook itinerary page at /trips/{slug}. F-262: a creator's trip is a guide now (tests/test_guides.py), so the page's own content is tested through its renderer on the creator sample, and the
+routes on a sample that is not a creator's (CLASSIC)."""
 import html as htmllib
 from dataclasses import replace
 
@@ -8,6 +9,7 @@ from gitaway import itineraries
 from gitaway.itinerary_view import itinerary_body
 
 SLUG = "sun-tacos-and-tide-pools"
+CLASSIC = "la-for-two-slow-mornings"      # no creator's source card: it keeps the trip page
 
 
 def render(trip):
@@ -20,10 +22,10 @@ def render_theme(trip):
 
 
 def test_known_trip_renders_hero_board_and_every_day(client):
-    r = client.get(f"/trips/{SLUG}")
-    assert r.status_code == 200
-    h = r.text
-    assert "TravelOS" not in h
+    r = client.get(f"/trips/{CLASSIC}")
+    assert r.status_code == 200 and "TravelOS" not in r.text
+    assert "/assets/css/itinerary.css" in r.text and "/assets/css/base.css" in r.text
+    h = render(itineraries.get(SLUG))
     assert "Sun, tacos &amp; tide pools" in h and "little ones" in h
     assert "Maya &amp; Theo Adventures" in h and "Watch the original" in h
     for label in ["5 days", "4 people", "$3,480", "312"]:
@@ -36,7 +38,6 @@ def test_known_trip_renders_hero_board_and_every_day(client):
     booked = [s.title for d in itineraries.get(SLUG).days for s in d.stops if s.booked]
     assert len(booked) == 4 and "Skylark Air 219" in booked[-1]
     assert h.count(">BOOKED<") == 4
-    assert "/assets/css/itinerary.css" in h and "/assets/css/base.css" in h
     assert "74°F" in h
 
 
@@ -51,27 +52,27 @@ def test_itinerary_css_is_only_loaded_by_this_page(client):
 
 
 def test_trip_record_chooses_the_theme_and_query_overrides_it(client):
-    assert 'data-theme="sunset"' in client.get(f"/trips/{SLUG}").text
-    assert 'data-theme="pacific"' in client.get(f"/trips/{SLUG}?theme=pacific").text
-    assert 'data-theme="sunset"' in client.get(f"/trips/{SLUG}?theme=bogus").text
+    assert 'data-theme="sunset"' in client.get(f"/trips/{CLASSIC}").text
+    assert 'data-theme="pacific"' in client.get(f"/trips/{CLASSIC}?theme=pacific").text
+    assert 'data-theme="sunset"' in client.get(f"/trips/{CLASSIC}?theme=bogus").text
     assert 'data-theme="pacific"' in render_theme(replace(itineraries.get(SLUG), theme="pacific"))
 
 
 def test_fork_button_links_to_signin_with_intent(client):
-    h = htmllib.unescape(client.get(f"/trips/{SLUG}").text)
-    assert f'href="/signin?next=/trips/{SLUG}&intent=fork"' in h
+    h = htmllib.unescape(client.get(f"/trips/{CLASSIC}").text)
+    assert f'href="/signin?next=/trips/{CLASSIC}&intent=fork"' in h
 
 
 def test_days_four_and_five_are_collapsed_open_day_cards(client):
-    h = client.get(f"/trips/{SLUG}").text
+    h = render(itineraries.get(SLUG))
     assert h.count("<details") >= 2 and h.count("Open day") == 2
     assert 'id="day-4"' in h and "Dinosaur hall" in h
 
 
 def test_loading_state_shows_skeleton_blocks_instead_of_content(client):
-    h = client.get(f"/trips/{SLUG}?state=loading").text
+    h = client.get(f"/trips/{CLASSIC}?state=loading").text
     assert "skeleton" in h and "aria-busy" in h
-    assert "Griffith Observatory" not in h
+    assert "Late brunch in Silver Lake" not in h
 
 
 def test_free_day_says_nothing_is_planned():

@@ -171,7 +171,7 @@ def test_the_published_guide_is_for_anyone_with_the_creators_name_held_back_unti
     post(client, d, do="publish", own="1")
     html = stranger(client).get(f"/trips/{d['slug']}").text
     text = words(html)
-    assert '<span class="g-by">theplanetd.com</span>' in html      # unverified: the byline names the site, not the person (D-189)
+    assert '<span class="src-by">theplanetd.com · Blog</span>' in html      # unverified: the byline names the site, not the person (D-189)
     assert BELEM in text and "Plan this trip" in text and "Publish" not in text.replace("Published", "") and 'class="ed"' not in html and 'data-mode="reader"' in html
     assert re.search(r'href="/plan/ask(\?to=[^"]*)?"', html)      # Plan this trip opens booking's sentence
     assert 'href="/theplanetd' not in html

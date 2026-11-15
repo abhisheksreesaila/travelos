@@ -148,7 +148,7 @@ def test_part_three_makes_the_card_to_post_and_a_creators_matrix(client):
     assert "LA + San Diego" in _text(_el(layer, "div", "cv-ig")) and "Maya’s Tahoe trip" in _text(layer)
     assert [_text(s) for s in re.findall(r'<span(?: class="lit")?>(\$[\d,]+)</span>', _el(layer, "div", "cv-mini"))] == ["$1,640", "$1,520", "$1,710"]
     part = _part(html, 3)
-    assert re.search(r'<a [^>]*href="/for-creators"[^>]*>For creators', part)
+    assert re.search(r'<a [^>]*href="/guides"[^>]*>Guides', part)
 
 
 def test_the_frame_is_a_drawing_nothing_in_it_can_be_pressed(client):
@@ -180,7 +180,7 @@ def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     door = "/signin"      # D-458, D-461: Start a trip and Plan a trip are one door: sign in, then / decides (the family's trip, or the matrix; showcase or not)
     assert _links(hero) == [door, "#compare"] and 'id="compare"' in html
     assert _links(_el(html, "section", "cv-close")) == [door]
-    assert _links(_el(html, "header", "cv-top")) == ["/", "/for-creators", "/community", door, "/signin"]
+    assert _links(_el(html, "header", "cv-top")) == ["/", "/guides", door, "/signin"]
     for href in sorted(set(_links(html))):
         if href.startswith(("#", "http", "mailto:")):
             continue

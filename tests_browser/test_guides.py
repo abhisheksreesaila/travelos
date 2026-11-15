@@ -59,16 +59,18 @@ def family(browser, base_url):
 def test_the_hub_filters_and_a_guide_opens_a_stop_and_adds_it_to_the_plan(family, base_url, viewport):
     page = family(viewport)
     page.goto(f"{base_url}/guides")
-    expect(page.locator(".gcard")).to_have_count(2)
+    expect(page.locator(".gcard")).to_have_count(4)      # the four samples, labelled
     shot(page, f"hub-{viewport['width']}")
     expect(page.locator(".v2-sections a")).to_have_text(["Book", "Plan", "Guides"])
     expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text("Guides")
-    # a filter is a plain link: "3 to 4 days" leaves the one three-day guide
+    # a filter is a plain link: "3 to 4 days" leaves the three guides of three and four days
     page.get_by_role("link", name="3 to 4 days").click()
-    expect(page.locator(".gcard")).to_have_count(1)
+    expect(page.locator(".gcard")).to_have_count(3)
+    page.locator(".fchip", has_text="With a pet").click()      # and a second filter keeps the first
     expect(page.locator(".gcard h3")).to_have_text("Dog-friendly Big Sur drive")
-    page.get_by_role("link", name="3 to 4 days").click()      # on again: off
-    expect(page.locator(".gcard")).to_have_count(2)
+    page.locator(".fchip", has_text="With a pet").click()      # on again: off
+    page.get_by_role("link", name="3 to 4 days").click()
+    expect(page.locator(".gcard")).to_have_count(4)
     # the search suggests the places GitAway knows, then looks for guides there
     page.fill("#gh-q", "San D")
     expect(page.locator("#gh-list li").first).to_contain_text("San Diego")
@@ -80,7 +82,7 @@ def test_the_hub_filters_and_a_guide_opens_a_stop_and_adds_it_to_the_plan(family
     page.wait_for_url("**/trips/dog-friendly-big-sur-drive")
     # the guide: tiles, the day strip, the stop cards; nothing it does not know
     expect(page.locator("h1")).to_have_text("Dog-friendly Big Sur drive")
-    expect(page.locator(".gl small")).to_have_text(["Days", "Suits", "From"])
+    expect(page.locator(".gl small")).to_have_text(["Days", "Suits", "From the vlog"])
     expect(page.locator(".dbtn")).to_have_count(3)
     assert page.locator(".g-stop").count() > 3
     assert overflow(page) <= 1

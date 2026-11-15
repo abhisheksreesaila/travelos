@@ -17,7 +17,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import community, creatorbook as cb, creatordraft as cd, draftjobs as dj, hub, seo, session as ses, showcase
+from gitaway import community, creatorbook as cb, creatordraft as cd, draftjobs as dj, hub, session as ses, showcase
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.layout import page
@@ -41,11 +41,10 @@ def chip(label, to, on) -> A:
 
 
 def guides(session, who="", length="", q="") -> list:
-    """The hub's cards: every published trip (a creator's guide, or a family's own, which keeps its trip page) and the creator samples on the showcase that match what is asked. `who` is one of hub.TAGS, `length` one of LENGTHS, `q` a place or a
-    word of the title. Most planned-from first, then the rest in the order the hub lists them."""
-    made = seo.imported_slugs()
+    """The hub's cards: every published trip (a creator's guide, or a family's own, which keeps its trip page) and the samples on the showcase, labelled, that match what is asked. `who` is one of
+    hub.TAGS, `length` one of LENGTHS, `q` a place or a word of the title. Most planned-from first, then the rest in the order the hub lists them."""
     low = [(a, b) for k, _, a, b in LENGTHS if k == length]
-    out = [c for c in hub.cards(session, tags=(who,) if who in hub.TAGS else (), q=q) if (c.source or c.real or c.slug in made) and (not low or low[0][0] <= c.days <= low[0][1])]
+    out = [c for c in hub.cards(session, tags=(who,) if who in hub.TAGS else (), q=q) if not low or low[0][0] <= c.days <= low[0][1]]
     return sorted(out, key=lambda c: -community.fork_count(c.slug) if c.real else 0)
 
 
@@ -100,13 +99,16 @@ def hub_page(session, who="", length="", q="", error="", status=200):
                   action=PATH, method="get", role="search", id="gh-form", data_suggest="/plan/ask/suggest")
     filters = Div(Div(Span("Who", cls="flab"), *[chip(label, href("" if who == k else k, length, q), who == k) for k, label in WHO], cls="fgroup", role="group", aria_label="Who it suits"),
                   Div(Span("Length", cls="flab"), *[chip(label, href(who, "" if length == k else k, q), length == k) for k, label, _, _ in LENGTHS], cls="fgroup", role="group", aria_label="How long"), cls="gh-filters")
+    first = ("" if filtered or hub.has_shared() or not showcase.on() else
+             Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"), P("These are sample guides. Make yours and it shows up here for every traveler, ready to plan from."), A("Make a guide", href=PATH + "/make", cls="go")),
+                 cls="gh-first v2-glass", role="status"))
     body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="gh-grid") if shown else
             Div(H2("No guides match that" if filtered else "No guides yet"), P("Try fewer filters, or another place." if filtered else "Creators turn a post or a trip into a guide; the first ones show up here."),
                 A("Show every guide", href=PATH, cls="go") if filtered else A("Make a guide", href=PATH + "/make", cls="go"), cls="gh-empty v2-glass", role="status"))
     hero = Div(Span("Guides · from other travellers", cls="g-kick"), H1("See what people did, ", Em("then make it yours."), cls="disp"),
                P("Real trips laid out to scan in seconds: the days, the stops, the times, what it cost, and the tips."), search, filters, cls="gh-hero")
     head = Div(H2("Popular guides"), Span(f"{len(shown)} guide{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="n", role="status"), cls="gh-head")
-    return FtResponse(page("Guides", Div(hero, Div(Div(head, P(error, role="alert", cls="v2-error", id="mk-error") if error else "", body, cls="gh-main"), Div(make_panel(session), yours(session), cls="gh-side"), cls="gh-body"),
+    return FtResponse(page("Guides", Div(hero, Div(Div(head, P(error, role="alert", cls="v2-error", id="mk-error") if error else "", body, first, cls="gh-main"), Div(make_panel(session), yours(session), cls="gh-side"), cls="gh-body"),
                                          Span("Sample guides: made up so you can see how they read", cls="smp g-smp") if showcase.on() else "", cls="gh"),
                        studio.foot(), current=PATH, head=HEAD, v2="cv g is-results", description="Guides from other travellers: real trips laid out stop by stop to plan from."), status_code=status)
 
