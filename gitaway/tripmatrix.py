@@ -143,7 +143,7 @@ def picks(flight="", stays="") -> tuple:
     """What a form said was chosen (F-242): ("1", "0,2") is (1, (0, 2)). Anything else (a letter, a long number, nothing) is the shown part, never an error."""
     def n(v):
         v = str(v).strip()
-        return int(v) if v.isdigit() and len(v) <= 2 else None
+        return int(v) if v.isascii() and v.isdecimal() and len(v) <= 2 else None      # isdigit() also passes "²", which int() refuses
     return (n(flight) or 0, tuple(n(x) for x in str(stays).split(",")[:2]))
 
 

@@ -217,6 +217,12 @@ def _square_of(s, lane, w, pk) -> tuple:
     return tm.key(lane.key, w.key), tuple(sorted((n, str(v)) for n, v in {**mx.params(s, lane=lane.key, w=w.key), **pick_fields(pk)}.items()))
 
 
+def _same_offers(sq, prep) -> bool:
+    """The held rooms are the square's chosen stays: LiteAPI's offer ids, or for the sample (no ids) the hotel and its price."""
+    mark = lambda p: p.offer_id or (p.name, p.cents)
+    return tuple(mark(p) for p in sq.stays) == tuple(mark(r.part) for r in prep.rows)
+
+
 def _first_step(request, session, s, lane, w, sq, pk, note=""):
     family = _family(session)
     if not sq.ok or not sq.stays:
@@ -276,6 +282,8 @@ def register(app):
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
         prep = mb.held(family, token, _square_of(s, lane_, w_, pk))
+        if prep is not None and not _same_offers(sq, prep):      # the square was read again and the same picks now name other rooms: never save one hotel while booking another
+            prep = None
         if prep is None:      # restarted, kept too long, another family's or another square's (or another choice's) token: nothing is asked of LiteAPI
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=sq.sample))
         guest, errors = mb.clean_guest(first, last, email)
