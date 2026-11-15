@@ -37,6 +37,9 @@
   --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
   --sunset: linear-gradient(120deg, #4338CA 0%, #8B2FC9 52%, #C92A5E 100%);
   --cloud: color-mix(in srgb, #fff 85%, transparent);
+  --v2-map-land: #E8EFE3; --v2-map-water: #A9D3F0; --v2-map-road: #FFFFFF;      /* the rail's schematic map */
+  --v2-thump: cubic-bezier(.2, 1.4, .4, 1);      /* the stamp landing on the pass */
+  --v2-stamp-bg: rgb(43 20 90 / .55);
 
   /* the motion: springs as linear() curves (the prototype's), durations in one place; assets/js/v2.js reads them with getComputedStyle, so no script writes a time */
   --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
@@ -109,6 +112,7 @@
   --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
   --sunset: linear-gradient(120deg, #4F46E5 0%, #9333EA 52%, #DB2777 100%);
   --cloud: rgb(255 255 255 / .06);
+  --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A3F5C;
   /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); v2's own bright kind colours above are for text and rings on the dark sky */
   --k-flight: #4338CA; --k-stay: #8B2FC9; --k-food: #C92A5E; --k-see: #0F766E; --k-tix: #C2410C; --k-wx: #0369A1;
   color-scheme: dark;

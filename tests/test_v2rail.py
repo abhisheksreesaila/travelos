@@ -3,9 +3,10 @@ The pieces are plain functions (gitaway/v2rail.py); the route draws them (gitawa
 from datetime import datetime, timezone
 from html import unescape
 
-from gitaway import geo, tripmatrix as tm, v2rail
+from gitaway import airportdrive, geo, interests, tripmatrix as tm, v2rail
 from gitaway.pages import tripmatrix as page
 from tests.test_plan_widgets import Router
+from tests.test_signin import person, sign_in
 from tests.test_tripmatrix_page import MATRIX, real, sample  # noqa: F401 (fixtures)
 
 RAIL = "/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12"
@@ -85,6 +86,7 @@ def test_a_rail_for_a_bad_address_is_a_400_and_an_unknown_lane_falls_back_to_the
 
 
 def test_the_drives_are_the_routers_own_times_the_airport_run_and_the_stay_to_the_asked_place(sample, client, monkeypatch):
+    sign_in(client)
     router = Router(3900)      # 65 minutes whatever is asked
     monkeypatch.setattr(geo, "fetch", router)
     html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()["html"])
@@ -93,3 +95,39 @@ def test_the_drives_are_the_routers_own_times_the_airport_run_and_the_stay_to_th
     asked = len(router.urls)
     client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12")
     assert len(router.urls) == asked      # kept: each drive is asked once
+
+
+def test_a_stranger_is_shown_only_the_drives_already_kept_and_the_router_is_not_asked(sample, client, monkeypatch):
+    """L-1: the open rail route must not spend the router's budget for anyone. A signed-in person asks (and it is kept); a stranger is then served that kept answer."""
+    router = Router(3900)
+    monkeypatch.setattr(geo, "fetch", router)
+    url = "/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12"
+    cold = unescape(client.get(url).json()["html"])
+    assert router.urls == [] and "min" not in cold.split("Where you will be")[1].split("</section>")[0].replace("in a straight line", "")
+    sign_in(client)
+    assert "SNA airport → Newport Beach" in unescape(client.get(url).json()["html"]) and router.urls
+    asked = len(router.urls)
+    from tests.test_members import browser
+    stranger = browser(client)
+    warm = unescape(stranger.get(url).json()["html"])
+    assert len(router.urls) == asked and "SNA airport → Newport Beach" in warm and "65 min" in warm
+
+
+def test_a_signed_out_rail_has_no_family_data(sample, client):
+    """The family's picked interests are not read for a stranger: Cafes brings Bean & Wave to a signed-in rail, never to a signed-out one."""
+    url = RAIL
+    assert "Bean & Wave" not in unescape(client.get(url).json()["html"])
+    sign_in(client)
+    interests.save(person(), ["cafes"])
+    assert "Bean & Wave" in unescape(client.get(url).json()["html"])
+    from tests.test_members import browser
+    assert "Bean & Wave" not in unescape(browser(client).get(url).json()["html"])
+
+
+def test_a_town_that_did_not_geocode_is_not_asked_again_until_fail_wait_has_passed(monkeypatch):
+    """L-1: between() keeps a failed geocode, as drive() does, so a nonsense town cannot cost a geocode on every request."""
+    calls = []
+    monkeypatch.setattr(geo, "find", lambda *a, **k: calls.append(a) or (geo.MISSING, None))
+    assert airportdrive.between("Nowhereville, Mars", "San Diego, California") is None
+    assert len(calls) == 2      # the two towns looked up once
+    assert airportdrive.between("Nowhereville, Mars", "San Diego, California") is None and len(calls) == 2      # then kept, not asked again

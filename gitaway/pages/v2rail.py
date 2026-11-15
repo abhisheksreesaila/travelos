@@ -47,19 +47,20 @@ def weather_widget(place, w, i):
 def _map(wh: v2rail.Where):
     """A schematic, not a map: the airport, the stay and the asked place as dots joined by their drive times. Drawn the prototype's way (soft land and water) with nothing pretending to be a
     coastline: the words on it are the real numbers and the caption says it is not to scale."""
+    # labels are made of numbers only; if a place or hotel name is ever added to this SVG it must be escaped (html.escape) first
     def label(x, y, t):
-        return f'<g transform="translate({x} {y})"><rect x="-26" y="-10" width="52" height="20" rx="10" fill="#fff"/><text x="0" y="4" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="650" fill="#0F1124">{t}</text></g>'
-    parts = ['<rect width="300" height="150" fill="#E8EFE3"/><path d="M0 0 H70 Q60 40 78 70 T66 120 Q60 140 72 150 H0Z" fill="#A9D3F0"/>',
-             '<path d="M110 0 V150 M200 0 Q190 60 210 150 M92 70 H300 M140 30 H300" stroke="#fff" stroke-width="5" fill="none"/>']
+        return f'<g transform="translate({x} {y})"><rect class="m-pill" x="-26" y="-10" width="52" height="20" rx="10"/><text class="m-txt" x="0" y="4" text-anchor="middle" font-size="11" font-weight="650">{t}</text></g>'
+    parts = ['<rect class="m-land" width="300" height="150"/><path class="m-water" d="M0 0 H70 Q60 40 78 70 T66 120 Q60 140 72 150 H0Z"/>',
+             '<path class="m-road" d="M110 0 V150 M200 0 Q190 60 210 150 M92 70 H300 M140 30 H300"/>']
     air, stay, want = (70, 112), (150, 74), (240, 40)
     if wh.airport_min:
-        parts.append(f'<path d="M{air[0]} {air[1]} L{stay[0]} {stay[1]}" stroke="#4338CA" stroke-width="3" stroke-dasharray="5 5" fill="none"/>' + label(110, 100, f"{wh.airport_min} min"))
+        parts.append(f'<path class="m-leg m-leg-a" d="M{air[0]} {air[1]} L{stay[0]} {stay[1]}"/>' + label(110, 100, f"{wh.airport_min} min"))
     if wh.asked_min:
-        parts.append(f'<path d="M{stay[0]} {stay[1]} L{want[0]} {want[1]}" stroke="#0F766E" stroke-width="3" stroke-dasharray="5 5" fill="none"/>' + label(196, 52, f"{wh.asked_min} min"))
-    parts.append(f'<g transform="translate({air[0]} {air[1]})"><circle r="11" fill="#4338CA"/><path d="M-5 0 h10 M1 -5 l5 5 -5 5" stroke="#fff" stroke-width="2" fill="none"/></g>')
-    parts.append(f'<g transform="translate({stay[0]} {stay[1]})"><circle r="13" fill="#8B2FC9" stroke="#fff" stroke-width="3"/><path d="M-6 3v-7M-6 1h12v4M6 -1a3 3 0 0 0-3-3h-4v4" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></g>')
+        parts.append(f'<path class="m-leg m-leg-b" d="M{stay[0]} {stay[1]} L{want[0]} {want[1]}"/>' + label(196, 52, f"{wh.asked_min} min"))
+    parts.append(f'<g transform="translate({air[0]} {air[1]})"><circle class="m-air" r="11"/><path class="m-glyph" d="M-5 0 h10 M1 -5 l5 5 -5 5"/></g>')
+    parts.append(f'<g transform="translate({stay[0]} {stay[1]})"><circle class="m-stay" r="13"/><path class="m-glyph" d="M-6 3v-7M-6 1h12v4M6 -1a3 3 0 0 0-3-3h-4v4"/></g>')
     if wh.asked_min:
-        parts.append(f'<g transform="translate({want[0]} {want[1]})"><circle r="9" fill="#0F766E"/><circle r="3.5" fill="#fff"/></g>')
+        parts.append(f'<g transform="translate({want[0]} {want[1]})"><circle class="m-want" r="9"/><circle class="m-core" r="3.5"/></g>')
     return Div(NotStr(f'<svg class="map" viewBox="0 0 300 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sketch: the airport, the stay and the asked place, with the drive times between them">{"".join(parts)}</svg>'),
                Span(SCHEMATIC, cls="map-cap"), cls="map-w")
 

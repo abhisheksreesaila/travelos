@@ -59,6 +59,18 @@ def flights(**over):
 
 # --- reading what the sandbox said
 
+def test_a_photo_is_kept_only_when_it_is_https_with_a_host():
+    """L-3: the main photo is drawn as an image address; a javascript: or plain http value from an answer becomes no photo."""
+    at = datetime(2026, 11, 12, 19, 50, tzinfo=timezone.utc)
+    doc = answer("hotel_rates.json")
+    wanted = {"lp369ef": "javascript:alert(1)", "lp280e6": "http://img.example.com/a.jpg", "lp1fa70": "https://", "lp3f338": "https://img.example.com/a.jpg", "lp1f5cb": None}
+    for h in doc["hotels"]:
+        if h["id"] in wanted:
+            h["main_photo"] = wanted[h["id"]]
+    got = {s.id: s.photo for s in liteapi.read_stays(doc, at)}
+    assert got == {"lp369ef": "", "lp280e6": "", "lp1fa70": "", "lp3f338": "https://img.example.com/a.jpg", "lp1f5cb": ""}
+
+
 def test_stays_are_each_hotels_cheapest_room_in_cents_taxes_included():
     at = datetime(2026, 11, 12, 19, 50, tzinfo=timezone.utc)
     got = liteapi.read_stays(answer("hotel_rates.json"), at)

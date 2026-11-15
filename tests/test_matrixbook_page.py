@@ -209,6 +209,26 @@ def test_a_token_posted_with_another_square_is_refused(real, client):
     assert "_5hnX-MI7" in ok                                                                  # the token still books the square it was made for
 
 
+@pytest.mark.parametrize("field,held,other", [("rm", "0", "1"), ("st", "0", "1"), ("fl", "0", "1")])
+def test_a_token_held_for_one_choice_is_refused_for_another_and_books_nothing(real, client, field, held, other):
+    """L-2: the room check is bound to the flight, hotel and room chosen on the square: confirming with another choice and the same token is STALE, and LiteAPI's book is never asked."""
+    sign_in(client)
+    mine = token(client.post("/plan/matrix/book", data={**FORM, field: held}, headers=FRAG).text)
+    r = client.post("/plan/matrix/book/confirm", data={**FORM, field: other, "token": mine, **GUEST}, headers=FRAG).text
+    assert "That room check has expired" in text(r) and real.calls(BOOK) == [] and stays_booked() == []
+    ok = client.post("/plan/matrix/book/confirm", data={**FORM, field: held, "token": mine, **GUEST}, headers=FRAG).text
+    assert "_5hnX-MI7" in ok      # the same token still books the choice it was held for
+
+
+def test_a_request_is_echoed_only_when_it_is_exactly_on_the_list(real, client):
+    """L-4: a word that merely contains a listed request ("Quiet roomy") is not a request; a listed one beside it is kept, in the list's order."""
+    sign_in(client)
+    html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
+    data = {**FORM, "token": token(html), **GUEST, "phone": "call me", "req": "Quiet roomy|High floor|Crib in the room", "arrive": "Eveningish"}
+    bad = client.post("/plan/matrix/book/confirm", data=data, headers=FRAG).text
+    assert 'name="req" value="Crib in the room|High floor"' in bad and 'name="arrive" value=""' in bad and "Quiet roomy" not in bad
+
+
 def test_the_form_starts_with_a_made_up_guest_and_says_why(real, client):
     sign_in(client)
     html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text

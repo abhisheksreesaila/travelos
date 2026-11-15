@@ -42,7 +42,13 @@
 
 .wg .map-w { position: relative; }
 .wg .map { width: 100%; height: 9.375rem; border-radius: 1rem; display: block; overflow: hidden; }
-:root[data-mode="dark"] .wg .map { filter: brightness(.78) saturate(.9); }
+/* the schematic's colours are v2 tokens, so it follows light and dark (the reviewer's fix: no hex in the SVG) */
+.wg .map .m-land { fill: var(--v2-map-land); } .wg .map .m-water { fill: var(--v2-map-water); }
+.wg .map .m-road { stroke: var(--v2-map-road); stroke-width: 5; fill: none; }
+.wg .map .m-leg { stroke-width: 3; stroke-dasharray: 5 5; fill: none; } .wg .map .m-leg-a { stroke: var(--flight); } .wg .map .m-leg-b { stroke: var(--see); }
+.wg .map .m-pill { fill: var(--card-solid); } .wg .map .m-txt { fill: var(--ink); font-family: var(--f-ui); }
+.wg .map .m-air { fill: var(--k-flight); } .wg .map .m-stay { fill: var(--k-stay); stroke: var(--on); stroke-width: 3; } .wg .map .m-want { fill: var(--k-see); } .wg .map .m-core { fill: var(--on); }
+.wg .map .m-glyph { stroke: var(--on); stroke-width: 2; fill: none; stroke-linecap: round; }
 .wg .map-cap { position: absolute; left: 0.5rem; bottom: 0.5rem; padding: 0.1875rem 0.5rem; border-radius: 62.4375rem; background: var(--card-solid); color: var(--ink-2); font: 600 max(var(--label-min), 0.75rem)/1.2 var(--f-ui); }
 .wg .dist { display: grid; gap: 0.125rem; margin-top: 0.625rem; }
 .wg .ro { display: flex; align-items: center; gap: 0.625rem; padding: 0.4375rem 0; font-size: 1rem; }

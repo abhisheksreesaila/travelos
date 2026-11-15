@@ -320,8 +320,8 @@ def register(app):
         guest, errors = mb.clean_guest(first, last, email)
         extras, more = mb.clean_extras(phone, req, arrive)
         errors = {**errors, **more, **({} if agree == "on" else {"agree": TICK})}      # the required tick is the server's rule too, not only the page's
-        typed = {"first": first[:mb.NAME_MAX], "last": last[:mb.NAME_MAX], "email": email[:mb.EMAIL_MAX], "phone": phone[:mb.PHONE_MAX], "req": "|".join(x for x in mb.REQUESTS if x in req),
-                 "arrive": arrive if arrive in mb.ARRIVALS else "", "agree": agree}
+        typed = {"first": first[:mb.NAME_MAX], "last": last[:mb.NAME_MAX], "email": email[:mb.EMAIL_MAX], "phone": phone[:mb.PHONE_MAX], "req": "|".join(extras.requests),
+                 "arrive": extras.arrive, "agree": agree}
         if errors:
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values=typed, errors=errors))
         try:

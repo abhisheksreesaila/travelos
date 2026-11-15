@@ -139,6 +139,6 @@ def between(town_a, town_b) -> Drive | None:
     except Exception:      # a drive is never worth failing the page
         pa, minutes = None, None
     found = Drive(a, b, int(minutes)) if isinstance(minutes, int) and 0 < minutes <= MAX_MINUTES else None
-    if found or isinstance(minutes, int):
+    if found or isinstance(minutes, int) or not isinstance(pa, tuple):      # a town that did not geocode is kept for FAIL_WAIT, as `drive` does
         _keep(key, found)
     return found

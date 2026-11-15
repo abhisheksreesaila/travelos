@@ -503,7 +503,8 @@ def register(app):
     @app.get(RAIL)
     def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         """The widget rail for one lane and start day (F-251): what is real about the place, drawn as the prototype's frosted cards. Squares are only read from what is already known
-        (a cheaper airport needs two answers): nothing is searched here. A plain `def`: a drive can wait on the router for a moment."""
+        (a cheaper airport needs two answers): nothing is searched here. A plain `def`: a drive can wait on the router for a moment, but only for a signed-in person
+        (L-1): a stranger is shown the drives already kept, so the open page cannot spend the router's budget."""
         s = state(to, home, d, r, a, k, x, nb, b)
         lanes, windows = lanes_of(s), windows_of(s)
         if s.problems or not windows:
@@ -512,7 +513,7 @@ def register(app):
         w_ = next((x_ for x_ in windows if x_.key == w), None) or next((x_ for x_ in windows if x_.asked), windows[0])
         family = _family(session)
         known = lambda ln, win: gridsource.square(ln, win, s.adults, s.kid_ages, s.home, family, peek=True)      # noqa: E731
-        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session)), "lane": lane_.key},
+        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session))), "lane": lane_.key},
                             headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)
