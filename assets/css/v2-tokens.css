@@ -63,7 +63,10 @@
   --v2-drawer-in: 460ms;   /* what is in the drawer arriving, one part after another */
   --v2-drawer-stagger: 70ms;
   --v2-drawer-out: 220ms;  /* the drawer going away */
-  --v2-focus: 600ms;       /* the hotel or the flight taking the room, the other shrinking to a summary */
+  --v2-fold: 320ms;        /* the drawer's stay or flights opening in place, the other folding to its summary (F-258: height and fade, nothing else moves) */
+  --v2-press: 90ms;        /* a button going in (F-258) */
+  --v2-release: 480ms;     /* and springing back on --spring */
+  --v2-press-scale: .96;
   --v2-count: 520ms;       /* the total counting to its new value */
   --v2-swap: 350ms;        /* what a choice changes fading in */
   --v2-rail: 450ms;        /* a widget arriving */

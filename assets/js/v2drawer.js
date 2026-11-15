@@ -3,8 +3,8 @@
 //   - choose in place: a hotel (the alternatives strip), a room of that hotel, a flight; the total counts to its new value and every other number follows (the Book button's, the mini summaries,
 //     the budget words). Every option was drawn by the server with its own price; nothing is priced here. The forms' three fields carry only indexes: fl, st (the hotel of each stay) and rm
 //     (its room), which the server reads again and prices itself (gitaway/tripmatrix.py `pick`); a held room is bound to its choice (pages/matrixbook.py).
-//   - Focus: looking at the hotel shrinks the flight to a summary and the other way round (the panels' flex grows on the spring, in CSS); touching an option of one side focuses it, tapping a
-//     summary shows it. On a phone the panels stack and the other side is a one-line summary ("Tap to show").
+//   - one thing at a time (F-258, D-670): the stay is open, the flights a summary card; tapping a summary opens that side in place and folds the other to its summary. Nothing else changes
+//     it: choosing, the gallery and the tabs never move a side, at any width, and nothing here moves keyboard focus or the scroll.
 //   - the hotel gallery: scroll or the arrows; two stays (a two-place trip) are two tabs.
 // Durations and easings are the page's tokens (--v2-*), read here with getComputedStyle; reduced motion: nothing moves.
 (function () {
@@ -19,7 +19,7 @@
   function state(dr) {
     if (!dr._s) {
       var n = qa(dr, '.dr-sp').length;
-      dr._s = { fl: 0, hotel: [], room: [], tab: 0, focus: phone.matches ? 'stay' : '' };
+      dr._s = { fl: 0, hotel: [], room: [], tab: 0, open: 'stay' };
       for (var i = 0; i < n; i++) { dr._s.hotel.push(0); dr._s.room.push(0); }
     }
     return dr._s;
@@ -68,7 +68,7 @@
     set(dr, 'stay-price', moneyOf(price));
     var f = flightOf(dr);
     set(dr, 'fly-times', f.dataset.times);
-    set(dr, 'fly-al', f.dataset.al + ' · ' + (f.querySelector('small').textContent.split(' · ')[1] || ''));
+    set(dr, 'fly-al', f.dataset.al + ' · ' + f.dataset.stops);
     set(dr, 'fly-price', moneyOf(fl));
     qa(dr, '[data-pick="fl"]').forEach(function (e) { e.value = String(s.fl); });
     qa(dr, '[data-pick="st"]').forEach(function (e) { e.value = s.hotel.join(','); });
@@ -94,49 +94,42 @@
     d.classList.toggle('is-minus', !on && diff < 0);
   }
 
-  // Focus
-  function setMini(dr) {
-    var f = state(dr).focus, panels = q(dr, '.dr-panels');
-    panels.dataset.focus = f;
-    qa(panels, '.dr-pn').forEach(function (p) { p.classList.toggle('is-mini', (f === 'stay' && p.dataset.pane === 'fly') || (f === 'fly' && p.dataset.pane === 'stay')); });
-    qa(panels, '.dr-fbtn').forEach(function (b) { b.lastChild.textContent = b.dataset.focus === f ? 'Side by side' : b.dataset.label; });
+  // one side open, the other its summary: the open one's content fades in, the panels' height follows (calm: fade and height only)
+  function setOpen(dr) {
+    var o = state(dr).open, panels = q(dr, '.dr-panels');
+    panels.dataset.open = o;
+    qa(panels, '.dr-pn').forEach(function (p) { p.classList.toggle('is-mini', p.dataset.pane !== o); });
   }
-  function focus(dr, f) {
+  function open(dr, who) {
     var s = state(dr);
-    if (s.focus === f) return;
-    s.focus = f;
-    setMini(dr);
+    if (s.open === who) return;
+    var panels = q(dr, '.dr-panels'), h0 = panels.offsetHeight;
+    s.open = who;
+    setOpen(dr);
     if (RM.matches) return;
-    qa(dr, '.dr-pn:not(.is-mini) .dr-full, .dr-pn.is-mini .dr-mini').forEach(function (x) {
-      var kf = [{ opacity: 0 }, { opacity: 1 }];
-      x.animate(kf, { duration: ms('--v2-swap'), easing: tok('--v2-ease') });
-    });
+    var h1 = panels.offsetHeight, d = ms('--v2-fold'), e = tok('--v2-ease');
+    panels.classList.add('is-folding');
+    var a = panels.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: d, easing: e });
+    a.onfinish = a.oncancel = function () { panels.classList.remove('is-folding'); };
+    qa(dr, '.dr-pn:not(.is-mini) .dr-full, .dr-pn.is-mini .dr-mini').forEach(function (x) { x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: e }); });
   }
 
   document.addEventListener('click', function (e) {
     var dr = e.target.closest && e.target.closest('#mx-drawer .dr, .dr-alone .dr');
     if (!dr) return;
     var s = state(dr), t = e.target.closest('button, .dr-mini');
-    if (!t) { var pn = e.target.closest('.dr-pn.is-mini'); if (pn) focus(dr, pn.dataset.pane); return; }
+    if (!t) { var pn = e.target.closest('.dr-pn.is-mini'); if (pn) open(dr, pn.dataset.pane); return; }
     if (t.dataset.act === 'close') { document.dispatchEvent(new CustomEvent('mx:close')); return; }
     if (t.dataset.galGo) { var tr = q(t.closest('.dr-gal'), '.dr-track'); tr.scrollBy({ left: parseInt(t.dataset.galGo, 10) * tr.clientWidth, behavior: RM.matches ? 'auto' : 'smooth' }); return; }
     if (t.dataset.tab) { s.tab = parseInt(t.dataset.tab, 10); apply(dr, ['.dr-sp:not([hidden])']); return; }
     if (t.dataset.room) { var i = s.tab; s.room[i] = parseInt(t.dataset.room, 10); apply(dr); return; }
     if (t.dataset.hotel) { var h = s.tab; s.hotel[h] = parseInt(t.dataset.hotel, 10); s.room[h] = 0; apply(dr, ['.dr-hotel:not([hidden])', '.dr-rooms:not([hidden])']); return; }
     if (t.dataset.fl) { s.fl = parseInt(t.dataset.fl, 10); apply(dr, ['.dr-flt:not([hidden])']); return; }
-    if ('focus' in t.dataset && t.dataset.focus !== undefined) { focus(dr, t.classList.contains('dr-fbtn') && state(dr).focus === t.dataset.focus ? '' : t.dataset.focus); }
-  });
-  // touching an option on one side of the laptop's drawer focuses it: looking at the hotel minimises the flight
-  document.addEventListener('pointerdown', function (e) {
-    var dr = e.target.closest && e.target.closest('#mx-drawer .dr, .dr-alone .dr');
-    if (!dr || phone.matches) return;
-    var pn = e.target.closest('.dr-pn');
-    if (!pn || pn.classList.contains('is-mini')) return;
-    if (e.target.closest('.dr-opt, .dr-alt, .dr-seg button, .dr-gal') && state(dr).focus !== pn.dataset.pane) setTimeout(function () { focus(dr, pn.dataset.pane); }, 0);
+    if (t.classList.contains('dr-mini')) open(dr, t.dataset.show);
   });
   document.addEventListener('keydown', function (e) {
     var m = e.target.closest && e.target.closest('.dr-mini');
-    if (m && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); focus(m.closest('.dr'), m.dataset.focus); }
+    if (m && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(m.closest('.dr'), m.dataset.show); }
   });
   document.addEventListener('scroll', function (e) {      // the gallery's dots follow its scroll
     var g = e.target;
@@ -151,7 +144,7 @@
     dr.dataset.total = '';
     var why = q(dr, '.dr-why');
     if (why) why.hidden = !why.textContent.replace(/Our pick:/, '').trim();      // nothing known to say: no empty pill
-    setMini(dr);
+    setOpen(dr);
     apply(dr);
   }
   document.addEventListener('mx:drawer', function (e) { ready(e.detail.box.firstElementChild); });

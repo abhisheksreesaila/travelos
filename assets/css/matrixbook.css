@@ -101,7 +101,6 @@
 .mxb-b1 svg { width: 1.25rem; height: 1.25rem; }
 .mxb-b1.sun { background: var(--sunset); color: var(--on); }
 .mxb-b1:disabled { opacity: .45; cursor: default; }
-.mxb-b2:active, .mxb-b1:active { transform: scale(.96); }
 .mxb-f:not(.is-fold) .mxb-b2, .mxb-f:not(.is-fold) .mxb-stepn, .mxb-f:not(.is-fold) [data-cont] { display: none; }
 .mxb-f:not(.is-fold) .mxb-go { width: 100%; }
 .mxb-f.is-fold:not([data-step="3"]) .mxb-go, .mxb-f.is-fold[data-step="3"] [data-cont], .mxb-f.is-fold[data-step="0"] .mxb-b2 { display: none; }
@@ -154,7 +153,6 @@
 .mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4rem; padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--sunset); color: var(--on);
   font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: 0 0.75rem 1.875rem -0.625rem rgb(139 47 201 / .6); position: sticky; bottom: 0.25rem; z-index: 4; }
 .mxb-plan:hover { color: var(--on); }
-.mxb-plan:active { transform: scale(0.97); }
 .mxb-plan:focus-visible, .mxb-go:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .mxb-flight { justify-self: center; min-height: var(--target); }
 .mxb-back { justify-self: start; min-height: var(--target); }

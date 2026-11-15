@@ -34,7 +34,12 @@ def test_the_rail_the_drawer_and_the_checkout_controls_are_all_48px_targets(matr
     assert small(page, "#mx-rail") == [], "the rail"
     view = open_square(page, viewport)
     page.wait_for_timeout(900)
-    assert small(page, ".dr") == [], "the drawer"
+    assert small(page, ".dr") == [], "the drawer, the stay open and the flights a summary card"
+    view.locator(".dr-fly .dr-mini").click()      # F-258: one side at a time, so the flights' own controls are measured open, the stay as its summary
+    page.wait_for_timeout(700)
+    assert small(page, ".dr") == [], "the drawer, the flights open and the stay a summary card"
+    view.locator(".dr-stay .dr-mini").click()
+    page.wait_for_timeout(700)
     view.locator(".dr-book").click()
     expect(page.locator(".mxb-sheet")).to_be_visible()
     page.wait_for_timeout(900)
