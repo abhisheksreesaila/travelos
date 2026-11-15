@@ -34,6 +34,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
@@ -285,10 +286,16 @@ def read_stays(answer, fetched: datetime) -> tuple:
             continue
         rooms = tuple(sorted(rooms, key=lambda r: r.cents)[:MAX_ROOMS])      # a stable sort: of two rooms at one price the first the answer gave is the cheapest
         best = rooms[0]
-        found.append(Stay(hotel["id"], str(hotel.get("name") or ""), str(hotel.get("main_photo") or ""), str(hotel.get("thumbnail") or ""), _num(hotel.get("latitude")),
+        found.append(Stay(hotel["id"], str(hotel.get("name") or ""), _https(hotel.get("main_photo")), str(hotel.get("thumbnail") or ""), _num(hotel.get("latitude")),
                           _num(hotel.get("longitude")), _num(hotel.get("stars")), _num(hotel.get("rating")), int(_num(hotel.get("review_count")) or 0),
                           str(hotel.get("address") or ""), best.name, best.board, best.refundable, best.cents, best.due_at_stay_cents, best.offer_id, fetched, rooms))
     return tuple(sorted(found, key=lambda s: (s.cents, s.id)))
+
+
+def _https(url) -> str:
+    """A photo address only when it is https with a host: a `javascript:` or plain http value from an answer never reaches a page."""
+    u = urlsplit(url) if isinstance(url, str) else None
+    return url if u and u.scheme == "https" and u.netloc else ""
 
 
 def _when(text_) -> datetime | None:

@@ -144,7 +144,7 @@ class Extras:
 
 
 def clean_extras(phone, requests, arrive):
-    """(Extras, {}) or (None, {field: problem}). The phone is optional: digits, spaces, dots, brackets and hyphens (a leading +), at most PHONE_MAX. The requests and the arrival are the
+    """(Extras, {field: problem}): the cleaned values even when the phone is bad (the form echoes them back). The phone is optional: digits, spaces, dots, brackets and hyphens (a leading +), at most PHONE_MAX. The requests and the arrival are the
     fixed lists above (a word that is not on them is dropped: a form cannot add a request of its own); `requests` is one string, the picked requests joined by "|"."""
     p = _tidy(phone)
     errors = {}
@@ -152,7 +152,7 @@ def clean_extras(phone, requests, arrive):
         errors["phone"] = "That does not look like a phone number."
     picked = {x.strip() for x in str(requests or "").split("|")}
     arrive = _tidy(arrive)
-    return (None, errors) if errors else (Extras(p, tuple(r for r in REQUESTS if r in picked), arrive if arrive in ARRIVALS else ""), {})
+    return Extras(p, tuple(r for r in REQUESTS if r in picked), arrive if arrive in ARRIVALS else ""), errors
 
 
 # ---- prebooking ------------------------------------------------------------------------------------------------------
