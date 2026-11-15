@@ -1631,3 +1631,24 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [x] dark mode turns the sun into a moon (with a few stars), with a small delightful transition
 - [x] 5 moods for the v2 sky: beach (today's), snow, hike, celebration, city; each a gradient and one simple cartoon object, light and dark, calm and readable (4.5:1 over each)
 - [x] the mood is chosen by a plain rule from the trip's place and dates (a small table with tests: Tahoe or Denver in winter → snow, a coast in summer → beach, a mountain or park in summer → hike, New York around Dec 31 → celebration, else city or beach); the cover and sign-in keep theirs
+
+## The v2.1 build (founder approved docs/design/guides-v2, 2026-11-15)
+## F-261 A calm palette, and a quiet sky for reading [todo]
+- [ ] the pink-to-violet gradient leaves every button, header, the planning hero and the booking pass: ink and indigo carry the UI (the prototype's "Calm"); kind colours only for kinds; the gradient stays only on the Instagram share card
+- [ ] reading pages (a guide, the guide editor, a creator's import) get a quiet sky: no sun, clouds or mood object, a soft gradient that frames the content column; booking and planning keep theirs
+- [ ] 4.5:1 everywhere, light and dark
+
+## F-262 Book · Plan · Guides, and the guide page [todo]
+- [ ] the v2 top bar is Book · Plan · Guides (Family leaves the bar; the avatar menu keeps account items; the family lives in Planning's Together drawer)
+- [ ] /guides (was /community) is the hub: search, filters, popular guides, "Make a guide" (from your planned trip, or paste your blog); old /community and /for-creators addresses redirect
+- [ ] a guide is the prototype's run sheet: at-a-glance tiles, a sticky day strip, a time rail of stop cards, master-detail (side panel on a laptop, sheet on a phone) with the creator's words, details, tip and their own link labelled as theirs; replaces the book view
+- [ ] Make a guide from a pasted blog (the magic import, restyled to land in the run sheet) and from a planned trip (calendar → draft, flights and hotel private); inline edit; publish; the Instagram card
+- [ ] honesty rules stand: the creator's own words and links only, nothing invented
+
+## F-263 Guides in context [todo]
+Needs: F-262
+- [ ] booking's rail: "Guides for <place>" opens a guide in a sheet over the matrix; closing returns exactly where you were
+- [ ] planning's rail: a guide in a sheet; "Add to my plan" drops stops into free slots (skips clashes, says so, Undo)
+
+## F-264 The design kit for other sites [todo]
+Needs: F-261, F-262. Extract the v2 language (tokens, glass card, press, springs, moods, sun/moon, quiet reading sky, sections pill, sheets) into a small reusable kit with a demo page, for the founder's other sites.

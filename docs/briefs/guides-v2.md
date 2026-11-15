@@ -12,3 +12,6 @@ Status: approved direction (founder, 2026-11-15, walking the v2 build: "the navi
 ## Calls (mine, to be judged in the prototype)
 - The word is **Guides**: you make a guide from your trip or your post; others' guides are where community lives. Nav: **Book · Plan · Guides**; the avatar menu keeps account things.
 - Palette: ink and indigo carry the UI; kind colours only for kinds; the pink-violet gradient only on the Instagram share card.
+
+## Approved (founder, 2026-11-15): "brilliant in every which way"
+The prototype docs/design/guides-v2/index.html is the reference, with the calm palette. One more rule: **reading pages get a quiet sky** ("when I'm reading blog posts or any guide … reduce the objects behind it so the emphasis is on that; the gradient not random but pointing towards what you want them to focus on, but still fun"). Booking and planning keep their sun and objects. The three open calls take my recommendations: the word is Guides; "Add to my plan" drops stops into your calendar while "Plan this trip" starts a booking search of the guide's length; creators' links say they are the creator's and that GitAway adds nothing to the price (true: GitAway takes no cut of a creator's link).
