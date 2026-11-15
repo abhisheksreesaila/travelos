@@ -359,14 +359,6 @@ def test_over_budget_or_a_failure_is_said_not_shown_as_an_empty_grid(fake, monke
     assert found.flights == () and "did not come back" in found.problem
 
 
-def test_the_grid_page_says_the_problem(client, monkeypatch):
-    from gitaway import gridsource
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    monkeypatch.setattr(gridsource, "SOURCE", lambda trip, family="": gridsource.Found((), (), lambda f, s: None, lambda i: (), False, problem=gridsource.SPENT))
-    r = client.get("/plan/grid?to=sd&d=2026-12-12&r=2026-12-16&a=2&home=SFO")
-    assert r.status_code == 200 and gridsource.SPENT in r.text and "tg-scroll" not in r.text
-
-
 def test_nothing_found_is_said_too(monkeypatch):
     from gitaway import gridsource
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")

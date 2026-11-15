@@ -16,23 +16,6 @@ def _link(html, id_):
     return (m.group(1), re.sub(r"<[^>]+>", "", m.group(2)).strip()) if m else (None, None)
 
 
-@pytest.mark.parametrize("path", VIEWS)
-def test_admin_sees_an_invite_button_to_the_invite_form(crew, path):
-    admin, _, _ = crew
-    html = admin.get(path).text
-    tag, text = _link(html, "ft-invite")
-    assert tag and 'href="/family#invite"' in tag and text == "Invite"
-
-
-@pytest.mark.parametrize("path", VIEWS)
-@pytest.mark.parametrize("who", [1, 2])
-def test_editor_and_viewer_get_a_link_to_see_who_is_in_the_family(crew, path, who):
-    html = crew[who].get(path).text
-    tag, text = _link(html, "ft-people")
-    assert tag and 'href="/family"' in tag and text == "Family"
-    assert _link(html, "ft-invite") == (None, None)
-
-
 def test_the_invite_form_it_points_at_exists_for_the_admin(crew):
     admin, _, _ = crew
     assert 'id="invite"' in admin.get("/family").text

@@ -28,7 +28,7 @@ def plan(browser, base_url):
             ctx.add_init_script("localStorage.setItem('ga-mode', 'dark')")      # the site's mode is the person's choice kept on the device (mode.js), not the system's
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": f"plan{time.time_ns()}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/pay", form=PICK, max_redirects=0)
+        ctx.request.post(f"{base_url}/_test/pay", form=PICK, max_redirects=0)
         page = ctx.new_page()
         page.errors = []
         page.on("pageerror", lambda e: page.errors.append(str(e)))

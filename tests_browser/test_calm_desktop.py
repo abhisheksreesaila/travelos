@@ -59,7 +59,7 @@ def lively(browser, base_url):
         ctx.set_default_timeout(5000)
         ctxs.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+        ctx.request.post(f"{base_url}/_test/pay", form=SAMPLE, max_redirects=0)
         me = person("ari")
         cal.add_activity(me, day=1, start=10 * 60, end=11 * 60, title="Slow breakfast", kind="food")
         cal.add_activity(me, day=1, start=18 * 60, end=19 * 60, title="Dinner at CityWalk", kind="food")

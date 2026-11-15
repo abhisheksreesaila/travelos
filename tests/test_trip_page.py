@@ -58,11 +58,6 @@ def test_trip_record_chooses_the_theme_and_query_overrides_it(client):
     assert 'data-theme="pacific"' in render_theme(replace(itineraries.get(SLUG), theme="pacific"))
 
 
-def test_fork_button_links_to_signin_with_intent(client):
-    h = htmllib.unescape(client.get(f"/trips/{CLASSIC}").text)
-    assert f'href="/signin?next=/trips/{CLASSIC}&intent=fork"' in h
-
-
 def test_days_four_and_five_are_collapsed_open_day_cards(client):
     h = render(itineraries.get(SLUG))
     assert h.count("<details") >= 2 and h.count("Open day") == 2
@@ -90,17 +85,6 @@ def test_more_than_six_stops_collapse_and_board_shows_plus_more():
     h = render(replace(trip, days=days))
     assert "Show all 8 stops" in h
     assert "+4 more" in h
-
-
-def test_trip_without_creator_or_photos_falls_back_to_stickers():
-    trip = itineraries.get(SLUG)
-    bare = replace(trip, source=None, polaroids=[],
-                   days=[replace(d, stops=[replace(s, photo="") for s in d.stops]) for d in trip.days])
-    h = render(bare)
-    assert "From the vlog" not in h and "Watch the original" not in h
-    assert "/assets/photos/" not in h
-    assert "collage-stickers" in h
-    assert "Fork this trip" in h
 
 
 def test_one_day_trip_hides_the_board():

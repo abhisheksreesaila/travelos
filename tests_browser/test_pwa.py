@@ -36,7 +36,7 @@ def sign_in(ctx, base_url, who="ari"):
 
 
 def book_trip(ctx, base_url):
-    ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
 
 
 def controlled(page, base_url, path="/guides"):
@@ -85,7 +85,7 @@ def test_posts_and_auth_routes_never_end_up_in_any_cache(ctxs, base_url):
     sign_in(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.evaluate("fetch('/pay', {method: 'POST', body: new URLSearchParams({f: 'f1', h: 'h1', c: 'c1'})}).then(r => r.status)")
+    page.evaluate("fetch('/_test/pay', {method: 'POST', body: new URLSearchParams({f: 'f1', h: 'h1', c: 'c1'})}).then(r => r.status)")
     page.evaluate("fetch('/signin', {method: 'POST', body: new URLSearchParams({email: 'ari@example.com', next: '/', intent: 'save'})}).then(r => r.status)")
     for path in ("/signin", "/signin?next=%2Fplan", "/login", "/logout", "/auth/callback"):
         page.goto(f"{base_url}{path}")
@@ -95,7 +95,7 @@ def test_posts_and_auth_routes_never_end_up_in_any_cache(ctxs, base_url):
     assert not [u for u in cached if not u.startswith("GET ")], cached
     assert not [u for u in cached if re.match(r"GET /(login|logout|signin|signout|auth|pay)\b", u)], cached
     ctx.set_offline(True)
-    assert page.evaluate("fetch('/pay', {method: 'POST', body: new URLSearchParams({f: 'f1'})}).then(() => false, () => true)")
+    assert page.evaluate("fetch('/_test/pay', {method: 'POST', body: new URLSearchParams({f: 'f1'})}).then(() => false, () => true)")
 
 
 def test_a_changed_asset_is_served_after_a_reload(ctxs, base_url, monkeypatch):

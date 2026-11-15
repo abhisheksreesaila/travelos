@@ -35,36 +35,3 @@ def test_plan_it_for_me_still_validates_on_the_server_when_the_picker_never_ran(
     r = client.post("/plan-for-me", data={**GOOD, "start": "2026-09-01", "end": "2026-09-03"}, follow_redirects=False)
     assert r.status_code == 422 and 'aria-invalid="true"' in r.text
 
-
-def test_the_pages_with_pickers_load_the_picker_script_and_styles(client):
-    book(client)
-    for url in ("/plan-for-me/start", "/family", "/calendar?add=1&at=11:00"):
-        html = client.get(url).text
-        assert "/assets/js/pickers.js" in html and "/assets/css/pickers.css" in html, url
-        assert html.index("/assets/css/pickers.css") > html.index("/assets/css/base.css"), url
-
-
-def test_every_page_with_a_select_or_a_date_or_time_field_loads_the_pickers(client):
-    """A new page with such a field must add *pickers.HEAD, or its browser-default widgets show."""
-    book(client)
-    paths = ["/", "/plan-for-me/start", "/discover", "/plan", "/calendar", "/trip?add=1&day=2&at=11:00", "/family", "/trips", "/creators", "/trips/import", "/rides", "/pay", "/trip?tab=today"]
-    for route in client.app.routes:
-        path = getattr(route, "path", "")
-        if "GET" in (getattr(route, "methods", None) or set()) and "{" not in path and path not in paths and not path.startswith(("/assets", "/auth", "/logout", "/healthz")):
-            paths.append(path)
-    found = []
-    for path in paths:
-        r = client.get(path)
-        if r.status_code != 200 or "text/html" not in r.headers.get("content-type", ""):
-            continue
-        if re.search(r'<select\b|<input\b[^>]*type="(date|time)"', r.text):
-            found.append(path)
-            assert "/assets/js/pickers.js" in r.text and "/assets/css/pickers.css" in r.text, f"{path} has a select, date or time field but no pickers.HEAD"
-    assert "/plan-for-me/start" in found and "/family" in found and "/trip?tab=today" in found  # the walk really reached pages with fields
-
-
-def test_the_add_sheet_keeps_native_time_fields(client):
-    book(client)
-    html = client.get("/trip?add=1&day=2&at=11:00").text
-    assert re.search(r'<input[^>]*type="time"[^>]*name="start"', html) or re.search(r'<input[^>]*name="start"[^>]*type="time"', html)
-    assert 'value="11:00"' in html

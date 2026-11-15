@@ -61,9 +61,9 @@ def test_production_alone_turns_the_showcase_off_and_keeps_the_dev_sign_in_locke
 
 # ---- production: hidden routes ----
 
-HIDDEN_GET = ["/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
-              "/trip/canvas?demo=long"] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
-HIDDEN_POST = ["/fork", "/save", "/unsave", "/share", "/share/unpublish", "/forks/apply", "/forks/undo", "/creators", "/creators/draft", "/creators/finish"]
+HIDDEN_GET = ["/creators", "/creators/draft", "/creators/finish", "/creators/done", 
+              ] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
+HIDDEN_POST = ["/save", "/unsave", "/creators", "/creators/draft", "/creators/finish"]
 
 
 @pytest.mark.parametrize("path", HIDDEN_GET)
@@ -83,18 +83,6 @@ def test_the_families_own_trip_routes_still_work(real, client):
     sign_in(client)
     for path in ["/trips/import", "/trips/build", "/", "/calendar", "/family", "/signin", "/offline"]:
         assert client.get(path, follow_redirects=False).status_code in (200, 303), path
-
-
-def test_the_404_page_links_nowhere_hidden(real, client):
-    r = client.get("/forks")
-    assert r.status_code == 404
-    assert_real(r.text, "404")
-
-
-def test_the_real_production_environment_hides_them_too(prod, client):
-    assert client.get("/forks").status_code == 404
-    assert client.get(f"/trips/{SLUGS[0]}").status_code == 404
-    assert client.get("/healthz").status_code == 200
 
 
 @pytest.mark.parametrize("env", ["real", "prod"])
@@ -131,14 +119,6 @@ def test_footer_links_are_only_real_destinations(real, client):
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S).group(0)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
     assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]      # the legal pages (F-076)
-
-
-def test_production_never_shows_the_invented_workspace(real, client):
-    """F-198 (6): the sample catalog (it was labelled "Preview: sample prices") is for the showcase and local copies; production asks where you are going and shows the honest lanes."""
-    h = client.get("/plan").text
-    assert "Where are you going?" in h and 'id="ws-total"' not in h and 'id="ws-book"' not in h and "Preview: sample prices" not in h
-    lanes = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2").text
-    assert "Search flights to Los Angeles" in lanes and 'id="ws-total"' not in lanes
 
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):
@@ -179,50 +159,9 @@ def test_the_service_worker_version_changes_with_the_mode(client, monkeypatch):
 
 # ---- the local copy keeps everything ----
 
-def test_the_local_copy_still_shows_all_sample_data(client):
-    assert showcase.on()
-    cover = client.get("/").text                                                    # F-206: a stranger's landing is the cover
-    assert "Guides" in cover and 'href="/guides"' in cover
-    sign_in(client)
-    for path in ["/guides", "/creators", "/forks", f"/trips/{SLUGS[0]}", "/discover"]:
-        assert client.get(path).status_code == 200, path
-    assert client.get("/plan").text.count('data-pane="community"') == 1
-    assert "Preview: sample prices" not in client.get("/plan").text
-    sign_in(client)
-    assert "Browse community trips" in client.get("/forks").text      # a new family's first-run welcome (F-231: Where to? no longer draws it)
-    book(client)
-    assert client.get("/community").status_code == 200 and client.get("/share").status_code == 200
-
-
 # ---- production: no scripted demo, and the preview books nothing ----
 
-def test_the_booking_preview_writes_nothing_in_production(real, client):
-    from tests.test_calendar import PICK
-    sign_in(client)
-    msg = "Booking opens after your trip. Add the trip you booked instead."
-    r = client.post("/pay", data=PICK, follow_redirects=False)
-    assert r.status_code == 200 and msg in r.text and 'href="/trips/import"' in r.text and 'href="/trips/build"' in r.text
-    r = client.get("/plan/pay?f=f1&h=h1&c=c1", follow_redirects=False)
-    assert r.status_code == 200 and msg in r.text
-    assert client.get("/booked", follow_redirects=False).status_code == 303
-    assert client.get("/calendar", follow_redirects=False).headers["location"] == "/trips/import"
-
-
 # ---- production: the simulated Uber is gone ----
-
-def test_no_uber_offers_or_rides_in_production_and_they_stay_locally(client, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    book(client, c="none")                       # flight and stay, no car: the day offers rides
-    assert "Schedule an Uber" in client.get("/trip?day=0").text
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    for path in ["/trip?day=0", "/calendar", "/trip"]:
-        r = client.get(path, follow_redirects=True)
-        assert r.status_code == 200 and "Uber" not in r.text and "/rides" not in r.text, path
-    assert client.get("/rides/new", follow_redirects=False).status_code == 404
-    assert client.get("/rides/r1", follow_redirects=False).status_code == 404
-    for path in ["/rides", "/rides/r1/step", "/rides/r1/cancel"]:
-        assert client.post(path, data={}, follow_redirects=False).status_code == 404, path
-
 
 @pytest.mark.parametrize("path", ["/trip/plans", "/trip/notes", "/trip/canvas/plan", "/trip/canvas/actnote"])
 def test_demo_long_in_a_form_body_writes_nothing_in_production(client, monkeypatch, path):

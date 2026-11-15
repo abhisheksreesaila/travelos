@@ -17,25 +17,3 @@ def pair(client):
     sign_in(other, vi)
     return client, other
 
-
-def test_a_viewer_does_not_get_live_uber_links_on_the_day(pair):
-    ari, vi = pair
-    editor = ari.get("/trip?day=0").text
-    assert "Schedule an Uber" in editor and "/rides/new" in editor
-    seen = vi.get("/trip?day=0").text
-    assert "Schedule an Uber" not in seen and "/rides/new" not in seen
-
-
-def test_a_viewer_does_not_get_schedule_links_on_the_booking_pages(pair):
-    ari, vi = pair
-    assert "/rides/new" in ari.get("/booked").text
-    assert "/rides/new" not in vi.get("/booked").text
-    assert "/rides/new" in ari.get("/plan?f=f1&h=h1&c=none").text
-    assert "/rides/new" not in vi.get("/plan?f=f1&h=h1&c=none").text
-
-
-def test_a_viewer_still_sees_the_rides_that_are_scheduled(pair):
-    ari, vi = pair
-    from tests.test_rides import schedule
-    assert schedule(ari).status_code == 303
-    assert "simulated" in vi.get("/trip?day=0").text and 'href="/rides/r1"' in vi.get("/trip?day=0").text

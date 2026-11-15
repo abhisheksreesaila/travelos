@@ -275,7 +275,7 @@ def test_a_long_trips_chips_scroll_when_a_plan_is_held_near_their_end(browser, b
     ctx.set_default_timeout(6000)
     try:
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-23", "r": "2026-11-01", "a": "2", "k": "4,7"}, max_redirects=0)
+        ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-23", "r": "2026-11-01", "a": "2", "k": "4,7"}, max_redirects=0)
         page = ctx.new_page()
         page.goto(f"{base_url}/trip/canvas?day=0")
         expect(page.locator(".cz-hchip")).to_have_count(10)

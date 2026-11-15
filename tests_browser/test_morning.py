@@ -46,7 +46,7 @@ def phone(browser, base_url):
         ctx.set_default_timeout(5000)
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
-        ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
+        ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
         page = ctx.new_page()
         if perm:
             page.add_init_script(script=f"({STUB % {'answer': json.dumps(answer)}})({json.dumps(perm)})")

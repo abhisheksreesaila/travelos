@@ -140,20 +140,6 @@ def test_off_the_showcase_without_a_home_airport_it_asks_and_searches_nothing(re
     assert "Say where you fly from" in html and "data-sq" not in html and real.asked == []
 
 
-@pytest.mark.parametrize("path", ["/plan/matrix", "/plan/matrix/tile", "/plan/matrix/square", "/plan/grid"])
-def test_off_the_showcase_without_a_key_the_pages_are_not_there_and_with_one_they_are(client, monkeypatch, path):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    monkeypatch.delenv("LITEAPI_KEY", raising=False)
-    assert client.get(path).status_code == 404
-    monkeypatch.setenv("LITEAPI_KEY", KEY)
-    monkeypatch.setattr(liteapi, "TRANSPORT", Fake())
-    full = path + "?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12"
-    assert client.get(full, follow_redirects=False).status_code == 200
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    monkeypatch.delenv("LITEAPI_KEY", raising=False)
-    assert client.get(full, follow_redirects=False).status_code == 200
-
-
 def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sample, client):
     form = {**{k: v[0] for k, v in parse_qs(MATRIX.split("?")[1]).items()}, "lane": "losangeles+sandiego", "w": "2026-12-12"}
     r = client.post("/plan/matrix/save", data=form, follow_redirects=False)

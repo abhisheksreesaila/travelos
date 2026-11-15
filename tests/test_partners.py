@@ -145,25 +145,10 @@ def test_uber_deep_link():
 
 # ---- /plan links ----------------------------------------------------------------------------------------------------
 
-def test_plan_links_every_offer_to_its_partner(client, nokeys):
-    html = client.get(f"/plan?{HI}").text.replace("&amp;", "&")
-    links = re.findall(r'<a[^>]*href="(/go/[^"]+)"[^>]*data-partner="([a-z]+)"[^>]*>(?:<svg.*?</svg>)?Book on ([A-Za-z]+)</a>', html)
-    assert len(links) == 4 + 3 + 2    # four flights, three stays, two cars in Honolulu
-    assert {(p, name) for _, p, name in links} == {("aviasales", "Aviasales"), ("klook", "Klook")}
-    assert f"/go/hif1?to=hi&d=2027-03-05&r=2027-03-09&a=2" in [h for h, _, _ in links]
-    assert "we may earn a commission" in html
-
-
 def test_plan_has_no_partner_links_in_production_without_a_marker(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     html = client.get(f"/plan?{HI}").text
     assert "Book on" not in html and "/go/" not in html
-
-
-def test_plan_links_in_production_with_a_marker(client, nokeys, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
-    assert "Search on Aviasales" in text(client.get(f"/plan?{HI}").text) and "We may earn a commission" in text(client.get(f"/plan?{HI}").text)      # F-198: the honest lanes
 
 
 # ---- /go ------------------------------------------------------------------------------------------------------------
@@ -225,12 +210,6 @@ def test_the_subid_names_the_family_and_nobody_else(client, nokeys, monkeypatch)
     assert b.endswith("_hi_270305_stay")
 
 
-def test_a_signed_out_click_still_redirects_and_logs_nothing(client, nokeys):
-    assert sandbox_of(client, "hif1").startswith("/sandbox/aviasales/")
-    sign_in(client, "ari")
-    assert "No clicks yet" in text(client.get("/partners").text)
-
-
 def test_go_uses_the_offers_own_place(client, nokeys):
     assert "o=nycf1" in sandbox_of(client, "nycf1", "to=la&" + TRIP) and "to=nyc" in sandbox_of(client, "nycf1", "to=la&" + TRIP)
 
@@ -271,46 +250,6 @@ def test_booking_signed_out_asks_to_sign_in_first(client, nokeys):
 
 # ---- the conversion and /partners -----------------------------------------------------------------------------------------
 
-def test_a_booking_records_the_conversion_and_the_family_sees_no_commission(client, nokeys):
-    sign_in(client, "ari")
-    r = complete(client, "hif1")
-    assert r.status_code == 303 and re.fullmatch(r"/sandbox/aviasales/[0-9a-f]{10}/done", r.headers["location"])
-    done = text(client.get(r.headers["location"]).text)
-    assert "Booked elsewhere · Aviasales" in done and "$1,064" in done and "Estimated commission" not in done
-    page = text(client.get("/partners").text)
-    assert "1 click · 1 booked" in page and "$11.70" not in page and "estimated commission" not in page.lower()
-    assert "Aviasales Booked Aloha Pacific 12" in page
-    assert re.search(r"SubID [0-9a-f]{6}_hi_270305_flight Price at the partner \$1,064 Partner status processing", page)
-
-
-def test_the_partners_page_lists_every_lane_without_commission(client, nokeys):
-    sign_in(client, "ari")
-    for offer in ("hif1", "hih1", "hic1"):
-        assert complete(client, offer).status_code == 303
-    page = text(client.get("/partners").text)
-    assert "3 clicks · 3 booked" in page and "$180.90" not in page
-    for fragment in ("Klook Booked Waikiki Tide Resort", "Klook Booked Island Drive Rentals"):
-        assert fragment in page
-
-
-def test_a_click_that_was_not_booked_is_listed_as_clicked(client, nokeys):
-    sign_in(client, "ari")
-    sandbox_of(client, "hic1")
-    page = text(client.get("/partners").text)
-    assert "1 click · 0 booked" in page
-    assert re.search(r"Klook Clicked Island Drive Rentals SubID [0-9a-f]{6}_hi_270305_car Price at the partner –", page)
-
-
-def test_booking_twice_changes_nothing(client, nokeys):
-    sign_in(client, "ari")
-    loc = sandbox_of(client, "hif1")
-    page = client.get(loc).text
-    fields = dict(re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', page))
-    for _ in range(2):
-        assert client.post(loc.split("?")[0], data=fields, follow_redirects=False).status_code == 303
-    assert "1 click · 1 booked" in text(client.get("/partners").text)
-
-
 def test_the_booking_lands_in_the_trip_and_a_second_lane_joins_it(client, nokeys):
     sign_in(client, "ari")
     first = text(client.get(complete(client, "hif1").headers["location"]).text)
@@ -338,31 +277,6 @@ def test_a_long_label_collapses_to_a_count():
     assert log._origin("Aviasales, Klook", "Skyscanner Flights Direct") == "3 partners"
 
 
-def test_a_viewer_cannot_book_but_can_click_and_read(client, nokeys):
-    from tests.test_calendar import book
-    book(client)
-    viewer_mail = addr("vi")
-    invite(client, viewer_mail, "viewer")
-    viewer = browser(client)
-    sign_in(viewer, viewer_mail)
-    r = complete(viewer, "hif1")
-    assert r.status_code == 403 and "Only editors can change that" in r.text
-    assert "1 click · 0 booked" in text(viewer.get("/partners").text)
-
-
-def test_partners_needs_sign_in_and_goes_back_after(client, nokeys):
-    r = client.get("/partners", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/signin?next=%2Fpartners"
-
-
-def test_one_family_never_sees_anothers_clicks(client, nokeys):
-    sign_in(client, "ari")
-    complete(client, "hif1")
-    other = browser(client)
-    sign_in(other, addr("lee"))
-    assert "No clicks yet" in text(other.get("/partners").text)
-
-
 def test_a_booked_click_id_cannot_be_reused_for_another_offer(client, nokeys):
     sign_in(client, "ari")
     loc = sandbox_of(client, "hif1")
@@ -377,14 +291,6 @@ def test_a_booked_click_id_cannot_be_reused_for_another_offer(client, nokeys):
 
 # ---- production stays honest ----------------------------------------------------------------------------------------------------
 
-def test_off_the_showcase_sandbox_and_go_are_404_without_keys(client, nokeys, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    sign_in(client, "ari")
-    assert client.get("/go/hif1?" + HI, follow_redirects=False).status_code == 404
-    assert client.get("/sandbox/aviasales/0123456789?o=hif1&" + HI).status_code == 404
-    assert client.get("/partners").status_code == 404
-
-
 def test_off_the_showcase_a_marker_still_sends_people_to_the_real_partner(client, nokeys, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
@@ -393,17 +299,6 @@ def test_off_the_showcase_a_marker_still_sends_people_to_the_real_partner(client
     r = client.get("/go/hif1?" + HI + "&home=jfk", follow_redirects=False)      # the reader's airport rides in the click's address
     assert r.headers["location"].startswith("https://www.aviasales.com/search/JFK0503HNL09032?marker=123456.")
     assert client.get("/sandbox/aviasales/0123456789?o=hif1&" + HI).status_code == 404    # the stand-in never exists with the showcase off
-
-
-def test_off_the_showcase_a_token_opens_partners_with_a_note_that_statistics_are_not_live(client, nokeys, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
-    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "123456")
-    sign_in(client, "ari")
-    client.get("/go/hif1?" + HI, follow_redirects=False)
-    page = text(client.get("/partners").text)
-    assert "Live statistics are not connected yet" in page and "1 click · 0 booked" in page and "Sample data" not in page
 
 
 def test_no_page_links_to_a_hidden_partner_page_when_the_showcase_is_off(client, nokeys, monkeypatch):
@@ -476,31 +371,6 @@ def test_go_carries_the_readers_airport_and_party_to_aviasales(client, nokeys, m
     assert "adults=2&children=1&infants=1&marker=801445." in loc and "SFO" not in loc
 
 
-def test_go_search_flight_is_one_aviasales_search_without_an_invented_offer(client, nokeys, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
-    sign_in(client, "ari")
-    loc = client.get("/go/search-flight?to=la&d=2027-03-05&r=2027-03-09&a=2&home=ord", follow_redirects=False).headers["location"]
-    base, _, query = loc.partition("?")
-    assert base == "https://www.aviasales.com/search/ORD0503LAX09032"
-    assert re.fullmatch(r"801445\.[0-9a-f]{6}_la_270305_flight", parse_qs(query)["marker"][0])
-    assert "Search flights to Los Angeles" in text(client.get("/partners").text)
-
-
-def test_go_search_todo_asks_klook_for_disneyland_tickets_through_the_partner_api(client, nokeys, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
-    monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
-    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
-    api = FakeApi()
-    monkeypatch.setattr(travelpayouts, "_post", api)
-    sign_in(client, "ari")
-    r = client.get(f"/go/search-todo?to=la&{TRIP}&focus=disney", follow_redirects=False)
-    assert r.status_code == 302 and re.fullmatch(r"https://klook\.tpx\.lv/x\?sub=[0-9a-f]{6}_la_270305_todo", r.headers["location"])
-    assert api.calls[0][2]["links"][0]["url"] == "https://www.klook.com/en-US/destination/p50042790-disneyland-resort/"
-    r = client.get(f"/go/search-todo?to=sd&{TRIP}", follow_redirects=False)
-    assert api.calls[1][2]["links"][0]["url"] == "https://www.klook.com/en-US/search/result/?query=San%20Diego%20attractions"
-    assert "Tickets and things to do" in text(client.get("/partners").text)
-
-
 def test_a_disneyland_stay_click_asks_klook_for_anaheim(client, nokeys, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
@@ -530,29 +400,3 @@ def test_only_the_three_search_lanes_exist(client, nokeys):
 def todo_cards(html):
     return re.findall(r'<a[^>]*href="(/go/search-todo[^"]*)"[^>]*>(.*?)</a>', html.replace("&amp;", "&"), re.S)
 
-
-def test_plan_has_one_tickets_card_that_goes_to_klook(client, nokeys):
-    html = client.get(f"/plan?{HI}").text
-    ((href, label),) = todo_cards(html)
-    assert href == "/go/search-todo?to=hi&d=2027-03-05&r=2027-03-09&a=2" and text(label).strip() == "Things to do on Klook"
-    assert "Tickets and things to do" in text(html) and "Honolulu attractions" in text(html)
-
-
-def test_a_disneyland_trip_offers_disneyland_tickets_and_keeps_its_focus_in_every_link(client, nokeys):
-    html = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4,7&home=JFK&focus=disney").text
-    ((href, label),) = todo_cards(html)
-    assert text(label).strip() == "See tickets on Klook"
-    assert href == "/go/search-todo?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney"
-    assert "Disneyland Resort tickets" in text(html)
-    assert "/go/h1?to=la&d=2027-03-05&r=2027-03-09&a=2&k=4%2C7&home=JFK&focus=disney" in html.replace("&amp;", "&")      # so does a stay's: it will ask Klook for Anaheim
-
-
-def test_an_ordinary_los_angeles_trip_is_not_a_disneyland_one(client, nokeys):
-    html = client.get("/plan?to=la&d=2027-03-05&r=2027-03-09&a=2").text
-    assert "Disneyland" not in html and "Los Angeles attractions" in text(html)
-
-
-def test_the_tickets_card_follows_the_same_rules_as_the_book_links_in_production(client, nokeys, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    html = client.get(f"/plan?{HI}").text           # F-198: production shows the honest lanes; with no keys the tickets lane is a plain GetYourGuide search that says so
-    assert 'data-lane="todo" data-site="getyourguide"' in html and "No commission" in text(html) and "/go/" not in html

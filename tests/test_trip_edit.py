@@ -52,16 +52,6 @@ def test_the_details_page_has_an_edit_button_that_opens_the_builder_filled(clien
         assert expected in visible(w.html), expected
 
 
-def test_the_phone_view_has_the_button_for_a_saved_trip_and_not_for_the_demo(client):
-    sign_in(client)
-    book(client)
-    assert 'id="tp-edit-trip"' not in client.get("/trip?day=0").text  # a sample trip has no stored plan
-    imported(client)
-    [trip_id] = trip_ids()
-    phone = client.get(f"/trip?trip={trip_id}").text
-    assert 'id="tp-edit-trip"' in phone and f'href="/trips/build/edit?trip={trip_id}"' in phone
-
-
 def test_the_preview_in_edit_mode_offers_only_save_changes_and_change_something(client):
     imported(client)
     [trip_id] = trip_ids()

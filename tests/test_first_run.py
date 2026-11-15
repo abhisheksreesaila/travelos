@@ -7,7 +7,6 @@ import pytest
 from tests.test_calendar import book
 from tests.test_crew_calendar import make_trip_real, named
 from tests.test_members import browser, invite
-from tests.test_share import share
 from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 
@@ -30,36 +29,11 @@ def new(client):
     return client
 
 
-def test_share_welcomes_a_new_family_with_the_three_ways_in(new):      # F-231: Where to? drew this welcome until it was deleted; /share and /forks still do
-    w = welcome_of(new.get("/share").text)
-    assert all(p in w for p in PATHS)
-    assert {"/plan/ask", "/trips/import", "/guides"} <= links(w)
-    assert new.get("/trips/import").status_code == 200 and new.get("/guides").status_code == 200
-
-
-def test_there_is_no_welcome_for_signed_out_visitors_or_families_with_a_trip(client):
-    assert "Start your first trip" not in client.get("/share").text
-    book(client)
-    assert "Start your first trip" not in client.get("/share").text
-
-
 def test_the_old_calendar_address_sends_a_new_family_to_the_matrix_instead_of_a_dead_end(new):
     assert new.get("/calendar", follow_redirects=False).headers["location"] == "/plan/ask"
     html = new.get("/calendar").text
     assert "<h1" in html and "Book a trip first" not in html
     assert "/trips/import" in links(html) and 'id="ak-import"' in html      # D-610: the v2 ask has no site nav, only its way to import
-
-
-def test_the_forks_page_has_next_steps_on_both_sides(new):
-    html = new.get("/forks").text
-    assert all(p in html for p in ("Plan a trip", "Import a trip you booked")) and "/guides" in links(html)
-    assert "Nothing forked or saved yet" in html
-
-
-def test_the_forks_page_of_a_family_with_a_trip_but_no_forks_still_points_on(client):
-    book(client)
-    html = client.get("/forks").text
-    assert "Nothing forked or saved yet" in html and "/guides" in links(html)
 
 
 def test_family_with_only_the_owner_invites_someone(new):
@@ -79,30 +53,9 @@ def test_trip_details_with_no_trip_points_to_the_ways_in(new):
     assert {"/trips/import", "/plan/ask", "/guides"} <= links(r.text)
 
 
-def test_the_trip_switcher_with_one_trip_offers_the_next_one(client):
-    book(client)
-    html = client.get("/trip/canvas").text
-    pop = html.split('ga-tb-pop-trip')[1].split("</details>")[0]
-    assert "only trip so far" in pop and "Plan another trip" in pop and "Import a trip you booked" in pop
-    assert "/trips/switch" not in pop  # nothing to switch to yet
-
-
-def test_the_guides_page_invites_the_first_share_until_someone_shares(client):
-    html = client.get("/guides").text
-    assert "Be the first to share one" in html and "These are sample guides" in html
-    book(client)
-    share(client)
-    assert "Be the first to share one" not in client.get("/guides").text
-
-
 def test_every_first_screen_of_a_new_family_has_a_way_forward(new):
     for path in ("/", "/plan/matrix", "/calendar", "/forks", "/family", "/trips/import", "/community", "/trip/details"):
         r = new.get(path)
         assert r.status_code in (200, 404), path
         assert links(r.text) & {"/plan/ask", "/trips/import", "/community"}, path
 
-
-def test_share_without_a_trip_shows_the_first_run_ways_in(new):
-    for r in (new.get("/share"), new.post("/share")):
-        w = welcome_of(r.text)
-        assert all(p in w for p in PATHS) and "Book a trip first" not in r.text

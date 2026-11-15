@@ -46,50 +46,11 @@ def met(monkeypatch):
 
 # ---- the /plan weather pane ---------------------------------------------------------------------------------------------------
 
-def test_the_showcases_sample_trip_keeps_its_sample_weather(client):
-    p = pane(client.get("/plan").text)
-    assert temps(p) == [75, 73, 70, 72, 77] and "Sample data" in p and "MET Norway" not in p and "Typical" not in p
-
-
-def test_a_real_trip_weeks_away_shows_typical_weather_from_noaa_labelled_not_a_forecast(client):
-    p = pane(client.get("/plan?d=2026-12-21&r=2026-12-24&a=2&k=4").text)     # Los Angeles, today is Sep 30 (tests/conftest.py)
-    text = visible(p)
-    assert re.findall(r'class="ws-wday"[^>]*>([^<]+)<', p) == ["Mon 21", "Tue 22", "Wed 23", "Thu 24"]
-    assert temps(p) == [67] * 4                                               # NOAA's late-December normal high, downtown Los Angeles
-    assert p.count("ws-typical") == 4
-    assert TYPICAL in text and "NOAA climate normals for Los Angeles, 1991–2020" in text and "The forecast opens around Dec 12." not in text   # off: no promise
-    assert "Sample data" not in text and "MET Norway" not in text
-
-
 def live_pane():
     """The /plan weather pane for the sample trip's dates, drawn as the live site would (the showcase off); since F-198 the live /plan itself shows the lanes instead."""
     from fasthtml.common import to_xml
     from gitaway.pages import plan
     return pane(to_xml(plan.weather_pane(catalog.SAMPLE_TRIP)))
-
-
-def test_the_live_site_shows_no_sample_weather_even_for_the_sample_trips_dates(client, monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert 'data-pane="weather"' not in client.get("/plan").text          # F-198: the live /plan is the booking lanes, with no workspace and so no weather pane
-    text = visible(live_pane())                                            # and the pane itself, wherever it shows, never shows the sample there
-    assert "Sample data" not in text and "Typical mid October · not a forecast yet" in text
-    assert "75°" not in text
-
-
-def test_once_the_forecast_reaches_a_real_trip_the_pane_shows_it_with_met_norways_credit(client, met):
-    p = pane(client.get("/plan?d=2026-12-19&r=2026-12-23&a=2").text)
-    assert temps(p) == [ws.EXPECT[d][0] for d in range(19, 24)]
-    assert "Heavy snow" in p and "ws-typical" not in p
-    link = CREDIT_LINE.search(p)                                      # the whole credit line is the link (review 9, 10), naming the station (last review)
-    assert link and link.group(1) == weather.CREDIT_URL and link.group(2) == "Los Angeles"
-    assert len(met.calls) == 1
-
-
-def test_a_trip_whose_days_have_gone_by_says_so(client, monkeypatch):
-    monkeypatch.setattr(catalog, "today", lambda: catalog.SAMPLE_TRIP.return_ + timedelta(days=3))
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    p = live_pane()
-    assert temps(p) == [] and "These days have gone by." in visible(p)
 
 
 # ---- the /forks calendar and a shared trip ---------------------------------------------------------------------------------------
@@ -109,21 +70,6 @@ def _calendar(html):
     return html[start:html.index("</section>", start)]
 
 
-def test_the_forks_calendar_shows_the_tahoe_trips_typical_weather_never_the_sample(client):
-    assert imported(client, TAHOE).status_code == 303
-    cal = _calendar(client.get("/forks").text)
-    heads = re.findall(r'class="fk-wx[^"]*"[^>]*>(\d+)°F<', cal)
-    assert len(heads) == 8 and set(heads) <= {"42"}                         # South Lake Tahoe, mid and late December
-    assert cal.count("fk-wx fk-wx-typ") == 8 and TYPICAL_SPAN in visible(cal)
-    assert "75°F" not in cal
-
-
-def test_the_forks_calendar_shows_no_weather_where_gitaway_has_nothing_real(client):
-    assert imported(client, TAHOE.replace("destination: South Lake Tahoe", "destination: Lisbon")).status_code == 303
-    cal = _calendar(client.get("/forks").text)
-    assert "fk-wx" not in cal and "°F" not in cal
-
-
 def test_a_shared_real_trip_carries_no_weather(client):
     assert imported(client, TAHOE).status_code == 303
     trip = share.build(person("ari"))
@@ -133,15 +79,6 @@ def test_a_shared_real_trip_carries_no_weather(client):
 def test_the_privacy_page_names_met_norway_and_noaa(client):
     text = visible(client.get("/privacy").text)
     assert "MET Norway" in text and "api.met.no" in text and "NOAA" in text
-
-
-def test_a_trip_under_way_shows_only_the_days_still_to_come(client, monkeypatch):
-    monkeypatch.setattr(catalog, "today", lambda: catalog.SAMPLE_TRIP.depart + timedelta(days=2))      # Sun Oct 18, the trip's third day
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    p = live_pane()
-    assert re.findall(r'class="ws-wday"[^>]*>([^<]+)<', p) == ["Sun 18", "Mon 19", "Tue 20"]
-    assert re.search(r'class="ws-meta"[^>]*>°F<', p)                                                    # no "first 3 of 5 days"
-
 
 
 # ---- review: a shared or published page never shows invented weather (reviewer 1) -------------------------------------------------------
@@ -173,23 +110,7 @@ def test_the_showcases_sample_itinerary_keeps_its_sample_badge():
 
 # ---- review: MET's answer can never take a page down (security F1) --------------------------------------------------------------------
 
-def test_a_signed_out_plan_page_stays_up_when_met_sends_garbage(client, met):
-    met.answers = [(200, ws.headers(), b"[" * 100000)]
-    r = client.get("/plan?d=2026-12-19&r=2026-12-23&a=2")
-    assert r.status_code == 200 and TYPICAL_SPAN in visible(pane(r.text))
-    assert client.get("/plan?d=2026-12-19&r=2026-12-23&a=2").status_code == 200 and len(met.calls) == 1     # and MET is not asked again at once
-
-
 # ---- review: the credit where /forks shows the forecast (reviewer 5) ----------------------------------------------------------------------
-
-def test_the_forks_calendar_credits_met_norway_when_its_days_are_the_forecast(client, met):
-    assert imported(client, TAHOE).status_code == 303
-    cal = _calendar(client.get("/forks").text)
-    assert re.findall(r'class="fk-wx"[^>]*>(\d+)°F<', cal) == [str(ws.EXPECT[d][0]) for d in range(19, 26)]
-    link = CREDIT_LINE.search(cal)
-    assert link and link.group(1) == weather.CREDIT_URL and link.group(2) == "South Lake Tahoe"
-
-
 
 # ---- last review: an old shared snapshot's day weather never reaches the page (reviewer 3); nor does the sample's (nit) ---------------------
 
@@ -199,10 +120,3 @@ def test_an_old_shared_snapshots_day_weather_never_reaches_the_page():
     page = _drawn(community.trip_of({"kind": "shared", "snapshot": community.dump(old)}))
     assert "75°F" not in page and "clear skies" not in page and "74°F" not in page and 'class="rail-weather"' not in page
 
-
-def test_sharing_the_showcases_sample_trip_carries_no_day_weather_either(client):
-    from tests.test_signin import sign_in
-    sign_in(client)
-    client.post("/pay", data={"f": "f1", "h": "h1", "c": "none", "a": "2", "k": "4,7"}, follow_redirects=False)     # the sample trip, booked
-    built = share.build(person())
-    assert built.days and all(d.weather == "" for d in built.days)

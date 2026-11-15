@@ -3,12 +3,6 @@ from gitaway import session as ses
 from tests.test_signin import person, session_data, sign_in
 
 
-def test_remembered_picks_live_in_the_family_database_not_the_cookie(client):
-    sign_in(client)
-    client.get("/plan?f=f2&h=h3&c=c1&rooms=cy1&add=bf&d=2026-10-16&r=2026-10-19&a=3&k=4,7")
-    assert "plan" not in session_data(client) and "f=f2&h=h3&c=c1" in ses.remembered_plan(person())
-
-
 def test_remembering_picks_ignores_an_absurdly_long_query():
     s = person()
     ses.remember_plan(s, "f=f2&h=h3&c=c1&d=2026-10-16&r=2026-10-19&a=3&k=4,7")

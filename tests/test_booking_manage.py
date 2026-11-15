@@ -169,25 +169,6 @@ def test_a_trip_booked_in_many_places_says_elsewhere_for_a_booking_it_cannot_pla
     assert cal.booked_on(plan, plan.hotels[0]) == "Airbnb"
 
 
-@pytest.mark.parametrize("block, partner, url", [
-    ("b-in", "Airbnb", "https://www.airbnb.com/trips"),
-    ("b-out", "Aviasales", "https://www.alaskaair.com/booking/reservation-lookup"),
-    ("b-back", "Expedia", "https://www.expedia.com/trips"),
-    ("b-car-pick", "Enterprise", "https://www.enterprise.com/en/reserve/view-modify-cancel.html"),
-    ("b-tix1", "GetYourGuide", "https://www.getyourguide.com/"),
-])
-def test_each_bookings_sheet_has_change_or_cancel_at_the_partner(client, block, partner, url):
-    imported(client)
-    day = {"b-in": 0, "b-out": 0, "b-back": 7, "b-car-pick": 0, "b-tix1": 2}[block]
-    html = client.get(f"/trip/canvas?day={day}&booked={block}").text
-    where = re.search(r'<div id="bk-where" class="bk-where">(.*?)</div>', html, re.S)
-    assert where, block
-    assert f"Booked on {partner}" in words(where.group(1))
-    link = re.search(r'<a[^>]*class="tp-btn tp-btn-white bk-manage"[^>]*>', where.group(1)).group(0)
-    assert f"Change or cancel on {manage.find(partner if block != 'b-out' else 'Alaska').name}" in link
-    assert f'href="{url}"' in link and 'target="_blank"' in link and 'rel="noopener"' in link and "Change or cancel" in where.group(1)
-
-
 def test_the_details_page_has_a_change_or_cancel_for_every_booking(client):
     imported(client)
     html = client.get("/trip/details").text

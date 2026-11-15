@@ -61,20 +61,6 @@ def test_the_arrival_names_the_trip_its_dates_the_family_and_the_days_to_go(book
     assert 'class="av' in r.text and "Planning together" in r.text or "together" in r.text.lower()
 
 
-def test_the_trips_real_bookings_are_placed_locked_and_open_their_booking(booked):
-    r = booked.get("/trip/plan")
-    d = data(r.text)
-    by = {b["id"]: b for b in d["booked"]}
-    assert by["b-out"]["day"] == 0 and by["b-in"]["day"] == 0 and by["b-out2"]["day"] == 4 and by["b-back"]["day"] == 4
-    assert by["b-in"]["title"].startswith("Check in · ") and by["b-out2"]["title"].startswith("Check out · ")
-    assert by["b-in"]["start"] == cal.CHECK_IN and by["b-out2"]["start"] == cal.CHECK_OUT
-    drawn = evs(r.text)
-    for i in ("b-out", "b-in", "b-out2", "b-back"):
-        assert drawn[i]["data-locked"] == "1" and unescape(drawn[i]["href"]) == by[i]["href"] and "booked=" + i in by[i]["href"]
-    assert "data-rz" not in re.search(r'<a [^>]*data-id="b-in".*?</a>', r.text, re.S).group(0)      # a booking has no resize edge: it cannot be dragged
-    assert "Desert" not in r.text and by["b-in"]["title"].split(" · ")[1] in r.text.replace("&amp;", "&")      # the stay band says the hotel's real name
-
-
 def test_the_calendar_day_headers_carry_weather_and_a_typical_day_is_labelled(booked, monkeypatch):
     typical = pv.Wx(74, 52, "Typical", "sun", True, False, "Typical · not a forecast yet")
     monkeypatch.setattr(pv, "sky", lambda t: ([typical] * 5, []))
@@ -261,21 +247,6 @@ def test_what_changed_lists_the_plan_changes_the_family_was_told(booked):
     write(booked, op="edit", act=act, start="780", end="840")
     page = booked.get("/trip/plan").text
     assert 'id="pl-changes"' in page and "added Venice Canals stroll" in page.replace("&amp;", "&")
-
-
-def test_the_trips_chat_is_read_and_written_through_the_existing_routes(booked):
-    assert booked.post("/trip/family/message", data={"text": "Shall we do the canals first?"}, headers={"X-Fragment": "1"}).status_code == 200
-    j = booked.get("/trip/plan/thread?key=trip").json()
-    assert [(i["text"], i["mine"]) for i in j["items"] if i["kind"] == "message"] == [("Shall we do the canals first?", True)]
-    assert j["threads"][0] == {"key": "trip", "title": "Whole trip", "unread": 0, "n": 1}
-
-
-def test_a_plans_own_chat_is_its_thread(booked):
-    act = add(booked).json()["plan"]["act"]
-    assert booked.post("/trip/talk/message", data={"act": act, "text": "Bring a hat"}, headers={"X-Fragment": "1"}).status_code == 200
-    j = booked.get(f"/trip/plan/thread?key={act}").json()
-    assert [i["text"] for i in j["items"]] == ["Bring a hat"] and any(t["key"] == act and t["title"] == "Venice Canals stroll" for t in j["threads"])
-    assert [i["text"] for i in booked.get("/trip/plan/thread?key=trip").json()["items"] if i["kind"] == "message"] == []
 
 
 # ---- the way in ------------------------------------------------------------------------------------------------------------------

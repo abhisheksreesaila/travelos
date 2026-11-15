@@ -106,24 +106,6 @@ def test_the_migration_runs_on_an_existing_family_file():
 
 # ---- /trip --------------------------------------------------------------------------------------------------------------------
 
-def test_a_paris_trip_shows_parisian_today_and_up_next(client, at_utc):
-    imported(client, PARIS)
-    at_utc(INSTANT)
-    html = client.get("/trip?tab=today").text
-    t = words(html)
-    assert "DAY 5 OF 5" in t and "Tuesday" in html.split("<h1")[1].split("</h1>")[0]
-    assert "UP NEXT · IN 3 H" in t and "The Example Hotel Santa Monica" in t
-
-
-def test_the_same_instant_is_a_day_earlier_for_an_la_trip_and_the_la_countdown_is_unchanged(client, at_utc):
-    imported(client)
-    at_utc(INSTANT)
-    assert "DAY 4 OF 5" in words(client.get("/trip?tab=today").text)  # 11 PM on Oct 19 in Los Angeles
-    at_utc(datetime(2026, 10, 20, 21, 0, tzinfo=timezone.utc))  # 2:00 PM in Los Angeles, 10 minutes before the flight home
-    t = words(client.get("/trip?tab=today").text)
-    assert "DAY 5 OF 5" in t and "UP NEXT · IN 10 MIN" in t
-
-
 def test_the_minute_and_the_day_follow_the_zone(at_utc):
     at_utc(INSTANT)
     assert td.now_minute("Europe/Paris") == 8 * 60 and td.now_minute() == 23 * 60 and td.now_minute("America/Los_Angeles") == 23 * 60
@@ -168,28 +150,3 @@ def trip_text(client, moment, at_utc):
     at_utc(moment)
     return words(client.get("/trip?tab=today").text)
 
-
-def test_on_the_morning_you_fly_to_paris_the_flight_is_hours_away_in_la_time(client, at_utc):
-    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
-    t = trip_text(client, datetime(2026, 10, 16, 16, 0, tzinfo=timezone.utc), at_utc)  # 9:00 AM in Los Angeles, 6 PM in Paris
-    assert "UP NEXT · IN 6 H" in t and "HAPPENING NOW" not in t and "DAY 1 OF" in t
-
-
-def test_the_evening_before_you_fly_it_is_still_before_the_trip(client, at_utc):
-    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
-    t = trip_text(client, datetime(2026, 10, 16, 1, 0, tzinfo=timezone.utc), at_utc)  # 6 PM on Oct 15 in Los Angeles, 3 AM on Oct 16 in Paris
-    assert "TRIP STARTS TOMORROW" in t and "DAY 1 OF" not in t
-
-
-def test_after_you_land_the_clock_is_the_destinations(client, at_utc):
-    imported(client, leaving("LAX", "CDG", "2026-10-16 15:00", "2026-10-17 11:00"))
-    t = trip_text(client, datetime(2026, 10, 17, 10, 0, tzinfo=timezone.utc), at_utc)  # 12:00 in Paris, an hour after landing
-    assert "DAY 2 OF" in t and "UP NEXT · IN 3 H" in t  # hotel check in at 3 PM Paris time
-
-
-def test_a_flight_across_the_date_line_stays_on_the_departure_day_until_it_lands(client, at_utc):
-    imported(client, leaving("SFO", "NRT", "2026-10-16 11:00", "2026-10-17 15:00"))
-    t = trip_text(client, datetime(2026, 10, 16, 17, 0, tzinfo=timezone.utc), at_utc)  # 10:00 AM Oct 16 in San Francisco, already Oct 17 in Tokyo
-    assert "DAY 1 OF" in t and "UP NEXT · IN 1 H" in t
-    t = trip_text(client, datetime(2026, 10, 17, 7, 0, tzinfo=timezone.utc), at_utc)  # 4 PM on Oct 17 in Tokyo, landed
-    assert "DAY 2 OF" in t

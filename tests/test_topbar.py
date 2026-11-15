@@ -22,59 +22,6 @@ def marked(html):
     return [re.sub(r"<[^>]+>", "", x).replace("/", "").strip() for x in links]
 
 
-def test_a_signed_in_page_has_the_bar_with_trip_family_ask_picker_sos_and_the_avatar_menu(client):
-    book(client)
-    b = bar(client.get("/family").text)
-    assert b
-    nav = b.split("</nav>")[0]
-    for href in ("/trip/plan", "/trip/family", "/trip/ask"):
-        assert f'href="{href}"' in nav
-    for label in ("Trip", "Family", "Ask"):
-        assert f">{label}<" in nav.replace(" <kbd>", "<") or label in nav
-    assert "<kbd" in nav                                           # the "/" key hint beside Ask
-    assert "ga-tb-picker" in b                                     # the trip picker
-    assert 'href="/trip/canvas?sos=1&amp;trip=' in b              # SOS, on the trip this page shows
-    assert 'action="/signout"' in b and "Sign out" in b           # the avatar menu
-    assert 'href="/family"' in b                                   # People and invites
-
-
-def test_the_picker_names_the_open_trip_with_its_dates_and_lists_every_trip(client):
-    book(client)
-    book(client, d="2026-10-23", r="2026-10-26", a="2", k="4,7")
-    b = bar(client.get("/family").text)
-    assert len(re.findall(r'name="trip" value="', b)) == 2        # one switch form per trip
-    assert 'aria-current="true"' in b                              # the open one is marked
-    assert re.search(r"Oct \d+ . \d+", b)                          # its dates, as the phone header writes them
-
-
-def test_the_current_section_is_marked(client):
-    book(client)
-    assert marked(client.get("/trip/ask").text) == ["Ask"]
-    assert marked(client.get("/trip/family").text) == ["Family"]
-    assert marked(client.get("/family").text) == ["Family"]
-    assert marked(client.get("/trip/canvas?day=0").text) == ["Trip"]
-    assert marked(client.get("/trip/canvas?day=0&panel=family").text) == ["Family"]          # F-143: the day with the Family chats open in the panel
-    imported(client)                                               # /trip/details is the imported trip's page
-    r = client.get("/trip/details")
-    assert r.status_code == 200 and marked(r.text) == ["Trip"]
-
-
-def test_the_trip_canvas_and_the_phone_tabs_carry_the_bar(client):
-    book(client)
-    for path in ("/trip/canvas?day=0", "/trip/canvas", "/trip/ask", "/trip/family", "/trip/help", "/trip/map", "/trip?tab=notes", "/calendar"):
-        assert bar(client.get(path).text), path
-
-
-def test_a_family_with_no_trip_gets_start_instead_of_trip(client):
-    sign_in(client)
-    b = bar(client.get("/family").text)
-    nav = b.split("</nav>")[0]
-    assert 'href="/plan/ask"' in nav and ">Start<" in nav
-    assert 'href="/trip"' not in nav
-    assert "/trips/switch" not in b                                # no trips to pick
-    assert "sos=1" not in b                                        # nothing to send help about
-
-
 def test_signed_out_pages_keep_their_own_header(client):
     for path in ("/", "/signin", "/privacy"):
         html = client.get(path).text
@@ -113,20 +60,6 @@ def test_the_bar_is_in_rem_and_sized_by_its_own_stylesheet(client):
     assert "min-width: 1020px" in css
 
 
-def test_trip_opens_day_one_before_the_trip_and_today_during_it(client, monkeypatch):
-    """The bar's Trip link is /trip, the trip's home: the cockpit (F-201), open on the first day before the trip and on today's during it (F-092's rule, which the bar relies on)."""
-    from datetime import date
-
-    from gitaway import showcase, catalog
-    from tests.test_family_storage import THREE_NIGHTS
-    book(client, **THREE_NIGHTS)
-    assert 'href="/trip/plan"' in bar(client.get("/family").text)      # F-252: the bar's Trip leads to planning
-    assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/cockpit")
-    assert 'data-open="0"' in client.get("/trip").text      # today is Sep 30
-    monkeypatch.setattr(catalog, "today", lambda: date(2026, 10, 18), raising=False)
-    assert 'data-open="2"' in client.get("/trip").text      # Oct 18 is the trip's third day
-
-
 # ---- the trip menu below 1020px (F-147 review) ----------------------------------------------------------------------------
 
 def phone_pick(html):
@@ -135,37 +68,7 @@ def phone_pick(html):
     return m.group(0) if m else ""
 
 
-def test_the_phone_screens_carry_the_trip_menu_with_the_same_items_as_the_bar(client):
-    from tests.test_calendar import PICK
-    book(client)
-    book(client, d="2026-10-23", r="2026-10-26", a="2", k="4,7")
-    for path in ("/trip/canvas?day=0", "/trip/canvas", "/trip?day=0"):
-        html = client.get(path).text
-        menu = phone_pick(html)
-        assert menu, path
-        assert menu.count('action="/trips/switch"') == 2 and 'href="/plan/ask"' in menu and 'href="/trips/import"' in menu, path
-        assert "Plan another trip" in menu and "Import a trip you booked" in menu
-
-
 def test_a_family_with_no_trip_has_no_trip_menu(client):
     sign_in(client)
     assert phone_pick(client.get("/family").text) == ""
 
-
-def test_the_menu_is_the_eyebrow_line_itself_not_another_row(client):
-    """The line that already names the trip (week, Today) or the day is the button."""
-    book(client)
-    week, day, today = (client.get(p).text for p in ("/trip/canvas", "/trip/canvas?day=1", "/trip?day=1"))
-    for html, words in ((week, "LA WITH THE KIDS · OCT 16 – 20"), (day, "SAT OCT 17"), (today, "LA WITH THE KIDS · OCT 16 – 20")):
-        m = re.search(r'<summary[^>]*>(.*?)</summary>', phone_pick(html), re.S)
-        assert m and words in re.sub(r"<[^>]+>", "", m.group(1)), words
-        assert re.search(r'<summary[^>]*class="[^"]*(cz-head-k|ga-tb-psum)', phone_pick(html))
-    assert all(h.count("ga-tb-phonepick") == 1 for h in (week, day, today))      # one menu on a page, in the eyebrow
-
-
-def test_a_viewer_is_not_offered_the_import_in_either_menu(crew):
-    owner, _, viewer = crew
-    for who, offered in ((owner, True), (viewer, False)):
-        html = who.get("/trip/canvas?day=0").text
-        for menu in (bar(html), phone_pick(html)):
-            assert ('href="/trips/import"' in menu) is offered

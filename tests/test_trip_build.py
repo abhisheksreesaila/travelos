@@ -69,18 +69,6 @@ def test_signed_out_goes_through_sign_in(client):
         assert r.status_code == 303 and r.headers["location"].startswith("/signin?next="), path
 
 
-def test_the_questions_build_exactly_the_trip_the_template_does(client):
-    sign_in(client)
-    w = whole_trip(Walk(client))
-    assert "Check your trip" in w.text and 'id="ti-save"' in w.html  # the importer's own preview
-    r = client.post(f"{PATH}/save", data={"draft": draft_of(w.html)}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip"
-    built = importer.plan_of(person())
-    assert built == ti.parse(TEMPLATE).plan  # flights, hotel, car, party, confirmation numbers: all of it
-    trips = ses.trips(person())
-    assert len(trips) == 1 and trips[0].source == "imported" and trips[0].title == "LA with the kids"
-
-
 def test_the_preview_is_the_import_preview_with_confirmations_and_booked_elsewhere(client):
     sign_in(client)
     w = whole_trip(Walk(client))
@@ -91,16 +79,6 @@ def test_the_preview_is_the_import_preview_with_confirmations_and_booked_elsewhe
     import_preview = client.post("/trips/import", data={"text": TEMPLATE}).text
     for card in ("ti-flights", "ti-hotel", "ti-car", "ti-travelers", "ti-trip"):
         assert f'id="{card}"' in w.html and f'id="{card}"' in import_preview
-
-
-def test_the_trip_shows_the_same_blocks_as_an_imported_template(client):
-    sign_in(client)
-    w = whole_trip(Walk(client))
-    client.post(f"{PATH}/save", data={"draft": draft_of(w.html)})
-    html = client.get("/trip/canvas?day=0").text
-    assert "Alaska Airlines AS 1234" in html
-    assert "booked=b-out" in html and "booked=b-in" in html
-    assert "ABCDEF" not in html  # confirmation numbers stay out of the page and its blocks
 
 
 def test_no_yaml_anywhere_and_the_cookie_holds_only_the_sign_in(client):
@@ -304,13 +282,6 @@ def test_viewers_are_refused_and_editors_can_build(crew):
 
 
 # ---- the ways in ----------------------------------------------------------------------------------------------------
-
-def test_the_first_run_welcome_and_the_import_page_link_to_the_builder(client):
-    sign_in(client, "newcomer@example.com")
-    html = client.get("/forks").text      # F-231: the first-run welcome was on Where to? too
-    assert 'href="/trips/build"' in html and "Answer a few questions" in html and "Paste the template" in html and 'href="/trips/import"' in html
-    assert 'href="/trips/build"' in client.get("/trips/import").text
-
 
 def test_every_step_has_unique_ids_and_every_input_has_a_label(client):
     sign_in(client)

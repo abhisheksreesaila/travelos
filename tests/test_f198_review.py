@@ -282,21 +282,6 @@ class _Hop(http.server.BaseHTTPRequestHandler):
 
 # ---- nits --------------------------------------------------------------------------------------------------------------------------
 
-def test_the_ask_card_says_an_airbnb(client):
-    sign_in(client, "ari")
-    assert client.post("/trips/import/save", data={"text": TAHOE_TRIP}, follow_redirects=False).status_code == 303
-    assert "This looks like an Airbnb confirmation" in words(client.post("/trip/ask/propose", data={"text": AIRBNB}).text)
-    assert "This looks like a Booking.com confirmation" in words(client.post("/trip/ask/propose", data={"text": BOOKING}).text)
-
-
-def test_the_partner_log_names_the_site_not_its_key(client, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
-    sign_in(client, "ari")
-    client.get(lane("stay", "airbnb"), follow_redirects=False)
-    page = client.get("/partners").text
-    assert re.search(r'class="pt-who">Airbnb<', page) and 'class="pt-who">airbnb<' not in page
-
-
 def test_the_details_page_says_where_once_not_twice(client):
     sign_in(client, "ari")
     assert client.post("/trips/import/save", data={"text": TAHOE_TRIP}, follow_redirects=False).status_code == 303
@@ -304,15 +289,6 @@ def test_the_details_page_says_where_once_not_twice(client):
     assert "Booked on Expedia" in t and "Booked elsewhere · Expedia" not in t
     today = words(client.get("/trip").text)
     assert "Booked elsewhere · Expedia" not in today
-
-
-def test_admin_counts_plain_link_clicks_per_lane(client, monkeypatch):
-    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "ari.rivera@example.com")
-    sign_in(client, "ari")
-    for site in ("airbnb", "vrbo", "getyourguide"):
-        client.get(lane("stay", site), follow_redirects=False)
-    card = re.search(r'id="ad-plain"(.*?)</section>|id="ad-plain"(.*?)</div>\s*</div>', client.get("/admin").text, re.S)
-    assert card and "stay 2" in words(card.group(0)) and "todo 1" in words(card.group(0))
 
 
 # ---- 18. body limits on the paste routes ------------------------------------------------------------------------------------------

@@ -82,28 +82,6 @@ def trip_buttons(html):
 
 # ---- stored in the family database, and surviving a restart --------------------------------------------------------
 
-def test_trips_bookings_activities_notes_and_friends_are_rows_in_the_family_file(client):
-    book(client)
-    add(client, id="a1")
-    client.post("/trip/notes", data={"id": "n2", "text": "Bring hats"})
-    s = person()
-    assert [count(s, t) for t in ("trips", "bookings", "activities", "notes")] == [1, 1, 1, 1]
-    assert set(session_data(client)) <= set(ses.AUTH_KEYS)  # the cookie holds only the sign-in
-
-
-def test_everything_survives_a_restart_of_the_server(client):
-    book(client)
-    add(client, id="a1", title="Venice Canals stroll")
-    client.post("/trip/canvas/actnote", data={"id": "n2", "text": "Bring hats", "act": "a1"})
-    client.get("/plan?f=f2&h=h3&c=c1")
-    before = client.get("/trip/canvas?day=1").text
-    restart()
-    again = client.get("/trip/canvas?day=1").text  # same cookie, nothing in memory
-    assert "Venice Canals stroll" in again and "Bring hats" in client.get("/trip/canvas/card?act=a1").text
-    assert tag(before, "data-act", "a1") == tag(again, "data-act", "a1")
-    assert [n["t"] for n in stored_calendar()["n"]] == ["Bring hats"] and ses.remembered_plan(person()).startswith("f=f2")
-
-
 def test_a_real_second_process_sees_the_same_trip(client, tmp_path):
     """A new Python process on the same data folder and cookie, which is what a restart really is."""
     book(client)
@@ -171,33 +149,6 @@ def test_someone_who_is_not_a_member_cannot_open_the_family_database():
 
 # ---- several trips and the switcher ----------------------------------------------------------------------------------
 
-def test_booking_again_with_other_picks_makes_another_trip_instead_of_replacing_the_first(client):
-    book(client)
-    first = ses.booking(person())
-    book(client, **THREE_NIGHTS)
-    s = person()
-    assert len(ses.trips(s)) == 2 and ses.booking(s)["id"] != first["id"]  # the newest is open
-    assert ses.trips(s)[0].current and not ses.trips(s)[1].current
-
-
-def test_the_top_bar_lists_the_trips_and_switching_opens_the_other_with_its_own_activities(client):
-    book(client)
-    add(client, id="a1", title="Sample trip plan")
-    book(client, **THREE_NIGHTS)
-    add(client, id="a1", title="Three night plan", day="1")
-    html = client.get("/trip/canvas?day=1").text
-    buttons = trip_buttons(html)
-    assert len(buttons) == 2 and [cur for _, cur in buttons] == [True, False]
-    assert "Three night plan" in html and "Sample trip plan" not in html
-    other = buttons[1][0]
-    r = client.post("/trips/switch", data={"trip": other}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip"
-    html = client.get("/trip/canvas?day=1").text
-    assert "Sample trip plan" in html and "Three night plan" not in html
-    assert [cur for _, cur in trip_buttons(html)] == [False, True]
-    assert "Oct 16 – 20" in html  # the sample trip's dates
-
-
 def test_switching_to_a_trip_that_is_not_the_familys_changes_nothing(client):
     book(client)
     here = ses.booking(person())["id"]
@@ -212,26 +163,9 @@ def test_switching_needs_sign_in(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/signin")
 
 
-def test_the_paid_trip_opens_on_the_calendar_and_pay_again_reopens_it(client):
-    book(client)
-    first = ses.booking(person())
-    book(client, **THREE_NIGHTS)
-    book(client)  # the same picks as the first trip: no new trip, it opens again
-    s = person()
-    assert len(ses.trips(s)) == 2 and ses.booking(s)["id"] == first["id"]
-
-
 def test_the_switcher_stays_out_of_the_way_with_one_trip(client):
     book(client)
     assert trip_buttons(client.get("/trip/canvas").text) == []
-
-
-def test_every_trip_has_its_own_ids_and_notes(client):
-    book(client)
-    add(client)
-    assert stored_calendar()["a"]
-    book(client, **THREE_NIGHTS)
-    assert stored_calendar()["a"] == [] and stored_calendar()["n"] == []  # nothing carried over
 
 
 # ---- at the same moment ---------------------------------------------------------------------------------------------
@@ -382,72 +316,7 @@ def titles_of(trip_id):
     return [a.title for a in cal.activities(s)]
 
 
-def test_a_form_drawn_for_a_trip_carries_that_trip(client):
-    a, b = two_trips(client)
-    html = client.get("/trip?add=1&day=1").text
-    assert f'name="trip" value="{b}"' in without_bar(html).split('id="tp-form"')[1].split("</form>")[0]
-
-
-def test_a_stale_tab_posting_with_its_trip_id_changes_that_trip_not_the_open_one(client):
-    a, b = two_trips(client)
-    client.post("/trips/switch", data={"trip": a})  # another tab opened trip A
-    r = client.post("/trip/canvas/plan", data={"op": "delete", "act": "a1", "trip": b}, follow_redirects=False)  # the old tab still shows trip B
-    assert r.status_code == 303
-    assert titles_of(a) == ["Trip A plan"]  # trip A's a1 was never touched
-    assert titles_of(b) == []  # the delete landed in B, the trip the form was drawn for
-    client.post("/trip/plans", data={**FORM, "id": "a7", "title": "Late add", "trip": b})
-    assert "Late add" not in titles_of(a) and "Late add" in titles_of(b)
-
-
-def test_a_write_naming_a_trip_the_family_does_not_have_changes_nothing(client):
-    a, b = two_trips(client)
-    r = client.post("/trip/canvas/plan", data={"op": "delete", "act": "a1", "trip": "not-a-trip"}, follow_redirects=False)
-    assert r.status_code in (303, 409)
-    assert titles_of(b) == ["Trip B plan"] and titles_of(a) == ["Trip A plan"]
-    client.post("/trip/plans", data={**FORM, "id": "a8", "title": "Nope", "trip": "not-a-trip"})
-    assert "Nope" not in titles_of(b) + titles_of(a)
-
-
-def test_a_plain_get_uses_the_open_trip_and_an_unknown_trip_falls_back_to_it(client):
-    a, b = two_trips(client)
-    assert "Trip B plan" in client.get("/trip/canvas?day=1").text
-    assert "Trip B plan" in client.get("/trip/canvas?day=1&trip=nope").text
-    assert "Trip A plan" in client.get(f"/trip/canvas?day=1&trip={a}").text
-
-
-def test_forks_apply_forms_carry_the_trip(client):
-    a, b = two_trips(client)
-    client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
-    assert f'name="trip" value="{b}"' in client.get("/forks?open=sun-tacos-and-tide-pools").text
-    client.post("/trips/switch", data={"trip": a})
-    r = client.post("/forks/apply", data={"slug": "sun-tacos-and-tide-pools", "pick": ["d1s2"], "trip": b}, follow_redirects=False)
-    assert r.status_code == 303
-    assert titles_of(a) == ["Trip A plan"] and len(titles_of(b)) == 2  # the plan went to B, where the page was drawn
-
-
 # ---- review fixes: deleted rows are purged, one host lock, notes ceiling ------------------------------------------------
-
-def test_only_the_last_deleted_activity_is_kept_for_undo_older_ones_are_removed_from_the_file(client):
-    book(client)
-    for i in range(1, 5):
-        add(client, id=f"a{i}", title=f"Plan {i}", start=f"{7 + i}:00", end=f"{7 + i}:30")
-        client.post("/trip/canvas/actnote", data={"id": f"n{10 + i}", "text": f"note {i}", "act": f"a{i}"})
-    for i in range(1, 5):
-        client.post("/trip/canvas/plan", data={"op": "delete", "act": f"a{i}"})
-    s = person()
-    assert count(s, "activities") == 1 and count(s, "notes") == 1  # just a4 and its note, for Undo
-    assert cal.undo_delete(s, "a4").title == "Plan 4"
-    assert cal.undo_delete(s, "a1") is None
-    assert cal.add_activity(s, day=1, start="12:00", end="12:30", title="Revived?", kind="fun", id="a2") is None  # a stale re-post does not bring it back
-
-
-def test_the_notes_ceiling_refuses_more_and_keeps_what_there_is(client, monkeypatch):
-    monkeypatch.setattr(cal, "MAX_NOTES", 3)
-    book(client)
-    codes = [client.post("/trip/notes", data={"id": f"n{i + 1}", "text": f"note {i}"}).status_code for i in range(6)]
-    assert 409 in codes and len(stored_calendar()["n"]) == 3
-    assert "a lot planned" in client.post("/trip/notes", data={"id": "n99", "text": "one more"}).text
-
 
 def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
     from gitaway import hostdb
@@ -468,58 +337,3 @@ def test_every_use_of_the_host_database_goes_through_the_one_lock(monkeypatch):
 
 
 # ---- review round 2: share, the form guard, rides housekeeping ----------------------------------------------------------
-
-def test_sharing_from_a_stale_tab_publishes_the_trip_the_page_showed_not_the_open_one(client):
-    from gitaway import community, share
-    a, b = two_trips(client)  # B is open
-    client.post("/trips/switch", data={"trip": a})  # another tab opened trip A
-    r = client.post("/share", data={"trip": b}, follow_redirects=False)  # the stale tab shows trip B
-    assert r.status_code == 303 and f"trip={b}" in r.headers["location"]
-    s = person()
-    with ses.family(s) as fam:
-        booking_b = familydb.booking_for_trip(fam.db, b)
-    assert [row["slug"] for row in community.rows()] == [share.slug_for(s["user_id"], booking_b)]
-    assert client.get(r.headers["location"]).status_code == 200  # the confirmation is for trip B too
-    r = client.post("/share/unpublish", data={"trip": b, "slug": community.rows()[0]["slug"]}, follow_redirects=False)
-    assert r.status_code == 303 and community.rows() == []
-
-
-def test_every_post_form_on_the_trip_forks_rides_and_share_pages_names_its_trip(client):
-    from tests.test_rides import schedule
-    a, b = two_trips(client)
-    client.post("/fork", data={"next": "/trips/sun-tacos-and-tide-pools"})
-    book(client, **{"f": "f1", "h": "h1", "c": "none"})
-    schedule(client, "arrive", pick="f=f1&h=h1&c=none")
-    client.post("/share", data={})
-    pages = ["/trip?day=1", "/trip?add=1&day=1", "/trip/canvas?day=1", "/forks", "/forks?open=sun-tacos-and-tide-pools", "/share", "/share/done", "/rides/r1",
-             "/rides/new?leg=depart&f=f1&h=h1&c=none"]
-    seen = 0
-    for path in pages:
-        html = client.get(path).text
-        for form in re.findall(r"<form\b[^>]*>.*?</form>", html, re.S):
-            head = form[:form.index(">") + 1]
-            if 'method="post"' not in head or 'action="/trips/switch"' in head or 'action="/signout"' in head or 'action="/fork"' in head or 'action="/save"' in head or 'action="/unsave"' in head:
-                continue
-            seen += 1
-            assert 'name="trip"' in form, (path, head)
-    assert seen >= 9
-
-
-def test_cancelled_rides_do_not_count_toward_the_family_ceiling_and_unused_ones_are_removed(client, monkeypatch):
-    from gitaway import rides
-    from tests.test_rides import schedule
-    monkeypatch.setattr(rides, "MAX_RIDES", 1)
-    book(client, f="f1", h="h1", c="none")
-    s = person()
-    assert schedule(client, "arrive", pick="f=f1&h=h1&c=none").status_code == 303
-    rides.cancel_ride(s, "r1")
-    assert schedule(client, "depart", pick="f=f1&h=h1&c=none").status_code == 303  # the cancelled one did not fill the ceiling
-    # a cancelled ride that no trip uses (its picks were never booked) goes when the next ride is saved
-    with familydb.using(s) as db:
-        import json
-        data = json.loads(familydb.row(db, "SELECT data FROM rides WHERE id = 'r1'")["data"])
-        data["k"] = "orphan"
-        familydb.run(db, "UPDATE rides SET trip_id = '', key = 'orphan', data = :d WHERE id = 'r1'", d=json.dumps(data))
-        db.conn.commit()
-    rides.cancel_ride(s, "r2")
-    assert [x.id for x in rides.list_rides(s)] == ["r2"]

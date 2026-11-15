@@ -44,7 +44,7 @@ def family(browser, base_url):
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": f"guide{time.time_ns()}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         if booked:
-            ctx.request.post(f"{base_url}/pay", form=PICK, max_redirects=0)
+            ctx.request.post(f"{base_url}/_test/pay", form=PICK, max_redirects=0)
         page = ctx.new_page()
         page.errors = []
         page.on("pageerror", lambda e: page.errors.append(str(e)))
