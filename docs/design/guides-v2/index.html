@@ -1,0 +1,1912 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-palette="calm">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitAway guides v2</title>
+<meta name="description" content="Prototype of GitAway guides v2: a calmer palette, the Book · Plan · Guides bar, the guides hub, the guide page (glance, day rail, stop detail), guides inside booking and planning, and making a guide. Sample data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&display=swap" rel="stylesheet">
+<!--
+  Guides v2 + the calm palette (docs/briefs/guides-v2.md, founder 2026-11-15), in booking v2's language
+  (docs/design/booking-v2 and planning-v2: the sky, the near-opaque cards, frosted glass only on widgets over the sky,
+  the springs, the press-in). Type: Newsreader for display, Inter for everything you read and every number.
+
+  The palette (switch "Palette: Calm / Before", bottom left):
+    Calm   ink and indigo carry the UI: primary actions are solid indigo, neutral ones ink; headers, the planning hero and
+           the pass are near-opaque cards or deep indigo. Kind colours (flight, stay, food, see, tickets, rides) only mark kinds.
+    Before what v2 does today: the pink-to-violet sunset on buttons, headers, the planning hero and the pass.
+  Either way the pink-violet gradient stays on exactly one thing: the Instagram share card (make a guide, then publish).
+
+  The guide format ("the run sheet"): an at-a-glance header (six tiles), a day strip, each day a time rail of compact
+  stop cards with the trip between them, and the detail one tap away (a side panel on a laptop, a sheet on a phone,
+  opened in place inside a context sheet so no sheet ever opens on a sheet).
+
+  Every guide, creator, price and link here is made up and labelled Sample. Drawings are illustrations, never photos.
+  States: the "States" menu (bottom left), or ?s=<state>&theme=dark&palette=before in the address.
+-->
+<style>
+:root {
+  --f-display: "Newsreader", Georgia, serif;
+  --f-ui: "Inter", system-ui, sans-serif;
+  --d-wt: 560; --d-track: -0.022em;
+  --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
+
+  --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
+  --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73;
+  --card: rgb(255 255 255 / .88); --card-solid: #FFFFFF; --card-2: #F2F3FA; --card-3: #E8EAF5;
+  --line: rgb(15 17 36 / .10); --line-2: rgb(15 17 36 / .18);
+  --glass: rgb(255 255 255 / .62); --glass-line: rgb(255 255 255 / .75);
+  --flight: #4338CA; --flight-t: #E4E3FB; --flight-i: #2A2185;
+  --stay: #8B2FC9; --stay-t: #F1E3FA; --stay-i: #5A1785;
+  --food: #C92A5E; --food-t: #FBE1EA; --food-i: #7E1538;
+  --see: #0F766E; --see-t: #D9F2EF; --see-i: #0B4D48;
+  --tix: #C2410C; --tix-t: #FCE6DA; --tix-i: #7A2906;
+  --wx: #0369A1; --wx-t: #DBEFFA; --wx-i: #034769;
+  --ride: #FFD43B; --ride-t: #FFF4C2; --ride-i: #5C4300; --ride-k: #E7B416;
+  --sun: #FFB547; --sun-ink: #D97706;
+  --indigo: #4338CA; --indigo-2: #3730A3; --indigo-t: #E4E3FB; --indigo-i: #2A2185; --on-indigo: #FFFFFF;
+  --pill-on: #0F1124; --pill-fg: #FFFFFF;
+  --cell: rgb(228 227 251 / .70); --cell-hover: rgb(214 212 250 / .95);
+  --hatch: rgb(15 17 36 / .06); --scrim: rgb(10 10 30 / .26);
+  --sh1: 0 1px 2px rgb(20 20 60 / .06), 0 2px 8px rgb(20 20 60 / .06);
+  --sh2: 0 2px 6px rgb(20 20 60 / .08), 0 14px 32px -10px rgb(40 30 110 / .22);
+  --sh3: 0 4px 14px rgb(20 20 60 / .07), 0 34px 70px -24px rgb(40 30 110 / .32);
+  --sunset: linear-gradient(120deg, #4338CA 0%, #8B2FC9 52%, #C92A5E 100%);
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  --spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --press: 90ms; --release: 480ms; --quick: 200ms; --slow: 1000ms;
+  --r-xl: 30px; --r-lg: 24px; --r-md: 18px; --r-sm: 12px;
+  --lead: 210px; --cw: 96px; --ch: 68px;
+  /* the palette: calm (default) */
+  --cta-bg: var(--indigo); --cta-fg: var(--on-indigo); --cta-sh: 0 10px 24px -12px rgb(67 56 202 / .7);
+  --head-bg: var(--card); --head-fg: var(--ink); --head-fg2: var(--ink-2); --head-chip: var(--card-2);
+  --pass-bg: #1E1B4B; --pass-fg: #FFFFFF; --pass-fg2: rgb(255 255 255 / .82);
+  --nav-on: var(--indigo); --nav-on-fg: #FFFFFF;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F;
+  --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4;
+  --card: rgb(22 24 48 / .90); --card-solid: #171A33; --card-2: #22264A; --card-3: #2B2F57;
+  --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
+  --glass: rgb(26 28 56 / .60); --glass-line: rgb(255 255 255 / .10);
+  --flight: #7B73FF; --flight-t: #24215A; --flight-i: #D2CFFF;
+  --stay: #C084FC; --stay-t: #321A4A; --stay-i: #EBD4FD;
+  --food: #FF6B9A; --food-t: #401528; --food-i: #FFD0DF;
+  --see: #2DD4BF; --see-t: #0E302D; --see-i: #BCF0E8;
+  --tix: #FB923C; --tix-t: #3D1E0E; --tix-i: #FFD6BC;
+  --wx: #38BDF8; --wx-t: #0C2A3E; --wx-i: #C6EAFC;
+  --ride-t: #3A300C; --ride-i: #FFE89A;
+  --sun-ink: #FBBF24;
+  --indigo: #5B54F0; --indigo-2: #4F46E5; --indigo-t: #24215A; --indigo-i: #D2CFFF;
+  --pill-on: #F4F5FB; --pill-fg: #0F1124;
+  --cell: rgb(52 50 120 / .55); --cell-hover: rgb(70 66 150 / .75);
+  --hatch: rgb(255 255 255 / .06); --scrim: rgb(5 5 20 / .5);
+  --sh1: 0 1px 2px rgb(0 0 0 / .3); --sh2: 0 12px 30px -10px rgb(0 0 0 / .6); --sh3: 0 30px 70px -24px rgb(0 0 0 / .75);
+  --sunset: linear-gradient(120deg, #4F46E5 0%, #9333EA 52%, #DB2777 100%);
+  --cta-sh: 0 10px 24px -12px rgb(0 0 0 / .7);
+  --pass-bg: #2A2670;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] { --indigo: #4F46E5; }
+/* the palette: before (v2 today: the sunset on buttons, headers, the planning hero and the pass) */
+:root[data-palette="before"] {
+  --cta-bg: var(--sunset); --cta-fg: #FFFFFF; --cta-sh: 0 12px 30px -12px rgb(139 47 201 / .6);
+  --head-bg: var(--sunset); --head-fg: #FFFFFF; --head-fg2: rgb(255 255 255 / .9); --head-chip: rgb(255 255 255 / .16);
+  --pass-bg: var(--sunset);
+  --nav-on: var(--sunset);
+}
+@media (max-width: 719px) { :root { --lead: 100px; --cw: 78px; --ch: 64px; } }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--sky-3); scrollbar-gutter: stable; }
+body { margin: 0; min-height: 100svh; color: var(--ink); font: 450 17px/1.5 var(--f-ui); font-optical-sizing: auto; overflow-x: clip; -webkit-font-smoothing: antialiased; }
+@media (max-width: 719px) { body { font-size: 16px; } }
+button, input { font: inherit; color: inherit; }
+h1, h2, h3, h4 { font-family: var(--f-display); font-weight: var(--d-wt); letter-spacing: var(--d-track); text-wrap: balance; margin: 0; }
+.num { font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--indigo); outline-offset: 3px; border-radius: 10px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+svg { flex: none; }
+[hidden] { display: none !important; }
+html.lock { overflow: hidden; }
+
+/* ---------- press: every button and tappable card goes in and springs back (the built F-258 rule) ---------- */
+:is(button, [role="button"], a.btn, .tap) { transition: scale var(--release) var(--spring), transform var(--quick) var(--ease), background-color var(--quick), color var(--quick), box-shadow var(--quick), opacity var(--quick); -webkit-tap-highlight-color: transparent; }
+:is(button, [role="button"], a.btn, .tap):active:not(:disabled) { scale: .96; transition: scale var(--press) var(--ease); }
+.tap.big:active { scale: .985; }
+
+/* ---------- the sky: gradient, sun (a moon in the dark), clouds, the beach at the foot ---------- */
+.bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: radial-gradient(60% 42% at 8% 0%, color-mix(in srgb, var(--wx-t) 90%, transparent), transparent 70%),
+              radial-gradient(48% 36% at 96% 8%, color-mix(in srgb, var(--ride-t) 90%, transparent), transparent 70%),
+              radial-gradient(70% 50% at 50% 104%, color-mix(in srgb, var(--flight-t) 95%, transparent), transparent 70%),
+              linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); transition: background var(--slow); }
+.bg .sunball { position: absolute; right: 7%; top: 13%; width: 10rem; height: 10rem; border-radius: 50%; background: var(--sun);
+  box-shadow: 0 0 0 2.4rem color-mix(in srgb, var(--sun) 20%, transparent), 0 0 0 5.2rem color-mix(in srgb, var(--sun) 9%, transparent);
+  transition: opacity var(--slow) var(--ease) .22s, transform var(--slow) var(--spring-soft) .22s; }
+:root[data-theme="dark"] .bg .sunball { opacity: 0; transform: translateY(60vh) scale(.8); transition: opacity var(--slow) var(--ease), transform var(--slow) var(--spring-soft); }
+.bg .moon { position: absolute; right: 7%; top: 12%; width: 9.5rem; height: 9.5rem; opacity: 0; transform: translateY(60vh) rotate(-24deg); filter: drop-shadow(0 0 1.75rem rgb(243 235 211 / .28));
+  transition: opacity var(--slow) var(--ease), transform var(--slow) var(--spring-soft); }
+:root[data-theme="dark"] .bg .moon { opacity: 1; transform: none; transition: opacity var(--slow) var(--ease) .22s, transform var(--slow) var(--spring-soft) .22s; }
+.bg .moon .zz { animation: zz 3.9s ease-in-out infinite alternate; }
+@keyframes zz { from { opacity: .25; translate: 0 2px; } to { opacity: 1; translate: 0 -2px; } }
+.bg .stars { position: absolute; left: 0; top: 0; width: 100%; height: 42vh; opacity: 0; transition: opacity var(--slow) var(--ease); }
+:root[data-theme="dark"] .bg .stars { opacity: 1; transition-delay: .5s; }
+.bg .stars circle { fill: #F3EBD3; animation: twinkle 3.9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.2s); }
+@keyframes twinkle { from { opacity: .3; } to { opacity: .9; } }
+.bg .cloud { position: absolute; fill: color-mix(in srgb, #fff 85%, transparent); transition: opacity var(--slow); animation: drift 60s linear infinite alternate; }
+:root[data-theme="dark"] .bg .cloud { fill: rgb(255 255 255 / .06); }
+@keyframes drift { to { translate: 6vw 0; } }
+.bg .shore { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 30vh; min-height: 180px; transition: transform var(--slow) var(--spring-soft), opacity var(--slow); }
+:root[data-theme="dark"] .bg .shore { filter: brightness(.42) saturate(.8); }
+body.deep .bg .shore { transform: translateY(70%); opacity: .55; }
+body.deep .bg .cloud { opacity: 0; }
+body.deep .bg :is(.sunball, .moon) { scale: .6; translate: 0 -40%; }
+:root[data-theme="dark"] body.deep .bg .stars { opacity: .4; }
+
+/* ---------- top bar: brand · Book · Plan · Guides · the avatar ---------- */
+.top { position: relative; z-index: 40; display: flex; align-items: center; gap: 12px; max-width: 1440px; margin: 0 auto; padding: 16px 28px 12px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; text-decoration: none; color: var(--ink); font: 600 25px/1 var(--f-display); letter-spacing: -0.03em; flex: none; }
+.brand svg { width: 34px; height: 34px; }
+.top .sp { flex: 1; }
+.sections { position: absolute; left: 50%; translate: -50% 0; display: inline-flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); box-shadow: inset 0 0 0 1px var(--glass-line), 0 10px 30px -14px rgb(40 30 110 / .25); }
+.sections button { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; min-width: 104px; padding: 0 20px; border: 0; border-radius: 999px; background: none; cursor: pointer; font: 620 17px/1 var(--f-ui); color: var(--ink); }
+.sections button svg { width: 19px; height: 19px; }
+.sections button:hover { background: color-mix(in srgb, var(--card-solid) 70%, transparent); }
+.sections .blob { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px; background: var(--nav-on); box-shadow: var(--sh1); transition: left .5s var(--spring), width .5s var(--spring); }
+.sections button > * { position: relative; z-index: 1; }
+.sections button[aria-current="page"] { color: var(--nav-on-fg); background: none; }
+.pill-sample { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; background: var(--ride-t); color: var(--ride-i); font: 650 13px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.round { position: relative; display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--card-solid); box-shadow: var(--sh1); cursor: pointer; color: var(--ink); flex: none; }
+.round svg { width: 20px; height: 20px; }
+.round.flat { background: var(--card-2); box-shadow: none; }
+.av { --c: var(--indigo); display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--c); color: #fff; font: 700 15px/1 var(--f-ui); flex: none; }
+.av.sm { width: 28px; height: 28px; font-size: 13px; }
+.av.lg { width: 44px; height: 44px; font-size: 18px; }
+.round.me { padding: 0; }
+.round.me .av { width: 40px; height: 40px; }
+.menu { position: absolute; z-index: 45; top: calc(100% - 4px); right: 28px; width: 290px; padding: 8px; border-radius: 22px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); transform-origin: calc(100% - 24px) 0; }
+.menu .who { display: flex; align-items: center; gap: 12px; padding: 10px 10px 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.menu .who b { display: block; font-weight: 650; }
+.menu .who small { display: block; color: var(--ink-2); font-size: 15px; }
+.menu button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 0 12px; border: 0; border-radius: 14px; background: none; cursor: pointer; text-align: left; font: 560 16px/1.2 var(--f-ui); }
+.menu button:hover { background: var(--card-2); }
+.menu button svg { width: 19px; height: 19px; color: var(--ink-2); }
+.menu button small { margin-left: auto; color: var(--ink-3); font-size: 14px; }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+.menu .moved { margin: 4px 6px 2px; padding: 10px 12px; border-radius: 14px; background: var(--indigo-t); color: var(--indigo-i); font-size: 15px; line-height: 1.35; }
+
+/* ---------- shared bits ---------- */
+.wrap { max-width: 1440px; margin: 0 auto; padding: 0 28px 120px; }
+.view { display: none; }
+.view.on { display: block; animation: viewin .45s var(--ease) both; }
+@keyframes viewin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border: 0; border-radius: 999px; cursor: pointer; font: 650 17px/1 var(--f-ui); text-decoration: none; white-space: nowrap; }
+.btn svg { width: 19px; height: 19px; }
+.btn.cta { background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); }
+.btn.cta:hover { transform: translateY(-1px); }
+.btn.ink { background: var(--pill-on); color: var(--pill-fg); }
+.btn.soft { background: var(--card-solid); color: var(--ink); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); }
+.btn.soft:hover { box-shadow: var(--sh2), inset 0 0 0 1px var(--line-2); }
+.btn.ghost { background: var(--card-2); color: var(--ink); }
+.btn.lg { min-height: 56px; padding: 0 28px; font-size: 18px; }
+.btn.busy { width: 56px; min-width: 0; padding: 0; pointer-events: none; transition: width .4s var(--spring-soft), padding .3s; }
+.btn.busy > :not(.spin) { display: none; }
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgb(255 255 255 / .35); border-top-color: #fff; animation: spin .8s linear infinite; }
+.spin.dk { border-color: color-mix(in srgb, var(--indigo) 22%, transparent); border-top-color: var(--indigo); width: 18px; height: 18px; border-width: 2.5px; }
+@keyframes spin { to { rotate: 360deg; } }
+.ic { --k: var(--see); width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: var(--k); color: #fff; flex: none; }
+.ic svg { width: 19px; height: 19px; }
+.ic.k-ride { color: #2B2100; }
+:root[data-theme="dark"] .ic:not(.k-ride) { color: #0B0C18; }
+.k-food { --k: var(--food); --kt: var(--food-t); --ki: var(--food-i); }
+.k-see { --k: var(--see); --kt: var(--see-t); --ki: var(--see-i); }
+.k-tix { --k: var(--tix); --kt: var(--tix-t); --ki: var(--tix-i); }
+.k-ride { --k: var(--ride-k); --kt: var(--ride-t); --ki: var(--ride-i); }
+.k-stay { --k: var(--stay); --kt: var(--stay-t); --ki: var(--stay-i); }
+.k-flight { --k: var(--flight); --kt: var(--flight-t); --ki: var(--flight-i); }
+.smp { display: inline-flex; align-items: center; font: 650 12px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ride-i); background: var(--ride-t); padding: 6px 9px; border-radius: 999px; white-space: nowrap; }
+.kick { font: 650 13px/1.2 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 0; cursor: pointer; background: var(--card-solid); color: var(--ink); font: 580 16px/1 var(--f-ui); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.chip svg { width: 17px; height: 17px; }
+.chip[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); box-shadow: none; }
+.art { overflow: hidden; background: var(--card-2); }
+.art > svg { width: 100%; height: 100%; display: block; }
+.ill { position: absolute; left: 10px; bottom: 10px; padding: 5px 9px; border-radius: 999px; background: rgb(15 17 36 / .66); color: #fff; font: 600 13px/1 var(--f-ui); }
+.link-btn { border: 0; background: none; min-height: 48px; padding: 0 2px; color: var(--indigo-i); font: 620 16px/1 var(--f-ui); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 6px; }
+:root[data-theme="dark"] .link-btn { color: var(--indigo-i); }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); box-shadow: inset 0 0 0 1px var(--glass-line), 0 10px 30px -14px rgb(40 30 110 / .25); }
+.scrim { position: fixed; inset: 0; z-index: 55; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.toast { position: fixed; z-index: 80; left: 50%; bottom: 28px; translate: -50% 0; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; min-height: 56px; border-radius: 999px; background: var(--pill-on); color: var(--pill-fg); box-shadow: var(--sh3); font: 560 16px/1.3 var(--f-ui); opacity: 0; transform: translateY(20px) scale(.96); pointer-events: none; transition: opacity .25s var(--ease), transform .5s var(--spring); width: max-content; max-width: calc(100vw - 24px); }
+.toast.on { opacity: 1; transform: none; pointer-events: auto; }
+.toast .ok { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--see); color: #fff; flex: none; }
+.toast .ok svg { width: 15px; height: 15px; }
+.toast button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--pill-fg) 16%, transparent); color: var(--pill-fg); font-weight: 650; cursor: pointer; }
+
+/* ---------- 1 · the hub ---------- */
+.hub-top { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 26px; align-items: end; padding-bottom: 26px; }
+.hub-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 30px 0 0; max-width: 900px; min-width: 0; }
+.hub-hero h1 { font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 1.02; }
+.hub-hero h1 em { font-style: italic; font-weight: 480; color: var(--ink-2); }
+.hub-hero p { margin: 0; color: var(--ink-2); font-size: 19px; max-width: 40rem; }
+.search { position: relative; max-width: 640px; }
+.search label { position: relative; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 22px; border-radius: 999px; background: var(--card-solid); box-shadow: var(--sh2), inset 0 0 0 1px var(--line); transition: box-shadow var(--quick); }
+.search label:focus-within { box-shadow: var(--sh3), 0 0 0 3px color-mix(in srgb, var(--indigo) 35%, transparent); }
+.search label > svg { width: 22px; height: 22px; color: var(--ink-3); }
+.search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; font: 500 19px/1 var(--f-ui); color: var(--ink); }
+.search input::-webkit-search-cancel-button { display: none; }
+.ac button > span:nth-child(2) { flex: 1; min-width: 0; }
+.search input::placeholder { color: var(--ink-3); }
+.search .clear { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--card-2); display: grid; place-items: center; cursor: pointer; }
+.search .clear svg { width: 18px; height: 18px; }
+.ac { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 8px); padding: 8px; border-radius: 24px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); transform-origin: 30% 0; animation: grow .32s var(--spring-soft) both; }
+@keyframes grow { from { opacity: 0; transform: scale(.96) translateY(-6px); } to { opacity: 1; transform: none; } }
+.ac button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 6px 12px; border: 0; border-radius: 16px; background: none; cursor: pointer; text-align: left; }
+.ac button:hover, .ac button.hi { background: var(--card-2); }
+.ac .art { width: 44px; height: 44px; border-radius: 12px; }
+.ac b { display: block; font-weight: 640; } .ac b mark { background: none; color: var(--indigo-i); }
+.ac small { display: block; color: var(--ink-2); font-size: 15px; }
+.ac .n { margin-left: auto; color: var(--ink-2); font: 600 15px/1 var(--f-ui); white-space: nowrap; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.fgroup { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fgroup > span { font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin-right: 4px; }
+.hub-body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 26px; align-items: start; }
+.hub-head { display: flex; align-items: baseline; gap: 12px; margin: 6px 0 14px; }
+.hub-head h2 { font-size: 30px; }
+.hub-head span { color: var(--ink-2); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.gcard { position: relative; display: flex; flex-direction: column; border: 0; padding: 0; text-align: left; border-radius: 26px; background: var(--card); box-shadow: var(--sh2); overflow: hidden; cursor: pointer; color: var(--ink); }
+.gcard:hover { box-shadow: var(--sh3); transform: translateY(-2px); }
+.gcard .art { position: relative; aspect-ratio: 16 / 9.4; }
+.gcard .art .smp { position: absolute; left: 12px; top: 12px; }
+.gcard .art .dz { position: absolute; right: 12px; top: 12px; padding: 7px 11px; border-radius: 999px; background: var(--card-solid); color: var(--ink); font: 650 14px/1 var(--f-ui); box-shadow: var(--sh1); }
+.gcard .bd { display: grid; gap: 8px; padding: 14px 18px 16px; }
+.gcard h3 { font-size: 23px; line-height: 1.12; }
+.gcard .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-2); font-size: 15px; }
+.gcard .meta span { display: inline-flex; align-items: center; gap: 6px; }
+.gcard .meta svg { width: 16px; height: 16px; color: var(--ink-3); }
+.gcard .by { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 15px; }
+.gcard .by b { color: var(--ink); font-weight: 620; }
+.gcard .by .n { margin-left: auto; white-space: nowrap; }
+.gcard.out { display: none; }
+.empty { padding: 30px; border-radius: 26px; background: var(--card); text-align: center; color: var(--ink-2); }
+.make { position: sticky; top: 16px; display: grid; gap: 14px; }
+.makecard { padding: 22px; border-radius: 28px; background: var(--card); box-shadow: var(--sh3); }
+.makecard h2 { font-size: 30px; line-height: 1.08; }
+.makecard > p { margin: 6px 0 16px; color: var(--ink-2); font-size: 16px; }
+.path { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 12px 14px; border: 0; border-radius: 20px; background: var(--card-2); cursor: pointer; text-align: left; color: var(--ink); }
+.path + .path { margin-top: 10px; }
+.path:hover { background: var(--card-3); }
+.path .pi { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--card-solid); color: var(--indigo-i); box-shadow: var(--sh1); flex: none; overflow: hidden; }
+.path .pi svg { width: 24px; height: 24px; }
+.path .pi.art svg { width: 100%; height: 100%; }
+.path b { display: block; font: 650 17px/1.25 var(--f-ui); }
+.path small { display: block; color: var(--ink-2); font-size: 15px; line-height: 1.3; }
+.path > svg { width: 20px; height: 20px; margin-left: auto; color: var(--ink-3); }
+.mine { padding: 16px 18px; border-radius: 24px; }
+.mine h3 { font: 650 14px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 8px; }
+.mine button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; border: 0; background: none; padding: 4px 0; text-align: left; cursor: pointer; }
+.mine button + button { border-top: 1px solid var(--line); }
+.mine .art { width: 44px; height: 44px; border-radius: 12px; }
+.mine b { display: block; font-weight: 620; font-size: 16px; }
+.mine small { display: block; color: var(--ink-2); font-size: 15px; }
+.mine .st { margin-left: auto; font: 650 13px/1 var(--f-ui); padding: 6px 9px; border-radius: 999px; background: var(--card-2); color: var(--ink-2); }
+
+/* ---------- 2 · the guide (the run sheet) ---------- */
+.gpage { display: grid; grid-template-columns: minmax(0, 1fr) 0px; gap: 0; align-items: start; transition: grid-template-columns .62s var(--spring-soft), gap .62s var(--spring-soft); }
+.gpage.has-detail { grid-template-columns: minmax(0, 1fr) 440px; gap: 22px; }
+.gmain { min-width: 0; display: grid; gap: 16px; }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 16px 0 10px; border: 0; border-radius: 999px; background: var(--card-solid); box-shadow: var(--sh1); cursor: pointer; font: 620 16px/1 var(--f-ui); justify-self: start; }
+.back svg { width: 18px; height: 18px; }
+.ghead { position: relative; display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 16px 22px 16px 16px; border-radius: var(--r-xl); background: var(--head-bg); color: var(--head-fg); box-shadow: var(--sh3); overflow: hidden; }
+.ghead > .art { position: relative; width: 200px; height: 148px; border-radius: 22px; box-shadow: var(--sh1); }
+.ghead .kick { color: var(--head-fg2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ghead h1 { margin: 8px 0 12px; font-size: clamp(2rem, 3.1vw, 2.9rem); line-height: 1.04; }
+.byline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--head-fg2); font-size: 16px; }
+.byline b { color: var(--head-fg); font-weight: 650; }
+.byline .dot { opacity: .5; }
+.gact { display: grid; gap: 10px; justify-items: stretch; min-width: 230px; }
+.gact .row { display: flex; gap: 10px; justify-content: flex-end; }
+:root[data-palette="before"] .ghead .btn.soft { background: rgb(255 255 255 / .18); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35); }
+:root[data-palette="before"] .ghead .round { background: rgb(255 255 255 / .18); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35); }
+:root[data-palette="before"] .ghead .btn.cta { background: #fff; color: #5A1785; }
+.round.on { color: var(--food); }
+.round.on svg { fill: currentColor; }
+.glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; }
+.gl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; padding: 12px 14px; border-radius: 20px; background: var(--card); box-shadow: var(--sh1); }
+.gl > svg { grid-row: span 3; width: 22px; height: 22px; color: var(--ink-2); align-self: start; margin-top: 2px; }
+.gl small { font: 650 12px/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.gl b { font: 680 18px/1.15 var(--f-ui); }
+.gl span { color: var(--ink-2); font-size: 15px; line-height: 1.3; }
+.daystrip { position: sticky; top: 8px; z-index: 6; display: grid; grid-template-columns: repeat(var(--nd, 3), minmax(0, 1fr)); gap: 8px; padding: 6px; border-radius: 26px; }
+.dbtn { display: grid; gap: 4px; padding: 10px 14px 12px; border: 0; border-radius: 20px; background: color-mix(in srgb, var(--card-solid) 70%, transparent); cursor: pointer; text-align: left; color: var(--ink); min-width: 0; }
+.dbtn .dn { font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.dbtn b { font: var(--d-wt) 20px/1.15 var(--f-display); letter-spacing: var(--d-track); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dbtn .tl { position: relative; height: 12px; margin-top: 4px; }
+.dbtn .tl::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; border-radius: 2px; background: var(--line-2); }
+.dbtn .tl i { position: absolute; top: 0; width: 12px; height: 12px; border-radius: 4px; background: var(--k); translate: -50% 0; box-shadow: 0 0 0 2px var(--card-solid); }
+.dbtn[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); }
+.dbtn[aria-pressed="true"] .dn { color: color-mix(in srgb, var(--pill-fg) 75%, transparent); }
+.dbtn[aria-pressed="true"] .tl::before { background: color-mix(in srgb, var(--pill-fg) 30%, transparent); }
+.dbtn[aria-pressed="true"] .tl i { box-shadow: 0 0 0 2px var(--pill-on); }
+.daysec { scroll-margin-top: 120px; padding: 18px 20px 10px; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--sh2); }
+.daysec > header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 10px; }
+.daysec h2 { font-size: 28px; line-height: 1.1; }
+.daysec h2 small { font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 6px; }
+.daysec header p { margin: 0; color: var(--ink-2); font-size: 16px; }
+.daysec header .addday { margin-left: auto; }
+.rail-l { list-style: none; margin: 0; padding: 0; }
+.stop { display: grid; grid-template-columns: 60px 22px minmax(0, 1fr); align-items: stretch; }
+.stop .tm { padding-top: 18px; text-align: right; font: 650 16px/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink); }
+.stop .tm small { display: block; margin-top: 4px; font: 500 14px/1 var(--f-ui); color: var(--ink-3); }
+.stop .ln { position: relative; }
+.stop .ln::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--line-2); }
+.stop:first-child .ln::before { top: 22px; }
+.stop.last .ln::before { bottom: calc(100% - 22px); }
+.stop .ln i { position: absolute; left: 5px; top: 17px; width: 12px; height: 12px; border-radius: 50%; background: var(--k); box-shadow: 0 0 0 3px var(--card-solid); }
+.leg { display: grid; grid-template-columns: 60px 22px minmax(0, 1fr); }
+.leg .ln { position: relative; } .leg .ln::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: repeating-linear-gradient(var(--line-2) 0 4px, transparent 4px 8px); }
+.leg span { display: inline-flex; align-items: center; gap: 8px; padding: 4px 0 4px 6px; color: var(--ink-2); font: 520 15px/1.3 var(--f-ui); }
+.leg span svg { width: 17px; height: 17px; color: var(--ink-3); }
+.sc { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 14px; align-items: start; margin: 6px 0 6px 6px; padding: 12px 12px 12px 12px; border-radius: 20px; background: var(--card-solid); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); cursor: pointer; text-align: left; border: 0; width: calc(100% - 6px); color: var(--ink); }
+.sc:hover { box-shadow: var(--sh2), inset 0 0 0 1px var(--line-2); }
+.sc[aria-expanded="true"], .sc.sel { box-shadow: var(--sh2), inset 0 0 0 2.5px var(--indigo); }
+.sc .ic { margin-top: 2px; }
+.sc .t { min-width: 0; display: grid; gap: 3px; }
+.sc .t b { font: 650 17px/1.25 var(--f-ui); }
+.sc .t .sub { color: var(--ink-3); font: 520 15px/1.3 var(--f-ui); }
+.sc .t p { margin: 2px 0 0; color: var(--ink-2); font-size: 16px; line-height: 1.4; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bdg { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 999px; font: 620 14px/1 var(--f-ui); background: var(--card-2); color: var(--ink-2); white-space: nowrap; }
+.bdg svg { width: 14px; height: 14px; }
+.bdg.cost { color: var(--ink); }
+.bdg.tip { background: var(--ride-t); color: var(--ride-i); }
+.bdg.lnk { background: var(--indigo-t); color: var(--indigo-i); }
+.bdg.nolnk { background: none; box-shadow: inset 0 0 0 1.5px var(--line-2); color: var(--ink-2); }
+.sc .side { display: flex; align-items: center; gap: 4px; }
+.plus { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--card-2); color: var(--ink); cursor: pointer; flex: none; }
+.plus svg { width: 20px; height: 20px; }
+.plus:hover { background: var(--pill-on); color: var(--pill-fg); }
+.plus.done { background: var(--see); color: #fff; }
+:root[data-theme="dark"] .plus.done { color: #062320; }
+.chev { width: 20px; height: 20px; color: var(--ink-3); transition: rotate .4s var(--spring); }
+.sc[aria-expanded="true"] .chev { rotate: 90deg; }
+.inplace { overflow: hidden; height: 0; transition: height .5s var(--spring-soft); margin-left: 6px; }
+.inplace > div { padding: 4px 0 12px; }
+.stays { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stayc { display: grid; gap: 6px; padding: 14px; border-radius: 20px; background: var(--card-solid); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); }
+.stayc .top2 { display: flex; align-items: center; gap: 10px; }
+.stayc small { font: 650 12px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.stayc b { font-weight: 650; }
+.stayc p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.35; }
+.stayc .pr { font: 700 20px/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.stayc .pr small { font: 500 14px/1 var(--f-ui); letter-spacing: 0; text-transform: none; }
+.befores { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.befores li { display: flex; gap: 12px; padding: 10px 0; font-size: 16px; color: var(--ink-2); line-height: 1.4; }
+.befores li + li { border-top: 1px solid var(--line); }
+.befores li svg { width: 20px; height: 20px; color: var(--ink-3); margin-top: 1px; }
+.befores b { color: var(--ink); font-weight: 640; }
+.disclose { color: var(--ink-2); font-size: 15px; text-align: center; padding: 6px 12px 20px; }
+
+/* the detail: a side panel on a laptop */
+.gdetail { position: sticky; top: 14px; min-width: 0; max-height: calc(100svh - 28px); overflow: hidden auto; scrollbar-width: thin; border-radius: var(--r-xl); background: var(--card-solid); box-shadow: var(--sh3); opacity: 0; transform: translateX(24px); transition: opacity .3s var(--ease), transform .62s var(--spring-soft); }
+.gpage.has-detail .gdetail { opacity: 1; transform: none; }
+.dt { padding: 14px 18px 20px; display: grid; gap: 14px; }
+.dt.swap-dn { animation: swapdn .42s var(--ease) both; } .dt.swap-up { animation: swapup .42s var(--ease) both; }
+@keyframes swapdn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes swapup { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+.dt-top { display: flex; align-items: center; gap: 10px; }
+.dt-top .kn { font: 650 13px/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ki); }
+.dt-top .of { color: var(--ink-3); font-size: 15px; }
+.dt-top .sp { flex: 1; }
+.dt .art { position: relative; aspect-ratio: 16 / 9; border-radius: 20px; }
+.dt h2 { font-size: 32px; line-height: 1.06; }
+.dt .sub { margin-top: -6px; color: var(--ink-2); font-size: 16px; }
+.words { margin: 0; padding: 14px 16px 14px 18px; border-radius: 18px; background: var(--card-2); position: relative; }
+.words small { display: flex; align-items: center; gap: 8px; font: 650 12px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.words p { margin: 0; font: italic 450 20px/1.4 var(--f-display); color: var(--ink); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fact { padding: 10px 12px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); }
+.fact small { display: block; font: 650 12px/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.fact b { display: block; margin-top: 4px; font: 640 16px/1.3 var(--f-ui); }
+.fact.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; }
+.fact.wide > div { flex: 1; }
+.tipbox { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 12px 14px; border-radius: 18px; background: var(--ride-t); color: var(--ride-i); }
+.tipbox .ti { grid-row: span 2; width: 34px; height: 34px; border-radius: 11px; background: var(--ride); color: #2B2100; display: grid; place-items: center; }
+.tipbox .ti svg { width: 19px; height: 19px; }
+.tipbox b { font: 680 15px/1.2 var(--f-ui); letter-spacing: .03em; }
+.tipbox span { font-size: 16px; line-height: 1.4; }
+.theirs { display: grid; gap: 8px; padding: 14px; border-radius: 18px; background: var(--indigo-t); }
+.theirs .who { display: flex; align-items: center; gap: 10px; color: var(--indigo-i); font: 620 15px/1.3 var(--f-ui); }
+.theirs .btn { justify-content: space-between; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh1); }
+.theirs .fine { color: var(--indigo-i); font-size: 15px; line-height: 1.35; margin: 0; }
+.dt-act { display: grid; grid-template-columns: 1fr auto; gap: 10px; position: sticky; bottom: 0; padding: 12px 0 0; background: linear-gradient(transparent, var(--card-solid) 30%); }
+.dt-empty { padding: 30px 22px; color: var(--ink-2); }
+
+/* ---------- context sheets (booking and planning): a guide over your place ---------- */
+.gsheet { position: fixed; z-index: 60; top: 12px; right: 12px; bottom: 12px; width: min(680px, 50vw); display: flex; flex-direction: column; border-radius: 30px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); overflow: hidden; }
+.gsheet.peek { top: auto; height: 76px; }
+.gs-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 12px; border-bottom: 1px solid var(--line); background: var(--card-solid); }
+.gs-head .keep { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; min-height: 48px; border: 0; border-radius: 999px; background: var(--card-2); cursor: pointer; text-align: left; }
+.gs-head .keep .ks { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--card-solid); box-shadow: var(--sh1); flex: none; }
+.gs-head .keep .ks svg { width: 18px; height: 18px; }
+.gs-head .keep span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 560 15px/1.25 var(--f-ui); color: var(--ink-2); }
+.gs-head .keep b { color: var(--ink); font-weight: 650; }
+.gs-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 30px; display: grid; gap: 14px; align-content: start; }
+.gsheet .ghead { grid-template-columns: 120px minmax(0, 1fr); padding: 12px; gap: 16px; box-shadow: none; }
+.gsheet .ghead > .art { width: 120px; height: 104px; border-radius: 18px; }
+.gsheet .ghead h1 { font-size: 28px; margin: 6px 0 8px; }
+.gsheet .gact { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; min-width: 0; }
+.gsheet .gact .row { display: none; }
+
+.gsheet .daystrip { top: -14px; margin: 0 -16px; border-radius: 0; padding: 8px 16px; background: color-mix(in srgb, var(--card-solid) 92%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--line); }
+.gsheet .daysec { box-shadow: none; background: var(--card-2); padding: 14px 12px 8px; }
+.gsheet .daysec .sc { width: calc(100% - 6px); }
+.gsheet .stays { grid-template-columns: 1fr; }
+.fitnote { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--see-t); color: var(--see-i); font: 560 16px/1.35 var(--f-ui); }
+.fitnote svg { width: 22px; height: 22px; }
+.fitnote b { color: var(--see-i); }
+.peekbar { display: flex; align-items: center; gap: 12px; height: 76px; padding: 0 12px 0 14px; border: 0; width: 100%; background: none; cursor: pointer; text-align: left; }
+.peekbar .art { width: 52px; height: 52px; border-radius: 14px; }
+.peekbar b { display: block; font: var(--d-wt) 19px/1.15 var(--f-display); }
+.peekbar small { display: block; color: var(--ink-2); font-size: 15px; }
+.peekbar .up { margin-left: auto; width: 44px; height: 44px; border-radius: 50%; background: var(--card-2); display: grid; place-items: center; }
+.peekbar .up svg { width: 18px; height: 18px; rotate: -90deg; }
+
+/* ---------- 5a · booking (booking v2's results, kept) ---------- */
+.bk { display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 22px; align-items: start; }
+.sent { margin: 6px 0 18px; font: var(--d-wt) clamp(1.35rem, 1.9vw, 1.85rem)/1.3 var(--f-display); letter-spacing: var(--d-track); color: var(--ink); max-width: 1100px; }
+.sent .fill { color: var(--ink-2); }
+.w { display: inline; padding: 0 .06em; border: 0; background: none; cursor: pointer; font: inherit; letter-spacing: inherit; color: var(--indigo-i); text-decoration: underline; text-decoration-thickness: .08em; text-underline-offset: .14em; text-decoration-color: color-mix(in srgb, var(--indigo) 35%, transparent); border-radius: .18em; }
+:root[data-theme="dark"] .w { color: #A9A4FF; }
+.mx { position: relative; border-radius: var(--r-xl); background: var(--card); box-shadow: var(--sh3); padding: 16px 0 10px; overflow: hidden; }
+.mx-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 0 22px 12px; }
+.mx-status { font-weight: 560; color: var(--ink-2); } .mx-status b { color: var(--ink); font-weight: 680; }
+.legend { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.lg { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--card-2); font: 560 15px/1 var(--f-ui); color: var(--ink-2); }
+.lg i { width: 14px; height: 14px; border-radius: 5px; }
+.pickbar { position: relative; margin: 0 22px 10px; display: flex; align-items: center; gap: 16px; padding: 10px 14px 10px 10px; border-radius: 22px; background: var(--indigo); color: #fff; border: 0; width: calc(100% - 44px); text-align: left; cursor: pointer; box-shadow: var(--sh2); }
+.pickbar .art { width: 64px; height: 48px; border-radius: 12px; }
+.pickbar .t { flex: 1; min-width: 0; }
+.pickbar .t b { display: block; font: var(--d-wt) 21px/1.15 var(--f-display); letter-spacing: var(--d-track); }
+.pickbar .t span { color: rgb(255 255 255 / .88); font-size: 16px; }
+.pickbar .badge { flex: none; background: var(--ride); color: #2B2100; font: 700 13px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; border-radius: 999px; }
+.pickbar .p { font: 760 30px/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.02em; }
+.mx-scroll { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding: 0 16px 10px 0; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+.mx-head, .mx-row { position: relative; display: grid; grid-template-columns: var(--lead) repeat(var(--n), var(--cw)); width: max-content; }
+.mx-row { padding-top: 12px; }
+.lead { position: sticky; left: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 22px; background: var(--card-solid); box-shadow: 10px 0 14px -12px rgb(20 20 60 / .25); clip-path: inset(0 -24px 0 0); }
+.mx-head .lead { align-items: end; padding-bottom: 8px; }
+.mx-head .lead span { font: 650 13px/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.lead .art { width: 48px; height: 48px; border-radius: 16px; box-shadow: var(--sh1); }
+.lead b { display: block; font: var(--d-wt) 18px/1.12 var(--f-display); letter-spacing: var(--d-track); }
+.lead small { display: block; margin-top: 3px; color: var(--ink-2); font: 500 15px/1.25 var(--f-ui); }
+.day { display: grid; justify-items: center; align-content: end; padding: 4px 4px 8px; border-radius: 16px 16px 0 0; }
+.day .dw { font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.day .dn { font: var(--d-wt) 22px/1.1 var(--f-display); }
+.day.wkend { background: color-mix(in srgb, var(--flight-t) 45%, transparent); }
+.c { padding: 0 4px; position: relative; z-index: 1; }
+.sq { position: relative; display: grid; grid-template-rows: auto 1fr; align-items: center; justify-items: center; width: 100%; height: var(--ch); padding: 9px 4px 5px; border: 0; border-radius: 18px; background: var(--cell); cursor: pointer; color: var(--ink); }
+.sq:hover { background: var(--cell-hover); }
+.sq .wx { display: inline-flex; align-items: center; gap: 4px; font: 560 15px/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink-2); }
+.sq .wx svg { width: 18px; height: 18px; } .sq .wx.sun svg { color: var(--sun-ink); } .sq .wx.rain svg { color: var(--wx); }
+.sq .pr { font: 720 19px/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.015em; }
+.sq .tag { position: absolute; top: -12px; left: 50%; translate: -50% 0; white-space: nowrap; padding: 5px 9px; border-radius: 999px; font: 700 12px/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; box-shadow: var(--sh1); z-index: 2; }
+.sq.pick { background: var(--indigo); color: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 22%, transparent), var(--sh2); }
+.sq.pick .wx { color: rgb(255 255 255 / .92); } .sq.pick .wx svg { color: #FFD43B; }
+.sq.pick .tag { background: var(--ride); color: #2B2100; }
+.sq.cheap { box-shadow: inset 0 0 0 2.5px var(--see); } .sq.cheap .tag { background: var(--see); color: #fff; }
+:root[data-theme="dark"] .sq.cheap .tag { color: #062320; }
+.sq.over { background: repeating-linear-gradient(135deg, transparent 0 7px, var(--hatch) 7px 14px), color-mix(in srgb, var(--card-2) 60%, transparent); color: var(--ink-3); }
+.sq.sel { outline: 3px solid var(--ink); outline-offset: 2px; }
+.band { position: absolute; z-index: 0; top: 8px; bottom: -6px; left: calc(var(--lead) + var(--c) * var(--cw)); width: calc(var(--k) * var(--cw)); border-radius: 22px; pointer-events: none; background: color-mix(in srgb, var(--indigo) 9%, transparent); box-shadow: inset 0 0 0 2.5px color-mix(in srgb, var(--indigo) 55%, transparent); }
+.band b { position: absolute; right: 8px; top: -11px; padding: 5px 10px; border-radius: 999px; background: var(--indigo); color: #fff; font: 650 13px/1 var(--f-ui); white-space: nowrap; }
+.rail { position: sticky; top: 14px; display: grid; gap: 14px; max-height: calc(100svh - 28px); overflow-y: auto; scrollbar-width: none; padding-bottom: 20px; }
+.rail::-webkit-scrollbar { display: none; }
+.rail-head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 2px; }
+.rail-head .art { width: 44px; height: 44px; border-radius: 14px; box-shadow: var(--sh1); }
+.rail-head b { display: block; font: var(--d-wt) 22px/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.rail-head small { color: var(--ink-2); font-size: 15px; }
+.rail-row { display: grid; gap: 14px; }
+.wg { position: relative; padding: 16px 18px 18px; border-radius: 26px; }
+.wg > header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.wg > header h3 { margin: 0; flex: 1; font: 650 15px/1.1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.wg .ic { width: 30px; height: 30px; border-radius: 10px; } .wg .ic svg { width: 17px; height: 17px; }
+.wg .ic.gd { background: var(--pill-on); color: var(--pill-fg); }
+.wg p { margin: 4px 0 0; color: var(--ink-2); font-size: 16px; line-height: 1.4; }
+.glist { display: grid; gap: 4px; }
+.grow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 8px; border: 0; border-radius: 18px; background: color-mix(in srgb, var(--card-solid) 72%, transparent); cursor: pointer; text-align: left; color: var(--ink); }
+.grow:hover { background: var(--card-solid); box-shadow: var(--sh1); }
+.grow .art { width: 52px; height: 52px; border-radius: 14px; }
+.grow .t { flex: 1; min-width: 0; }
+.grow b { display: block; font: 640 16px/1.25 var(--f-ui); }
+.grow small { display: block; color: var(--ink-2); font-size: 15px; line-height: 1.3; }
+.grow > svg { width: 18px; height: 18px; color: var(--ink-3); }
+.grow.fits { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--see) 50%, transparent); }
+.grow .fitb { display: inline-flex; margin-top: 4px; padding: 3px 8px; border-radius: 999px; background: var(--see-t); color: var(--see-i); font: 620 13px/1.2 var(--f-ui); }
+.days5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align: center; }
+.days5 div { padding: 8px 0; border-radius: 14px; background: color-mix(in srgb, var(--card-solid) 55%, transparent); display: grid; gap: 4px; justify-items: center; font: 600 15px/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.days5 div span { font: 650 12px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.days5 svg { width: 22px; height: 22px; } .days5 .sun svg { color: var(--sun-ink); } .days5 .rain svg { color: var(--wx); } .days5 .partly svg { color: var(--ink-2); }
+.map { width: 100%; height: 140px; border-radius: 16px; display: block; overflow: hidden; }
+:root[data-theme="dark"] .map { filter: brightness(.78) saturate(.9); }
+
+/* ---------- 5b · planning (planning v2's calendar, kept) ---------- */
+.pl { display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 16px 22px; align-items: start; }
+.trip { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 22px; min-height: 112px; padding: 14px 22px 14px 14px; border-radius: var(--r-xl); background: var(--head-bg); color: var(--head-fg); box-shadow: var(--sh2); overflow: hidden; }
+.trip > .art { width: 124px; height: 84px; border-radius: 18px; box-shadow: var(--sh1); flex: none; }
+.trip .ti { flex: 1; min-width: 0; }
+.trip .kick { color: var(--head-fg2); display: inline-flex; gap: 8px; align-items: center; }
+.trip .kick .chk { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--see); color: #fff; }
+:root[data-palette="before"] .trip .kick .chk { background: var(--ride); color: #2B2100; }
+.trip .kick .chk svg { width: 11px; height: 11px; }
+.trip h1 { margin: 6px 0 2px; font-size: 40px; line-height: 1; }
+.trip h1 em { font-style: italic; font-weight: 480; color: var(--head-fg2); }
+.trip .meta { color: var(--head-fg2); font-size: 16px; }
+.stack { display: inline-flex; } .stack .av { box-shadow: 0 0 0 3px var(--card-solid); } .stack .av + .av { margin-left: -9px; }
+:root[data-palette="before"] .trip .stack .av { box-shadow: 0 0 0 3px rgb(90 40 170); }
+.together { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 18px 0 8px; border: 0; border-radius: 999px; background: var(--head-chip); color: var(--head-fg); cursor: pointer; font: 620 16px/1 var(--f-ui); }
+.count { display: grid; justify-items: center; min-width: 110px; padding: 10px 14px; border-radius: 22px; background: var(--head-chip); }
+.count b { font: 560 40px/1 var(--f-display); letter-spacing: -0.03em; }
+.count span { font: 600 14px/1.2 var(--f-ui); color: var(--head-fg2); }
+.cal { position: relative; border-radius: var(--r-xl); background: color-mix(in srgb, var(--card-solid) 94%, transparent); box-shadow: var(--sh3); overflow: hidden; display: flex; flex-direction: column; height: calc(100svh - 236px); min-height: 520px; }
+.cal-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px 10px 18px; }
+.seg { display: inline-flex; padding: 4px; gap: 4px; border-radius: 999px; background: var(--card-2); }
+.seg button { min-height: 48px; padding: 0 16px; border-radius: 999px; border: 0; background: none; cursor: pointer; font: 620 15px/1 var(--f-ui); color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); box-shadow: var(--sh1); }
+.cal-title { font: var(--d-wt) 24px/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.cal-title small { font: 500 15px/1 var(--f-ui); letter-spacing: 0; color: var(--ink-2); margin-left: 6px; }
+.cal-top .legend .lg i { background: var(--k); width: 12px; height: 12px; border-radius: 4px; }
+.grid { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); --gut: 56px; --hh: 44px; }
+.g-head, .g-all, .g-inner { display: grid; grid-template-columns: var(--gut) repeat(var(--n), minmax(0, 1fr)); }
+.dh { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 10px; padding: 10px 10px 10px 12px; border-left: 1px solid var(--line); }
+.dh .dw { font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.dh .dn { grid-row: span 2; font: var(--d-wt) 32px/1 var(--f-display); }
+.dh .wxl { display: inline-flex; align-items: center; gap: 5px; font: 600 15px/1.2 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink-2); }
+.dh .wxl svg { width: 20px; height: 20px; } .dh .wxl.sun svg { color: var(--sun-ink); } .dh .wxl.rain svg { color: var(--wx); }
+.dh.free { background: color-mix(in srgb, var(--see-t) 40%, transparent); }
+.g-all { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 40px; }
+.g-all .lbl { display: grid; place-items: center; font: 650 12px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.stayband { grid-row: 1; margin: 6px 4px; display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 28px; border-radius: 10px; background: var(--stay-t); color: var(--stay-i); font: 620 15px/1 var(--f-ui); box-shadow: inset 4px 0 0 var(--stay); white-space: nowrap; overflow: hidden; }
+.stayband svg { width: 16px; height: 16px; color: var(--stay); }
+.g-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+.g-inner { position: relative; height: calc(var(--hours) * var(--hh)); }
+.gut { position: relative; }
+.gut span { position: absolute; right: 10px; translate: 0 -50%; font: 560 14px/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink-3); }
+.col { position: relative; border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hh); }
+.offwin { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(135deg, transparent 0 7px, var(--hatch) 7px 14px); }
+.freewin { position: absolute; left: 4px; right: 4px; border-radius: 12px; border: 2px dashed color-mix(in srgb, var(--see) 55%, transparent); display: grid; place-items: center; color: var(--see-i); font: 620 14px/1.2 var(--f-ui); text-align: center; padding: 4px; opacity: 0; transition: opacity .3s; }
+.freewin.on { opacity: 1; animation: breathe 1.2s ease-in-out infinite; }
+@keyframes breathe { 50% { background: color-mix(in srgb, var(--see-t) 70%, transparent); } }
+.ev { position: absolute; z-index: 2; top: var(--top); height: var(--h); left: 4px; right: 4px; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--kt); color: var(--ki); box-shadow: inset 4px 0 0 var(--k); overflow: hidden; }
+.ev b { font: 640 15px/1.2 var(--f-ui); }
+.ev .tm { font: 560 14px/1.2 var(--f-ui); font-feature-settings: var(--num-feat); color: color-mix(in srgb, var(--ki) 82%, var(--kt)); }
+.ev small { font: 500 14px/1.25 var(--f-ui); color: color-mix(in srgb, var(--ki) 82%, var(--kt)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev .lk { position: absolute; right: 7px; top: 7px; width: 15px; height: 15px; opacity: .7; }
+.ev .from { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin-top: 2px; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--card-solid) 70%, transparent); font: 620 13px/1.2 var(--f-ui); color: var(--ki); }
+.ev.land { animation: land .7s var(--spring) both; animation-delay: var(--dl, 0ms); }
+@keyframes land { from { opacity: 0; transform: translateY(-10px) scale(.86); } to { opacity: 1; transform: none; } }
+
+.flyer { position: fixed; z-index: 120; pointer-events: none; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 8px 14px; border-radius: 14px; overflow: hidden; background: var(--kt); color: var(--ki); box-shadow: inset 4px 0 0 var(--k), var(--sh3); font: 640 15px/1.2 var(--f-ui); }
+.dchips { display: none; gap: 8px; padding: 0 14px 10px; overflow-x: auto; scrollbar-width: none; }
+.dchip { flex: 1 0 auto; min-width: 64px; min-height: 52px; display: grid; justify-items: center; align-content: center; gap: 2px; padding: 6px 10px; border: 0; border-radius: 16px; background: var(--card-2); cursor: pointer; }
+.dchip small { font: 650 12px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.dchip b { font: var(--d-wt) 20px/1 var(--f-display); }
+.dchip[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); }
+.dchip[aria-pressed="true"] small { color: color-mix(in srgb, var(--pill-fg) 75%, transparent); }
+
+/* ---------- 6 · making a guide ---------- */
+.mk-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 4px 0 16px; }
+.mk-top h1 { font-size: clamp(2rem, 3.4vw, 3rem); line-height: 1.05; }
+.mk-top .sp { flex: 1; }
+.paths { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.bigpath { display: grid; gap: 14px; align-content: start; padding: 22px; border-radius: 30px; background: var(--card); box-shadow: var(--sh3); }
+.bigpath h2 { font-size: 30px; line-height: 1.08; }
+.bigpath p { margin: 0; color: var(--ink-2); }
+.bigpath .tripmini { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 20px; background: var(--card-2); }
+.bigpath .tripmini .art { width: 92px; height: 64px; border-radius: 14px; }
+.bigpath .tripmini b { display: block; font: var(--d-wt) 21px/1.15 var(--f-display); }
+.bigpath .tripmini small { display: block; color: var(--ink-2); font-size: 15px; }
+.urlbox { display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 8px 0 18px; border-radius: 999px; background: var(--card-solid); box-shadow: inset 0 0 0 1px var(--line-2); }
+.urlbox svg { width: 20px; height: 20px; color: var(--ink-3); }
+.urlbox input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: 500 17px/1 var(--f-ui); color: var(--ink); }
+.steps { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.steps li { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--card-solid) 55%, transparent); font: 600 15px/1 var(--f-ui); color: var(--ink-2); transition: background-color .3s, color .3s; }
+.steps li i { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--line-2); display: grid; place-items: center; transition: box-shadow .3s; }
+.steps li i svg { width: 12px; height: 12px; opacity: 0; color: #fff; }
+.steps li.on { background: var(--card-solid); color: var(--ink); box-shadow: var(--sh1); }
+.steps li.on i { box-shadow: inset 0 0 0 2px var(--indigo); animation: beat 1.4s ease-out infinite; }
+@keyframes beat { 50% { box-shadow: inset 0 0 0 5px var(--indigo); } }
+.steps li.done i { box-shadow: inset 0 0 0 10px var(--see); animation: none; } .steps li.done i svg { opacity: 1; }
+:root[data-theme="dark"] .steps li.done i svg { color: #062320; }
+.imp { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; align-items: start; }
+.src { position: sticky; top: 14px; padding: 18px 20px; border-radius: 26px; background: var(--card); box-shadow: var(--sh2); max-height: calc(100svh - 28px); overflow: auto; }
+.src header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.src header b { font-weight: 650; } .src header small { color: var(--ink-2); font-size: 15px; display: block; }
+.src .ln2 { margin: 0 0 10px; padding: 4px 8px; border-radius: 10px; color: var(--ink-2); font: 450 16px/1.55 var(--f-display); font-size: 17px; transition: background-color .3s, color .3s; }
+.src h4 { margin: 14px 8px 6px; font: var(--d-wt) 20px/1.2 var(--f-display); color: var(--ink); }
+.src .ln2.read { background: color-mix(in srgb, var(--ride) 32%, transparent); color: var(--ink); }
+.src .ln2.done { color: var(--ink); }
+.src a { color: var(--indigo-i); text-decoration: underline; text-underline-offset: 3px; transition: background-color .3s; border-radius: 4px; }
+.src a.kept { background: var(--indigo-t); box-shadow: 0 0 0 3px var(--indigo-t); }
+.src .story { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: var(--card-2); color: var(--ink-2); font-size: 15px; }
+.draft { display: grid; gap: 14px; }
+.lnkfound { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 18px; background: var(--indigo-t); color: var(--indigo-i); font: 560 16px/1.35 var(--f-ui); }
+.lnkfound svg { width: 20px; height: 20px; }
+.skel { color: transparent !important; background: var(--card-2) !important; border-radius: 10px; box-shadow: none !important; position: relative; overflow: hidden; }
+.skel * { visibility: hidden; }
+.skel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--card-solid) 75%, transparent) 50%, transparent 80%); background-size: 220% 100%; animation: shimmer 1.3s ease-in-out infinite; }
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.settle { animation: settle .62s var(--spring) both; animation-delay: var(--dl, 0s); }
+@keyframes settle { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: none; } }
+.pend { opacity: 0; }
+.tm2 { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; align-items: start; }
+.minical { position: sticky; top: 14px; padding: 16px; border-radius: 26px; background: var(--card); box-shadow: var(--sh2); transition: opacity .5s var(--ease); }
+.minical header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.minical header .art { width: 64px; height: 48px; border-radius: 12px; }
+.minical header b { display: block; font: var(--d-wt) 22px/1.1 var(--f-display); }
+.minical header small { color: var(--ink-2); font-size: 15px; }
+.mcg { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.mcd { display: grid; gap: 6px; align-content: start; }
+.mcd > span { text-align: center; font: 650 13px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding-bottom: 4px; }
+.mcd > span b { display: block; font: var(--d-wt) 22px/1 var(--f-display); letter-spacing: 0; text-transform: none; color: var(--ink); }
+.mb { padding: 6px 6px 6px 9px; border-radius: 10px; background: var(--kt); color: var(--ki); box-shadow: inset 3px 0 0 var(--k); font: 620 13px/1.2 var(--f-ui); min-height: 44px; }
+.mb small { display: block; font: 500 12px/1.2 var(--f-ui); font-feature-settings: var(--num-feat); opacity: .9; }
+.mb.priv { box-shadow: inset 3px 0 0 var(--k), inset 0 0 0 1.5px color-mix(in srgb, var(--k) 40%, transparent); }
+.privnote { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: var(--card-2); color: var(--ink-2); font-size: 15px; line-height: 1.35; }
+.privnote svg { width: 18px; height: 18px; }
+.edbar { position: sticky; top: 8px; z-index: 8; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 8px 8px 16px; border-radius: 999px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); }
+.edbar .st { display: inline-flex; align-items: center; gap: 8px; font: 600 15px/1 var(--f-ui); color: var(--ink-2); }
+.edbar .st i { width: 8px; height: 8px; border-radius: 50%; background: var(--see); }
+.edbar .hint { color: var(--ink-3); font-size: 15px; }
+.edbar .sp { flex: 1; }
+.nudges { display: flex; flex-wrap: wrap; gap: 8px; }
+.nudge { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ride-t); color: var(--ride-i); font: 600 15px/1 var(--f-ui); cursor: pointer; }
+.nudge svg { width: 16px; height: 16px; }
+[contenteditable="true"] { outline: 0; border-radius: 6px; transition: background-color .2s, box-shadow .2s; cursor: text; }
+.editing [contenteditable="true"]:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 10%, transparent); background: color-mix(in srgb, var(--indigo) 10%, transparent); }
+.editing [contenteditable="true"]:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 45%, transparent); background: color-mix(in srgb, var(--indigo) 6%, transparent); }
+.editing .ghead [contenteditable="true"]:hover { background: color-mix(in srgb, var(--head-fg) 10%, transparent); box-shadow: none; }
+.editing .sc { cursor: default; }
+.addlink { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1.5px var(--line-2); color: var(--ink-2); font: 620 14px/1 var(--f-ui); cursor: pointer; border-style: dashed; }
+.addlink svg { width: 14px; height: 14px; }
+.lnkform { display: flex; gap: 8px; margin-top: 8px; align-items: center; animation: grow .3s var(--spring-soft) both; transform-origin: 0 0; }
+.lnkform input { flex: 1; min-width: 0; height: 48px; padding: 0 14px; border-radius: 14px; border: 0; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line-2); font-size: 16px; outline: 0; }
+.lnkform input:focus { box-shadow: inset 0 0 0 2px var(--indigo); }
+.lnkform .btn { min-height: 48px; padding: 0 16px; font-size: 16px; }
+
+/* the celebration */
+.celeb { position: fixed; z-index: 70; left: 50%; top: 50%; translate: -50% -50%; width: min(880px, calc(100vw - 32px)); max-height: calc(100svh - 32px); overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; padding: 24px; border-radius: 32px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); }
+.celeb.in { animation: donein .7s var(--spring) both; }
+@keyframes donein { from { opacity: 0; transform: scale(.9) translateY(20px); } to { opacity: 1; transform: none; } }
+.pass { position: relative; padding: 22px 22px 20px; border-radius: 26px; background: var(--pass-bg); color: var(--pass-fg); overflow: hidden; }
+.pass .kick { color: var(--pass-fg2); }
+.pass h2 { margin: 8px 0 6px; font-size: 34px; line-height: 1.05; }
+.pass p { margin: 0; color: var(--pass-fg2); }
+.pass .url { margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 999px; background: rgb(255 255 255 / .12); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2); font: 560 16px/1 var(--f-ui); }
+.pass .url span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pass .url button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: #fff; color: #1E1B4B; font-weight: 650; cursor: pointer; }
+.stamp { position: absolute; right: 18px; top: 16px; width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; text-align: center; border: 3px solid var(--ride); color: var(--ride); font: 700 14px/1.1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; rotate: -12deg; }
+.stamp.thump { animation: thump .5s cubic-bezier(.2, 1.4, .4, 1) .3s both; }
+@keyframes thump { from { opacity: 0; transform: scale(2.2); } to { opacity: 1; transform: none; } }
+.celeb .side2 { display: grid; gap: 10px; align-content: start; }
+.celeb h3 { font: 650 14px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+.celeb .x { position: absolute; right: 14px; top: 14px; }
+.donebtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.stats div { padding: 10px 12px; border-radius: 16px; background: var(--card-2); }
+.stats b { display: block; font: 700 22px/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.stats small { color: var(--ink-2); font-size: 14px; }
+/* the one pink-violet thing: the Instagram share card */
+.igcard { position: relative; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: linear-gradient(150deg, #4338CA 0%, #8B2FC9 50%, #C92A5E 100%); color: #fff; display: flex; flex-direction: column; padding: 16px; box-shadow: 0 20px 40px -18px rgb(139 47 201 / .6); }
+.igcard .art { border-radius: 14px; aspect-ratio: 4 / 3; box-shadow: 0 8px 18px -8px rgb(0 0 0 / .4); }
+.igcard .k { margin-top: 12px; font: 650 12px/1 var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: rgb(255 255 255 / .88); }
+.igcard b { margin-top: 6px; font: 560 25px/1.08 var(--f-display); letter-spacing: -0.02em; }
+.igcard .chips2 { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.igcard .chips2 span { padding: 5px 9px; border-radius: 999px; background: rgb(255 255 255 / .18); font: 620 13px/1 var(--f-ui); }
+.igcard .ft { margin-top: auto; display: flex; align-items: center; gap: 8px; font: 600 13px/1.2 var(--f-ui); color: rgb(255 255 255 / .92); }
+.igcard .ft svg { width: 22px; height: 22px; }
+.confetti { position: fixed; inset: 0; z-index: 75; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 3px; background: var(--c); animation: fall 2.6s cubic-bezier(.25, .6, .4, 1) both; animation-delay: var(--d); }
+@keyframes fall { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--x), 105vh) rotate(var(--r)); opacity: .9; } }
+
+/* ---------- the prototype's own island (not part of the product) ---------- */
+.island { position: fixed; z-index: 90; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 999px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); }
+.island > span { padding: 0 6px 0 10px; font: 650 13px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.island button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: none; cursor: pointer; font: 620 15px/1 var(--f-ui); color: var(--ink-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.island button svg { width: 16px; height: 16px; }
+.island button[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); }
+.island > span.sep { padding: 0; width: 1px; height: 26px; background: var(--line-2); margin: 0 4px; }
+.states { position: fixed; z-index: 91; left: 16px; bottom: 76px; width: 330px; max-height: calc(100svh - 100px); overflow: auto; padding: 8px; border-radius: 22px; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); transform-origin: 20px 100%; animation: grow .3s var(--spring-soft) both; }
+.states h4 { margin: 8px 10px 4px; font: 650 12px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.states button { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 12px; background: none; cursor: pointer; text-align: left; font: 560 15px/1.2 var(--f-ui); color: var(--ink); }
+.states button:hover, .states button.cur { background: var(--card-2); }
+.states button i { font-style: normal; font: 650 13px/1 var(--f-ui); color: var(--ink-3); width: 24px; }
+.states .pal { display: flex; gap: 4px; padding: 6px; }
+.states .pal button { justify-content: center; background: var(--card-2); }
+.states .pal button[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); }
+
+.words small svg { width: 16px; height: 16px; }
+.celeb h3 svg { width: 18px; height: 18px; }
+.fact.wide > svg { width: 22px; height: 22px; color: var(--ink-3); }
+.ev .from svg { width: 13px; height: 13px; }
+.story svg, .privnote svg, .lnkfound svg { width: 18px; height: 18px; flex: none; }
+.gs-body { display: block; }
+.gs-body > * + * { margin-top: 14px; }
+.sc { scroll-margin: 130px 0 40px; }
+.daysec > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 4px 14px; }
+.daysec > header p { grid-column: 1; }
+.daysec > header .addday { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.gl { align-items: start; }
+
+/* ---------- tablet ---------- */
+@media (max-width: 1180px) {
+  .gpage.has-detail { grid-template-columns: minmax(0, 1fr) 380px; }
+  .ghead { grid-template-columns: 160px minmax(0, 1fr); }
+  .ghead > .art { width: 160px; height: 124px; }
+  .ghead .gact { grid-column: 1 / -1; grid-template-columns: 1fr 1fr auto; }
+  .ghead .gact .row { justify-content: flex-start; }
+  .hub-body, .hub-top { grid-template-columns: minmax(0, 1fr) 330px; }
+}
+@media (max-width: 1099px) {
+  .bk, .pl { grid-template-columns: minmax(0, 1fr); }
+  .pl .trip { order: -2; }
+  .bk .rail, .pl .rail { position: relative; top: 0; order: -1; max-height: none; overflow: visible; padding: 0; }
+  .rail-row { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -28px; padding: 2px 28px 10px; scroll-padding: 0 28px; }
+  .rail-row::-webkit-scrollbar { display: none; }
+  .rail-row .wg { flex: 0 0 320px; scroll-snap-align: start; }
+}
+
+/* ---------- phone ---------- */
+@media (max-width: 719px) {
+  .top { padding: 10px 16px 8px; gap: 8px; }
+  .top .pill-sample { display: none; }
+  .brand { font-size: 22px; }
+  .sections { position: fixed; left: 50%; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); translate: -50% 0; z-index: 50; }
+  .sections button { min-width: 0; padding: 0 15px; font-size: 16px; gap: 6px; }
+  body.sheet-open .sections, body.sheet-open .island { opacity: 0; pointer-events: none; }
+  .menu { right: 12px; left: 12px; width: auto; }
+  .wrap { padding: 0 16px 130px; }
+  .bg .sunball, .bg .moon { width: 5rem !important; height: 5rem !important; right: -1.5rem; top: 76px; }
+  .hub-hero { padding: 14px 0 18px; gap: 14px; }
+  .hub-hero h1 { font-size: 2.6rem; }
+  .hub-hero p { font-size: 17px; }
+  .search label { height: 58px; }
+  .search input { font-size: 17px; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px 4px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .fgroup { flex-wrap: nowrap; }
+  .hub-body, .hub-top { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .hub-body > aside { display: none; }
+  .makecard { padding: 18px; border-radius: 26px; }
+  .makecard h2 { font-size: 26px; }
+  .mine { display: none; }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .gpage, .gpage.has-detail { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .gpage .gdetail { display: none; }
+  .ghead { grid-template-columns: 1fr; padding: 12px 12px 16px; gap: 12px; border-radius: 26px; }
+  .ghead > .art { width: 100%; height: 170px; }
+  .ghead h1 { font-size: 2rem; }
+  .ghead .gact { grid-template-columns: 1fr; }
+  .ghead .gact .row { justify-content: stretch; }
+  .ghead .gact .row .btn { flex: 1; }
+  .glance { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px 6px; scroll-snap-type: x proximity; }
+  .glance::-webkit-scrollbar { display: none; }
+  .gl { flex: 0 0 168px; scroll-snap-align: start; }
+  .daystrip { margin: 0 -16px; padding: 8px 16px; border-radius: 0; display: flex; overflow-x: auto; scrollbar-width: none; }
+  .daystrip::-webkit-scrollbar { display: none; }
+  .dbtn { flex: 0 0 200px; }
+  .daysec { padding: 14px 12px 8px; border-radius: 26px; }
+  .daysec h2 { font-size: 24px; }
+  .daysec > header { grid-template-columns: minmax(0, 1fr); }
+  .daysec > header .addday { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 6px; }
+  .stop, .leg { grid-template-columns: 48px 18px minmax(0, 1fr); }
+  .stop .tm { font-size: 15px; }
+  .stop .ln::before, .leg .ln::before { left: 8px; } .stop .ln i { left: 3px; }
+  .sc { grid-template-columns: auto minmax(0, 1fr); padding: 12px 10px; gap: 4px 10px; }
+  .sc .side { grid-column: 1 / -1; justify-content: flex-end; margin-top: -8px; }
+  .sc .side .chev { display: none; }
+  .sc .ic { width: 32px; height: 32px; }
+  .stays { grid-template-columns: minmax(0, 1fr); }
+  .gsheet, .gsheet.peek { top: auto; left: 0; right: 0; bottom: 0; width: 100%; height: 92svh; border-radius: 28px 28px 0 0; }
+  .gsheet.peek { height: 84px; bottom: 0; }
+  .gsheet .ghead { grid-template-columns: 96px minmax(0, 1fr); }
+  .gsheet .ghead > .art { width: 96px; height: 84px; }
+  .gsheet .ghead h1 { font-size: 23px; }
+  .gsheet .glance { display: flex; }
+  .gsheet .daystrip { top: -14px; }
+  .gsheet .gact { grid-template-columns: 1fr; }
+  .gs-head .keep span { font-size: 14px; }
+  .gs-body { padding: 12px 12px 30px; }
+  .gsheet .sc .side { grid-column: auto; margin: 0; }
+  .grab { width: 44px; height: 5px; border-radius: 5px; background: var(--line-2); margin: 8px auto 0; flex: none; }
+  .sheet-stop .grab { margin-bottom: 4px; }
+  .sent { font-size: 1.22rem; line-height: 1.38; margin: 4px 0 12px; }
+  .rail-row { margin: 0 -16px; padding: 2px 16px 10px; scroll-padding: 0 16px; }
+  .rail-row .wg { flex-basis: 300px; }
+  .bk .rail-head { display: none; }
+  .mx { border-radius: 26px; padding-top: 12px; }
+  .mx-top { padding: 0 14px 10px; }
+  .legend { margin-left: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .lg { flex: none; font-size: 14px; }
+  .pickbar { margin: 0 12px 10px; width: calc(100% - 24px); gap: 12px; }
+  .pickbar .art { width: 48px; height: 40px; } .pickbar .t b { font-size: 18px; } .pickbar .t span { font-size: 15px; } .pickbar .p { font-size: 24px; }
+  .pickbar .badge { position: absolute; top: -10px; left: 16px; }
+  .lead { flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 0 8px 0 12px; }
+  .lead .art { width: 40px; height: 32px; border-radius: 10px; }
+  .lead b { font-size: 16px; } .lead small { display: none; }
+  .sq .pr { font-size: 17px; } .sq .wx { font-size: 14px; }
+  .trip { padding: 12px; gap: 12px; min-height: 0; border-radius: 26px; flex-wrap: wrap; }
+  .trip > .art { width: 72px; height: 60px; border-radius: 14px; }
+  .trip h1 { font-size: 28px; }
+  .trip .meta { font-size: 15px; }
+  .trip .count { display: none; }
+  .trip .together { margin-left: auto; }
+  .trip .together .lbl { display: none; }
+  .cal { height: calc(100svh - 330px); min-height: 480px; border-radius: 26px; }
+  .cal-top .legend { display: none; }
+  .cal-top .seg { display: none; }
+  .dchips { display: flex; }
+  .grid { --gut: 48px; }
+  .pl .rail-head { display: none; }
+  .imp, .tm2 { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .src { position: relative; top: 0; max-height: 210px; padding: 14px 16px; }
+  .minical { position: relative; top: 0; padding: 12px; }
+  .mb { font-size: 12px; padding: 5px 5px 5px 7px; } .mb small { display: none; }
+  .paths { grid-template-columns: minmax(0, 1fr); }
+  .bigpath { padding: 18px; }
+  .bigpath h2 { font-size: 26px; }
+  .edbar { border-radius: 22px; padding: 8px; gap: 8px; }
+  .edbar .hint, .edbar .btn.ghost { display: none; }
+  .edbar .btn { min-height: 48px; padding: 0 16px; }
+  .celeb { left: 0; right: 0; top: auto; bottom: 0; translate: none; width: 100%; max-height: 94svh; grid-template-columns: 1fr; border-radius: 30px 30px 0 0; padding: 18px 16px max(18px, env(safe-area-inset-bottom)); gap: 16px; }
+  .celeb .side2 { order: -1; }
+  .igcard { width: 62%; margin: 0 auto; padding: 12px; } .igcard b { font-size: 19px; }
+  .pass h2 { font-size: 28px; padding-right: 80px; }
+  .stamp { width: 74px; height: 74px; font-size: 12px; }
+  .island { left: 10px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); padding: 2px; }
+  .island > :not(.st-btn) { display: none; }
+  .island .st-btn { width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .island .st-btn .lbl { display: none; }
+  .states { left: 10px; right: 10px; width: auto; bottom: 142px; max-height: calc(100svh - 170px); }
+  .toast { bottom: 88px; font-size: 15px; }
+}
+/* the stop's sheet on a phone */
+.sheet-stop { position: fixed; z-index: 62; left: 0; right: 0; bottom: 0; max-height: 90svh; display: flex; flex-direction: column; border-radius: 28px 28px 0 0; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); overflow: hidden; }
+.sheet-stop .dt { display: block; } .sheet-stop .dt > * + * { margin-top: 14px; }
+.sheet-stop .dt { overflow-y: auto; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+
+@media (prefers-reduced-motion: reduce) {
+  *:active { scale: none !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
+  .bg .cloud, .bg .stars circle, .bg .moon .zz, .skel::after, .confetti { animation: none !important; }
+  .confetti { display: none; }
+}
+</style>
+<style>
+:where(.ev, .mb, .flyer, .stop, .sc) { --k: var(--see); --kt: var(--see-t); --ki: var(--see-i); }
+::view-transition-group(g-art) { animation-duration: .62s; animation-timing-function: var(--spring-soft); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .3s; }
+:root[data-theme="dark"] .art > svg, :root[data-theme="dark"] .map { filter: brightness(.86) saturate(.95); }
+.daystrip { background: color-mix(in srgb, var(--card-solid) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); }
+.gsheet.peek .gs-head, .gsheet.peek .gs-body, .gsheet.peek .grab { display: none; }
+.gsheet:not(.peek) .peekbar { display: none; }
+.gsheet .grab { display: none; }
+@media (max-width: 719px) { .gsheet .grab { display: block; } }
+.why-missing { color: var(--ink-3) !important; font-style: italic; }
+.tipline { margin: 4px 0 0; font-size: 15px; color: var(--ride-i); background: var(--ride-t); padding: 6px 10px; border-radius: 12px; justify-self: start; }
+.tipline b { font-weight: 680; }
+.draft .ghead { box-shadow: var(--sh2); }
+.ready { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-radius: 22px; background: var(--card-solid); box-shadow: var(--sh2); }
+.ready p { margin: 0; flex: 1 1 260px; color: var(--ink-2); font-size: 16px; }
+.ready p b { color: var(--ink); }
+.mkhead-sub { margin: 4px 0 0; color: var(--ink-2); font-size: 17px; max-width: 44rem; }
+.sectionlabel { font: 650 14px/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin: 4px 0 -4px; }
+.priv { background: var(--card-2); color: var(--ink-2); }
+.calnote { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 15px; }
+.calnote svg { width: 18px; height: 18px; color: var(--see); }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="sunball"></div>
+  <svg class="moon" viewBox="0 0 100 100"><defs><mask id="moon-cut"><rect width="100" height="100" fill="#fff"/><circle cx="73" cy="36" r="34" fill="#000"/></mask></defs><circle cx="50" cy="50" r="42" fill="#F3EBD3" mask="url(#moon-cut)"/><path d="M19 57 q5 5 10 0" fill="none" stroke="#6B5B3A" stroke-width="2.4" stroke-linecap="round"/><path d="M21 69 q3.5 3 7 0" fill="none" stroke="#6B5B3A" stroke-width="2.2" stroke-linecap="round"/><circle cx="15" cy="64" r="3.4" fill="#F4A9A0" opacity=".7"/><g class="zz" fill="#F3EBD3" font-family="Newsreader, Georgia, serif" font-weight="600"><text x="80" y="28" font-size="13">z</text><text x="89" y="15" font-size="10">z</text></g></svg>
+  <svg class="stars" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMin slice" id="stars"></svg>
+  <svg class="cloud" style="left:6%;top:9%;width:170px" viewBox="0 0 120 50"><path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/></svg>
+  <svg class="cloud" style="left:58%;top:22%;width:120px;animation-duration:80s" viewBox="0 0 120 50"><path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/></svg>
+  <svg class="cloud" style="left:28%;top:44%;width:200px;animation-duration:95s" viewBox="0 0 120 50"><path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/></svg>
+  <svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice" id="shore"></svg>
+</div>
+
+<header class="top" id="top">
+  <a class="brand" href="#" data-act="toHub" aria-label="GitAway, guides">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/><path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#fff"/><path d="M5 31c5-3 9-3 14 0s9 3 16 0" fill="none" stroke="#C92A5E" stroke-width="2.5"/></svg>
+    GitAway
+  </a>
+  <nav class="sections" id="sections" aria-label="Sections"><span class="blob" id="blob"></span></nav>
+  <span class="sp"></span>
+  <span class="pill-sample">Prototype · sample guides</span>
+  <button class="round" id="themeBtn" aria-label="Switch to dark"></button>
+  <button class="round me" id="meBtn" aria-label="Your account" aria-haspopup="menu" aria-expanded="false"><span class="av" style="--c:#0F766E">S</span></button>
+  <div class="menu" id="menu" role="menu" hidden></div>
+</header>
+
+<main class="wrap" id="main">
+  <section class="view" data-v="hub" id="v-hub" aria-label="Guides"></section>
+  <section class="view" data-v="guide" id="v-guide" aria-label="A guide"></section>
+  <section class="view" data-v="book" id="v-book" aria-label="Book"></section>
+  <section class="view" data-v="plan" id="v-plan" aria-label="Plan"></section>
+  <section class="view" data-v="make" id="v-make" aria-label="Make a guide"></section>
+  <section class="view" data-v="imp" id="v-imp" aria-label="Reading your post"></section>
+  <section class="view" data-v="fromtrip" id="v-fromtrip" aria-label="Your trip as a guide"></section>
+  <section class="view" data-v="edit" id="v-edit" aria-label="Edit your guide"></section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="gsheet" id="gsheet" role="dialog" aria-modal="true" aria-label="Guide" hidden></aside>
+<div class="sheet-stop" id="stopSheet" role="dialog" aria-modal="true" aria-label="Stop" hidden></div>
+<div class="celeb" id="done" role="dialog" aria-modal="true" aria-label="Published" hidden></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="island" id="island" role="group" aria-label="Prototype controls">
+  <button class="st-btn" id="stBtn" aria-haspopup="true" aria-expanded="false"></button>
+  <span class="sep"></span>
+  <span>Palette</span>
+  <button data-pal="calm" aria-pressed="true">Calm</button>
+  <button data-pal="before" aria-pressed="false">Before</button>
+</div>
+<div class="states" id="states" hidden></div>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia('(prefers-reduced-motion: reduce)');
+const PHONE = matchMedia('(max-width: 719px)');
+const CSSV = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const SPRING = CSSV('--spring'), SPRING_SOFT = CSSV('--spring-soft'), EASE = 'cubic-bezier(.2,.8,.2,1)';
+const wait = ms => new Promise(r => setTimeout(r, RM.matches ? 0 : ms));
+const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+function hash(...a) { let x = 2166136261; for (const ch of a.join('|')) { x ^= ch.charCodeAt(0); x = Math.imul(x, 16777619); } return (x >>> 0) / 4294967295; }
+let uid = 0;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ================= icons ================= */
+const sv = (p, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I = {
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>',
+  partly: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="3.4" fill="#F59E0B" stroke="none"/><path d="M9 2.8v1.4M3.6 9H2.2M4.8 4.8l1 1M14.2 4.8l-1 1"/><path d="M8 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6 1.2A3 3 0 0 0 8 20z" fill="currentColor" fill-opacity=".18"/></svg>',
+  rain: sv('<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z" fill="currentColor" fill-opacity=".18"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>'),
+  plane: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 15.5v-1.8l-8-5V3.5a1.5 1.5 0 0 0-3 0v5.2l-8 5v1.8l8-2.4V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-4.9z" transform="rotate(90 12 12)"/></svg>',
+  bed: sv('<path d="M3 19V6M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/>'),
+  car: sv('<path d="M5 16V11l2-5h10l2 5v5M3 16h18v3H3zM5 11h14"/><circle cx="7.5" cy="16" r="1.4"/><circle cx="16.5" cy="16" r="1.4"/>'),
+  pin: sv('<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+  check: sv('<path d="m5 12.5 4.5 4.5L19 7.5"/>', 3),
+  close: sv('<path d="M6 6l12 12M18 6 6 18"/>', 2.4),
+  left: sv('<path d="m15 5-7 7 7 7"/>', 2.4),
+  right: sv('<path d="m9 5 7 7-7 7"/>', 2.4),
+  up: sv('<path d="m5 15 7-7 7 7"/>', 2.4),
+  down: sv('<path d="m5 9 7 7 7-7"/>', 2.4),
+  arrow: sv('<path d="M5 12h14M13 6l6 6-6 6"/>', 2.2),
+  moon: sv('<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>'),
+  sunline: sv('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>'),
+  food: sv('<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1.5-4 4-4 8h4"/>'),
+  wallet: sv('<path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l12-3v3"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor"/>'),
+  search: sv('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>', 2.2),
+  bulb: sv('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+  link: sv('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+  ext: sv('<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
+  heart: sv('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
+  share: sv('<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>'),
+  cal: sv('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  users: sv('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>'),
+  clock: sv('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  ticket: sv('<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6.5v11" stroke-dasharray="2 2.5"/>'),
+  eye: sv('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+  walk: sv('<circle cx="13" cy="4.5" r="2"/><path d="M10 21l2-6 3 3v3M8 12l3-4 3 1 2 3M12 15l1-6"/>'),
+  boat: sv('<path d="M3 16l1.5 4h15L21 16zM6 16V9h12v7M12 9V4M9 6h3"/>'),
+  book: sv('<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>'),
+  compass: sv('<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z" fill="currentColor"/>'),
+  pen: sv('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>'),
+  lock: sv('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'),
+  gear: sv('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  help: sv('<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"/>'),
+  out: sv('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 8l-4 4 4 4M6 12h10"/>'),
+  plus: sv('<path d="M12 5v14M5 12h14"/>', 2.4),
+  quote: sv('<path d="M7 10h3v6H5v-3c0-3 1-5 4-6M16 10h3v6h-5v-3c0-3 1-5 4-6"/>'),
+  grid: sv('<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'),
+  copy: sv('<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
+  trolley: sv('<rect x="5" y="4" width="14" height="13" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>'),
+  sparkle: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5 14 9l6.5 2-6.5 2-2 6.5-2-6.5L3.5 11 10 9z"/></svg>',
+  camera: sv('<rect x="3" y="6.5" width="18" height="13" rx="3.5"/><circle cx="12" cy="13" r="3.6"/><path d="M8.5 6.5 10 4h4l1.5 2.5"/>'),
+};
+const KIND = {
+  food: { label: 'Food', icon: 'food' }, see: { label: 'See', icon: 'eye' }, tix: { label: 'Tickets and tours', icon: 'ticket' },
+  ride: { label: 'Getting around', icon: 'car' }, stay: { label: 'Stay', icon: 'bed' }, flight: { label: 'Getting there', icon: 'plane' },
+};
+const LEGI = { walk: 'walk', car: 'car', ferry: 'boat', trolley: 'trolley' };
+
+/* ================= illustrated art (never a photo) ================= */
+const A = {
+  sky(id, a, b) { return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="160" height="100" fill="url(#${id})"/>`; },
+  palm(x, y, s = 1, c = '#2F7A55', t = '#7A4E26') { return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 Q2 -14 6 -28" fill="none" stroke="${t}" stroke-width="2.4" stroke-linecap="round"/><g fill="${c}"><path d="M6 -28q-10-3-15 4 8-3 15-4z"/><path d="M6 -28q10-4 15 3-8-3-15-3z"/><path d="M6 -28q-5-9-13-8 8 2 13 8z"/><path d="M6 -28q4-10 12-9-8 2-12 9z"/></g></g>`; },
+  sea(y, a = '#3F8FC2', b = '#78B8E3') { return `<path d="M0 ${y} Q40 ${y - 5} 80 ${y - 1} T160 ${y - 2} V100 H0Z" fill="${a}"/><path d="M0 ${y + 8} Q40 ${y + 4} 80 ${y + 7} T160 ${y + 6} V100 H0Z" fill="${b}"/>`; },
+};
+function art(kind) {
+  const g = 'g' + (++uid);
+  let s = '';
+  switch (kind) {
+    case 'beach':
+      s = A.sky(g, '#BFE1F7', '#FCE3C8') + `<circle cx="124" cy="30" r="12" fill="#FFB547"/>` + A.sea(60) +
+        `<rect x="18" y="55" width="76" height="3" fill="#2B3A4A"/>${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${22 + i * 12}" y="58" width="2" height="12" fill="#2B3A4A"/>`).join('')}<rect x="82" y="45" width="12" height="10" rx="1" fill="#E4572E"/><path d="M80 45h16l-8-5z" fill="#2B3A4A"/>` +
+        `<path d="M0 82 Q50 73 100 79 T160 76 V100 H0Z" fill="#F0DDBA"/>` + A.palm(132, 86, 1.1) + A.palm(146, 88, .8); break;
+    case 'city':
+      s = A.sky(g, '#D7E8F7', '#FBE1C9') + `<circle cx="34" cy="28" r="10" fill="#FF9F45"/><path d="M0 64 Q30 46 62 56 T120 50 T160 56 V100H0Z" fill="#C9A57E"/>` +
+        [[70, 30, 10], [82, 22, 9], [93, 36, 8], [103, 26, 11], [116, 40, 7]].map(([x, y, w]) => `<rect x="${x}" y="${y}" width="${w}" height="${70 - y}" fill="#7E93AD"/><rect x="${x + 2}" y="${y + 4}" width="${w - 4}" height="2" fill="#C9D6E6"/>`).join('') +
+        `<path d="M0 74 Q80 66 160 72 V100H0Z" fill="#3E6B4A"/><path d="M0 86 Q80 80 160 84 V100H0Z" fill="#E9D3B0"/>` + A.palm(24, 88, 1.2, '#3B7550') + A.palm(46, 90, 1.05, '#3B7550') + A.palm(140, 90, 1.15, '#3B7550'); break;
+    case 'desert':
+      s = A.sky(g, '#F8E3CC', '#FCD9B4') + `<circle cx="112" cy="34" r="14" fill="#FFAA3B"/><path d="M0 64 L30 30 L52 50 L78 22 L110 58 L136 38 L160 54 V100H0Z" fill="#C9A98B"/><path d="M0 72 L40 46 L70 66 L100 44 L160 70 V100H0Z" fill="#B48A6A"/>` +
+        `<path d="M0 80 Q80 74 160 80 V100H0Z" fill="#F1D9B2"/>` + `<g fill="#5B7F4E"><rect x="40" y="62" width="5" height="26" rx="2.5"/><path d="M40 74h-6a3 3 0 0 1-3-3v-6a3 3 0 0 1 6 0v4h3zM45 70h5v-6a3 3 0 0 1 6 0v6a4 4 0 0 1-4 4h-7z"/><rect x="122" y="70" width="4" height="18" rx="2"/></g>`; break;
+    case 'wheel':
+      s = A.sky(g, '#C7E2F6', '#FBE7D4') + `<circle cx="34" cy="26" r="10" fill="#FFB547"/>` + A.sea(62, '#3F8FC2', '#6FB0DD') +
+        `<g transform="translate(112 40)"><circle r="18" fill="none" stroke="#E4572E" stroke-width="2.2"/>${[0, 45, 90, 135].map(a => `<path d="M0 0 L${(18 * Math.cos(a * Math.PI / 180)).toFixed(1)} ${(18 * Math.sin(a * Math.PI / 180)).toFixed(1)} M0 0 L${(-18 * Math.cos(a * Math.PI / 180)).toFixed(1)} ${(-18 * Math.sin(a * Math.PI / 180)).toFixed(1)}" stroke="#E4572E" stroke-width="1.2"/>`).join('')}<path d="M-8 22 L0 0 L8 22" fill="none" stroke="#2B3A4A" stroke-width="2"/></g>` +
+        `<path d="M40 58 l10 -18 v18z" fill="#fff"/><path d="M36 58h18l-3 4h-12z" fill="#2B3A4A"/><path d="M0 84 Q60 76 160 82 V100H0Z" fill="#F0DDBA"/>` + A.palm(16, 90, 1); break;
+    case 'coast':
+      s = A.sky(g, '#CFE5F5', '#F4E7D6') + `<path d="M0 56 Q30 22 60 40 T120 30 T160 44 V100H0Z" fill="#5B8A5E"/><path d="M0 60 Q40 44 80 54 T160 56 V100H0Z" fill="#7FA37A"/>` +
+        [[40, 50], [56, 54], [72, 50], [90, 55]].map(([x, y]) => `<rect x="${x}" y="${y}" width="10" height="7" fill="#F7F3EA"/><path d="M${x - 1} ${y}h12l-6-4z" fill="#C2410C"/>`).join('') + A.sea(68) + `<path d="M0 88 Q80 82 160 88 V100H0Z" fill="#F0DDBA"/>` + A.palm(140, 92, 1); break;
+    case 'mesa':
+      s = A.sky(g, '#FAD9B8', '#F7C9A0') + `<circle cx="40" cy="30" r="13" fill="#FFD27A"/><path d="M60 62 V40 h10 l4 -6 h30 l4 6 h8 V62z" fill="#B4532A"/><path d="M0 66 V52 h22 l3 -5 h14 l3 5 h6 V66z" fill="#C8693A"/>` +
+        `<path d="M0 66 Q80 60 160 66 V100H0Z" fill="#E8B988"/><path d="M0 82 Q80 76 160 82 V100H0Z" fill="#D9A06A"/>` +
+        `<g fill="#3F6B45"><rect x="120" y="58" width="6" height="30" rx="3"/><path d="M120 72h-6a3 3 0 0 1-3-3v-8a3 3 0 0 1 6 0v5h3zM126 68h5v-6a3 3 0 0 1 6 0v6a4 4 0 0 1-4 4h-7z"/><rect x="28" y="70" width="4" height="18" rx="2"/></g>`; break;
+    case 'garden':
+      s = A.sky(g, '#CFE6F7', '#FBE6CF') + `<circle cx="130" cy="24" r="10" fill="#FFB547"/><rect x="66" y="20" width="16" height="46" fill="#E9D3B0"/><path d="M64 20h20l-10-12z" fill="#C2410C"/><rect x="70" y="28" width="8" height="10" rx="4" fill="#7E93AD"/><rect x="18" y="44" width="124" height="22" fill="#F1E2C8"/>` +
+        [0, 1, 2, 3, 4, 5].map(i => `<path d="M${25 + i * 19} 66 v-12 a6 6 0 0 1 12 0 v12z" fill="#B48A6A"/>`).join('') +
+        `<path d="M0 66 H160 V100 H0Z" fill="#7FA37A"/><ellipse cx="80" cy="84" rx="46" ry="8" fill="#78B8E3"/><circle cx="64" cy="84" r="3" fill="#F4A9C0"/><circle cx="94" cy="82" r="3" fill="#F4A9C0"/><circle cx="80" cy="87" r="2.6" fill="#F4A9C0"/>` + A.palm(14, 92, 1.2) + A.palm(150, 94, 1.1); break;
+    case 'food':
+      s = `<rect width="160" height="100" fill="#F6E7D3"/><rect x="104" y="8" width="44" height="26" rx="3" fill="#BFE1F7"/><path d="M104 26 Q126 22 148 26 V34H104Z" fill="#78B8E3"/><rect y="40" width="160" height="60" fill="#C9A57E"/><rect y="40" width="160" height="4" fill="rgba(0,0,0,.1)"/>` +
+        `<circle cx="48" cy="70" r="21" fill="#fff"/><circle cx="48" cy="70" r="14" fill="#FBE7C2"/><path d="M36 72 q12 -12 24 0" fill="#F1C27D" stroke="#C2410C" stroke-width="2"/><circle cx="44" cy="74" r="2.6" fill="#2F7A55"/><circle cx="52" cy="73" r="2.6" fill="#E4572E"/>` +
+        `<circle cx="106" cy="66" r="16" fill="#fff"/><path d="M96 66 a10 6 0 0 0 20 0z" fill="#D9A06A"/><rect x="130" y="56" width="14" height="20" rx="3" fill="#fff"/><rect x="132" y="60" width="10" height="12" fill="#7A4E26"/>`; break;
+  }
+  return `<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${s}</svg>`;
+}
+
+/* ================= sample data: every guide, person, price and link is made up ================= */
+const MAYA = { name: 'Maya Ortiz', first: 'Maya', blog: 'Salt & Sun family blog', init: 'M', c: '#0F766E' };
+const G = {
+  id: 'sd-kids', place: 'San Diego', region: 'California', title: 'Three easy days in San Diego with kids', art: 'beach', creator: MAYA,
+  updated: 'Updated Oct 2026', planned: '1,240 planned with it', url: 'gitaway.me/g/three-easy-days-sd',
+  glance: [['cal', 'Days', '3 days', 'Easy pace, early nights'], ['sun', 'Best season', 'Sep to Oct', 'Warm sea, thinner crowds'], ['wallet', 'Budget', '$$', 'About $210 a day for 4'],
+    ['users', 'Suits', 'Families', 'Kids 4 to 12'], ['car', 'Getting around', 'Car on day 2', 'Trolley and short rides otherwise'], ['bed', 'Stay', 'Mission Beach', 'or Little Italy']],
+  days: [
+    { n: 1, dow: 'Saturday', title: 'Balboa Park and the bay', areas: 'Little Italy · Balboa Park', cost: 'about $330 for 4', stops: [
+      { id: 'a1', t: '8:30', s: 8.5, e: 9.25, dur: '45 min', k: 'food', name: 'Cinnamon knots at Cornerstone Bakery', area: 'Little Italy', why: 'Watch the bakers through the window while you wait.', cost: '$', costTxt: 'About $25 for 4', tip: 'Go before 9: the line triples after.', words: 'We start every San Diego trip here. The kids press their noses to the glass, and we take the knots to the little playground two blocks down.', ahead: 'No', good: 'All ages', art: 'food' },
+      { leg: 'car', txt: '12 min drive' },
+      { id: 'a2', t: '9:30', s: 9.5, e: 11, dur: '1.5 h', k: 'see', name: 'Balboa Park gardens and the lily pond', area: 'Balboa Park', why: 'Free, shady, and the fountain is a perfect first stop.', cost: 'Free', costTxt: 'Free', tip: 'Park at Inspiration Point; the little tram up is free.', words: 'The lily pond is the kids’ favourite part of the whole park. We let them run the arcades before the zoo asks them to walk all afternoon.', ahead: 'No', good: 'All ages', art: 'garden' },
+      { leg: 'walk', txt: '8 min walk' },
+      { id: 'a3', t: '11:00', s: 11, e: 15, dur: '4 h', k: 'tix', name: 'San Diego Zoo', area: 'Balboa Park', why: 'Take the guided bus first to see the lay of it, then walk the canyons downhill.', cost: '$$$', costTxt: 'About $70 a ticket', tip: 'Arrive at opening and bring the stroller: it is hilly.', words: 'Do the bus loop first so the kids pick the three animals they cannot miss. Then it is all downhill, and nobody melts down at three.', ahead: 'Yes, pick a day', good: 'Ages 3 and up', link: { site: 'Viator', what: 'Zoo tickets' }, art: 'garden' },
+      { leg: 'car', txt: '10 min drive' },
+      { id: 'a4', t: '15:30', s: 15.5, e: 16.5, dur: '1 h', k: 'food', name: 'Late tacos at Pacific Taco Shop', area: 'Old Town', why: 'Tortillas pressed in the window; a quiet courtyard.', cost: '$', costTxt: 'About $40 for 4', tip: 'Order the kids’ plate: it is enough for two.', words: 'Our reward after the zoo. The courtyard is quiet at half past three and the horchata fixes everything.', ahead: 'No', good: 'All ages', art: 'food' },
+      { leg: 'car', txt: '9 min drive' },
+      { id: 'a5', t: '17:30', s: 17.5, e: 19, dur: '1.5 h', k: 'see', name: 'Splash fountains at Waterfront Park', area: 'Little Italy', why: 'Fountains for them, the harbour at sunset for you.', cost: 'Free', costTxt: 'Free', tip: 'Pack a towel and a dry change of clothes.', words: 'They will get soaked, so plan for it. We sit on the grass and watch the boats until the light goes pink.', ahead: 'No', good: 'All ages', art: 'wheel' },
+    ] },
+    { n: 2, dow: 'Sunday', title: 'La Jolla and the coast', areas: 'Pacific Beach · La Jolla · Torrey Pines', cost: 'about $290 for 4', stops: [
+      { id: 'b1', t: '8:00', s: 8, e: 8.75, dur: '45 min', k: 'food', name: 'Breakfast burritos at Shorebird', area: 'Pacific Beach', why: 'Eat them on the sea wall, two minutes from the car.', cost: '$', costTxt: 'About $30 for 4', tip: 'Ask for the potatoes inside; it travels better.', words: 'A burrito on the sea wall is our idea of a San Diego morning. The surfers are already out.', ahead: 'No', good: 'All ages', art: 'beach' },
+      { leg: 'car', txt: '15 min drive' },
+      { id: 'b2', t: '9:00', s: 9, e: 10.5, dur: '1.5 h', k: 'see', name: 'Sea lions at La Jolla Cove', area: 'La Jolla', why: 'Sea lions a few steps away, and tide pools at low tide.', cost: 'Free', costTxt: 'Free, parking extra', tip: 'Before 10 the tide pools show and parking is still easy.', words: 'The kids would stay all day. Keep a polite distance; the sea lions are loud and do not care about you at all.', ahead: 'No', good: 'All ages', art: 'coast' },
+      { leg: 'walk', txt: '12 min walk' },
+      { id: 'b3', t: '11:00', s: 11, e: 13, dur: '2 h', k: 'tix', name: 'Kayak the sea caves', area: 'La Jolla Shores', why: 'Double kayaks with a guide; the caves are the highlight of the trip.', cost: '$$', costTxt: 'About $55 a person', tip: 'Ages 6 and up. The 11:00 tour has the calmest water.', words: 'Our nine year old still talks about paddling into the cave. The guides are brilliant with nervous kids.', ahead: 'Yes, a week ahead', good: 'Ages 6 and up', link: { site: 'Viator', what: 'Kayak tour' }, art: 'coast' },
+      { leg: 'walk', txt: '5 min walk' },
+      { id: 'b4', t: '13:30', s: 13.5, e: 14.5, dur: '1 h', k: 'food', name: 'Fish tacos on the shore', area: 'La Jolla Shores', why: 'Sandy feet welcome; picnic tables facing the water.', cost: '$', costTxt: 'About $45 for 4', tip: 'Grab extra napkins: the sauce wins.', words: 'Still salty from the kayak, we eat at the tables by the sand. Nobody minds the wet hair.', ahead: 'No', good: 'All ages', art: 'food' },
+      { leg: 'car', txt: '14 min drive' },
+      { id: 'b5', t: '16:30', s: 16.5, e: 18, dur: '1.5 h', k: 'see', name: 'Torrey Pines short trail', area: 'Torrey Pines', why: 'A flat loop under a mile, with the whole coast below you.', cost: '$', costTxt: 'Parking about $20', tip: 'Take the short loop; the long trails are steep for little legs.', words: 'The rare pines and the cliffs at golden hour. A short walk with a big view, which is exactly what tired kids need.', ahead: 'No', good: 'Ages 4 and up', art: 'mesa' },
+    ] },
+    { n: 3, dow: 'Monday', title: 'Coronado and Old Town', areas: 'Downtown · Coronado · Old Town', cost: 'about $250 for 4', stops: [
+      { id: 'c1', t: '9:00', s: 9, e: 9.25, dur: '15 min', k: 'ride', name: 'Ferry across to Coronado', area: 'Downtown', why: 'The best ten minutes of skyline in the city.', cost: '$', costTxt: 'About $8 each way', tip: 'Bring bikes or rent there: the ferry takes them.', words: 'The ferry is half the fun. Sit outside on the top deck and count the navy ships.', ahead: 'No', good: 'All ages', link: { site: 'the ferry’s site', what: 'Ferry times' }, art: 'wheel' },
+      { leg: 'walk', txt: '10 min walk' },
+      { id: 'c2', t: '9:30', s: 9.5, e: 11.5, dur: '2 h', k: 'see', name: 'Coronado Beach and the bike path', area: 'Coronado', why: 'Wide, flat, sparkly sand; an easy ride along the bay.', cost: 'Free', costTxt: 'Free, bikes about $15', tip: 'The sand glitters: it is mica, and kids love it.', words: 'The widest beach we know. The sand really does sparkle, and the bike path is flat enough for a six year old.', ahead: 'No', good: 'All ages', art: 'beach' },
+      { leg: 'car', txt: '20 min ride' },
+      { id: 'c3', t: '12:30', s: 12.5, e: 13.5, dur: '1 h', k: 'food', name: 'Lunch in Old Town', area: 'Old Town', why: 'Tortillas made in the window; mariachis on weekends.', cost: '$$', costTxt: 'About $70 for 4', tip: 'Sit in the courtyard; inside gets loud.', words: 'Touristy, yes, and we still love it. The tortilla ladies are a show of their own.', ahead: 'No', good: 'All ages', art: 'food' },
+      { leg: 'walk', txt: '3 min walk' },
+      { id: 'c4', t: '14:00', s: 14, e: 15.5, dur: '1.5 h', k: 'see', name: 'Old Town State Historic Park', area: 'Old Town', why: 'Free little museums, a blacksmith, a schoolhouse.', cost: 'Free', costTxt: 'Free', tip: 'Pick up the free map at the visitor centre first.', words: 'History that kids can touch. Ours spent half an hour in the old schoolhouse playing teacher.', ahead: 'No', good: 'Ages 5 and up', art: 'city' },
+      { leg: 'trolley', txt: '15 min trolley' },
+      { id: 'c5', t: '16:30', s: 16.5, e: 18.5, dur: '2 h', k: 'tix', name: 'USS Midway Museum', area: 'Downtown', why: 'Climb into cockpits on a real aircraft carrier.', cost: '$$', costTxt: 'About $35 a ticket', tip: 'Do the flight deck first; the lines come later.', words: 'We thought it was for the grown ups. The kids sat in every cockpit and did not want to leave.', ahead: 'Yes, any day', good: 'Ages 5 and up', link: { site: 'Viator', what: 'Midway tickets' }, art: 'wheel' },
+    ] },
+  ],
+  stay: [['Splurge', 'Beach resort on Mission Bay', 'Pools, a lagoon beach, bikes to borrow', 420], ['Middle', 'Apartment hotel in Little Italy', 'A kitchen, walk to dinner and the trolley', 230], ['Save', 'Motor inn by Old Town', 'Free parking, a pool, simple rooms', 140]],
+  before: [['sun', 'Best in September and October', ': the sea is warmest and summer crowds have gone home.'], ['ticket', 'Book the zoo and the kayaks', ' a few days ahead; both sell out on weekends.'], ['car', 'Rent a car only for day 2', '. Days 1 and 3 work on the trolley, ferry and short rides.'], ['bulb', 'Pack layers', ': mornings by the water are cool even when afternoons are warm.']],
+};
+G.stops = G.days.flatMap(d => d.stops.filter(s => !s.leg).map((s, i, a) => Object.assign(s, { day: d.n, idx: i + 1, of: a.length })));
+
+const GUIDES = [
+  { id: 'sd-kids', place: 'San Diego', title: G.title, days: 3, budget: '$$', season: 'Sep to Oct', seasons: ['fall', 'spring'], who: ['family'], suits: 'Families', by: 'Maya Ortiz', c: '#0F766E', n: '1,240', art: 'beach' },
+  { id: 'sd-food', place: 'San Diego', title: 'A long weekend of tacos and harbour views', days: 2, budget: '$$$', season: 'All year', seasons: ['winter', 'spring', 'summer', 'fall'], who: ['couple'], suits: 'Couples', by: 'Dev Raman', c: '#C2410C', n: '860', art: 'wheel' },
+  { id: 'sd-cheap', place: 'San Diego', title: 'San Diego on $90 a day', days: 4, budget: '$', season: 'Spring', seasons: ['spring'], who: ['solo'], suits: 'Solo, friends', by: 'Lena Park', c: '#4338CA', n: '2,010', art: 'city' },
+  { id: 'jt', place: 'Joshua Tree', title: 'Joshua Tree for first-timers', days: 2, budget: '$$', season: 'Winter, spring', seasons: ['winter', 'spring'], who: ['family', 'couple'], suits: 'Families, couples', by: 'Omar Haddad', c: '#8B2FC9', n: '640', art: 'desert' },
+  { id: 'sedona', place: 'Sedona', title: 'Red rocks and easy trails with kids', days: 3, budget: '$$', season: 'Spring, fall', seasons: ['spring', 'fall'], who: ['family'], suits: 'Families', by: 'Ana Lucero', c: '#C92A5E', n: '510', art: 'mesa' },
+  { id: 'bigsur', place: 'Big Sur', title: 'Big Sur, slowly', days: 3, budget: '$$$', season: 'Fall', seasons: ['fall'], who: ['couple'], suits: 'Couples', by: 'Theo Brandt', c: '#0369A1', n: '920', art: 'coast' },
+  { id: 'la', place: 'Los Angeles', title: 'LA with teenagers, no theme parks', days: 4, budget: '$$', season: 'Summer', seasons: ['summer'], who: ['family'], suits: 'Families', by: 'Priya Nair', c: '#5A1785', n: '700', art: 'city' },
+];
+const PLACES = [['San Diego', 'California', 3, 'beach'], ['Santa Barbara', 'California', 0, 'coast'], ['Sedona', 'Arizona', 1, 'mesa'], ['San Francisco', 'California', 0, 'city'], ['Joshua Tree', 'California', 1, 'desert'], ['Big Sur', 'California', 1, 'coast'], ['Los Angeles', 'California', 1, 'city']];
+
+/* the family's own trip (planning v2's calendar): days 0..4 = Fri Dec 18 to Tue Dec 22 */
+const TRIPDAYS = [{ d: 18, w: 'Fri', wx: 'sun', t: 68 }, { d: 19, w: 'Sat', wx: 'partly', t: 66 }, { d: 20, w: 'Sun', wx: 'sun', t: 70 }, { d: 21, w: 'Mon', wx: 'rain', t: 61 }, { d: 22, w: 'Tue', wx: 'sun', t: 67 }];
+const EVENTS0 = [
+  { d: 0, s: 10.08, e: 11.67, k: 'flight', t: 'SFO to SAN', sub: 'Flight · booked', lock: 1 },
+  { d: 0, s: 12.5, e: 13.5, k: 'food', t: 'Lunch at the harbour', sub: 'Seaport Village' },
+  { d: 0, s: 15, e: 17, k: 'see', t: 'Mission Beach boardwalk', sub: 'A walk and ice cream' },
+  { d: 1, s: 13, e: 14, k: 'food', t: 'Taco lunch', sub: 'Pacific Beach' },
+  { d: 1, s: 16.5, e: 18, k: 'see', t: 'Sunset Cliffs', sub: 'Sunset around 4:45' },
+  { d: 2, s: 9, e: 13, k: 'tix', t: 'San Diego Zoo', sub: 'Tickets at the gate' },
+  { d: 2, s: 18.5, e: 20, k: 'food', t: 'Dinner in Little Italy', sub: 'Table for 4' },
+  { d: 3, s: 10, e: 12, k: 'see', t: 'Coronado bike ride', sub: 'Bikes by the ferry' },
+  { d: 3, s: 13, e: 14, k: 'food', t: 'Lunch on Orange Ave', sub: 'Coronado' },
+  { d: 4, s: 9, e: 10, k: 'food', t: 'Last breakfast', sub: 'Mission Beach' },
+  { d: 4, s: 16.33, e: 17.83, k: 'flight', t: 'SAN to SFO', sub: 'Flight · booked', lock: 1 },
+];
+const OFF = [[0, 7, 11.67], [4, 16.33, 22]];
+const H0 = 7, H1 = 22;
+const fmt = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); const ap = hh >= 12 ? 'pm' : 'am'; return `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')}`; };
+const fmt12 = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); return `${((hh + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''} ${hh >= 12 ? 'pm' : 'am'}`; };
+
+/* the trip, turned into a guide (planning → guide draft) */
+const ME = { name: 'Sam Rivera', first: 'Sam', blog: 'Rivera family', init: 'S', c: '#0F766E' };
+const TG = {
+  id: 'trip', place: 'San Diego', region: 'California', title: 'Five December days in San Diego', art: 'beach', creator: ME, updated: 'Draft', planned: 'From your trip, Dec 18 to 22', url: 'gitaway.me/g/five-december-days-sd', mine: 1,
+  glance: [['cal', 'Days', '5 days', 'A slow pace'], ['sun', 'Season', 'December', 'Your trip’s dates'], ['wallet', 'Budget', '$$$', 'Your total, about $2,600 for 4'], ['users', 'Suits', 'Families', 'Kids 6 and 9'], ['car', 'Getting around', 'A car', 'Picked up at the airport'], ['bed', 'Stay', 'Mission Beach', '4 nights']],
+  days: [],
+  stay: [['Where we stayed', 'An inn at Mission Beach', 'The name and price stay private', 0]],
+  before: [['lock', 'Your bookings stay private', ': the guide says where and when, never your confirmation, price or room.']],
+};
+(function buildTG() {
+  const titles = ['Arrive and the boardwalk', 'Pacific Beach and Sunset Cliffs', 'The zoo day', 'Coronado', 'One last breakfast'];
+  const artOf = { food: 'food', see: 'beach', tix: 'garden', flight: 'beach' };
+  TG.days = TRIPDAYS.map((td, i) => {
+    const evs = EVENTS0.filter(e => e.d === i).sort((a, b) => a.s - b.s);
+    const stops = [];
+    evs.forEach((e, j) => {
+      if (j) stops.push({ leg: 'car', txt: 'Drive' });
+      const fl = e.k === 'flight';
+      stops.push({ id: 't' + i + j, t: fmt(e.s), s: e.s, e: e.e, dur: (e.e - e.s >= 1 ? (Math.round((e.e - e.s) * 2) / 2) + ' h' : Math.round((e.e - e.s) * 60) + ' min'), k: e.k, name: fl ? (i === 0 ? 'Fly into San Diego (SAN)' : 'Fly home from SAN') : e.t, area: fl ? 'Airport' : e.sub, why: '', cost: '', costTxt: fl ? 'Private' : '', priv: fl, tip: '', words: '', ahead: '', good: '', art: artOf[e.k] || 'beach', src: EVENTS0.indexOf(e) });
+    });
+    return { n: i + 1, dow: ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday'][i], title: titles[i], areas: '', cost: '', stops };
+  });
+  TG.stops = TG.days.flatMap(d => d.stops.filter(s => !s.leg).map((s, i, a) => Object.assign(s, { day: d.n, idx: i + 1, of: a.length })));
+})();
+
+/* ================= state ================= */
+const S = { view: 'hub', q: '', f: { who: new Set(), budget: new Set(), season: new Set(), len: new Set() }, detail: null, events: EVENTS0.map(e => ({ ...e })), calDay: 1, sheet: null, saved: false, added: new Set(), editG: G, impTok: 0 };
+const isPhone = () => PHONE.matches;
+
+/* ================= the guide, as a run sheet ================= */
+const kindIc = (k, cls = '') => `<span class="ic k-${k} ${cls}">${I[KIND[k].icon]}</span>`;
+function linkLabel(g, mode) { return (mode === 'edit' || mode === 'draft' || g.mine) ? 'Your link' : `${g.creator.first}’s link`; }
+function stopCard(st, g, mode, ctx) {
+  const ed = mode === 'edit' ? ' contenteditable="true" spellcheck="false"' : '';
+  const why = st.why || (mode === 'edit' || mode === 'draft' ? 'Add a line on why it is worth it' : '');
+  const badges = [];
+  if (st.costTxt) badges.push(`<span class="bdg cost${st.priv ? ' priv' : ''}">${st.priv ? I.lock : ''}${esc(st.costTxt)}</span>`);
+  if (st.tip && mode !== 'edit') badges.push(`<span class="bdg tip">${I.bulb}Tip</span>`);
+  if (st.link) badges.push(`<span class="bdg lnk">${I.link}${linkLabel(g, mode)}</span>`);
+  if (mode === 'edit' && !st.priv) badges.push(st.link ? `<button class="addlink" data-act="addlink" data-s="${st.id}">${I.pen}Change link</button>` : `<button class="addlink" data-act="addlink" data-s="${st.id}">${I.plus}Add your link</button>`);
+  const plus = (mode === 'page' || mode === 'sheet') && !st.priv ? `<button class="plus${S.added.has(st.id) ? ' done' : ''}" data-add="${st.id}" aria-label="Add ${esc(st.name)} to my plan">${S.added.has(st.id) ? I.check : I.plus}</button>` : '';
+  const role = mode === 'edit' || mode === 'draft' ? '' : ` role="button" tabindex="0" aria-expanded="false" aria-label="${esc(st.name)}, ${st.t}"`;
+  return `<div class="sc${mode === 'edit' || mode === 'draft' ? '' : ' tap big'} k-${st.k}" data-stop="${st.id}"${role}>
+    ${kindIc(st.k)}
+    <div class="t"><b${ed}>${esc(st.name)}</b><span class="sub">${esc(st.area)} · ${KIND[st.k].label}</span>
+      ${why ? `<p${ed} class="${st.why ? '' : 'why-missing'}">${esc(why)}</p>` : ''}
+      ${mode === 'edit' && st.tip ? `<p class="tipline"><b>Tip: </b><span${ed}>${esc(st.tip)}</span></p>` : ''}
+      ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
+    </div>
+    <div class="side">${plus}${mode === 'page' || mode === 'sheet' ? `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>` : ''}</div>
+  </div>`;
+}
+function dayTimeline(d) {
+  const ss = d.stops.filter(s => !s.leg); if (!ss.length) return '';
+  const a = ss[0].s, b = Math.max(ss[ss.length - 1].s, a + 1);
+  return `<span class="tl" aria-hidden="true">${ss.map(s => `<i class="k-${s.k}" style="left:${6 + (s.s - a) / (b - a) * 88}%"></i>`).join('')}</span>`;
+}
+function guideHTML(g, mode = 'page', ctx = '') {
+  const ed = mode === 'edit' ? ' contenteditable="true" spellcheck="false"' : '';
+  const pre = mode + '-' + g.id;
+  const actions = mode === 'page' || mode === 'sheet' ? `<div class="gact">
+      <button class="btn cta" data-act="planthis">${I.compass}Plan this trip</button>
+      <button class="btn soft" data-act="addplan">${I.plus}Add to my plan</button>
+      <div class="row"><button class="round${S.saved ? ' on' : ''}" data-act="save" aria-label="Save this guide" aria-pressed="${S.saved}">${I.heart}</button><button class="round" data-act="share" aria-label="Share this guide">${I.share}</button></div>
+    </div>` : '';
+  const head = `<header class="ghead">
+    <div class="art"${mode === 'page' ? ' style="view-transition-name:g-art"' : ''}>${art(g.art)}<span class="ill">Illustration</span></div>
+    <div class="hd">
+      <div class="kick">${g.place}, ${g.region} · Guide <span class="smp">Sample</span></div>
+      <h1${ed}>${esc(g.title)}</h1>
+      <div class="byline"><span class="av sm" style="--c:${g.creator.c}">${g.creator.init}</span><b>${g.creator.name}</b><span>${g.creator.blog}</span><span class="dot">·</span><span>${g.updated}</span><span class="dot">·</span><span>${g.planned}</span></div>
+    </div>${actions}
+  </header>`;
+  const glance = `<div class="glance" role="list" aria-label="At a glance">${g.glance.map(([ic, l, b, s]) => `<div class="gl" role="listitem">${I[ic]}<small>${l}</small><b>${b}</b><span>${s}</span></div>`).join('')}</div>`;
+  const strip = `<nav class="daystrip" style="--nd:${g.days.length}" aria-label="Days">${g.days.map((d, i) => `<button class="dbtn" data-day="${d.n}" data-pre="${pre}" aria-pressed="${i === 0}"><span class="dn">Day ${d.n} · ${d.dow.slice(0, 3)}</span><b>${esc(d.title)}</b>${dayTimeline(d)}</button>`).join('')}</nav>`;
+  const days = g.days.map(d => {
+    const ss = d.stops; const nStops = ss.filter(s => !s.leg).length;
+    const fitsSat = ctx === 'plan' && d.n === 2;
+    return `<section class="daysec" id="${pre}-d${d.n}" data-dsec="${d.n}">
+      <header><h2><small>Day ${d.n} · ${d.dow}</small><span${ed}>${esc(d.title)}</span></h2><p>${[d.areas, nStops + ' stops', d.cost].filter(Boolean).join(' · ')}</p>
+      ${fitsSat ? `<button class="btn ink addday" data-act="addday" data-dayn="2">${I.plus}Add this morning to Sat</button>` : ''}</header>
+      <ol class="rail-l">${ss.map((s, i) => s.leg ? `<li class="leg"><span></span><span class="ln"></span><span>${I[LEGI[s.leg]]}${s.txt}</span></li>`
+        : `<li class="stop k-${s.k}${i === ss.length - 1 ? ' last' : ''}"><div class="tm num">${s.t}<small>${s.dur}</small></div><div class="ln"><i></i></div><div>${stopCard(s, g, mode, ctx)}${mode === 'sheet' ? '<div class="inplace"><div></div></div>' : ''}</div></li>`).join('')}</ol>
+    </section>`;
+  }).join('');
+  const stay = `<section class="daysec" data-extra="stay"><header><h2><small>Where to stay</small>${g.mine ? 'Where we stayed' : 'Three ways to sleep near the water'}</h2></header>
+    <div class="stays">${g.stay.map(([tier, what, why, pr]) => `<div class="stayc"><div class="top2">${kindIc('stay')}<div><small>${tier}</small><b>${what}</b></div></div><p>${why}</p>${pr ? `<div class="pr num">from $${pr}<small> a night</small></div><span class="bdg lnk">${I.link}${linkLabel(g, mode)} · Booking.com</span>` : `<span class="bdg priv">${I.lock}Private</span>`}</div>`).join('')}</div></section>`;
+  const before = `<section class="daysec" data-extra="before"><header><h2><small>Before you go</small>${g.mine ? 'Notes' : `What ${g.creator.first} wishes she had known`}</h2></header>
+    <ul class="befores">${g.before.map(([ic, b, t]) => `<li>${I[ic]}<span><b>${b}</b>${t}</span></li>`).join('')}</ul></section>`;
+  const disc = mode === 'edit' || mode === 'draft' ? '' : `<p class="disclose">Links marked “${linkLabel(g, mode)}” are ${g.creator.first}’s own: she may earn a commission when you book. GitAway adds nothing to the price. Sample guide: every place, price and link here is made up.</p>`;
+  return head + glance + strip + days + stay + before + disc;
+}
+function detailBody(st, g) {
+  return `<figure class="words"><small>${I.quote}In ${g.creator.first}’s words</small><p>“${esc(st.words)}”</p></figure>
+    <div class="facts">
+      <div class="fact"><small>When</small><b class="num">${fmt12(st.s)} to ${fmt12(st.e)}</b></div>
+      <div class="fact"><small>How long</small><b>${st.dur}</b></div>
+      <div class="fact"><small>Cost</small><b>${esc(st.costTxt)}</b></div>
+      <div class="fact"><small>Book ahead</small><b>${st.ahead}</b></div>
+      <div class="fact wide">${I.pin}<div><small>Where</small><b>${esc(st.area)}, San Diego</b></div><button class="link-btn" data-act="maps">Maps</button></div>
+    </div>
+    ${st.tip ? `<div class="tipbox"><span class="ti">${I.bulb}</span><b>${g.creator.first.toUpperCase()}’S TIP</b><span>${esc(st.tip)}</span></div>` : ''}
+    ${st.link ? `<div class="theirs"><div class="who"><span class="av sm" style="--c:${g.creator.c}">${g.creator.init}</span>${g.creator.first}’s own link</div>
+      <a class="btn" href="#" data-act="theirlink"><span>${st.link.what} on ${st.link.site}</span>${I.ext}</a>
+      <p class="fine">${g.creator.first} may earn a commission if you book here. GitAway adds nothing to the price and takes no cut.</p></div>` : ''}`;
+}
+function detailHTML(st, g, dir = '') {
+  return `<div class="dt k-${st.k}${dir ? ' swap-' + dir : ''}">
+    <div class="dt-top">${kindIc(st.k)}<div><div class="kn">${KIND[st.k].label}</div><div class="of">Day ${st.day} · stop ${st.idx} of ${st.of}</div></div><span class="sp"></span>
+      <button class="round flat" data-act="prev" aria-label="Previous stop">${I.up}</button><button class="round flat" data-act="next" aria-label="Next stop">${I.down}</button><button class="round flat" data-act="closedetail" aria-label="Close">${I.close}</button></div>
+    <div class="art">${art(st.art)}<span class="ill">Illustration</span></div>
+    <h2>${esc(st.name)}</h2><div class="sub">${esc(st.area)} · ${st.dur}</div>
+    ${detailBody(st, g)}
+    <div class="dt-act"><button class="btn cta" data-add="${st.id}">${S.added.has(st.id) ? I.check + 'In your plan' : I.plus + 'Add to my plan'}</button><button class="btn soft" data-act="planthis">Plan this trip</button></div>
+  </div>`;
+}
+
+/* ================= motion helpers ================= */
+function clipFrom(el, src, r = 22) {
+  const b = el.getBoundingClientRect();
+  return `inset(${Math.max(0, src.top - b.top)}px ${Math.max(0, b.right - src.right)}px ${Math.max(0, b.bottom - src.bottom)}px ${Math.max(0, src.left - b.left)}px round ${r}px)`;
+}
+function growFrom(el, srcEl) {
+  if (RM.matches) return Promise.resolve();
+  const src = srcEl && srcEl.getBoundingClientRect();
+  const kids = [...el.children];
+  if (src && src.width && src.bottom > 0 && src.top < innerHeight) {
+    const a = el.animate([{ clipPath: clipFrom(el, src) }, { clipPath: 'inset(0 round 30px)' }], { duration: 640, easing: SPRING_SOFT });
+    kids.forEach(k => k.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 120, easing: EASE, fill: 'backwards' }));
+    return a.finished.catch(() => {});
+  }
+  const from = isPhone() ? 'translateY(100%)' : 'translateX(105%)';
+  return el.animate([{ transform: from }, { transform: 'none' }], { duration: 560, easing: SPRING_SOFT }).finished.catch(() => {});
+}
+function shrinkTo(el, srcEl) {
+  if (RM.matches) return Promise.resolve();
+  const src = srcEl && srcEl.getBoundingClientRect();
+  if (src && src.width && src.bottom > 0 && src.top < innerHeight) {
+    [...el.children].forEach(k => k.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: EASE, fill: 'forwards' }));
+    return el.animate([{ clipPath: 'inset(0 round 30px)' }, { clipPath: clipFrom(el, src) }], { duration: 380, easing: EASE, fill: 'forwards' }).finished.catch(() => {});
+  }
+  return el.animate([{ transform: 'none', opacity: 1 }, { transform: isPhone() ? 'translateY(100%)' : 'translateX(105%)', opacity: 1 }], { duration: 320, easing: EASE, fill: 'forwards' }).finished.catch(() => {});
+}
+function fly(src, dst, k, html) {
+  if (RM.matches) return Promise.resolve();
+  const f = document.createElement('div');
+  f.className = `flyer k-${k}`; f.innerHTML = html;
+  Object.assign(f.style, { left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px' });
+  document.body.appendChild(f);
+  const a = f.animate([{ left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px', opacity: .96 },
+    { left: dst.left + 'px', top: dst.top + 'px', width: dst.width + 'px', height: dst.height + 'px', opacity: 1 }], { duration: 760, easing: SPRING_SOFT, fill: 'forwards' });
+  return a.finished.catch(() => {}).then(() => f.remove());
+}
+function flip(container, sel, mutate) {
+  const before = new Map($$(sel, container).map(e => [e, e.getBoundingClientRect()]));
+  mutate();
+  if (RM.matches) return;
+  $$(sel, container).forEach(e => {
+    const a = before.get(e), b = e.getBoundingClientRect();
+    if (!b.width) return;
+    if (a && a.width) { const dx = a.left - b.left, dy = a.top - b.top; if (dx || dy) e.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 560, easing: SPRING_SOFT }); }
+    else e.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: SPRING });
+  });
+}
+let toastT;
+function toast(html, undo) {
+  const t = $('#toast');
+  t.innerHTML = `<span class="ok">${I.check}</span><span>${html}</span>${undo ? '<button data-act="undo">Undo</button>' : ''}`;
+  S.undo = undo || null; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 4200);
+}
+
+/* ================= the bar ================= */
+const NAV = [['book', 'Book', 'plane'], ['plan', 'Plan', 'cal'], ['guides', 'Guides', 'book']];
+function drawNav() {
+  $('#sections').insertAdjacentHTML('beforeend', NAV.map(([k, l, ic]) => `<button data-nav="${k}">${I[ic]}<span>${l}</span></button>`).join(''));
+}
+function setNav(k, animate = true) {
+  $$('#sections button').forEach(b => b.dataset.nav === k ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  const b = $(`#sections button[data-nav="${k}"]`), blob = $('#blob');
+  if (!animate) blob.style.transition = 'none';
+  blob.style.left = b.offsetLeft + 'px'; blob.style.width = b.offsetWidth + 'px';
+  if (!animate) { blob.offsetWidth; blob.style.transition = ''; }
+}
+function drawMenu() {
+  $('#menu').innerHTML = `<div class="who"><span class="av lg" style="--c:#0F766E">S</span><div><b>Sam Rivera</b><small>Rivera family · sample account</small></div></div>
+    <button role="menuitem" data-act="toPlan">${I.cal}Your trips<small>1 planned</small></button>
+    <button role="menuitem" data-act="myGuides">${I.book}Your guides<small>1 draft</small></button>
+    <button role="menuitem" data-act="saved">${I.heart}Saved guides<small>4</small></button>
+    <hr>
+    <button role="menuitem">${I.gear}Settings</button>
+    <button role="menuitem">${I.help}Help</button>
+    <button role="menuitem">${I.out}Sign out</button>
+    <p class="moved">Your family plans with you in <b>Plan</b>, from the Together drawer. The old Family page is gone.</p>`;
+}
+function toggleMenu(on) {
+  const m = $('#menu'), b = $('#meBtn');
+  on = on ?? m.hidden;
+  b.setAttribute('aria-expanded', on);
+  if (on) { m.hidden = false; if (!RM.matches) m.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: SPRING_SOFT }); }
+  else m.hidden = true;
+}
+
+/* ================= views ================= */
+const SECTION_OF = { hub: 'guides', guide: 'guides', make: 'guides', imp: 'guides', fromtrip: 'guides', edit: 'guides', book: 'book', plan: 'plan' };
+function setView(v, { scroll = true } = {}) {
+  S.view = v;
+  $$('.view').forEach(s => s.classList.toggle('on', s.dataset.v === v));
+  document.body.classList.toggle('deep', v !== 'hub' && v !== 'make');
+  setNav(SECTION_OF[v]);
+  if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* ---------- 1 · the hub ---------- */
+function matchGuide(x) {
+  const f = S.f, q = S.q.trim().toLowerCase();
+  if (q && !x.place.toLowerCase().includes(q) && !x.title.toLowerCase().includes(q)) return false;
+  if (f.who.size && !x.who.some(w => f.who.has(w))) return false;
+  if (f.budget.size && !f.budget.has(x.budget)) return false;
+  if (f.season.size && !x.seasons.some(s => f.season.has(s))) return false;
+  if (f.len.size && !f.len.has(x.days <= 2 ? 'wk' : x.days <= 4 ? 'mid' : 'week')) return false;
+  return true;
+}
+function gcard(x) {
+  return `<button class="gcard tap" data-g="${x.id}" aria-label="${esc(x.title)}, ${x.place}">
+    <div class="art">${art(x.art)}<span class="smp">Sample</span><span class="dz">${x.days} days</span></div>
+    <div class="bd"><span class="kick">${x.place}</span><h3>${esc(x.title)}</h3>
+      <div class="meta"><span>${I.wallet}${x.budget}</span><span>${I.sun}${x.season}</span><span>${I.users}${x.suits}</span></div>
+      <div class="by"><span class="av sm" style="--c:${x.c}">${x.by[0]}</span><b>${x.by}</b><span class="n">${x.n} planned with it</span></div></div>
+  </button>`;
+}
+function drawHub() {
+  const F = [['who', 'Who', [['family', 'Families'], ['couple', 'Couples'], ['solo', 'Solo']]], ['budget', 'Budget', [['$', '$'], ['$$', '$$'], ['$$$', '$$$']]],
+    ['season', 'Season', [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['fall', 'Fall']]], ['len', 'Length', [['wk', 'A weekend'], ['mid', '3 to 4 days'], ['week', 'A week']]]];
+  $('#v-hub').innerHTML = `<div class="hub-top"><div class="hub-hero">
+      <span class="kick">Guides · from other travellers</span>
+      <h1>See what people did, <em>then make it yours.</em></h1>
+      <p>Real trips laid out to scan in seconds: the days, the stops, the times, what it cost, and the tips.</p>
+      <div class="search" id="search"><label>${I.search}<span class="sr">Search a place</span><input id="q" type="search" autocomplete="off" placeholder="Search a place: San Diego, Sedona, Big Sur" value="${esc(S.q)}"><button class="clear" data-act="clearq" aria-label="Clear" ${S.q ? '' : 'hidden'}>${I.close}</button></label><div class="ac" id="ac" hidden></div></div>
+      <div class="filters">${F.map(([k, l, opts]) => `<div class="fgroup" role="group" aria-label="${l}"><span>${l}</span>${opts.map(([v, t]) => `<button class="chip" data-f="${k}" data-v="${v}" aria-pressed="${S.f[k].has(v)}">${t}</button>`).join('')}</div>`).join('')}</div>
+    </div>
+        <div class="makecard"><span class="kick">Your turn</span><h2>Make a guide</h2><p>Put your trip in order for others, with your own links. Two ways in:</p>
+          <button class="path tap big" data-act="fromTrip"><span class="pi art">${art('beach')}</span><span><b>From your planned trip</b><small>San Diego, Dec 18 to 22: your calendar becomes the draft</small></span>${I.right}</button>
+          <button class="path tap big" data-act="fromBlog"><span class="pi">${I.link}</span><span><b>Paste your blog post</b><small>We lay it out; your words and affiliate links stay yours</small></span>${I.right}</button>
+        </div>
+    </div>
+    <div class="hub-body">
+      <div><div class="hub-head"><h2 id="hubTitle"></h2><span id="hubCount"></span></div><div class="cards" id="cards">${GUIDES.map(gcard).join('')}</div><div class="empty" id="empty" hidden>No guides match yet. Try fewer filters, or be the first: make one.</div></div>
+      <aside class="make">
+        <div class="mine glass"><h3>Your guides</h3>
+          <button class="tap" data-act="editDraft"><span class="art">${art('beach')}</span><span><b>Five December days in San Diego</b><small>From your trip</small></span><span class="st">Draft</span></button>
+        </div>
+      </aside>
+    </div>`;
+  filterHub(false);
+}
+function filterHub(anim = true) {
+  const run = () => {
+    let n = 0;
+    $$('#cards .gcard').forEach(c => { const ok = matchGuide(GUIDES.find(x => x.id === c.dataset.g)); c.classList.toggle('out', !ok); n += ok; });
+    $('#empty').hidden = n > 0;
+    const q = S.q.trim();
+    $('#hubTitle').textContent = q ? `Guides for ${PLACES.find(p => p[0].toLowerCase().startsWith(q.toLowerCase()))?.[0] || '“' + q + '”'}` : (Object.values(S.f).some(s => s.size) ? 'Matching guides' : 'Popular this month');
+    $('#hubCount').textContent = `${n} guide${n === 1 ? '' : 's'}`;
+  };
+  anim ? flip($('#cards'), '.gcard', run) : run();
+}
+function drawAc() {
+  const q = S.q.trim().toLowerCase(), ac = $('#ac');
+  if (!q) { ac.hidden = true; return; }
+  const hits = PLACES.filter(p => p[0].toLowerCase().includes(q)).slice(0, 5);
+  if (!hits.length) { ac.hidden = true; return; }
+  ac.innerHTML = hits.map(([n, r, c, a], i) => { const at = n.toLowerCase().indexOf(q); return `<button data-place="${n}" class="${i === 0 ? 'hi' : ''}"><span class="art">${art(a)}</span><span><b>${n.slice(0, at)}<mark>${n.slice(at, at + q.length)}</mark>${n.slice(at + q.length)}</b><small>${r}</small></span><span class="n">${c ? c + ' guide' + (c > 1 ? 's' : '') : 'No guides yet'}</span></button>`; }).join('');
+  ac.hidden = false;
+}
+
+/* ---------- 2 · the guide page ---------- */
+function drawGuide() {
+  $('#v-guide').innerHTML = `<div class="gpage" id="gpage"><div class="gmain"><button class="back" data-act="toHub">${I.left}Guides</button>${guideHTML(G, 'page')}</div><aside class="gdetail" id="gdetail" aria-label="Stop details"></aside></div>`;
+  spy($('#v-guide'), null);
+}
+function openDetail(id, dir = '') {
+  const st = G.stops.find(s => s.id === id); if (!st) return;
+  const prev = S.detail; S.detail = id;
+  $$('#v-guide .sc').forEach(c => { c.classList.toggle('sel', c.dataset.stop === id); c.setAttribute('aria-expanded', c.dataset.stop === id); });
+  if (isPhone()) return openStopSheet(st);
+  const gp = $('#gpage'), dt = $('#gdetail');
+  dt.innerHTML = detailHTML(st, G, prev ? (dir || 'dn') : '');
+  gp.classList.add('has-detail');
+  const card = $(`#v-guide .sc[data-stop="${id}"]`);
+  setTimeout(() => { const r = card.getBoundingClientRect(); if (r.top < 90 || r.bottom > innerHeight - 20) card.scrollIntoView({ block: 'nearest', behavior: RM.matches ? 'auto' : 'smooth' }); }, prev ? 0 : 380);
+}
+function closeDetail() {
+  S.detail = null; $('#gpage')?.classList.remove('has-detail');
+  $$('#v-guide .sc').forEach(c => { c.classList.remove('sel'); c.setAttribute('aria-expanded', 'false'); });
+}
+function stepDetail(d) {
+  const i = G.stops.findIndex(s => s.id === S.detail), j = Math.max(0, Math.min(G.stops.length - 1, i + d));
+  if (j !== i) openDetail(G.stops[j].id, d > 0 ? 'dn' : 'up');
+}
+let stopSrc = null;
+function openStopSheet(st) {
+  const sh = $('#stopSheet'); stopSrc = $(`.sc[data-stop="${st.id}"]`);
+  sh.innerHTML = `<div class="grab"></div>${detailHTML(st, G)}`;
+  sh.hidden = false; $('#scrim').classList.add('on'); document.documentElement.classList.add('lock'); document.body.classList.add('sheet-open');
+  growFrom(sh, stopSrc);
+}
+async function closeStopSheet() {
+  const sh = $('#stopSheet'); if (sh.hidden) return;
+  $('#scrim').classList.remove('on');
+  await shrinkTo(sh, stopSrc); sh.hidden = true; sh.getAnimations().forEach(a => a.cancel()); [...sh.children].forEach(k => k.getAnimations().forEach(a => a.cancel()));
+  document.documentElement.classList.remove('lock'); document.body.classList.remove('sheet-open'); closeDetail();
+}
+/* the day strip follows the scroll */
+function spy(scope, root) {
+  const secs = $$('[data-dsec]', scope); if (!secs.length) return;
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { const n = e.target.dataset.dsec; $$('.dbtn', scope).forEach(b => b.setAttribute('aria-pressed', b.dataset.day === n)); } });
+  }, { root, rootMargin: '-35% 0px -60% 0px' });
+  secs.forEach(s => io.observe(s));
+}
+
+/* ---------- 5 · guides in context: the sheet over your place ---------- */
+let sheetSrc = null;
+function openSheet(ctx, srcEl) {
+  const sh = $('#gsheet'); sheetSrc = srcEl; S.sheet = ctx;
+  const keep = ctx === 'book' ? `<b>Your trips</b> · San Diego, Dec 18 · 4 nights · $1,846 picked` : `<b>Your plan</b> · Dec 18 to 22 · Saturday morning free`;
+  sh.innerHTML = `<div class="grab"></div><div class="gs-head"><button class="keep tap" data-act="closesheet"><span class="ks">${I.left}</span><span>${keep}</span></button><button class="round flat" data-act="closesheet" aria-label="Close the guide">${I.close}</button></div>
+    <div class="gs-body" id="gsBody">${ctx === 'plan' ? `<div class="fitnote">${I.sparkle}<span><b>Your Saturday morning is free.</b> Day 2 fits it: breakfast, the cove and the kayaks, 8 to 1.</span></div>` : ''}${guideHTML(G, 'sheet', ctx)}</div>
+    <button class="peekbar" data-act="unpeek"><span class="art">${art('beach')}</span><span><b>${G.title}</b><small>Back to the guide, where you left it</small></span><span class="up">${I.right}</span></button>`;
+  sh.classList.remove('peek'); sh.hidden = false;
+  $('#scrim').classList.add('on'); document.documentElement.classList.add('lock'); document.body.classList.add('sheet-open');
+  spy(sh, $('#gsBody'));
+  if (ctx === 'plan') { $$('.freewin').forEach(f => f.classList.add('on')); }
+  return growFrom(sh, srcEl);
+}
+async function closeSheet() {
+  const sh = $('#gsheet'); if (sh.hidden) return;
+  $('#scrim').classList.remove('on'); $$('.freewin').forEach(f => f.classList.remove('on'));
+  if (sh.classList.contains('peek')) { sh.hidden = true; sh.classList.remove('peek'); }
+  else { await shrinkTo(sh, sheetSrc); sh.hidden = true; }
+  sh.getAnimations().forEach(a => a.cancel()); [...sh.children].forEach(k => k.getAnimations().forEach(a => a.cancel()));
+  document.documentElement.classList.remove('lock'); document.body.classList.remove('sheet-open'); S.sheet = null;
+  sheetSrc?.focus({ preventScroll: true });
+}
+function peekSheet(on) {
+  const sh = $('#gsheet');
+  if (on === sh.classList.contains('peek')) return;
+  const h0 = sh.getBoundingClientRect().height;
+  sh.classList.toggle('peek', on);
+  $('#scrim').classList.toggle('on', !on); document.documentElement.classList.toggle('lock', !on);
+  const h1 = sh.getBoundingClientRect().height;
+  if (!RM.matches) sh.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 560, easing: SPRING_SOFT });
+}
+function toggleInplace(card) {
+  const box = card.parentElement.querySelector('.inplace'); if (!box) return;
+  const open = card.getAttribute('aria-expanded') !== 'true';
+  $$('#gsheet .sc[aria-expanded="true"]').forEach(c => { if (c !== card) { c.setAttribute('aria-expanded', 'false'); const b = c.parentElement.querySelector('.inplace'); b.style.height = b.scrollHeight + 'px'; requestAnimationFrame(() => b.style.height = '0px'); } });
+  card.setAttribute('aria-expanded', open);
+  const st = G.stops.find(s => s.id === card.dataset.stop);
+  if (open) { box.firstElementChild.innerHTML = `<div class="dt" style="padding:8px 0 4px">${detailBody(st, G)}</div>`; box.style.height = box.firstElementChild.scrollHeight + 'px'; }
+  else { box.style.height = box.scrollHeight + 'px'; requestAnimationFrame(() => box.style.height = '0px'); }
+}
+
+/* ---------- 5a · booking ---------- */
+const dowOf = d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][(d + 1) % 7];
+const LANES = [['San Diego', 'SAN · 7 min to the beach', 'beach', 1846], ['Los Angeles', 'LAX · 24 min to the pier', 'city', 1702], ['Palm Springs', 'PSP · 9 min to town', 'desert', 1594], ['Santa Barbara', 'SBA · 12 min to the beach', 'coast', 2140]];
+const DAYS = [15, 16, 17, 18, 19, 20, 21, 22, 23];
+function drawBook() {
+  const wx = ['sun', 'partly', 'sun', 'sun', 'partly', 'sun', 'rain', 'sun', 'partly'];
+  const head = `<div class="mx-head" style="--n:${DAYS.length}"><div class="lead"><span>Places · start day</span></div>${DAYS.map(d => `<div class="day${['Sat', 'Sun'].includes(dowOf(d)) ? ' wkend' : ''}"><span class="dw">${dowOf(d)}</span><span class="dn num">${d}</span></div>`).join('')}</div>`;
+  const rows = LANES.map(([n, sub, a, base], li) => `<div class="mx-row" style="--n:${DAYS.length}">
+      <div class="lead"><span class="art">${art(a)}</span><div><b>${n}</b><small>${sub}</small></div></div>
+      ${DAYS.map((d, i) => {
+        const p = Math.round(base + (hash(n, d) - .45) * 420 + (['Sat', 'Sun'].includes(dowOf(d)) ? 120 : 0));
+        const pick = li === 0 && d === 18, cheap = li === 2 && d === 16, over = p > 2500;
+        const price = pick ? 1846 : p;
+        return `<div class="c"><button class="sq${pick ? ' pick sel' : ''}${cheap ? ' cheap' : ''}${over && !pick ? ' over' : ''}" aria-label="${n}, Dec ${d}, ${money(price)}">${pick ? '<span class="tag">Our pick</span>' : cheap ? '<span class="tag">Cheapest</span>' : ''}<span class="wx ${wx[(i + li) % 9]}">${I[wx[(i + li) % 9]]}${62 + Math.round(hash(d, li) * 9)}°</span><span class="pr num">${money(price)}</span></button></div>`;
+      }).join('')}
+      ${li === 0 ? `<div class="band" style="--c:3;--k:4"><b>Your 4 nights</b></div>` : ''}
+    </div>`).join('');
+  $('#v-book').innerHTML = `<p class="sent">A family of four from <button class="w">San Francisco</button>, to <button class="w">San Diego</button> <span class="fill">or nearby</span>, around <button class="w">Dec 18</button>, for <button class="w">4 nights</button>, <span class="fill">under</span> <button class="w">$2,500</button>.</p>
+    <div class="bk"><div class="main-col"><div class="mx" id="mx">
+      <div class="mx-top"><span class="mx-status"><b>36 trips</b> · flight and stay, one total</span><div class="legend"><span class="lg"><i style="background:var(--indigo)"></i>Our pick</span><span class="lg"><i style="box-shadow:inset 0 0 0 2.5px var(--see)"></i>Cheapest</span><span class="lg"><i style="background:repeating-linear-gradient(135deg,var(--line-2) 0 3px,transparent 3px 6px)"></i>Over budget</span></div></div>
+      <button class="pickbar tap big"><span class="art">${art('beach')}</span><span class="t"><b>San Diego · Fri, Dec 18 to Tue, Dec 22</b><span>Flight $524 + Mission Beach Inn, 4 nights $1,322</span></span><span class="badge">Our pick</span><span class="p num">$1,846</span></button>
+      <div class="mx-scroll" id="mxScroll">${head}${rows}</div>
+    </div></div>
+    <aside class="rail" aria-label="Around San Diego"><div class="rail-head"><span class="art">${art('beach')}</span><div><b>San Diego</b><small>Fri, Dec 18 to Tue, Dec 22</small></div></div>
+      <div class="rail-row">${guidesWidget('book')}${weatherWidget()}${mapWidget()}</div></aside></div>`;
+}
+function guidesWidget(ctx) {
+  const rows = GUIDES.filter(x => x.place === 'San Diego');
+  return `<section class="wg glass" style="--i:0"><header><span class="ic gd">${I.book}</span><h3>Guides for San Diego</h3><span class="smp">Sample</span></header>
+    <p style="margin:0 0 10px">${ctx === 'book' ? 'What other families did there. It opens over your trips, so you keep your place.' : 'Days other travellers planned there; add a stop or a whole morning.'}</p>
+    <div class="glist">${rows.map((x, i) => `<button class="grow tap${ctx === 'plan' && i === 0 ? ' fits' : ''}" data-openguide="${x.id}" data-ctx="${ctx}"><span class="art">${art(x.art)}</span><span class="t"><b>${esc(x.title)}</b><small>${x.days} days · ${x.suits} · ${x.budget} · ${x.by}</small>${ctx === 'plan' && i === 0 ? '<span class="fitb">Day 2 fits your free Saturday</span>' : ''}</span>${I.right}</button>`).join('')}</div>
+    <button class="link-btn" data-act="toHubSD">All San Diego guides</button></section>`;
+}
+function weatherWidget() {
+  return `<section class="wg glass" style="--i:1"><header><span class="ic" style="--k:var(--wx)">${I.sun}</span><h3>Weather</h3><span class="smp">Sample</span></header>
+    <div class="days5">${TRIPDAYS.map(d => `<div class="${d.wx}"><span>${d.w}</span>${I[d.wx]}<b class="num">${d.t}°</b></div>`).join('')}</div>
+    <p style="margin-top:10px">Mild and mostly dry. Monday may rain in the morning.</p></section>`;
+}
+function mapWidget() {
+  return `<section class="wg glass" style="--i:2"><header><span class="ic" style="--k:var(--see)">${I.pin}</span><h3>Where things are</h3><span class="smp">Sample</span></header>
+    <svg class="map" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="300" height="140" fill="#E8EFE3"/><path d="M0 0 H70 Q60 40 78 70 T64 140 H0Z" fill="#A9D3F0"/><path d="M90 0 L120 140 M70 60 H300 M150 0 Q170 70 260 140" stroke="#fff" stroke-width="5" fill="none"/><circle cx="96" cy="54" r="7" fill="#8B2FC9"/><circle cx="160" cy="92" r="7" fill="#4338CA"/><circle cx="210" cy="40" r="7" fill="#0F766E"/></svg>
+    <p style="margin-top:8px">Your inn at Mission Beach is 11 min from the airport and 18 min from Balboa Park.</p></section>`;
+}
+
+/* ---------- 5b · planning ---------- */
+function drawPlan() {
+  $('#v-plan').innerHTML = `<div class="pl">
+    <section class="trip" aria-label="Your trip"><span class="art">${art('beach')}</span>
+      <div class="ti"><span class="kick"><span class="chk">${I.check}</span>Booked · now planning</span><h1>San Diego, <em>Dec 18 to 22</em></h1><div class="meta">Family of 4 · Mission Beach Inn · flights SFO to SAN</div></div>
+      <button class="together tap"><span class="stack"><span class="av sm" style="--c:#0F766E">S</span><span class="av sm" style="--c:#C92A5E">A</span><span class="av sm" style="--c:#4338CA">L</span></span><span class="lbl">Together</span></button>
+      <div class="count"><b class="num">33</b><span>days to go</span></div></section>
+    <section class="cal" aria-label="Trip calendar">
+      <div class="cal-top"><div class="seg"><button aria-pressed="true">Week</button><button aria-pressed="false">Day</button></div><span class="cal-title">December <small>Fri 18 to Tue 22</small></span>
+        <div class="legend">${['flight', 'stay', 'food', 'see', 'tix'].map(k => `<span class="lg k-${k}"><i></i>${{ flight: 'Flight', stay: 'Stay', food: 'Food', see: 'See', tix: 'Tickets' }[k]}</span>`).join('')}</div></div>
+      <div class="dchips" id="dchips">${TRIPDAYS.map((d, i) => `<button class="dchip" data-cday="${i}" aria-pressed="${i === S.calDay}"><small>${d.w}</small><b class="num">${d.d}</b></button>`).join('')}</div>
+      <div class="grid" id="calgrid"></div>
+      <div class="calnote">${I.sparkle}Plans you add from a guide carry its name, so you can find the creator’s tips later.</div>
+    </section>
+    <aside class="rail" aria-label="Help for this trip"><div class="rail-head"><span class="ic" style="--k:var(--indigo);width:44px;height:44px;border-radius:14px">${I.sparkle}</span><div><b>Help for this trip</b><small>Fitted to your free time</small></div></div>
+      <div class="rail-row">${guidesWidget('plan')}${weatherWidget()}</div></aside></div>`;
+  drawCal();
+}
+function drawCal(landId) {
+  const g = $('#calgrid'); if (!g) return;
+  const days = isPhone() ? [S.calDay] : [0, 1, 2, 3, 4];
+  const hh = 44;
+  g.style.setProperty('--n', days.length); g.style.setProperty('--hours', H1 - H0);
+  g.innerHTML = `<div class="g-head"><span></span>${days.map(i => { const d = TRIPDAYS[i]; return `<div class="dh${i === 1 ? ' free' : ''}"><span class="dn num">${d.d}</span><span class="dw">${d.w}</span><span class="wxl ${d.wx}">${I[d.wx]}${d.t}°</span></div>`; }).join('')}</div>
+    <div class="g-all"><span class="lbl">Stay</span><div class="stayband" style="grid-column:2 / span ${days.length}">${I.bed}Mission Beach Inn · 4 nights</div></div>
+    <div class="g-body" id="gbody"><div class="g-inner"><div class="gut">${Array.from({ length: H1 - H0 }, (_, i) => i ? `<span style="top:${i * hh}px">${fmt12(H0 + i).replace(':00', '')}</span>` : '').join('')}</div>
+      ${days.map(i => `<div class="col" data-col="${i}">${OFF.filter(o => o[0] === i).map(o => `<div class="offwin" style="top:${(o[1] - H0) * hh}px;height:${(o[2] - o[1]) * hh}px"></div>`).join('')}
+        ${i === 1 && !S.added.size ? `<div class="freewin${S.sheet === 'plan' ? ' on' : ''}" style="top:${(8 - H0) * hh}px;height:${5 * hh}px">Free morning</div>` : ''}
+        ${S.events.filter(e => e.d === i).map(e => `<div class="ev k-${e.k}${e.id && e.id === landId ? ' land' : ''}" data-ev="${e.id || ''}" style="--top:${(e.s - H0) * hh + 1}px;--h:${(e.e - e.s) * hh - 3}px${e.dl ? ';--dl:' + e.dl + 'ms' : ''}"><b>${esc(e.t)}</b>${e.e - e.s >= .75 ? `<span class="tm num">${fmt(e.s)} to ${fmt(e.e)}</span>` : ''}${e.from && e.e - e.s >= 1 ? `<span class="from">${I.book}From Maya’s guide</span>` : e.sub && e.e - e.s >= 1.25 ? `<small>${esc(e.sub)}</small>` : ''}${e.lock ? `<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>` : ''}</div>`).join('')}</div>`).join('')}
+    </div></div>`;
+  $$('.ev.land', g).forEach(e => e.addEventListener('animationend', () => e.classList.remove('land'), { once: true }));
+}
+function scrollCalTo(h) { const b = $('#gbody'); if (b) b.scrollTop = Math.max(0, (h - H0) * 44 - 30); }
+function fits(d, s, e) {
+  if (OFF.some(o => o[0] === d && s < o[2] && e > o[1])) return false;
+  return !S.events.some(x => x.d === d && s < x.e && e > x.s);
+}
+function slotFor(st) { for (const d of [1, 0, 2, 3, 4]) if (fits(d, st.s, st.e)) return d; return -1; }
+async function addStops(ids, fromEls) {
+  const list = ids.map(id => G.stops.find(s => s.id === id)).filter(st => st && !S.added.has(st.id));
+  if (S.view !== 'plan') {
+    list.forEach(st => S.added.add(st.id));
+    $$(`[data-add]`).forEach(b => { if (S.added.has(b.dataset.add)) { b.classList.add('done'); b.innerHTML = b.classList.contains('plus') ? I.check : I.check + 'In your plan'; } });
+    return toast(list.length > 1 ? `${list.length} stops added to your San Diego plan` : `Added to your San Diego plan · ${list[0] ? list[0].t : ''}`, null);
+  }
+  const placed = [], skipped = [];
+  const srcRects = list.map((st, i) => (fromEls[i] || $(`#gsheet .sc[data-stop="${st.id}"]`) || $(`.sc[data-stop="${st.id}"]`))?.getBoundingClientRect());
+  list.forEach(st => { const d = slotFor(st); if (d < 0) skipped.push(st); else { placed.push([st, d]); S.events.push({ d, s: st.s, e: st.e, k: st.k, t: st.name, sub: st.area, from: 1, id: 'g-' + st.id, pend: 1 }); S.added.add(st.id); } });
+  if (!placed.length) return toast(`No free time at ${list[0].t} on your trip. Pick a time in the calendar.`);
+  if (isPhone()) { S.calDay = placed[0][1]; $$('.dchip').forEach(b => b.setAttribute('aria-pressed', +b.dataset.cday === S.calDay)); peekSheet(true); const c = $('.cal'); window.scrollTo({ top: c.getBoundingClientRect().top + scrollY - 70, behavior: 'instant' }); }
+  $$('.freewin').forEach(f => f.classList.remove('on'));
+  drawCal(); scrollCalTo(Math.min(...placed.map(p => p[0].s)));
+  $$('#calgrid .ev').forEach(e => { if (S.events.find(x => x.id === e.dataset.ev)?.pend) e.style.visibility = 'hidden'; });
+  await frame();
+  await Promise.all(placed.map(([st, d], i) => new Promise(res => setTimeout(async () => {
+    const evEl = $(`#calgrid .ev[data-ev="g-${st.id}"]`); const dst = evEl.getBoundingClientRect();
+    const src = srcRects[list.indexOf(st)] || dst;
+    await fly(src, dst, st.k, `<b>${esc(st.name)}</b><span class="num" style="font:560 14px/1.2 var(--f-ui);opacity:.85">${fmt(st.s)} to ${fmt(st.e)}</span>`);
+    evEl.style.visibility = ''; evEl.classList.add('land'); evEl.addEventListener('animationend', () => evEl.classList.remove('land'), { once: true });
+    S.events.find(x => x.id === 'g-' + st.id).pend = 0; res();
+  }, RM.matches ? 0 : i * 140))));
+  $$('[data-add]').forEach(b => { if (S.added.has(b.dataset.add)) { b.classList.add('done'); b.innerHTML = b.classList.contains('plus') ? I.check : I.check + 'In your plan'; } });
+  const d0 = TRIPDAYS[placed[0][1]];
+  const msg = placed.length > 1 ? `Added ${placed.length} stops to ${d0.w}, ${fmt(placed[0][0].s)} to ${fmt(placed[placed.length - 1][0].e)}${skipped.length ? ` · ${skipped.length} clash with your plans` : ''}` : `Added <b>${esc(placed[0][0].name)}</b> · ${d0.w} ${fmt(placed[0][0].s)} to ${fmt(placed[0][0].e)}`;
+  toast(msg, () => { placed.forEach(([st]) => { S.events = S.events.filter(x => x.id !== 'g-' + st.id); S.added.delete(st.id); }); drawCal(); $$('[data-add]').forEach(b => { if (!S.added.has(b.dataset.add)) { b.classList.remove('done'); b.innerHTML = b.classList.contains('plus') ? I.plus : I.plus + 'Add to my plan'; } }); });
+}
+
+/* ---------- 6 · making a guide ---------- */
+function drawMake() {
+  $('#v-make').innerHTML = `<div class="mk-top"><div><span class="kick">Guides · make one</span><h1>Make a guide</h1><p class="mkhead-sub">Your trip or your post, laid out so people can scan it in seconds. Your words, your order, your links.</p></div><span class="sp"></span><button class="back" data-act="toHub">${I.left}Guides</button></div>
+    <div class="paths">
+      <div class="bigpath"><span class="kick">From your planned trip</span><h2>Your calendar becomes the draft</h2><p>Days, times and places come straight from Plan. Bookings stay private: the guide says where, never your confirmation or price.</p>
+        <div class="tripmini"><span class="art">${art('beach')}</span><div><b>San Diego, Dec 18 to 22</b><small>5 days · 9 plans · flights and an inn</small></div></div>
+        <button class="btn cta lg" data-act="fromTrip">${I.cal}Turn my trip into a guide</button></div>
+      <div class="bigpath"><span class="kick">From your blog post</span><h2>Paste a link, watch it lay out</h2><p>We read your post, find the days and stops, and keep every affiliate link as yours. Nothing is invented: every line comes from your post.</p>
+        <label class="urlbox">${I.link}<span class="sr">Your post’s address</span><input id="url" value="saltandsun.example/san-diego-with-kids"></label>
+        <button class="btn cta lg" data-act="fromBlog">${I.sparkle}Read my post</button></div>
+    </div>`;
+}
+const POST = [
+  ['h', 'Day one: Balboa Park and the bay'],
+  ['p', 'We start every San Diego trip with cinnamon knots at Cornerstone Bakery in Little Italy, before nine, while the line is short.'],
+  ['p', 'Then the gardens at Balboa Park: free, shady, and the lily pond is the kids’ favourite. Park at Inspiration Point; the tram is free.'],
+  ['p', 'The zoo takes the rest of the day. Do the guided bus first, then walk the canyons downhill. We book <a>zoo tickets on Viator</a> to skip the queue.'],
+  ['h', 'Day two: La Jolla'],
+  ['p', 'Sea lions at the cove before ten, when the tide pools show. Then <a>kayak the sea caves</a>; ages six and up.'],
+  ['p', 'Torrey Pines for sunset: take the short loop, the long trails are steep for little legs.'],
+  ['h', 'Day three: Coronado and Old Town'],
+  ['p', 'Ferry to Coronado, bikes on board, the sparkly beach, then lunch and the free museums in Old Town. The <a>Midway tickets</a> are worth it.'],
+  ['h', 'Where we stay'],
+  ['p', 'Mission Beach for the sand, Little Italy for food. Our favourite apartment hotel is on <a>Booking.com</a>, and we <a>rent a car</a> only for the La Jolla day.'],
+];
+function steps(names) { return `<ol class="steps" id="steps">${names.map(n => `<li><i>${I.check}</i>${n}</li>`).join('')}</ol>`; }
+function step(i) { $$('#steps li').forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); }); }
+function pendAll(root) { $$('.gl, .dbtn, .daysec, .stop, .leg', root).forEach(e => e.classList.add('pend')); $$('.ghead h1, .ghead .byline, .ghead .kick', root).forEach(e => e.classList.add('skel')); $$('.ghead > .art', root).forEach(e => e.classList.add('skel')); }
+const land = (els, gap = 70) => els.forEach((e, i) => { e.classList.remove('pend'); if (!RM.matches) { e.style.setProperty('--dl', i * gap + 'ms'); e.classList.add('settle'); } });
+async function runImport() {
+  const tok = ++S.impTok, alive = () => tok === S.impTok && S.view === 'imp';
+  $('#v-imp').innerHTML = `<div class="mk-top"><div><span class="kick">Make a guide · from your post</span><h1>Reading your post</h1></div><span class="sp"></span>${steps(['Reading your post', 'Finding days and stops', 'Keeping your links', 'Laying out your guide'])}</div>
+    <div class="imp"><div class="src" id="src"><header><span class="av" style="--c:#0F766E">M</span><div><b>San Diego with kids: three easy days</b><small>saltandsun.example · Sample post</small></div></header>
+      ${POST.map(([t, h], i) => t === 'h' ? `<h4 data-l="${i}">${h}</h4>` : `<p class="ln2" data-l="${i}">${h.replace(/<a>/g, '<a href="#" tabindex="-1">')}</p>`).join('')}
+      <div class="story" id="story"><span class="spin dk"></span><span>Opening your post</span></div></div>
+      <div class="draft" id="draft">${guideHTML(G, 'draft')}</div></div>`;
+  const D = $('#draft'); pendAll(D);
+  const story = t => { const s = $('#story'); if (s) s.innerHTML = `<span class="spin dk"></span><span>${t}</span>`; };
+  const read = async i => { const l = $(`#src [data-l="${i}"]`); if (!l) return; $$('#src .read').forEach(x => { x.classList.remove('read'); x.classList.add('done'); }); if (l.classList.contains('ln2')) l.classList.add('read'); const src = $('#src'); src.scrollTop = Math.max(0, l.offsetTop - 90); };
+  step(0); await wait(500); if (!alive()) return;
+  await read(1); story('Finding the title and who wrote it');
+  $$('.skel', D).forEach(e => e.classList.remove('skel')); land([$('.ghead', D)]); await wait(520); if (!alive()) return;
+  step(1); story('Three days, fifteen stops');
+  land($$('.gl', D), 60); land($$('.dbtn', D), 90); await wait(420);
+  const secs = $$('.daysec[data-dsec]', D); const lines = [[0, 2, 3], [4, 5, 6], [7, 8]];
+  for (let k = 0; k < secs.length; k++) {
+    if (!alive()) return;
+    for (const l of lines[k]) { await read(l); await wait(160); }
+    land([secs[k]]); land($$('.stop, .leg', secs[k]), 70); await wait(560);
+  }
+  if (!alive()) return;
+  step(2); story('Keeping your links as yours'); await read(10);
+  land($$('.daysec[data-extra]', D), 120);
+  for (const a of $$('#src a')) { a.classList.add('kept'); await wait(140); }
+  $$('.bdg.lnk', D).forEach((b, i) => { if (!RM.matches) b.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: i * 50, easing: SPRING, fill: 'backwards' }); });
+  $('.ghead', D).insertAdjacentHTML('afterend', `<div class="lnkfound settle">${I.link}<span><b>5 links found and kept as yours:</b> Viator (3), Booking.com, a car rental. Readers see them labelled as yours.</span></div>`);
+  await wait(700); if (!alive()) return;
+  step(3); story('Done. Every line came from your post.'); $$('#src .read').forEach(x => { x.classList.remove('read'); x.classList.add('done'); });
+  $('#story').innerHTML = `<span style="color:var(--see)">${I.check}</span><span>Done. Every line came from your post.</span>`; $('#story svg').style.width = '18px';
+  await wait(300); step(4);
+  D.insertAdjacentHTML('afterbegin', `<div class="ready settle"><p><b>Your draft is ready:</b> 3 days, 15 stops, 5 of your links. Fix anything, then publish.</p><button class="btn cta" data-act="toEdit" data-g="blog">${I.pen}Edit and publish</button></div>`);
+}
+function drawMini() {
+  return `<header><span class="art">${art('beach')}</span><div><b>Your trip: San Diego</b><small>Fri Dec 18 to Tue Dec 22 · from Plan</small></div></header>
+    <div class="mcg">${TRIPDAYS.map((d, i) => `<div class="mcd"><span>${d.w}<b class="num">${d.d}</b></span>${EVENTS0.filter(e => e.d === i).sort((a, b) => a.s - b.s).map(e => `<div class="mb k-${e.k}${e.lock ? ' priv' : ''}" data-src="${EVENTS0.indexOf(e)}">${esc(e.k === 'flight' ? 'Flight' : e.t)}<small>${fmt(e.s)}</small></div>`).join('')}</div>`).join('')}</div>
+    <p class="privnote">${I.lock}<span>Flights and the inn become “Getting there” and “Where we stayed”. Confirmations, prices and names of who travels stay private.</span></p>`;
+}
+async function runFromTrip() {
+  const tok = ++S.impTok, alive = () => tok === S.impTok && S.view === 'fromtrip';
+  $('#v-fromtrip').innerHTML = `<div class="mk-top"><div><span class="kick">Make a guide · from your trip</span><h1>Your trip, as a guide</h1></div><span class="sp"></span>${steps(['Reading your calendar', 'Days into a guide', 'Keeping bookings private'])}</div>
+    <div class="tm2"><div class="minical" id="minical">${drawMini()}</div><div class="draft" id="draft2">${guideHTML(TG, 'draft')}</div></div>`;
+  const D = $('#draft2'); pendAll(D);
+  step(0); await wait(700); if (!alive()) return;
+  $$('#minical .mb').forEach((m, i) => { if (!RM.matches) m.animate([{ transform: 'none' }, { transform: 'scale(1.06)' }, { transform: 'none' }], { duration: 420, delay: i * 40, easing: EASE }); });
+  await wait(600); if (!alive()) return;
+  step(1); $$('.skel', D).forEach(e => e.classList.remove('skel')); land([$('.ghead', D)]); land($$('.gl', D), 50); land($$('.dbtn', D), 70);
+  await wait(300);
+  const secs = $$('.daysec[data-dsec]', D); land(secs, 90); $$('.leg', D).forEach(l => l.classList.remove('pend'));
+  await frame();
+  const flights = [];
+  $$('.stop', D).forEach((li, i) => {
+    const card = $('.sc', li), st = TG.stops.find(s => s.id === card.dataset.stop), mb = $(`#minical .mb[data-src="${st.src}"]`);
+    const r = card.getBoundingClientRect(), m = mb.getBoundingClientRect();
+    li.classList.remove('pend'); li.style.visibility = 'hidden';
+    const show = () => { li.style.visibility = ''; if (!RM.matches) li.animate([{ transform: 'scale(.96)' }, { transform: 'none' }], { duration: 480, easing: SPRING }); };
+    if (r.top < innerHeight && r.bottom > 0 && !RM.matches) flights.push(new Promise(res => setTimeout(() => fly(m, r, st.k, `<b>${esc(st.name)}</b>`).then(() => { show(); res(); }), i * 110)));
+    else { setTimeout(show, RM.matches ? 0 : 400 + i * 40); }
+  });
+  await Promise.all(flights); if (!alive()) return;
+  step(2); land($$('.daysec[data-extra]', D), 120);
+  $$('.bdg.priv', D).forEach((b, i) => { if (!RM.matches) b.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: i * 80, easing: SPRING, fill: 'backwards' }); });
+  $('#minical').style.opacity = '.62';
+  await wait(800); if (!alive()) return; step(3);
+  D.insertAdjacentHTML('afterbegin', `<div class="ready settle"><p><b>Your draft is ready:</b> 5 days, 11 stops. Add a line on why for each stop and your own links, then publish.</p><button class="btn cta" data-act="toEdit" data-g="trip">${I.pen}Edit and publish</button></div>`);
+}
+function drawEdit() {
+  const g = S.editG, missingWhy = g.stops.filter(s => !s.why && !s.priv).length, noLink = g.stops.filter(s => !s.link && !s.priv).length;
+  $('#v-edit').innerHTML = `<div class="gmain editing">
+    <div class="edbar"><span class="st"><i></i>Draft · saved just now</span><span class="hint">Tap any words to change them</span><span class="sp"></span><button class="btn ghost" data-act="preview">Preview</button><button class="btn cta" data-act="publish" id="pubBtn">${I.sparkle}<span>Publish</span></button></div>
+    <div class="nudges">${missingWhy ? `<button class="nudge" data-act="nudge">${I.pen}${missingWhy} stops need a line on why</button>` : ''}<button class="nudge" data-act="nudge">${I.link}${noLink} stops have no link of yours</button><button class="nudge" data-act="nudge">${I.camera}Add your own cover picture</button></div>
+    ${guideHTML(g, 'edit')}</div>`;
+}
+async function publish() {
+  const b = $('#pubBtn'); b.insertAdjacentHTML('beforeend', '<span class="spin"></span>'); b.classList.add('busy');
+  await wait(1100);
+  b.classList.remove('busy'); b.querySelector('.spin')?.remove();
+  showDone();
+}
+function showDone() {
+  const g = S.editG;
+  const d = $('#done');
+  d.innerHTML = `<button class="round flat x" data-act="closedone" aria-label="Close">${I.close}</button>
+    <div><div class="pass"><div class="kick">Published · Sample</div><h2>${esc(g.title)}</h2><p>Live in Guides, and beside San Diego in Book and Plan.</p>
+      <div class="url"><span>${g.url}</span><button data-act="copy">${'Copy'}</button></div><div class="stamp thump">Live<br>today</div></div>
+      <div class="stats"><div><b class="num">${g.days.length}</b><small>days</small></div><div><b class="num">${g.stops.length}</b><small>stops</small></div><div><b class="num">${g.mine ? 0 : 5}</b><small>your links</small></div></div>
+      <div class="donebtns"><button class="btn soft" data-act="seeguide">See your guide</button><button class="btn ink" data-act="toHub">Back to Guides</button></div></div>
+    <div class="side2"><h3>${I.camera}Your Instagram card</h3>
+      <div class="igcard"><span class="art">${art(g.art)}</span><span class="k">${g.place} · ${g.days.length} days</span><b>${esc(g.title)}</b><span class="chips2"><span>${g.glance[3][2]}</span><span>${g.glance[2][2]}</span><span>${g.glance[1][2]}</span></span>
+        <span class="ft"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#fff"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/><path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#4338CA"/></svg>Plan it on GitAway · ${g.url.replace('gitaway.me/', '')}</span></div>
+      <button class="btn cta" data-act="ig">${I.share}Share to Instagram</button></div>`;
+  d.hidden = false; d.classList.remove('in'); void d.offsetWidth; d.classList.add('in');
+  $('#scrim').classList.add('on'); document.documentElement.classList.add('lock'); document.body.classList.add('sheet-open');
+  confetti();
+}
+function closeDone() { $('#done').hidden = true; $('#confetti').innerHTML = ''; $('#scrim').classList.remove('on'); document.documentElement.classList.remove('lock'); document.body.classList.remove('sheet-open'); }
+function confetti() {
+  if (RM.matches) return;
+  const cs = ['var(--indigo)', 'var(--see)', 'var(--ride)', 'var(--food)', 'var(--wx)', 'var(--tix)'];
+  $('#confetti').innerHTML = Array.from({ length: 26 }, (_, i) => `<i style="left:${8 + hash('c', i) * 84}%;--c:${cs[i % cs.length]};--d:${Math.round(hash('d', i) * 500)}ms;--x:${Math.round((hash('x', i) - .5) * 160)}px;--r:${Math.round(hash('r', i) * 720)}deg"></i>`).join('');
+  setTimeout(() => { $('#confetti').innerHTML = ''; }, 3400);
+}
+
+/* ================= events ================= */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (!t.closest('#menu, #meBtn') && !$('#menu').hidden) toggleMenu(false);
+  if (!t.closest('#states, #stBtn') && !$('#states').hidden) toggleStates(false);
+  if (!t.closest('#search')) { const ac = $('#ac'); if (ac) ac.hidden = true; }
+  const nav = t.closest('[data-nav]'); if (nav) { e.preventDefault(); return go(nav.dataset.nav === 'guides' ? 'hub' : nav.dataset.nav); }
+  const pal = t.closest('[data-pal]'); if (pal) return setPalette(pal.dataset.pal);
+  const stl = t.closest('[data-state]'); if (stl) { toggleStates(false); return goState(stl.dataset.state); }
+  const fl = t.closest('[data-f]'); if (fl) { const set = S.f[fl.dataset.f], v = fl.dataset.v; set.has(v) ? set.delete(v) : set.add(v); fl.setAttribute('aria-pressed', set.has(v)); return filterHub(); }
+  const pl = t.closest('[data-place]'); if (pl) { S.q = pl.dataset.place; $('#q').value = S.q; $('#ac').hidden = true; $('.search .clear').hidden = false; return filterHub(); }
+  const gc = t.closest('[data-g]'); if (gc && gc.classList.contains('gcard')) return gc.dataset.g === 'sd-kids' ? openGuidePage(gc) : toast('Prototype: only “Three easy days in San Diego with kids” is filled in.');
+  const og = t.closest('[data-openguide]'); if (og) return og.dataset.openguide === 'sd-kids' ? openSheet(og.dataset.ctx, og) : toast('Prototype: only the first guide is filled in.');
+  const add = t.closest('[data-add]'); if (add) { e.stopPropagation(); const card = add.closest('.sc'); return addStops([add.dataset.add], [card]); }
+  const day = t.closest('.dbtn'); if (day) { const sec = document.getElementById(`${day.dataset.pre}-d${day.dataset.day}`); sec?.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: 'start' }); return; }
+  const cday = t.closest('[data-cday]'); if (cday) { S.calDay = +cday.dataset.cday; $$('.dchip').forEach(b => b.setAttribute('aria-pressed', b === cday)); drawCal(); return scrollCalTo(8); }
+  const sc = t.closest('.sc[role="button"]');
+  if (sc) { if (sc.closest('#gsheet')) return toggleInplace(sc); return S.detail === sc.dataset.stop && !isPhone() ? closeDetail() : openDetail(sc.dataset.stop); }
+  const a = t.closest('[data-act]'); if (!a) return;
+  e.preventDefault();
+  const act = a.dataset.act;
+  ({
+    toHub: () => go('hub'), toHubSD: () => { closeSheet(); S.q = 'San Diego'; go('hub'); },
+    toPlan: () => go('plan'), myGuides: () => go('edit'), saved: () => go('hub'), editDraft: () => { S.editG = TG; go('edit'); },
+    clearq: () => { S.q = ''; $('#q').value = ''; a.hidden = true; filterHub(); $('#q').focus(); },
+    fromTrip: () => go('fromtrip'), fromBlog: () => go('imp'),
+    toEdit: () => { S.editG = a.dataset.g === 'trip' ? TG : G; go('edit'); },
+    closedetail: () => isPhone() ? closeStopSheet() : closeDetail(), prev: () => stepDetail(-1), next: () => stepDetail(1),
+    closesheet: () => closeSheet(), unpeek: () => peekSheet(false),
+    addday: () => addStops(['b1', 'b2', 'b3'], ['b1', 'b2', 'b3'].map(id => $(`#gsheet .sc[data-stop="${id}"]`))),
+    addplan: () => { if (S.sheet === 'plan') return addStops(['b1', 'b2', 'b3'], ['b1', 'b2', 'b3'].map(id => $(`#gsheet .sc[data-stop="${id}"]`))); if (S.sheet) { closeSheet(); return toast('Saved to your San Diego trip: it waits beside your calendar in Plan.'); } go('plan').then(() => openSheet('plan', $('#v-plan [data-openguide="sd-kids"]'))); },
+    planthis: () => { if (S.sheet === 'book') { closeSheet(); return toast('Guide kept with this trip: it waits beside you in Plan.'); } closeStopSheet(); closeSheet(); go('book'); toast('Searching San Diego for 3 days, the guide’s length'); },
+    save: () => { S.saved = !S.saved; $$('[data-act="save"]').forEach(b => { b.classList.toggle('on', S.saved); b.setAttribute('aria-pressed', S.saved); }); toast(S.saved ? 'Saved to your guides' : 'Removed from your guides'); },
+    share: () => toast('Link copied: gitaway.me/g/three-easy-days-sd'), theirlink: () => toast('Opens Maya’s own link on the partner’s site (prototype)'), maps: () => toast('Opens in your maps app (prototype)'),
+    undo: () => { S.undo && S.undo(); $('#toast').classList.remove('on'); },
+    addlink: () => { const tbox = a.closest('.t'); if ($('.lnkform', tbox)) return; a.insertAdjacentHTML('afterend', `<div class="lnkform"><input placeholder="Paste your link (any site)" aria-label="Your link" value="https://www.getyourguide.example/ref=saltandsun"><button class="btn ink" data-act="savelink">Save</button></div>`); $('.lnkform input', tbox).focus(); },
+    savelink: () => { const f = a.closest('.lnkform'), btn = f.previousElementSibling; btn.outerHTML = `<span class="bdg lnk settle">${I.link}Your link</span>`; f.remove(); toast('Link saved. Readers see it labelled as yours.'); },
+    nudge: () => { const m = $('.editing .why-missing, .editing .addlink'); m?.scrollIntoView({ block: 'center', behavior: RM.matches ? 'auto' : 'smooth' }); m?.focus?.(); },
+    preview: () => { G === S.editG ? (go('guide')) : toast('Preview shows the page readers see'); },
+    publish: () => publish(), closedone: () => closeDone(), copy: () => { a.textContent = 'Copied'; }, ig: () => toast('Saved the card to your photos; Instagram opens next (prototype)'),
+    seeguide: () => { closeDone(); go('guide'); },
+  }[act] || (() => {}))();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (!$('#done').hidden) return closeDone(); if (!$('#stopSheet').hidden) return closeStopSheet(); if (!$('#gsheet').hidden) return closeSheet(); if (S.detail) return closeDetail(); if (!$('#menu').hidden) return toggleMenu(false); }
+  if (S.detail && S.view === 'guide' && (e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.target.closest('input,[contenteditable]')) { e.preventDefault(); stepDetail(e.key === 'ArrowDown' ? 1 : -1); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.sc[role="button"]')) { e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; $('.search .clear').hidden = !S.q; drawAc(); filterHub(); } });
+document.addEventListener('focusin', e => { if (e.target.id === 'q' && S.q) drawAc(); });
+$('#scrim').addEventListener('click', () => { if (!$('#done').hidden) return closeDone(); if (!$('#stopSheet').hidden) return closeStopSheet(); closeSheet(); });
+$('#meBtn').addEventListener('click', () => toggleMenu());
+$('#themeBtn').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+$('#stBtn').addEventListener('click', () => toggleStates());
+
+function openGuidePage(card) {
+  const run = () => { go('guide', { noscroll: false }); };
+  if (document.startViewTransition && !RM.matches && card) {
+    const a = card.querySelector('.art'); a.style.viewTransitionName = 'g-art';
+    document.startViewTransition(() => { a.style.viewTransitionName = ''; run(); });
+  } else run();
+}
+async function go(v) {
+  closeDetail(); if (!$('#gsheet').hidden) { $('#gsheet').hidden = true; S.sheet = null; $('#scrim').classList.remove('on'); document.documentElement.classList.remove('lock'); document.body.classList.remove('sheet-open'); }
+  if (!$('#stopSheet').hidden) { $('#stopSheet').hidden = true; $('#scrim').classList.remove('on'); document.documentElement.classList.remove('lock'); document.body.classList.remove('sheet-open'); }
+  if (!$('#done').hidden) closeDone();
+  ({ hub: drawHub, guide: drawGuide, book: drawBook, plan: drawPlan, make: drawMake, edit: drawEdit, imp: () => {}, fromtrip: () => {} }[v])();
+  setView(v);
+  if (v === 'imp') runImport();
+  if (v === 'fromtrip') runFromTrip();
+  if (v === 'plan') { await frame(); scrollCalTo(8); }
+}
+
+/* ================= theme, palette, states ================= */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').innerHTML = t === 'dark' ? I.sunline : I.moon; $('#themeBtn').setAttribute('aria-label', t === 'dark' ? 'Switch to light' : 'Switch to dark');
+  try { localStorage.setItem('gv2-theme', t); } catch {}
+}
+function setPalette(p) {
+  document.documentElement.dataset.palette = p;
+  $$('[data-pal]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pal === p));
+  try { localStorage.setItem('gv2-palette', p); } catch {}
+}
+const STATES = [
+  ['The calm palette and the bar', [['hub', 'Guides hub'], ['hub-search', 'Hub: search a place, filter'], ['menu', 'The avatar menu']]],
+  ['A guide', [['guide', 'Guide page (the run sheet)'], ['guide-stop', 'Guide: a stop’s detail']]],
+  ['Guides in context', [['book', 'Book: guides beside the matrix'], ['book-sheet', 'Book: a guide over your trips'], ['book-stop', 'Book: a stop opened in place'], ['plan', 'Plan: guides beside the calendar'], ['plan-sheet', 'Plan: a guide over your plan'], ['plan-added', 'Plan: a morning dropped in']]],
+  ['Making a guide', [['make', 'Make a guide: two ways in'], ['make-blog', 'From a blog post (live)'], ['make-trip', 'From your trip (live)'], ['edit', 'Edit inline'], ['published', 'Published, the Instagram card']]],
+];
+let curState = 'hub';
+function toggleStates(on) {
+  const s = $('#states'); on = on ?? s.hidden;
+  $('#stBtn').setAttribute('aria-expanded', on);
+  if (!on) { s.hidden = true; return; }
+  let n = 0;
+  s.innerHTML = STATES.map(([h, list]) => `<h4>${h}</h4>${list.map(([k, l]) => `<button data-state="${k}" class="${k === curState ? 'cur' : ''}"><i>${++n}</i>${l}</button>`).join('')}`).join('') +
+    `<h4>Palette</h4><div class="pal"><button data-pal="calm" aria-pressed="${document.documentElement.dataset.palette === 'calm'}">Calm</button><button data-pal="before" aria-pressed="${document.documentElement.dataset.palette === 'before'}">Before</button></div>`;
+  s.hidden = false;
+}
+async function goState(k) {
+  curState = k; toggleMenu(false); $('#toast').classList.remove('on');
+  S.added.clear(); S.events = EVENTS0.map(e => ({ ...e })); S.calDay = 1; S.detail = null;
+  const at = (sel) => $(sel);
+  switch (k) {
+    case 'hub': S.q = ''; Object.values(S.f).forEach(s => s.clear()); await go('hub'); break;
+    case 'hub-search': S.q = ''; Object.values(S.f).forEach(s => s.clear()); await go('hub'); { const q = $('#q'); q.focus(); for (const ch of 'San') { q.value += ch; S.q = q.value; drawAc(); await wait(90); } $('.search .clear').hidden = false; S.f.who.add('family'); $('[data-f="who"][data-v="family"]').setAttribute('aria-pressed', 'true'); filterHub(); } break;
+    case 'menu': await go('hub'); toggleMenu(true); break;
+    case 'guide': await go('guide'); break;
+    case 'guide-stop': await go('guide'); await frame(); { const s = $('#page-sd-kids-d1'); if (!isPhone()) window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 100, behavior: 'instant' }); } openDetail('a3'); break;
+    case 'book': await go('book'); break;
+    case 'book-sheet': case 'book-stop': await go('book'); $('#mxScroll').scrollLeft = 96; await frame(); await openSheet('book', at('#v-book [data-openguide="sd-kids"]'));
+      if (k === 'book-stop') { await wait(200); const c = $('#gsheet .sc[data-stop="a3"]'); $('#gsBody').scrollTop = c.offsetTop - 120; toggleInplace(c); } break;
+    case 'plan': await go('plan'); break;
+    case 'plan-sheet': case 'plan-added': await go('plan'); await frame(); await openSheet('plan', at('#v-plan [data-openguide="sd-kids"]'));
+      { const sec = $('#gsheet [data-dsec="2"]'); $('#gsBody').scrollTop = sec.offsetTop - 70; }
+      if (k === 'plan-added') { await wait(250); await addStops(['b1', 'b2', 'b3'], ['b1', 'b2', 'b3'].map(id => $(`#gsheet .sc[data-stop="${id}"]`))); } break;
+    case 'make': await go('make'); break;
+    case 'make-blog': await go('imp'); break;
+    case 'make-trip': await go('fromtrip'); break;
+    case 'edit': S.editG = G; await go('edit'); break;
+    case 'published': S.editG = G; await go('edit'); await wait(200); await publish(); break;
+  }
+  try { const u = new URL(location); u.searchParams.set('s', k); history.replaceState(null, '', u); } catch {}
+}
+
+/* ================= go ================= */
+(function init() {
+  let t = 'light', p = 'calm';
+  try { t = localStorage.getItem('gv2-theme') || 'light'; p = localStorage.getItem('gv2-palette') || 'calm'; } catch {}
+  const q = new URLSearchParams(location.search);
+  if (q.get('theme')) t = q.get('theme'); if (q.get('palette')) p = q.get('palette');
+  setTheme(t); setPalette(p);
+  $('#stBtn').innerHTML = `${I.grid}<span class="lbl">States</span>`;
+  drawNav(); drawMenu();
+  $('#stars').innerHTML = [[70, 40, 2.4], [160, 110, 1.8], [260, 30, 2.2], [330, 150, 1.6], [430, 70, 2.6], [520, 20, 1.8], [610, 120, 2.2], [700, 50, 1.6], [790, 140, 2.4], [880, 24, 1.8], [960, 96, 2.2], [1040, 170, 1.6], [1130, 40, 2.4], [1240, 120, 1.8], [1330, 60, 2.2], [1400, 150, 1.6]].map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" style="--i:${i}"/>`).join('');
+  $('#shore').innerHTML = `<path d="M0 120 Q160 70 330 110 T700 96 T1060 108 T1440 92 V260 H0Z" fill="#C9B9D9" opacity=".55"/>
+    <path d="M0 150 Q240 132 480 146 T960 140 T1440 148 V260 H0Z" fill="#A7D3EE"/><path d="M0 176 Q240 160 480 172 T960 166 T1440 174 V260 H0Z" fill="#78B8E3"/>
+    <rect x="120" y="128" width="380" height="6" fill="#2B3A4A"/>${Array.from({ length: 16 }, (_, i) => `<rect x="${130 + i * 24}" y="134" width="4" height="40" fill="#2B3A4A"/>`).join('')}<rect x="456" y="104" width="40" height="24" rx="2" fill="#E4572E"/><path d="M450 104h52l-26-14z" fill="#2B3A4A"/>
+    <path d="M0 214 Q300 190 640 206 T1440 200 V260 H0Z" fill="#F4D9A0"/>
+    ${[[1180, 214, 2.1], [1240, 220, 1.6], [1320, 212, 2.4], [70, 222, 1.8]].map(([x, y, s]) => A.palm(x, y, s, '#1F8A5B', '#7A4E26')).join('')}
+    <g transform="translate(860 150)"><path d="M0 0 h60 l-8 10 h-44z" fill="#C2410C"/><path d="M28 0 V-46 L56 -4z" fill="#FFD43B"/><path d="M26 -2 V-38 L6 -4z" fill="#fff"/></g>`;
+  PHONE.addEventListener('change', () => { if (S.view === 'plan') drawCal(); if (S.view === 'guide' && S.detail) closeDetail(); setNav(SECTION_OF[S.view], false); });
+  addEventListener('resize', () => setNav(SECTION_OF[S.view], false));
+  goState(q.get('s') || 'hub');
+  document.fonts?.ready.then(() => setNav(SECTION_OF[S.view], false));
+})();
+</script>
+</body>
+</html>
