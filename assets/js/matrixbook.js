@@ -189,7 +189,7 @@
             var n = form.querySelector('.mxb-fail') || document.createElement('p');
             n.className = 'mxb-note is-warn mxb-fail';
             n.setAttribute('role', 'alert');
-            n.textContent = 'Could not reach the booking just now. Nothing was booked. Try again.';
+            n.textContent = 'We could not confirm the booking just now. Check your trip before you try again.';
             form.insertBefore(n, form.firstChild);
           });
         }

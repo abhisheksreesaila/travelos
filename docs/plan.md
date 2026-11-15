@@ -1562,7 +1562,7 @@ Founder, 2026-11-14: "Then you log in. You don't go to the matrix directly, you 
 - [x] on Search a skeleton of the matrix shows at once (three places, five days each, shimmering on the --motion-* tokens; plain under reduced motion), then the matrix
 - [x] colourful in both modes, 4.5:1, 48px targets, phone and laptop; tests: `tests/test_trip_ask.py`, `tests_browser/test_trip_ask.py`
 - Decisions D-560 to D-565.
-## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [review]
+## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [done]
 Founder, 2026-11-14: "I click on a square, I open up the details behind it. I like this hotel, I like this flight, this is a perfect combination. I say book this trip. Book this trip should be bold and very easy to find. Then it simulates what would have happened ... It spins and spins. Then finally a confirmation with confetti. Then I'd say plan this trip, leading me to plan." Builds F-239's picks: A2 Trip line (laptop), A3 Bento (phone), checkout B1 Folding cards ending in B2's stamped pass.
 - [x] the opened square shows the hotel (the source's photo, else the place's drawing), room, rating, address; the flight (times, airline, stops); the sky for those nights (typical days say so); the total
 - [x] the hotel and the flight switch in place where the source gave alternatives, the total moves by exactly the difference, and Book and Save use the choice (priced again on the server)

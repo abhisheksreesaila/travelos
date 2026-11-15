@@ -35,7 +35,7 @@ def test_every_option_the_source_gave_is_drawn_with_its_own_price_and_only_the_f
     options = re.findall(r'<div [^>]*class="mx-opt"[^>]*>', html)
     assert len(options) == 6 and [" hidden" in o for o in options] == [False, True, True] * 2      # the shown one first in each tile, two waiting behind it
     cents = [int(re.search(r'data-c="(\d+)"', o).group(1)) for o in options]
-    assert cents[3:] == [f.cents for f in sq.flights] or cents[:3] == [f.cents for f in sq.flights]
+    assert cents[:3] == [x.cents for x in sq.stay_alts[0]] and cents[3:] == [f.cents for f in sq.flights]      # the stay's tile is drawn first, then the flights'
     for alt in sq.stay_alts[0]:
         assert alt.name in html and f'data-c="{alt.cents}"' in html
 
@@ -91,3 +91,12 @@ def test_a_held_room_is_used_only_while_the_square_still_names_the_same_rooms():
     held = lambda *parts: N(rows=[N(part=p) for p in parts])
     assert _same_offers(N(stays=[a]), held(a)) and _same_offers(N(stays=[sample]), held(N(offer_id="", name="Inn", cents=900)))
     assert not _same_offers(N(stays=[b]), held(a)) and not _same_offers(N(stays=[N(offer_id="", name="Inn", cents=950)]), held(sample))
+
+
+def test_a_two_place_trip_shows_each_places_own_sky_for_its_own_nights(sample, client):
+    """Review of F-242: a strip headed with the first place used to cover the nights spent in the second; now each stay has its place's own strip."""
+    html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
+    skies = re.search(r'<div class="mx-skies">(.*?)<div class="mx-tl', html, re.S) or re.search(r'<div class="mx-skies">(.*)', html, re.S)
+    assert skies, "no per-place skies"
+    body = skies.group(1)
+    assert "Los Angeles" in body and "San Diego" in body and body.index("Los Angeles") < body.index("San Diego")

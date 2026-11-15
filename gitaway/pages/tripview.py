@@ -125,8 +125,9 @@ def view(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
                            cls="mx-tile-hotel"))
     flight_tile = _tile("flight", "Flights", "plane", [_flight_opt(f, j) for j, f in enumerate(flights)], _flip("flight", len(flights)))
     first = lane.places[0]
-    days = weather_for(first.name, w.depart, w.return_)
-    sky = sky_strip(first.name, days)
+    # each place's own sky for its own nights (review of F-242: one strip headed with the first place covered the nights in the second)
+    sky = (Div(*[sky_strip(p.name, weather_for(p.name, a, b)) for p, a, b in tm.stays_for(lane, w)], cls="mx-skies") if lane.combo
+           else sky_strip(first.name, weather_for(first.name, w.depart, w.return_)))
     drive = P(icon("car", 16, 2.2), f"Airport drive: {sq.drive} min from {first.iata} to {first.name}" if sq.drive else f"Airport drive: from {first.iata}, no drive time yet", cls="mx-drive")
     hidden = [Input(type="hidden", name=n, value=str(v)) for n, v in mx.params(s, lane=lane.key, w=w.key).items()]
     picks = [Input(type="hidden", name="fl", value="0", data_pick="fl"), Input(type="hidden", name="st", value=",".join("0" for _ in sq.stays), data_pick="st")]
