@@ -10,6 +10,7 @@ from gitaway.pages import tripask
 from tests.test_calendar import book
 from tests.test_liteapi import KEY
 from tests.test_signin import person, sign_in
+from tests.test_roles import crew  # noqa: F401 (fixture)
 
 
 def where(r):
@@ -141,3 +142,10 @@ def test_signed_out_may_search_like_the_matrix_it_leads_to_but_keeps_nothing(cli
 def test_clean_keeps_only_the_fixed_list():
     assert interests.clean(["Hikes", " beaches ", "nope", "hikes", "kids"]) == ("beaches", "hikes", "kids")
     assert interests.clean(None) == () and interests.clean([]) == ()
+
+
+def test_a_viewer_may_search_but_never_changes_the_familys_interests(crew):
+    """Review of F-241: /plan/ask is an open post (a viewer may search), so the one write behind it, the family's interests, is an editor's or admin's alone."""
+    admin, _, viewer = crew
+    r = viewer.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["seafood", "hikes"]}, follow_redirects=False)
+    assert r.status_code == 303 and interests.get(person("ari")) == ()

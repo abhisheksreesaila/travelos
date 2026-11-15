@@ -22,7 +22,7 @@
 .ak-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .ak-chip-i { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--chip-t, var(--paper)); color: var(--chip, var(--ink)); transition: background var(--motion-quick) var(--motion-ease), color var(--motion-quick) var(--motion-ease); }
 .ak-chip:has(:checked) { background: var(--chip, var(--ink)); color: var(--k-on); }
-.ak-chip:has(:checked) .ak-chip-i { background: rgb(255 255 255 / .22); color: var(--k-on); }
+.ak-chip:has(:checked) .ak-chip-i { background: color-mix(in srgb, var(--k-on) 22%, transparent); color: var(--k-on); }
 .ak-chip:has(:focus-visible) { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .ak-chip.k-car { --chip: var(--k-car); --chip-t: var(--k-car-t); } .ak-chip.k-food { --chip: var(--k-food); --chip-t: var(--k-food-t); } .ak-chip.k-tix { --chip: var(--k-tix); --chip-t: var(--k-tix-t); } .ak-chip.k-wx { --chip: var(--k-wx); --chip-t: var(--k-wx-t); }
 .ak-chip.k-stay { --chip: var(--k-stay); --chip-t: var(--k-stay-t); } .ak-chip.k-see { --chip: var(--k-see); --chip-t: var(--k-see-t); } .ak-chip.k-flight { --chip: var(--k-flight); --chip-t: var(--k-flight-t); }
