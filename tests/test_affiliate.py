@@ -274,3 +274,22 @@ def test_the_page_of_a_waiting_trip_says_bookings_support_gitaway_and_the_approv
     assert says(waiting) == "Bookings from this trip support GitAway."
     assert says(approved) == "Flights booked from this trip support Maya Chen. Stays and things to do support GitAway for now."
 
+
+
+# ---- F-254: the creator's credit through the v2 journey ----------------------------------------------------------------
+
+def test_plan_ask_with_via_from_the_creators_page_sets_the_30_day_cookie_and_nothing_else(client):
+    _, handle, _ = live_trip()
+    cookie = client.get(f"/plan/ask?to=Lisbon&via={handle}", headers=seen_on(handle)).headers["set-cookie"]
+    assert f"ga_via={handle}" in cookie and "Max-Age=2592000" in cookie and "HttpOnly" in cookie and "SameSite=lax" in cookie.replace("samesite", "SameSite")
+    assert "ga_via" not in client.get(f"/plan/ask?to=Lisbon&via={handle}", headers={"referer": "http://testserver/guides"}).headers.get("set-cookie", "")      # not from a creator's own page
+    assert "ga_via" not in client.get("/plan/ask?via=nobody-real", headers=seen_on("nobody-real")).headers.get("set-cookie", "")
+
+
+def test_a_guide_link_with_via_sets_the_cookie_too_and_plan_this_trip_names_the_creator(client):
+    from gitaway import guide as gd
+    row, handle, _ = live_trip()
+    r = client.get(f"/trips/{row['slug']}?via={handle}", headers=seen_on(handle))
+    assert f"ga_via={handle}" in r.headers.get("set-cookie", "")
+    assert gd.plan_href("Los Angeles", 3, handle).endswith(f"&via={handle}") and "via=" not in gd.plan_href("Los Angeles", 3)
+    assert f"via={handle}" in r.text

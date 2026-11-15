@@ -98,7 +98,7 @@ def plan_href(trip) -> str:
     """"Plan this trip" for a real published trip: the way in (/plan/ask) at the trip's place and length (gitaway.guide.plan_href), "" when
     the trip's place is not one the workspace plans. The reader says their party and airport on the page it opens (F-195)."""
     from gitaway import guide as gd  # here, not at the top: guide imports this module
-    return gd.plan_href(trip.place, max(trip.plan_days - 1, 0)) if trip.plan_to else ""
+    return gd.plan_href(trip.place, max(trip.plan_days - 1, 0), trip.handle if trip.real else "") if trip.plan_to else ""
 
 
 def todo_href(trip) -> str:

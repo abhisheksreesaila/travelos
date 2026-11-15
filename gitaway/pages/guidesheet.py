@@ -71,7 +71,7 @@ def free_card(g: gd.Guide, free, fit):
 
 
 def _body(g: gd.Guide, ctx: str, add: str, free_html):
-    actions = Div(A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights), cls="go") if ctx == "book" else "",
+    actions = Div(A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights, g.handle), cls="go") if ctx == "book" else "",
                   A(icon("ext", 20, 2.2), "Open the full guide", href=f"/trips/{g.slug}", cls="tonal"), cls="gs-act")
     head = Div(guideview.art(g, True), Div(guideview.kicker(g), Div(g.title, cls="gs-h", role="heading", aria_level="1"), guideview.byline(g), cls="g-hmain"), cls="gs-head")
     tiles = Div(*[guideview.tile(t) for t in g.tiles], cls="g-tiles")

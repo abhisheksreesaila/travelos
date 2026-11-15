@@ -57,3 +57,11 @@ def test_the_refusal_leads_back_to_the_plan(crew):      # noqa: F811
     _, _, viewer = crew
     r = viewer.post("/trip/plans", data={"id": "a1", **FORM}, follow_redirects=False)
     assert r.status_code == 403 and 'href="/trip/plan"' in r.text and "Back to the trip" in r.text
+
+
+def test_with_a_trip_the_avatar_menu_has_help_who_to_call_and_it_opens(client):
+    """F-254: the old SOS lives in the avatar menu (a phone has the avatar top right too), only when the family has a trip."""
+    book(client)
+    _, menu, _ = parts(client.get(PLAN).text)
+    assert ("Help · who to call", "/trip/booking?sos=1") in menu
+    assert 'href="tel:911"' in client.get("/trip/booking?sos=1").text

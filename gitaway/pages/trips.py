@@ -33,22 +33,24 @@ def not_found():
 
 def register(app):
     @app.get("/trips/{slug}")
-    def trip(request, session, slug: str, theme: str = "", state: str = ""):
+    def trip(request, session, slug: str, theme: str = "", state: str = "", via: str = ""):
         found = forks_model.resolve(slug)
         if found is None:
             return not_found()
         if found.real:
             stats.count_view(request, session, slug)   # F-192: one reader once a day, no cookie, nothing personal kept (a plain def, so the write is off the event loop)
+        credit = affiliate.credit_cookie(request, via)      # F-254: a link to a trip that names its creator (`?via=`), same rules as /plan/ask
         from gitaway.pages import guidepage      # here: guidepage draws with layout, which imports the pages
         if gd.is_guide(found):      # F-262: a creator's trip is a guide (the run sheet); a family's own published trip keeps this page
-            return guidepage.reader_page(session, slug, found)
+            body = guidepage.reader_page(session, slug, found)
+            return (body, credit) if credit else body
         waiting = found.real and community.review_state(slug) == "pending"      # F-194: reachable by its link, in no list, and not for search engines
         forked = slug in ses.forks(session)
         body = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=forked,
                               blog=blogbutton.for_owner(session, slug) if found.real else "", noindex=found.real and seo.imported(slug), waiting=waiting)      # a copy of a creator's post is not for search (F-196)
         # F-195: a family that forked a creator's trip books for them (every fork path, signed in or through sign-in, ends on this page)
         unchecked = found.real and community.waits(slug)       # pending or unverified: nobody earns from it yet, so forking it sets no cookie and forgets an earlier one
-        via = ()
+        via = (credit,) if credit else ()
         if forked and found.real and not unchecked and affiliate.valid_via(found.handle):
             via = (cookie(affiliate.COOKIE, found.handle, **affiliate.cookie_args()),)
         elif forked and unchecked and affiliate.COOKIE in request.cookies:

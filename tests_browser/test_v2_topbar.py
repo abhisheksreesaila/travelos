@@ -38,7 +38,7 @@ def test_the_avatar_opens_the_menu_and_escape_closes_it_with_focus_back_on_the_a
     page.click(ME)
     expect(page.locator(MENU)).to_be_visible()
     expect(page.locator(ME)).to_have_attribute("aria-expanded", "true")
-    expect(page.locator(f"{MENU} [role=menuitem]")).to_have_text(["Family members", "Sign out"])      # F-262: the family stays one tap away in the menu
+    expect(page.locator(f"{MENU} [role=menuitem]")).to_have_text(["Family members", "Help · who to call", "Sign out"])      # F-262: the family stays one tap away in the menu; F-254: and so does Help
     expect(page.locator(f"{MENU} a").first).to_be_focused()
     page.keyboard.press("Escape")
     expect(page.locator(MENU)).to_be_hidden()
@@ -63,7 +63,9 @@ def test_the_keyboard_opens_walks_and_leaves_the_menu(plan):  # noqa: F811
     page.focus(ME)
     page.keyboard.press("Enter")
     expect(page.locator(f"{MENU} a").first).to_be_focused()
-    page.keyboard.press("ArrowDown")      # F-262: the menu is one link (Family members) and Sign out
+    page.keyboard.press("ArrowDown")      # F-262, F-254: the menu is two links (Family members, Help) and Sign out
+    expect(page.locator(f"{MENU} a").nth(1)).to_be_focused()
+    page.keyboard.press("ArrowDown")
     expect(page.locator(f"{MENU} button")).to_be_focused()
     page.keyboard.press("Home")
     expect(page.locator(f"{MENU} a").first).to_be_focused()

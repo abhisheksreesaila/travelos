@@ -105,7 +105,7 @@ def panel() -> Aside:
 
 def _actions(g: gd.Guide, mode: str, state: dict) -> Div:
     add = state.get("add", "no")
-    plan = A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights), cls="go", id="g-plan", data_plan="1")
+    plan = A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights, g.handle), cls="go", id="g-plan", data_plan="1")
     if mode == "owner":
         return Div(A(icon("pencil", 20, 2.2), "Edit details", href=state["editor"], cls="tonal", id="detailsBtn"), cls="g-act")
     heart = bookview.heart_button(state.get("saved", False), g.slug, state.get("signed", False))
@@ -179,7 +179,7 @@ def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     days = [day_section(g, d, owner, add) for d in g.days]
     disclose = trust(g, st)
     main = Div(back, head, owner_bar(g, st) if owner else "", privates, Div(*[tile(t) for t in g.tiles], cls="g-tiles"), strip(g), *days, disclose, cls="g-main")
-    return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights), data_title=g.title,
+    return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights, g.handle), data_title=g.title,
                     data_days=str(len(g.days)), data_stops=str(g.stops), data_by=g.by, data_host=g.host, data_live="1" if st.get("live") else "0", data_first=g.first, data_post=st.get("post", ""), data_sample="1" if g.sample else "0", data_signed="1" if st.get("signed") else "0"),
             share_template() if owner else "", Div(id="scrim", cls="scrim"), Div(id="sheet", cls="sheet", role="dialog", aria_modal="true", hidden=True), Div(id="toast", cls="toast", role="status", aria_live="polite"),
             Aside(id="sharep", cls="sharep v2-glass", hidden=True, aria_label="Share your guide")]

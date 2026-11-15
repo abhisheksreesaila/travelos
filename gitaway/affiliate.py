@@ -105,6 +105,18 @@ def claimed_via(request, via="") -> str:
     return handle if handle and seen_on_own_page(request, handle) else ""
 
 
+def credit_cookie(request, via=""):
+    """The `Set-Cookie` header a page sets for a click that names a creator (F-254, as the old /plan did): `ga_via` for 30 days when `via` is a real creator's and the click came from their own page;
+    the cookie forgotten when the click came from a trip that waits for the captain; else None."""
+    from fasthtml.common import cookie
+    creator = claimed_via(request, via)
+    if creator:
+        return cookie(COOKIE, creator, **cookie_args())
+    if COOKIE in request.cookies and on_waiting_trip(request):
+        return cookie(COOKIE, "", max_age=0, path="/")      # F-194: planning from a trip that waits for the captain forgets an earlier trip's creator
+    return None
+
+
 # What is true about the money, in one place (F-194): the For creators page, the claim page, the outreach message, the settings page and the trip page all say it with these words.
 # A creator's own links on a stop are a different thing (F-196); if they come back, say so here and every place follows.
 STAYS = "Stays and things to do support GitAway for now."

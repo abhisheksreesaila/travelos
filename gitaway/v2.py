@@ -79,9 +79,9 @@ def items(signed_in: bool, has_trip: bool) -> list:
     return [("book", "Book", showcase.planning_path())] + ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("guides", "Guides", "/guides")]
 
 
-def menu_items(captain: bool, new: int = 0) -> list:
-    """The avatar menu's links as (key, label, href): the family's members page (it left the bar, so it stays reachable here) and Admin (the captain only); Sign out is its own form."""
-    return [("family", "Family members", "/family")] + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else [])
+def menu_items(captain: bool, new: int = 0, has_trip: bool = False) -> list:
+    """The avatar menu's links as (key, label, href): the family's members page (it left the bar, so it stays reachable here) Help · who to call (SOS, F-254: with a trip; /trip/booking?sos=1) and Admin (the captain only); Sign out is its own form."""
+    return [("family", "Family members", "/family")] + ([("help", "Help · who to call", "/trip/booking?sos=1")] if has_trip else []) + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else [])
 
 
 def top(current: str = "", sample: str = "Sample prices") -> Div:
@@ -93,7 +93,7 @@ def top(current: str = "", sample: str = "Sample prices") -> Div:
     pill = Nav(*[A(label, href=href, aria_current="page" if key == here else None) for key, label, href in items(traveler is not None, has_trip)],
                cls="v2-sections v2-glass", aria_label="Sections")
     if traveler:
-        menu = Div(*[A(label, href=href, role="menuitem", tabindex="-1") for _, label, href in menu_items(captain, new)],
+        menu = Div(*[A(label, href=href, role="menuitem", tabindex="-1") for _, label, href in menu_items(captain, new, has_trip)],
                    Form(Button("Sign out", type="submit", role="menuitem", tabindex="-1"), action="/signout", method="post"),
                    id="v2-menu", cls="v2-menu v2-glass", role="menu", aria_label="Account", hidden=True)
         news = f", {new} new report{'s' if new != 1 else ''}" if new and captain else ""
