@@ -174,13 +174,9 @@
 .mx-sq.is-wait .mx-d { color: var(--ink-2); }
 
 /* the opened square (option A's panel): the side on a laptop, the sheet on a phone, the square's own page */
-.mx-p { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; padding-bottom: 1rem; }
-.mx-p-art { height: 8rem; margin: 0 0 0.25rem; }
-.mx-p > :not(.mx-p-art) { margin-left: 1.125rem; margin-right: 1.125rem; }
 .mx-p-top { display: grid; gap: 0.25rem; }
 .mx-p-h { margin: 0; font-size: 1.375rem; font-weight: 720; letter-spacing: -0.03em; line-height: 1.15; }
 .mx-p-sub { margin: 0; color: var(--ink-2); font-size: 1rem; }
-.mx-p-tot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.75rem; }
 .mx-p-n { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
 .mx-vs { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--ok-tint); color: var(--ok-ink); font-size: max(var(--text-min), 0.875rem); font-weight: 650; }
 .mx-vs.is-empty { display: none; }
@@ -193,12 +189,6 @@
 .mx-r-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.35; }
 .mx-r-due { color: var(--warn-ink); }
 .mx-r-n { font-family: var(--font-mono); font-size: 1rem; font-weight: 650; }
-.mx-photo { grid-column: 2 / -1; width: 100%; height: 7rem; object-fit: cover; border-radius: 0.75rem; background: var(--paper-2); }
-.mx-p-sky .ss-strip { box-shadow: none; padding: 0; background: transparent; }
-.mx-p-sky { min-width: 0; }
-.mx-p-sky .ss-days { gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
-.mx-p-sky .ss-day { flex: 1 0 3.5rem; }
-.mx-acts { display: grid; gap: 0.625rem; padding: 0.875rem 1rem; border-radius: var(--r-md); background: var(--paper-2); }
 .mx-soon { margin: 0; font-size: 1rem; line-height: 1.4; color: var(--ink-2); }
 .mx-soon-h { color: var(--ink); font-weight: 700; }
 .mx-save-f { margin: 0; }
@@ -283,28 +273,6 @@
   .mx-lane .mx-sq.is-over.is-on .mx-v { color: var(--on-ink); }
   .mx-lane .mx-sq.is-open { box-shadow: none; }
   .mx-lane .mx-sq.is-find.is-open { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
-  .mx-p-art { height: 9rem; }
-
-  /* the opened square: the design's trip bar under the calendar */
-  .mx-side { position: sticky; bottom: 0.75rem; z-index: 30; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--sh3); }      /* always in view, like the design's bar */
-  .mx-b { display: grid; grid-template-columns: 15rem minmax(0, 1fr) auto; gap: 1.25rem; align-items: center; padding: 0.75rem 1.25rem 0.75rem 0.75rem; }
-  .mx-b > .mx-p-note { grid-column: 1 / -1; padding: 0.75rem; }
-  .mx-b-art { align-self: stretch; min-height: 7.5rem; border-radius: 1.25rem; }
-  .mx-b-mid { display: grid; gap: 0.625rem; min-width: 0; }
-  .mx-b-h { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; }
-  .mx-b .mx-p-h { font-size: 1.75rem; }
-  .mx-b .mx-p-meta { margin: 0; }
-  .mx-parts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .mx-part { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.25rem 0.875rem 0.25rem 0.25rem; border-radius: var(--r-pill); background: var(--paper-2); font-size: 1.125rem; }
-  .mx-part .mx-kt { width: 2rem; height: 2rem; border-radius: 50%; }
-  .mx-kt.k-wx { background: var(--k-wx); }
-  .mx-part-n { font-family: var(--font-mono); font-weight: 650; }
-  .mx-b-fine { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); line-height: 1.35; }
-  .mx-b-end { display: grid; justify-items: end; gap: 0.5rem; }
-  .mx-b .mx-p-n { font-size: 3.5rem; font-weight: 750; letter-spacing: -0.04em; }
-  .mx-b-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
-  .mx-b-btns .mx-save { width: auto; }
-  .mx-b .mx-soon { margin: 0; max-width: 24rem; text-align: right; font-size: max(var(--text-min), 1rem); }
 }
 
 @media (min-width: 1020px) {

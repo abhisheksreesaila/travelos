@@ -193,11 +193,15 @@ def _family(session):
 
 
 def _read(s, lane_key, w_key, family, pk):
-    """(lane, window, square): the square as it was shown (kept answers first), else asked again, with the flight and stays the person chose on it."""
+    """(lane, window, square, choice): the square as it was shown (kept answers first), else asked again, with the flight and stays the person chose on it and that choice
+    made to fit the square (a forged index is the shown part)."""
     lane, w, sq, _ = mx._square_of(s, lane_key, w_key, family, True)
     if lane is not None and sq is None:
         lane, w, sq, _ = mx._square_of(s, lane_key, w_key, family)
-    return lane, w, (tm.pick(sq, *pk) if sq is not None else sq)
+    if sq is None:
+        return lane, w, sq, pk
+    pk = tm.clamp(sq, pk)
+    return lane, w, tm.pick(sq, *pk), pk
 
 
 def _prepare(s, lane, w, sq, family):
@@ -250,7 +254,7 @@ def register(app):
         if not mb.allow(me.id):      # before anything is read: a refused press starts no search
             return _slowed(request, s, lane, w)
         pk = tm.picks(fl, st)
-        lane_, w_, sq = _read(s, lane, w, _family(session), pk)
+        lane_, w_, sq, pk = _read(s, lane, w, _family(session), pk)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
         return _first_step(request, session, s, lane_, w_, sq, pk)
@@ -268,7 +272,7 @@ def register(app):
             return _slowed(request, s, lane, w)
         family = _family(session)
         pk = tm.picks(fl, st)
-        lane_, w_, sq = _read(s, lane, w, family, pk)
+        lane_, w_, sq, pk = _read(s, lane, w, family, pk)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
         prep = mb.held(family, token, _square_of(s, lane_, w_, pk))

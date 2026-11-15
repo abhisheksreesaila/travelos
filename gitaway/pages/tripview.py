@@ -61,7 +61,7 @@ def _stay_opt(st: tm.StayPart, i: int, place, multi: bool):
                    P(icon("pin", 14, 2.2), st.address, cls="mx-o-addr") if st.address else "",
                    P(" · ".join(b for b in bits if b), cls="mx-o-s"),
                    P(f"{st.nights} nights" + (f" in {st.place}" if multi else ""), cls="mx-o-s"),
-                   P(f"{catalog.money(st.due_at_stay_cents)} of it is paid at the hotel", cls="mx-o-s mx-r-due") if st.due_at_stay_cents else "", cls="mx-o-body"),
+                   P(f"{catalog.money(st.due_at_stay_cents)} of it paid at the hotel", cls="mx-o-s mx-r-due") if st.due_at_stay_cents else "", cls="mx-o-body"),
                cls="mx-opt", data_c=st.cents, data_short=st.name, hidden=i != 0)
 
 
@@ -113,7 +113,7 @@ def view(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     head = Div(H3(f"{lane.name} · {tm.when(w)}", cls="mx-p-h"), P(f"{nights} · {mx.party_words(s)}", cls="mx-p-sub"), cls="mx-p-top mx-tv-top")
     if sq is None or not sq.ok:
         note = "Searching this square…" if sq is None else tm.SAID[sq.status]
-        return Div(mx._arts(lane, "mx-b-art"), Div(head, P(note, cls="mx-p-note", role="status")), cls="mx-tv mx-b mx-p is-quiet", data_open=tm.key(lane.key, w.key))
+        return Div(mx._arts(lane, "mx-b-art"), Div(head, P(note, cls="mx-p-note", role="status")), cls="mx-tv is-quiet", data_open=tm.key(lane.key, w.key))
     vs = mx.vs_words(sq.cents - asked_sq.cents, s.place.name, lane.combo) if asked_sq is not None and asked_sq.ok and not lane.asked else ""
     age = mx.age_words(sq.fetched)
     multi = len(sq.stays) > 1
@@ -126,7 +126,7 @@ def view(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     flight_tile = _tile("flight", "Flights", "plane", [_flight_opt(f, j) for j, f in enumerate(flights)], _flip("flight", len(flights)))
     first = lane.places[0]
     days = weather_for(first.name, w.depart, w.return_)
-    sky = sky_strip(first.name, days, asked=(w.depart, w.return_))
+    sky = sky_strip(first.name, days)
     drive = P(icon("car", 16, 2.2), f"Airport drive: {sq.drive} min from {first.iata} to {first.name}" if sq.drive else f"Airport drive: from {first.iata}, no drive time yet", cls="mx-drive")
     hidden = [Input(type="hidden", name=n, value=str(v)) for n, v in mx.params(s, lane=lane.key, w=w.key).items()]
     picks = [Input(type="hidden", name="fl", value="0", data_pick="fl"), Input(type="hidden", name="st", value=",".join("0" for _ in sq.stays), data_pick="st")]
@@ -136,11 +136,11 @@ def view(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     buy = Div(Div(Span("Total for the trip", cls="mx-c-k"), Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"), Span(vs, cls="mx-vs" + ("" if vs else " is-empty"), data_vs="1"), cls="mx-c-tot"),
               _cost(sq, lane),
               P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), cls="mx-p-meta mx-c-meta"),
-              P(Span(words, cls="mx-soon-h"), " Books the stay" + ("s" if multi else "") + " here; the flight books on its airline’s site.", cls="mx-soon"),
-              cls="mx-buy-in")
-    actions = Div(book, P(saved, cls="mx-saved", role="status") if saved else save, cls="mx-buy-acts")
+              P(saved, cls="mx-saved", role="status") if saved else save,
+              P(Span(words, cls="mx-soon-h"), " Books the stay" + ("s" if multi else "") + " here; the flight books on its airline’s site.", cls="mx-soon"), cls="mx-buy-in")
+    acts = Div(Div(Span("Total", cls="mx-c-k"), Span(tm.dollars(sq.cents), cls="mx-bar-n", data_mirror="total"), cls="mx-bar-tot"), book, cls="mx-buy-acts")
     return Div(Div(head, cls="mx-tv-h"),
                Div(sky, _gantt_el(lane, w, sq, s), cls="mx-line mx-p-sky"),
-               Div(*tiles, flight_tile, drive, cls="mx-tiles"),
-               Div(buy, actions, cls="mx-buy"),
-               cls="mx-tv mx-b mx-p", data_open=sq.key, data_nights=str(w.nights))
+               Div(Div(*tiles, cls="mx-stays"), flight_tile, drive, cls="mx-tiles"),
+               Div(buy, acts, cls="mx-buy"),
+               cls="mx-tv", data_open=sq.key, data_nights=str(w.nights))

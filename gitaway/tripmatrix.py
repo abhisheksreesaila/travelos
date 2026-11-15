@@ -123,13 +123,20 @@ class Find:
 MAX_ALTS = 3
 
 
+def clamp(sq: Square, pk: tuple) -> tuple:
+    """`pk` (the flight index and one index per stay, as `picks` read them) made to fit `sq`: an index the square does not have (a stale or forged form) is the shown part."""
+    flight = pk[0] if 0 <= pk[0] < len(sq.flights) else 0
+    alts = sq.stay_alts or ((),) * len(sq.stays)
+    return flight, tuple(i if i is not None and 0 <= i < len(a) else 0 for i, a in zip(tuple(pk[1]) + (None,) * len(sq.stays), alts))
+
+
 def pick(sq: Square, flight: int = 0, stays: tuple = ()) -> Square:
-    """The square with another flight and/or other stays chosen (F-242: "switch in place"): `flight` is an index into `sq.flights`, `stays` one index per stay
-    into its `stay_alts`. An index the square does not have (a stale or forged form) keeps the shown one, never raises. The total moves with the choice."""
-    fl = sq.flights[flight] if 0 <= flight < len(sq.flights) else sq.flight
-    chosen = tuple(alts[i] if i is not None and 0 <= i < len(alts) else st
-                   for st, alts, i in zip(sq.stays, sq.stay_alts or ((),) * len(sq.stays), tuple(stays) + (None,) * len(sq.stays)))
-    return replace(sq, flight=fl, stays=chosen)
+    """The square with another flight and/or other stays chosen (F-242: "switch in place"): `flight` is an index into `sq.flights`, `stays` one index per stay into its
+    `stay_alts`. An index the square does not have keeps the shown part, never raises. The total moves with the choice."""
+    fl, st = clamp(sq, (flight, stays))
+    if not sq.flights:
+        return sq if not any(st) else replace(sq, stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)))
+    return replace(sq, flight=sq.flights[fl], stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)) if sq.stay_alts else sq.stays)
 
 
 def picks(flight="", stays="") -> tuple:

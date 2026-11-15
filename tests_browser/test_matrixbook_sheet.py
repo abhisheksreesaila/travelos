@@ -1,6 +1,7 @@
-"""F-233 in a real browser: Book a square. A square is opened, Book grows a sheet out of it (laptop 1440 and phone 390), the guest form books through a recorded LiteAPI
-sandbox (tests/fixtures/liteapi: prebook.json, book.json), the steps settle on the springs, the confirmation shows LiteAPI's booking id, and Open your trip lands on the
-cockpit with the stay on it. Set F233_SHOTS=1 for docs/report/f233-*.png."""
+"""F-233 in a real browser, redone for F-242: Book this trip. A square is opened, the bold button grows the checkout out of it (laptop 1440 and phone 390), the checkout is three
+folding cards (guest, payment, confirm), booking plays out step by step through a recorded LiteAPI sandbox (tests/fixtures/liteapi: prebook.json, book.json) while the real call
+runs, the stamped pass shows LiteAPI's booking id and the hotel's confirmation code with the confetti, and Plan this trip lands on the cockpit with the stay on it.
+Set F233_SHOTS=1 for docs/report/f233-*.png."""
 import json
 import os
 from dataclasses import replace
@@ -84,11 +85,24 @@ def fill(page, first="Anne-Marie", last="O’Neil", email="anne@example.com"):
     page.fill("#mxb-email", email)
 
 
+def to_review(page):
+    """Continue through the guest and payment cards to the last one (the checkout's three folding cards, D-572)."""
+    page.click("[data-card='guest'] .mxb-next")
+    expect(page.locator("[data-card='pay']")).to_have_attribute("data-state", "active")
+    page.click("[data-card='pay'] .mxb-next")
+    expect(page.locator("[data-card='review']")).to_have_attribute("data-state", "active")
+
+
+def states(box):
+    return [c.get_attribute("data-state") for c in box.locator(".mxb-card").all()]
+
+
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
-def test_the_square_grows_into_the_booking_sheet_and_books_through_the_sandbox(matrix, sandbox, viewport):  # noqa: F811
+def test_the_square_grows_into_the_checkout_plays_the_booking_and_lands_the_pass(matrix, sandbox, viewport):  # noqa: F811
     page = matrix(viewport, motion=True, signed_in=True)
     panel = open_square(page, viewport)
     expect(panel.locator(".mx-book")).to_be_visible()
+    expect(panel.locator(".mx-book")).to_have_text("Book this trip")
     expect(panel.locator(".mx-soon-h")).to_have_text("Sandbox booking: nothing is charged.")
     shot(page, f"{viewport['width']}-square")
     panel.locator(".mx-book").click()
@@ -98,34 +112,47 @@ def test_the_square_grows_into_the_booking_sheet_and_books_through_the_sandbox(m
     expect(sheet.locator(".mxb-sandbox")).to_have_text("Sandbox booking: nothing is charged")
     opened = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').slice(-1)[0]")
     assert opened and not opened.get("calm") and opened["from"]                                 # liquid on the laptop too; it grew out of the square
-    assert [s.get_attribute("data-state") for s in sheet.locator(".mxb-step").all()] == ["done", "active", "todo"]
+    assert states(sheet) == ["active", "todo", "todo"]                                          # the first of three folding cards is open
     page.wait_for_timeout(700)                                                                  # landed
     box = sheet.bounding_box()
     if viewport is PHONE:
         assert box["y"] + box["height"] >= viewport["height"] - 2 and box["width"] >= viewport["width"] - 2      # a bottom sheet
     else:
         assert 480 < box["width"] < 600 and box["x"] > 300                                      # a card in the middle
-    shot(page, f"{viewport['width']}-sheet")
+    shot(page, f"{viewport['width']}-checkout")
     page.fill("#mxb-first", "Anne-Marie")
     page.fill("#mxb-last", "O’Neil")
+    page.fill("#mxb-email", "")
+    page.click("[data-card='guest'] .mxb-next")
+    assert states(sheet) == ["active", "todo", "todo"]                                          # an empty email keeps the first card open (the browser says why)
     page.fill("#mxb-email", "anne@example")
+    to_review(page)
+    assert states(sheet) == ["done", "done", "active"]
+    expect(sheet.locator("[data-sum='guest']")).to_have_text("Anne-Marie O’Neil · anne@example")      # a folded card says its answer in a line
+    shot(page, f"{viewport['width']}-review")
     page.click(".mxb-go")
-    expect(sheet.locator("#mxb-email-e")).to_have_text("That does not look like an email address.")      # said in the sheet, the typed words kept
+    expect(sheet.locator(".mxb-stages li")).to_have_text(["Holding your room", "Paying with the test card", "Booking your stay with LiteAPI", "Putting the trip together"])
+    shot(page, f"{viewport['width']}-booking")
+    expect(sheet.locator("#mxb-email-e")).to_have_text("That does not look like an email address.")      # the server's word, the cards back with the typed words kept
     expect(page.locator("#mxb-first")).to_have_value("Anne-Marie")
     assert [r for u, _, r in sandbox.asked if u.endswith("/rates/book")] == []
-    shot(page, f"{viewport['width']}-error")
     page.fill("#mxb-email", "anne@example.com")
+    to_review(page)
     page.click(".mxb-go")
+    expect(sheet.locator(".mxb-stages li[data-state='active']")).to_have_count(1)             # a spinner while it books
     expect(sheet.locator(".mxb-id").first).to_have_text("_5hnX-MI7")
     expect(sheet.locator(".mxb-sandbox")).to_have_text("Sandbox booking: nothing is charged")
     assert sheet.locator(".mxb").get_attribute("data-at") == "booked"
-    expect(sheet.locator(".mxb-step[data-state='active'] .mxb-step-n")).to_have_text("Booked")
+    expect(sheet.locator(".mxb-stamp")).to_have_text("Booked")
     expect(sheet).to_contain_text("Anne-Marie O’Neil, your booking is confirmed.")
-    assert page.evaluate("() => GA.motion.log.filter(m => m.kind === 'settle').length") >= 1                # the step settled on the spring
-    page.wait_for_timeout(500)
+    expect(sheet).to_contain_text("Hotel confirmation")
+    assert sheet.locator(".mxb-cf").count() == 28 and page.evaluate("() => getComputedStyle(document.querySelector('.mxb-confetti')).display") != "none"      # the confetti, thrown once
+    assert page.evaluate("() => GA.motion.log.filter(m => m.kind === 'settle').length") >= 1                # the pass settled on the spring
+    page.wait_for_timeout(900)
     shot(page, f"{viewport['width']}-booked")
     assert page.errors == []
-    sheet.locator("[data-trip]").click()
+    expect(sheet.locator(".mxb-plan")).to_have_text("Plan this trip")
+    sheet.locator(".mxb-plan").click()
     page.wait_for_url("**/trip/cockpit")
     page.wait_for_timeout(400)
     expect(page.locator("body")).to_contain_text("Check in")                                   # the booked stay is on the trip's days
@@ -141,9 +168,13 @@ def test_a_sample_square_books_a_sample_stay_and_says_so(matrix, monkeypatch, st
     page.click("#mx-side .mx-book")
     expect(page.locator(".mxb-sandbox")).to_have_text("Sample booking: nothing is booked or charged")
     fill(page)
+    to_review(page)
     page.click(".mxb-go")
+    expect(page.locator(".mxb-stages li").nth(1)).to_have_text("Paying with the sample card")
     expect(page.locator(".mxb-id").first).to_contain_text("SAMPLE-")
     expect(page.locator(".mxb-sheet")).to_contain_text("your sample booking is confirmed")
+    expect(page.locator(".mxb-stamp")).to_have_text("Sample")
+    expect(page.locator(".mxb-confetti")).to_be_hidden()                                       # reduced motion (the fixture's default): no confetti
     assert page.errors == []
 
 
@@ -165,11 +196,13 @@ def test_signed_out_it_goes_to_sign_in(matrix, sandbox):  # noqa: F811
     page.wait_for_url("**/signin**")
 
 
-def test_without_the_script_the_two_steps_are_pages(matrix, sandbox):  # noqa: F811
+def test_without_the_script_the_two_steps_are_pages_and_all_three_cards_are_open(matrix, sandbox):  # noqa: F811
     gridsource.SQUARE.peek_all = True
     page = matrix(DESKTOP, js=False, signed_in=True, url=URL.replace("/plan/matrix?", "/plan/matrix/square?") + "&lane=sandiego&w=2026-12-12")
     page.click(".mx-book")
     expect(page.locator(".mxb-h")).to_have_text("Book San Diego")
+    assert states(page.locator("body")) == ["active", "todo", "todo"]
+    assert page.locator(".mxb-card-b").evaluate_all("els => els.every(e => getComputedStyle(e).display !== 'none')")      # no script: every card open, the one button books
     fill(page)
     page.click(".mxb-go")
     expect(page.locator(".mxb-id").first).to_have_text("_5hnX-MI7")

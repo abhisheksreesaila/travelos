@@ -36,8 +36,8 @@ from gitaway.partners import places
 PATH = "/plan/matrix"
 TILE, SQUARE, SAVE, WARM, BOOK, PEEK = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/peek"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
-        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
-        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
+        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/tripview.css"), Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
+        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/tripview.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip already longer or shorter in the address widens the range to hold it
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead

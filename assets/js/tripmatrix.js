@@ -333,7 +333,7 @@
     var first = curFind ? curFind.key : (a && known[key(a.k, w.k)] ? key(a.k, w.k) : '');
     var now = side.querySelector('[data-open]'), fresh = side.dataset.n !== String(N);
     if (!first) {
-      if (fresh) { side.innerHTML = '<div class="mx-b"><p class="mx-p-note">Open a square to see the whole trip: the flight, the stay, the drive.</p></div>'; side.dataset.n = String(N); side.dataset.ph = ''; }
+      if (fresh) { side.innerHTML = '<div class="mx-tv is-quiet"><p class="mx-p-note">Open a square to see the whole trip: the flight, the stay, the drive.</p></div>'; side.dataset.n = String(N); side.dataset.ph = ''; }
       return;
     }
     if (!fresh && now && now.dataset.open === first && (side.dataset.ph ? !bars[first] : true)) return;      // already showing it (a placeholder waits for its answer)
@@ -352,7 +352,7 @@
   }
   function fill(box, k, from) {      // `from`: the bars (the laptop) or the panels (the sheet)
     var src = from || panels;
-    box.innerHTML = src[k] || placeholder(k, src === bars ? 'mx-b' : 'mx-p');
+    box.innerHTML = src[k] || placeholder(k, 'mx-tv is-quiet');
     box.dataset.n = String(N);
     box.dataset.ph = src[k] ? '' : '1';
     var chip = box.querySelector('[data-vs]');
