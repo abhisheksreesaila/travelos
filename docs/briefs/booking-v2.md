@@ -16,3 +16,7 @@ Status: approved (founder, 2026-11-14 night, in their words below; replaces the 
 1. One interactive prototype of the whole booking page, every state, with type options to pick (docs/design/booking-v2/).
 2. Build it into the app, replacing the old booking pages.
 3. Then planning.
+
+## Approved (founder, 2026-11-14 late)
+"You cooked… perfect in every which way… it just felt like water. I hope you implement it the same way: the translucency, the gradient, everything was exactly how I imagined… I almost want to adopt the design language." Type: **C, Newsreader with Inter** ("it read really well… the thinness of the font; everything else is so thick"). The frosted-glass blur on the widgets is wanted (it supersedes omxqua's "no glass or blur" for GitAway). The prototype docs/design/booking-v2/index.html is the reference to build to. "Our pick" stays within a sensible drive of the asked place (my call, not answered).
+Next: the same for planning, then creators; all three designed in tandem before building.
