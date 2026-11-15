@@ -290,14 +290,9 @@
 /* the share panel after Publish: a dialog in the middle of the page on a laptop (the Instagram card beside the link and the badge), cv2's sheet from the foot on a phone */
 @media (min-width: 720px) {
   .g .sharep { position: fixed; z-index: 80; left: 50%; top: 50%; right: auto; translate: -50% -50%; width: min(44rem, calc(100vw - 3rem)); max-height: calc(100svh - 3rem); overflow-y: auto; margin: 0; padding: 1.625rem;
-    grid-template-columns: minmax(0, 1fr) 17rem; gap: 0.75rem 1.5rem; background: var(--card-solid); border-radius: 2rem; box-shadow: var(--sh3); }
-  .g .sharep > * { grid-column: 1; }
-  .g .sharep > .sh-ig { grid-column: 2; grid-row: 1 / span 6; align-self: start; }
-  .g .sharep > .x { position: absolute; right: 0.875rem; top: 0.875rem; grid-column: auto; }
+    background: var(--card-solid); border-radius: 2rem; box-shadow: var(--sh3); }
+  .g .sharep > div { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 0.75rem 1.5rem; }
+  .g .sharep > div > * { grid-column: 1; }
+  .g .sharep > div > .sh-ig { grid-column: 2; grid-row: 1 / span 6; align-self: start; }
+  .g .sharep > .x { position: absolute; right: 0.875rem; top: 0.875rem; }
 }
-
-/* press (F-258): the links and cards that are not buttons go in when pressed and spring back like every v2 button (the shared rule is v2.css's; this is the same rule for these): the stop's card is pressed through
-   the button that covers it. Reduced motion: v2.css turns every press and transition off. */
-.g :is(.fchip, .gcard, .mk, .g-back, .g-card, .g-act a) { transition: scale var(--v2-release) var(--spring), box-shadow var(--v2-quick), background-color var(--v2-quick), color var(--v2-quick); }
-.g :is(.fchip, .gcard, .mk, .g-back, .g-act a):active, .g .g-card:has(> .g-cover:active) { scale: var(--v2-press-scale); transition: scale var(--v2-press) var(--v2-ease); }
-.g :is(.gcard, .fchip):hover { box-shadow: var(--sh3); }
