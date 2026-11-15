@@ -52,7 +52,7 @@
 .gs-free b { display: block; font: 650 1.0625rem/1.25 var(--f-ui); }
 .gs-free span { color: inherit; }
 .gs-free .go { grid-column: 1 / -1; margin-top: 0.5rem; width: 100%; }
-.gs-free .go:disabled { background: var(--see); color: var(--on); opacity: 1; box-shadow: none; }      /* done: the same green as a stop's check */
+.gsheet.g .gs-free .go:disabled, :root[data-mode="dark"] .gsheet.g .gs-free .go:disabled { background: var(--see); color: var(--on); opacity: 1; box-shadow: none; }      /* done: the same green as a stop's check */
 .gsheet.g .g-strip { top: 0; }
 .gsheet.g .g-day { scroll-margin-top: 7.5rem; box-shadow: none; background: var(--card-2); padding: 0.875rem 0.75rem 0.5rem; }
 .gsheet.g .g-day .g-card { background: var(--card-solid); }
@@ -70,7 +70,7 @@
 .gsheet.g .g-card.is-open { box-shadow: var(--sh2), inset 0 0 0 0.15625rem var(--flight); }
 .gsheet.g .g-card.is-open .g-chev { rotate: 90deg; }
 .gsheet.g .g-fold .go { width: 100%; }
-.gsheet.g .g-fold .go:disabled { opacity: .45; }
+.gsheet.g .g-fold .go:disabled, :root[data-mode="dark"] .gsheet.g .g-fold .go:disabled { background: var(--see); color: var(--on); opacity: 1; box-shadow: none; }
 .gsheet.g .g-more { margin-top: 0; }
 
 /* what the sheet shrinks to on a phone while stops drop into the calendar: a bar, tap it to open the guide again */

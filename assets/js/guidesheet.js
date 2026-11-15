@@ -131,7 +131,8 @@
     keys.forEach(function (k) {
       $$('.g-plus[data-add="' + k + '"], .g-inplace .go[data-add="' + k + '"]', cur ? cur.el : document).forEach(function (b) {
         if (b.classList.contains('g-plus')) { b.classList.toggle('done', on); b.innerHTML = on ? CHECK : PLUS; b.setAttribute('aria-label', on ? 'Added to your plan' : 'Add to my plan'); }
-        else b.disabled = on;
+        else if (on) { b.dataset.was = b.innerHTML; b.innerHTML = CHECK + 'Added to your plan'; b.disabled = true; }
+        else if (b.dataset.was) { b.innerHTML = b.dataset.was; b.disabled = false; }
       });
     });
   }
