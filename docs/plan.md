@@ -1646,10 +1646,11 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [x] honesty rules stand: the creator's own words and links only, nothing invented
 Built in D-710..D-721 (docs/decisions.md): `/guides`, `/guides/make`, the guide at `/trips/<slug>` and `/creators/import/<id>/guide`, Add to my plan, a draft from the planned trip, the share dialog with the Instagram card. Prototype-vs-build screenshots: docs/report/f262-*.png. Where it differs from the prototype: D-721.
 
-## F-263 Guides in context [todo]
+## F-263 Guides in context [review]
 Needs: F-262
-- [ ] booking's rail: "Guides for <place>" opens a guide in a sheet over the matrix; closing returns exactly where you were
-- [ ] planning's rail: a guide in a sheet; "Add to my plan" drops stops into free slots (skips clashes, says so, Undo)
+- [x] booking's rail: "Guides for <place>" opens a guide in a sheet over the matrix; closing returns exactly where you were
+- [x] planning's rail: a guide in a sheet; "Add to my plan" drops stops into free slots (skips clashes, says so, Undo)
+Built in D-730..D-739 (docs/decisions.md): `guide.for_place`, `GET /guides/sheet`, `assets/js/guidesheet.js`, `guideplan.free_time/fit_day/add(day=)`, the calendar's "From <creator>'s guide" tag; shots docs/report/f263-*.png.
 
 ## F-264 The design kit for other sites [todo]
 Needs: F-261, F-262. Extract the v2 language (tokens, glass card, press, springs, moods, sun/moon, quiet reading sky, sections pill, sheets) into a small reusable kit with a demo page, for the founder's other sites.

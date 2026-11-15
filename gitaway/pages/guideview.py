@@ -89,10 +89,11 @@ def strip(g: gd.Guide) -> Div:
                cls="g-strip v2-glass", role="group", aria_label="Days", style=f"--nd:{len(g.days)}")
 
 
-def art(g: gd.Guide) -> Div:
+def art(g: gd.Guide, short: bool = False) -> Div:
+    """The guide's picture: the creator's own photo or a drawing, each said so. `short` (the sheet's small picture) says it in one word."""
     if g.photo:
-        return Div(Img(src=g.photo[0], alt=g.photo[1], referrerpolicy="no-referrer"), Span("Photo from the post", cls="g-cap"), cls="g-art")
-    return Div(bookview.drawing(g.scene, f"A drawing of {g.place}, not a photograph"), Span("Illustration", cls="g-cap"), cls="g-art")
+        return Div(Img(src=g.photo[0], alt=g.photo[1], referrerpolicy="no-referrer"), Span("Photo" if short else "Photo from the post", cls="g-cap"), cls="g-art")
+    return Div(bookview.drawing(g.scene, f"A drawing of {g.place}, not a photograph"), Span("Drawing" if short else "Illustration", cls="g-cap"), cls="g-art")
 
 
 def panel() -> Aside:

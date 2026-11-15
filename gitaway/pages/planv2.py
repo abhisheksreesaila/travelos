@@ -83,13 +83,13 @@ def _ev(e, lane, across, can_edit, gs, i=0):
     if e.by and not e.locked:
         body.append(Span(e.by, cls="by"))
     if e.tag:
-        body.append(Span(icon("list", 13, 2.4), e.tag, cls="gtag"))      # F-263: a plan dropped in from a guide says whose
+        body.append(Span(icon("list", 13, 2.4), Span(e.tag, cls="gt"), cls="gtag", title=e.tag))      # F-263: a plan dropped in from a guide says whose
     if e.locked:
         body.append(icon("lock", 14, 2.4, cls="lk"))
         return A(*body, href=e.href, cls=cls, style=style, data_id=e.id, data_locked="1", aria_label=f"{e.title}, {e.when}. Booked: opens the booking")
     body.append(Span(cls="rz", data_rz="1", aria_hidden="true"))
     return Div(*body, cls=cls, style=style, data_id=e.id, data_start=str(e.start), data_end=str(e.end), data_kind=e.kind, data_title=e.title, role="button", tabindex="0",
-               aria_label=f"{e.title}, {e.when}. Tap to change" + (" or drag to move" if can_edit else ""))
+               aria_label=f"{e.title}, {e.when}" + (f", {e.tag}" if e.tag else "") + ". Tap to change" + (" or drag to move" if can_edit else ""))
 
 
 def _column(v, i, can_edit, gs, wide):

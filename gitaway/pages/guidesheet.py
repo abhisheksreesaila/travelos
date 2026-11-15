@@ -55,7 +55,7 @@ def _bar(left: str, text: str, back: str):
 
 def _peek(g: gd.Guide, line: str):
     """What the sheet shrinks to on a phone while you watch a drop: a bar with the guide's name; tapping it opens the guide again where you left it."""
-    return Button(Div(guideview.art(g), cls="gs-pa"), Div(B(g.title), Span(line)), icon("up", 20, 2.4), type="button", cls="gs-peek", data_unpeek="1", aria_label=f"Open {g.title} again")
+    return Button(Div(guideview.art(g, True), cls="gs-pa"), Div(B(g.title), Span(line)), icon("up", 20, 2.4), type="button", cls="gs-peek", data_unpeek="1", aria_label=f"Open {g.title} again")
 
 
 def free_card(g: gd.Guide, free, fit):
@@ -73,7 +73,7 @@ def free_card(g: gd.Guide, free, fit):
 def _body(g: gd.Guide, ctx: str, add: str, free_html):
     actions = Div(A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights), cls="go") if ctx == "book" else "",
                   A(icon("ext", 20, 2.2), "Open the full guide", href=f"/trips/{g.slug}", cls="tonal"), cls="gs-act")
-    head = Div(guideview.art(g), Div(guideview.kicker(g), Div(g.title, cls="gs-h", role="heading", aria_level="1"), guideview.byline(g), cls="g-hmain"), cls="gs-head")
+    head = Div(guideview.art(g, True), Div(guideview.kicker(g), Div(g.title, cls="gs-h", role="heading", aria_level="1"), guideview.byline(g), cls="g-hmain"), cls="gs-head")
     tiles = Div(*[guideview.tile(t) for t in g.tiles], cls="g-tiles")
     days = [guideview.day_section(g, d, False, add, inplace=True) for d in g.days]
     return [head, actions, P(guideview.ADD_NOTE[add], cls="g-note") if add in guideview.ADD_NOTE and ctx == "plan" else "", free_html, tiles, guideview.strip(g), *days, guideview.trust(g, {"plannable": True})]

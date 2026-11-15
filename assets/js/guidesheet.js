@@ -135,12 +135,16 @@
       });
     });
   }
+  function ran(btn, on) {      // the free time's button says it is done, and what it was again after an Undo
+    if (on) { btn.dataset.was = btn.innerHTML; btn.innerHTML = CHECK + 'Added to ' + btn.dataset.when; btn.disabled = true; }
+    else if (btn.dataset.was) { btn.innerHTML = btn.dataset.was; btn.disabled = false; }
+  }
   function undo(added) {
     return function () {
       var c = cur;
       added.slice().reverse().reduce(function (p, a) { return p.then(function () { return post('/trip/plan/write', { op: 'undo', undo: JSON.stringify(a.undo) }); }); }, Promise.resolve()).then(function () {
         document.dispatchEvent(new CustomEvent('pl:changed'));
-        if (c && c === cur) { mark(added.map(function (a) { return a.key; }), false); $$('[data-add-day]', cur.el).forEach(function (b) { b.disabled = false; }); }
+        if (c && c === cur) { mark(added.map(function (a) { return a.key; }), false); $$('[data-add-day]', cur.el).forEach(function (b) { ran(b, false); }); }
         toast('Taken out of your plan');
       });
     };
@@ -153,8 +157,8 @@
       if (j.error) { btn.disabled = false; toast(j.error, { error: true }); return; }
       var added = j.added || [];
       if (!added.length) btn.disabled = false;
-      if (c === cur) mark(added.map(function (a) { return a.key; }), true);
-      if (added.length) document.dispatchEvent(new CustomEvent('pl:changed'));
+      if (c === cur) { mark(added.map(function (a) { return a.key; }), true); if (added.length && btn.hasAttribute('data-add-day')) ran(btn, true); }
+      if (added.length) document.dispatchEvent(new CustomEvent('pl:changed', { detail: { plans: added } }));
       toast(j.toast, added.length ? { undo: undo(added) } : {});
       if (added.length && c === cur && PHONE.matches) peek(true);      // watch them land
     });
@@ -187,9 +191,9 @@
     e.preventDefault();
     open(row);
   });
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', function (e) {      // in the capture phase: Escape closes only the sheet, never the opened square or the drawer behind it (their own handlers never see it)
     if (!cur) return;
-    if (e.key === 'Escape') { e.preventDefault(); return close(); }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); return close(); }
     if (e.key !== 'Tab' || cur.el.getAttribute('aria-modal') !== 'true') return;
     var f = $$('button:not(:disabled), a[href], [tabindex="0"]', cur.el).filter(function (n) { return n.offsetParent && !n.closest('[inert]'); });
     if (!f.length) return;
@@ -197,5 +201,5 @@
     if (!cur.el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
     else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  });
+  }, true);
 })();

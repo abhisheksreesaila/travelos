@@ -119,5 +119,5 @@ def add(session, guide, keys, day=None, after=0) -> dict:
             pass      # the plan is in; only its tag is missing
         cursor = a.end
         date = dict(v.days)[a.day]
-        added.append({"key": key, "title": a.title, "when": f"{date.strftime('%a')} {date.day} · {cal.fmt_time(a.start)}", "undo": got["undo"], "start": a.start, "end": a.end})
+        added.append({"key": key, "act": a.id, "day": a.day, "title": a.title, "when": f"{date.strftime('%a')} {date.day} · {cal.fmt_time(a.start)}", "undo": got["undo"], "start": a.start, "end": a.end})
     return {"added": added, "skipped": skipped}
