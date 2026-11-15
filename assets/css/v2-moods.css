@@ -31,7 +31,7 @@ html:has(.v2-bg[data-mood]:not([data-mood="beach"])) { background: var(--m-3); }
 :root[data-mode="dark"] .v2-bg .stars { opacity: 1; transition-delay: calc(var(--v2-slow) / 2); }
 .v2-bg .stars circle { fill: #F3EBD3; animation: v2-twinkle calc(var(--v2-shimmer) * 3) ease-in-out infinite alternate; animation-delay: calc(var(--i) * var(--v2-quick) * -1); }
 @keyframes v2-twinkle { from { opacity: .3; } to { opacity: .9; } }
-.v2.is-results .v2-bg .moon, .v2-bg.is-results .moon { opacity: 0; transform: translateY(-40%) scale(.6); }      /* with the sun, when the results take the sky */
+.v2.is-results .v2-bg .moon, .v2-bg.is-results .moon { opacity: .9; transform: translateY(-40%) scale(.6); }      /* with the sun: smaller, still there, when the results take the sky */
 .v2.is-results .v2-bg .stars, .v2-bg.is-results .stars { opacity: .4; }
 
 /* a mood's foot goes down with the light, as the shore does */

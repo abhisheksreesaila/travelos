@@ -27,8 +27,8 @@ html:has(.v2) body { background: transparent; }
 @keyframes v2-drift { to { translate: 6vw 0; } }
 .v2-bg .shore { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 30vh; min-height: 11.25rem; transition: transform var(--v2-slow) var(--spring-soft), opacity var(--v2-slow) var(--v2-ease); }
 .v2.is-results .v2-bg .shore, .v2-bg.is-results .shore { transform: translateY(70%); opacity: .55; }
-.v2.is-results .v2-bg .sunball, .v2.is-results .v2-bg .cloud, .v2-bg.is-results .sunball, .v2-bg.is-results .cloud { opacity: 0; }
-.v2.is-results .v2-bg .sunball, .v2-bg.is-results .sunball { transform: translateY(-40%) scale(.6); }
+.v2.is-results .v2-bg .cloud, .v2-bg.is-results .cloud { opacity: 0; }
+.v2.is-results .v2-bg .sunball, .v2-bg.is-results .sunball { transform: translateY(-40%) scale(.6); opacity: .85; }      /* the founder: the sun and the moon stay, smaller, while the results take the sky */
 :root[data-mode="dark"] .v2-bg .shore { filter: brightness(.42) saturate(.8); }
 
 /* ---------- top bar ---------- */
