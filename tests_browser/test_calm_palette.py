@@ -53,6 +53,8 @@ def painted_words_read(page):
     low = []
     for w in words:
         box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
+        if box[0] < 0 or box[1] < 0 or box[2] > img.width or box[3] > img.height:
+            continue      # off the screen (the guide's tiles scroll sideways on a phone): there are no painted pixels to read it on
         px = sorted(img.crop(box).getdata(), key=lum)
         bg = px[len(px) // 2]
         m = re.findall(r"[\d.]+", w["c"])
@@ -68,7 +70,7 @@ def painted_words_read(page):
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
 def test_reading_pages_have_a_quiet_sky_and_every_word_reads_on_it(browser, base_url, lisbon, viewport, scheme):  # noqa: F811
     c, page, did = drafted(browser, base_url, viewport, lisbon, dark=scheme == "dark")
-    for path, name in ((f"/creators/import/{did}/book", "book"), (f"/creators/import/{did}", "editor"), ("/creators/import", "import")):
+    for path, name in ((f"/creators/import/{did}/guide", "guide"), (f"/creators/import/{did}", "editor"), ("/creators/import", "import")):
         page.goto(base_url + path)
         page.wait_for_selector(".v2-bg")
         page.wait_for_timeout(500)
@@ -133,7 +135,7 @@ def test_book_my_trip_the_sheet_and_the_pass_are_solid_indigo(matrix, sandbox, v
 def test_screenshots_of_the_books_and_the_matrix(browser, base_url, lisbon, matrix, sandbox, viewport):  # noqa: F811
     """No assertions: the same pages photographed before (F261_LABEL=before, on the old code) and after, to docs/report."""
     c, page, did = drafted(browser, base_url, viewport, lisbon)
-    for path, name in ((f"/creators/import/{did}/book", "book"), (f"/creators/import/{did}", "editor")):
+    for path, name in ((f"/creators/import/{did}/guide", "guide"), (f"/creators/import/{did}", "editor")):
         page.goto(base_url + path)
         page.wait_for_selector(".v2-bg")
         shot(page, name, viewport)
