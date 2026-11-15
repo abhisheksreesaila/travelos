@@ -66,6 +66,7 @@ def test_trip_opens_the_trips_day(signed_in):
     page.click(f"{BAR} .ga-tb-trip")
     page.wait_for_url("**/trip/plan")      # F-252: the bar's Trip leads to the planning calendar, with the booking placed on its first day
     expect(page.locator(".pl-cal .ev[data-locked]").first).to_be_visible()
+    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text(["Plan"])      # F-255: the v2 bar's pill marks where you landed (the old bar is not on this page)
 
 
 def test_family_opens_the_family_chat(signed_in):

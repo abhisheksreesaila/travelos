@@ -2,15 +2,19 @@
 and the stylesheets and script a v2 page loads. `layout.page(v2=True)` uses it; a page opts in by that one flag, which puts the class `v2` on its wrapper.
 Reference: docs/design/booking-v2/index.html (type pairing C, Newsreader with Inter); the tokens are assets/css/v2-tokens.css."""
 
-from fasthtml.common import A, Button, Div, Link, NotStr, Script, Span
+import logging
 
-from gitaway import session, showcase
+from fasthtml.common import A, Button, Div, Form, Link, Nav, NotStr, Script, Span
+
+from gitaway import session as session_, showcase
 from gitaway.icons import icon
+
+log = logging.getLogger(__name__)
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"),
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
-        Script(src="/assets/js/v2.js", defer=True))
+        Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
 
 CLOUD = '<path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/>'
 MARK = ('<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/>'
@@ -39,13 +43,59 @@ def bg() -> Div:
                NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{_shore()}</svg>'), cls="v2-bg", aria_hidden="true")
 
 
-def top() -> Div:
-    """The brand, a label saying the prices are samples (on the showcase), the light/dark button and the account: an avatar for a signed-in person, Sign in otherwise."""
-    traveler = session.request_traveler()
-    account = A(Span(traveler.initials), href="/family", cls="v2-round", aria_label="Your family and who is in it", title=traveler.name) if traveler \
-        else A("Sign in", href=session.signin_href(), cls="v2-signin")
+def section_of(current: str) -> str:
+    """Which of the pill's sections a page's `current` names: "trip" is Plan, the planning ask and matrix are Book, "family" is Family, anything else none."""
+    c = (current or "").rstrip("/")
+    return "plan" if c in ("trip", "/trip/plan") else "book" if c == "book" or c.startswith("/plan") else "family" if c in ("family", "/family") else ""
+
+
+def _state(traveler):
+    """(has a trip, is the captain, reports not yet read) for the signed-in person; a family whose trips cannot be read is shown as having none."""
+    from gitaway import topbar      # here: topbar imports layout, which imports this module
+    session = session_.request_session()
+    if traveler is None or session is None:
+        return False, False, 0
+    try:
+        has_trip = bool(session_.trips(session)) and session_.booking(session) is not None
+    except Exception:
+        log.exception("could not read the family's trips for the v2 top bar")
+        has_trip = False
+    new, captain = topbar._admin_notice(session)
+    return has_trip, captain, new
+
+
+def items(signed_in: bool, has_trip: bool) -> list:
+    """The section pill's items as (key, label, href): Plan (only with a trip), Book and Family for a signed-in person; Community trips and For creators for a visitor."""
+    if not signed_in:
+        return [("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
+    return ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("book", "Book", showcase.planning_path()), ("family", "Family", "/family")]
+
+
+def menu_items(captain: bool, new: int = 0) -> list:
+    """The avatar menu's links as (key, label, href): Family, Admin (the captain only), Community trips and For creators; Sign out is its own form."""
+    return [("family", "Family", "/family")] + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else []) + [
+        ("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
+
+
+def top(current: str = "") -> Div:
+    """The brand, a label saying the prices are samples (on the showcase), the sections pill (Plan, Book, Family; on a phone it floats at the bottom), the light/dark button and
+    the account: the avatar and its menu for a signed-in person, Sign in for a visitor (whose pill holds Community trips and For creators)."""
+    traveler = session_.request_traveler()
+    has_trip, captain, new = _state(traveler)
+    here = section_of(current)
+    pill = Nav(*[A(label, href=href, aria_current="page" if key == here else None) for key, label, href in items(traveler is not None, has_trip)],
+               cls="v2-sections v2-glass", aria_label="Sections")
+    if traveler:
+        menu = Div(*[A(label, href=href, role="menuitem", tabindex="-1") for _, label, href in menu_items(captain, new)],
+                   Form(Button("Sign out", type="submit", role="menuitem", tabindex="-1"), action="/signout", method="post"),
+                   id="v2-menu", cls="v2-menu v2-glass", role="menu", aria_label="Account", hidden=True)
+        news = f", {new} new report{'s' if new != 1 else ''}" if new and captain else ""
+        account = Div(Button(Span(traveler.initials), Span(cls="v2-dot") if news else "", type="button", cls="v2-round", id="v2-me", aria_haspopup="menu", aria_expanded="false",
+                             aria_controls="v2-menu", aria_label=f"{traveler.name}: account menu{news}", title=traveler.name), menu, cls="v2-account")
+    else:
+        account = A("Sign in", href=session_.signin_href(), cls="v2-signin")
     mode = Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",
                   aria_pressed="false", aria_label="Dark mode", title="Dark mode")
     from gitaway.layout import preview      # here: layout imports this module
     return Div(A(NotStr(MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway"), preview(), Span(cls="sp"),
-               Span("Sample prices", cls="v2-pill") if showcase.on() else "", mode, account, cls="v2-top")
+               pill, Span(cls="sp"), Span("Sample prices", cls="v2-pill") if showcase.on() else "", mode, account, cls="v2-top")

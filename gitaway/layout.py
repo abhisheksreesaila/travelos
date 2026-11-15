@@ -234,7 +234,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
         return (
             Title(f"GitAway · {title}" if title else "GitAway"),
             *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-            Div(v2_.bg(), v2_.top(), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
+            Div(v2_.bg(), v2_.top(current), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
         )
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
