@@ -266,99 +266,14 @@ def square_el(s: State, lane, w, sq, marks, day=False, style=None, wx=None, on=F
              **({"style": style} if style else {}))
 
 
-def book_form(s: State, lane, w, sq):
-    """The square's Book button (F-233): a form that posts to /plan/matrix/book; assets/js/matrixbook.js opens the answer as a sheet that grows out of the square."""
-    return Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
-                Button(icon("bed", 16, 2.4), "Book the stay" + ("s" if len(sq.stays) > 1 else ""), type="submit", cls="btn btn-ink mx-book"), method="post", action=BOOK, cls="mx-book-f")
-
-
 def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
-    """The opened square: what the whole trip is made of (option A's panel). The same function draws the laptop's side, the phone's sheet and the square's page."""
-    nights = (f"{w.nights // 2} nights each" if lane.combo and w.nights % 2 == 0 else
-              " · ".join(f"{(b - a).days} in {p.name}" for p, a, b in tm.stays_for(lane, w)) if lane.combo else f"{w.nights} nights")
-    head = [_arts(lane, "mx-p-art"), Div(H3(f"{lane.name} · {tm.when(w)}", cls="mx-p-h"), P(f"{nights} · {party_words(s)}", cls="mx-p-sub"), cls="mx-p-top")]
-    if sq is None:
-        return Div(*head, P("Searching this square…", cls="mx-p-note", role="status"), cls="mx-p", data_open=tm.key(lane.key, w.key))
-    if not sq.ok:
-        return Div(*head, P(tm.SAID[sq.status], cls="mx-p-note", role="status"), cls="mx-p", data_open=sq.key)
-    vs = ""
-    if asked_sq is not None and asked_sq.ok and not lane.asked:
-        vs = vs_words(sq.cents - asked_sq.cents, s.place.name, lane.combo)
-    age = age_words(sq.fetched)
-    rows = [Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"), Div(P(sq.flight.airline, cls="mx-r-h"), P(sq.flight.out, cls="mx-r-s"), P(sq.flight.back, cls="mx-r-s") if sq.flight.back else "",
-                                                                                     P(CHEAPEST_FOUND, cls="mx-r-s") if not sq.flight.complete else ""),
-                Span(catalog.money(sq.flight.cents), cls="mx-r-n"), cls="mx-row")]
-    for st in sq.stays:
-        bits = [st.room, "Breakfast" if st.board == "breakfast" else st.board.capitalize(), "Refundable" if st.refundable else "Non-refundable"]
-        rows.append(Div(Span(icon("bed", 16, 2.2), cls="mx-kt k-stay"),
-                        Div(P(f"{st.name}", cls="mx-r-h"), P(f"{st.nights} nights in {st.place}" if lane.combo else f"{st.nights} nights", " · ", " · ".join(b for b in bits if b), cls="mx-r-s"),
-                            P(st.rating, cls="mx-r-s") if st.rating else "",
-                            P(f"{catalog.money(st.due_at_stay_cents)} of it paid at the hotel", cls="mx-r-s mx-r-due") if st.due_at_stay_cents else ""),
-                        Span(catalog.money(st.cents), cls="mx-r-n"),
-                        Img(src=st.photo, alt=f"{st.name}, the hotel's own photo", loading="lazy", cls="mx-photo", referrerpolicy="no-referrer") if st.photo else "", cls="mx-row mx-row-stay"))
-    first = lane.places[0]
-    rows.append(Div(Span(icon("car", 16, 2.2), cls="mx-kt k-car"),
-                    Div(P("Airport drive", cls="mx-r-h"), P(f"{sq.drive} min from {first.iata} to {first.name}" if sq.drive else f"From {first.iata}: no drive time yet", cls="mx-r-s")),
-                    Span("", cls="mx-r-n"), cls="mx-row"))
-    sky = sky_strip(first.name, weather_for(first.name, w.depart, w.return_), asked=(w.depart, w.return_))
-    form = (Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
-                 Button(icon("check", 16, 2.4), "Save to trip", type="submit", cls="btn btn-ink mx-save"), method="post", action=SAVE, cls="mx-save-f")
-            if can_save else "")
-    return Div(*head,
-               Div(Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"), Span(vs, cls="mx-vs" + ("" if vs else " is-empty"), data_vs="1"), cls="mx-p-tot"),
-               P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), Span(SAMPLE, cls="mx-sample") if sq.sample else "", cls="mx-p-meta"),
-               Div(*rows, cls="mx-rows"), Div(sky, cls="mx-p-sky") if sky is not None else "",
-               Div(P(Span(BOOK_SAMPLE if sq.sample else BOOK_WORDS, cls="mx-soon-h"), " Books the stay" + ("s" if len(sq.stays) > 1 else "") + " here; the flight books on its airline’s site.", cls="mx-soon"),
-                   book_form(s, lane, w, sq) if can_save else "",
-                   P(saved, cls="mx-saved", role="status") if saved else form, cls="mx-acts"),
-               cls="mx-p", data_open=sq.key)
+    """The opened square (F-242, D-570): the hotel, the flight, the sky for those nights and the total, with "Book this trip" the boldest thing on the screen
+    (gitaway/pages/tripview.py). One view for the laptop's side under the calendar, the phone's sheet and the square's own page; CSS lays it out by width."""
+    from gitaway.pages import tripview
+    return tripview.view(s, lane, w, sq, asked_sq, saved, can_save)
 
 
-def _part(kind, ic, text, money=""):
-    return Span(Span(icon(ic, 14, 2.4), cls=f"mx-kt k-{kind}"), Span(text, cls="mx-part-t"), Span(money, cls="mx-part-n") if money else "", cls="mx-part")
-
-
-def weather_part(first, w):
-    """The trip's weather chip (typical or forecast, said which) from the place's own days, or None when there is none to show."""
-    days = [d for d in weather_for(first.name, w.depart, w.return_).days if d]
-    if not days:
-        return None
-    typ = all(d.kind != weather.FORECAST for d in days)
-    return _part("wx", days[0].condition if days[0].condition in WORDS else "cloud",
-                 f"{max(d.high_f for d in days)}°/{min(d.low_f for d in days)}°{' typical' if typ else ''} · {days[0].word}")
-
-
-def bar(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
-    """The opened square as the design's trip bar (F-236, D-520): the place's art, what the trip is made of as chips with their prices, the total huge, and its
-    actions. The same facts as `panel` (the phone's sheet and the square's page), in a row. The laptop's #mx-side holds it."""
-    head = _arts(lane, "mx-b-art")
-    title = H3(f"{lane.name} · {tm.when(w)}", cls="mx-p-h")
-    if sq is None or not sq.ok:
-        note = "Searching this square…" if sq is None else tm.SAID[sq.status]
-        return Div(head, Div(title, P(note, cls="mx-p-note", role="status")), cls="mx-b", data_open=tm.key(lane.key, w.key))
-    vs = vs_words(sq.cents - asked_sq.cents, s.place.name, lane.combo) if asked_sq is not None and asked_sq.ok and not lane.asked else ""
-    first, age = lane.places[0], age_words(sq.fetched)
-    parts = [_part("flight", "plane", via_of(lane, s.home), catalog.money(sq.flight.cents))]
-    parts += [_part("stay", "bed", f"{st.nights} nights in {st.place}" if lane.combo else f"{st.nights} nights", catalog.money(st.cents)) for st in sq.stays]
-    parts.append(_part("car", "car", f"{sq.drive} min from {first.iata}" if sq.drive else f"From {first.iata}: no drive time yet"))
-    wx = weather_part(first, w)
-    if wx is not None:
-        parts.append(wx)
-    fine = [f"{sq.flight.airline}", " · ".join(f"{st.name} ({st.rating})" if st.rating else st.name for st in sq.stays)]
-    fine += [f"{catalog.money(sum(st.due_at_stay_cents for st in sq.stays))} of it paid at the hotel"] if any(st.due_at_stay_cents for st in sq.stays) else []
-    fine += [CHEAPEST_FOUND] if not sq.flight.complete else []
-    fine += ["The flight books on its airline’s site."]
-    form = (Form(*[Input(type="hidden", name=n, value=str(v)) for n, v in params(s, lane=lane.key, w=w.key).items()],
-                 Button(icon("check", 16, 2.4), "Save to trip", type="submit", cls="btn btn-card mx-save"), method="post", action=SAVE, cls="mx-save-f")
-            if can_save else "")
-    return Div(head,
-               Div(Div(title, Span(vs, cls="mx-vs" + ("" if vs else " is-empty"), data_vs="1"), cls="mx-b-h"),
-                   P(Span(f"Preview · {age}" if age else "Preview", cls="mx-preview"), cls="mx-p-meta"),
-                   Div(*parts, cls="mx-parts"), P(" · ".join(x for x in fine if x), cls="mx-b-fine"), cls="mx-b-mid"),
-               Div(Span(tm.dollars(sq.cents), cls="mx-p-n", data_slot="total"),
-                   Div(book_form(s, lane, w, sq) if can_save else "", P(saved, cls="mx-saved", role="status") if saved else form, cls="mx-b-btns"),
-                   P(Span(BOOK_SAMPLE if sq.sample else BOOK_WORDS, cls="mx-soon-h"), cls="mx-soon"), cls="mx-b-end"),
-               cls="mx-b", data_open=sq.key)
+bar = panel
 
 
 # ---- the page --------------------------------------------------------------------------------------------------------
@@ -437,10 +352,6 @@ def find_el(s: State, found):
                A(Span(found.words, cls="mx-find-w", id="mx-find-w"), Span(f" · {found.when}", cls="mx-find-d", id="mx-find-d"),
                  href=href(s, SQUARE, lane=found.lane, w=found.window), cls="mx-find-a", id="mx-find-a", data_open=found.key),
                cls="mx-find", id="mx-find", aria_live="polite", data_key=found.key)
-
-
-def via_of(lane, home) -> str:
-    return f"{home} → {lane.places[0].iata}" + (f" · {lane.places[-1].iata} → {home}" if lane.combo else "")
 
 
 def band_words(lane, w, sq, found, s: State) -> str:
@@ -754,6 +665,7 @@ def register(app):
             lane_, w_, sq, asked_sq = await run_in_threadpool(_square_of, s, lane_key, w_key, _family(session))
         if not sq.ok:
             return square_page(s, lane_, w_, sq, asked_sq)
+        sq = tm.pick(sq, *tm.picks(form.get("fl", ""), form.get("st", "")))      # the flight and stays chosen on the square (F-242), read again here, never a price from the form
         try:
             await run_in_threadpool(save, session, s, lane_, w_, sq)      # database writes: off the event loop
         except importer.SaveError as e:

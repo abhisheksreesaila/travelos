@@ -132,6 +132,14 @@ def pick(sq: Square, flight: int = 0, stays: tuple = ()) -> Square:
     return replace(sq, flight=fl, stays=chosen)
 
 
+def picks(flight="", stays="") -> tuple:
+    """What a form said was chosen (F-242): ("1", "0,2") is (1, (0, 2)). Anything else (a letter, a long number, nothing) is the shown part, never an error."""
+    def n(v):
+        v = str(v).strip()
+        return int(v) if v.isdigit() and len(v) <= 2 else None
+    return (n(flight) or 0, tuple(n(x) for x in str(stays).split(",")[:2]))
+
+
 def key(lane_key, window_key) -> str:
     return f"{lane_key}|{window_key}"
 

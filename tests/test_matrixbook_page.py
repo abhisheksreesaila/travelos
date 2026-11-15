@@ -61,7 +61,7 @@ def price_like_the_square(real, client, extra=0):
     """The recorded prebook, priced as the square shows its stay (the recordings of the search and of the prebook are of different rooms), plus `extra` dollars."""
     import json
     panel = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["panel"]
-    shown = float(re.search(r'mx-row-stay.*?mx-r-n">\$([\d,.]+)<', panel, re.S).group(1).replace(",", ""))
+    shown = float(re.search(r'mx-tile-stay.*?mx-o-n">\$([\d,.]+)<', panel, re.S).group(1).replace(",", ""))
     doc = json.loads(real.prebook[1])
     doc["data"]["price"] = round(shown - 120 + extra, 2)
     real.prebook = (200, json.dumps(doc).encode())
@@ -100,12 +100,12 @@ def test_a_square_on_the_showcase_is_a_sample_booking_and_liteapi_is_never_asked
     sign_in(client)
     html = client.post("/plan/matrix/book", data=FORM).text
     words = text(html)
-    assert "Sample booking: nothing is booked or charged" in words and "Who is the lead guest?" in words and "Book · $" in words
+    assert "Sample booking: nothing is booked or charged" in words and "Who’s the lead guest?" in words and "Book this trip · $" in words
     assert 'action="/plan/matrix/book/confirm"' in html
     done = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST})
     words = text(done.text)
     assert "Booked" in words and "Anne-Marie O’Neil, your sample booking is confirmed." in words and "SAMPLE-" in words
-    assert 'href="/trip/cockpit"' in done.text and "Open your trip" in words
+    assert 'href="/trip/cockpit"' in done.text and "Plan this trip" in words
     assert fake.calls(PREBOOK) == [] and fake.calls(BOOK) == []
     rows = stays_booked()
     assert len(rows) == 1 and rows[0]["sample"] == 1
@@ -116,14 +116,14 @@ def test_the_sheet_prebooks_the_squares_offer_and_never_shows_its_id(real, clien
     sign_in(client)
     shown = price_like_the_square(real, client)
     j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()
-    assert j["s"] == "ok" and "Book the stay" in j["panel"] and 'action="/plan/matrix/book"' in j["panel"]
+    assert j["s"] == "ok" and "Book this trip" in j["panel"] and 'action="/plan/matrix/book"' in j["panel"]
     html = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
     offer = next(b["offerId"] for u, _, b in real.asked if u == PREBOOK)
     assert len(offer) > 100 and offer not in html and offer not in j["panel"] and "mxB7A2bfb" not in html and "<html" not in html     # a fragment; no id on it
     words = text(html)
     assert "Sandbox booking: nothing is charged" in words and "Standard Room, 2 Queen Beds" in words and "$120 of it is paid at the hotel" in words
-    assert "Non-refundable" in words and f"Book · ${shown:,.2f}".replace(".00", "") in words and "The price moved" not in words and "Margaritaville Hotel San Diego Gaslamp Quarter" in words
-    assert re.search(r'data-state="done"[^>]*>.*?Room', html, re.S) and html.count('data-state="active"') == 1
+    assert "Non-refundable" in words and f"Book this trip · ${shown:,.2f}".replace(".00", "") in words and "The price moved" not in words and "Margaritaville Hotel San Diego Gaslamp Quarter" in words
+    assert html.count('data-state="active"') == 1 and html.count('data-state="todo"') == 2 and re.search(r'data-card="guest" data-state="active"', html)      # the first of the three folding cards is open
 
 
 def test_booking_through_the_sandbox_shows_liteapis_booking_id_and_makes_the_trip(real, client):
@@ -132,7 +132,7 @@ def test_booking_through_the_sandbox_shows_liteapis_booking_id_and_makes_the_tri
     done = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST}, headers=FRAG)
     words = text(done.text)
     assert "Booking id _5hnX-MI7" in re.sub(r"\s+", " ", words) and "Hotel confirmation test" in re.sub(r"\s+", " ", words)
-    assert "Sandbox booking: nothing is charged" in words and "Anne-Marie O’Neil, your booking is confirmed." in words and "Search on" in words
+    assert "Sandbox booking: nothing is charged" in words and "Anne-Marie O’Neil, your booking is confirmed." in words and "Search flights on" in words
     assert 'href="/trip/cockpit"' in done.text
     sent = real.calls(BOOK)
     assert len(sent) == 1 and sent[0]["payment"] == {"method": "ACC_CREDIT_CARD"} and sent[0]["holder"]["email"] == "anne@example.com" and sent[0]["prebookId"] == "mxB7A2bfb"
@@ -164,7 +164,7 @@ def test_a_room_that_was_just_taken_is_said_and_the_kept_prices_are_dropped(real
     real.prebook = (400, raw("prebook_bad_offer.json"))
     squares = len([1 for u, *_ in real.asked if "/hotels/rates" in u])
     r = client.post("/plan/matrix/book", data=FORM, headers=FRAG).text
-    assert "That room was just taken" in text(r) and "Who is the lead guest?" not in text(r) and real.calls(BOOK) == []
+    assert "That room was just taken" in text(r) and "Who’s the lead guest?" not in text(r) and real.calls(BOOK) == []
     asked = len([1 for u, *_ in real.asked if "/hotels/rates" in u])
     assert asked > squares
     client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12")
@@ -255,13 +255,13 @@ def test_a_moved_price_is_said_before_booking(real, client):
     shown = price_like_the_square(real, client, extra=41)
     words = text(client.post("/plan/matrix/book", data=FORM, headers=FRAG).text)
     was, now = f"${shown:,.2f}".replace(".00", ""), f"${shown + 41:,.2f}".replace(".00", "")
-    assert f"The price moved: it was {was} on the square and is {now} now." in words and f"Book · {now}" in words
+    assert f"The price moved: it was {was} on the square and is {now} now." in words and f"Book this trip · {now}" in words
 
 
 def test_without_the_script_the_two_steps_are_pages(real, client):
     sign_in(client)
     html = client.post("/plan/matrix/book", data=FORM).text
-    assert "<html" in html and "Back to the matrix" in html and "Who is the lead guest?" in text(html)
+    assert "<html" in html and "Back to the matrix" in html and "Who’s the lead guest?" in text(html)
     done = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST}).text
     assert "<html" in done and "_5hnX-MI7" in done
 

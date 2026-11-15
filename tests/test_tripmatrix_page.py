@@ -100,7 +100,7 @@ def test_a_retyped_sentence_lands_on_its_plain_address_or_says_what_is_missing(s
 def test_a_squares_own_page_is_the_panel_with_every_part_and_a_sample_booking(sample, client):
     html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
     assert "Los Angeles + San Diego · Dec 12 to 16" in html and "2 nights each · a family of 4" in html
-    assert "Sample booking: nothing is booked or charged." in html and "Book the stays" in html and 'action="/plan/matrix/book"' in html and "Save to trip" in html and "Back to the matrix" in html
+    assert "Sample booking: nothing is booked or charged." in html and "Book this trip" in html and 'action="/plan/matrix/book"' in html and "Save to trip" in html and "Back to the matrix" in html
     assert 'action="/plan/matrix/save"' in html and "Sample prices" in html
     assert "2 nights in Los Angeles" in html and "2 nights in San Diego" in html and "Airport drive" in html
     r = client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=nowhere&w=2026-12-12", follow_redirects=False)

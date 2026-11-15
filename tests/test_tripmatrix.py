@@ -145,3 +145,8 @@ def test_a_pick_the_square_does_not_have_keeps_the_shown_part_instead_of_failing
 def test_a_square_with_no_alternatives_is_unchanged_by_a_pick():
     sq = tm.Square("sandiego", "k", tm.OK, tm.FlightPart("A", "o", "b", 0, 100), (tm.StayPart("SD", 1, "H", "r", "x", True, 0, "", "", 200),))
     assert tm.pick(sq, 2, (1,)) == sq
+
+
+@pytest.mark.parametrize("flight, stays, want", [("1", "0,2", (1, (0, 2))), ("", "", (0, (None,))), ("x", "-1,y", (0, (None, None))), ("123", "999", (0, (None,))), ("2", "1,1,1", (2, (1, 1)))])
+def test_the_form_words_for_a_choice_are_read_without_trusting_them(flight, stays, want):
+    assert tm.picks(flight, stays) == want
