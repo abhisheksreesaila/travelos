@@ -268,7 +268,8 @@ def _san_diego() -> Itinerary:
     return _short("san-diego-on-a-budget", "San Diego on a budget", "Cheap and cheerful:", "San Diego with kids",
                   "San Diego, California", "Four sunny days for a family of four that came in well under the usual price.",
                   days, [Tag("Kid friendly", "sun", "kid", -3), Tag("Budget", "sky", "clock", 2)], "the Okafors", 96,
-                  [("4 days", "Fri Jun 12 – Mon Jun 15"), ("4 people", "2 adults, kids 5 & 9")], "SFO → SAN · 1h 35m")
+                  [("4 days", "Fri Jun 12 – Mon Jun 15"), ("4 people", "2 adults, kids 5 & 9")], "SFO → SAN · 1h 35m",
+                  source=Source("The Okafors · family blog", "San Diego on a budget, with kids", "", "", kicker="From the blog", link_label="Read the original post"))      # a sample guide for San Diego, the matrix's default place, so the guides card shows there (F-263); made up and labelled Sample like the rest
 
 
 ITINERARIES = {t.slug: t for t in [_sun_tacos(), _la_for_two(), _big_sur(), _san_diego()]}

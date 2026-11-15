@@ -50,7 +50,8 @@ def test_the_showcase_offers_its_labelled_sample_guides_for_their_place_only(cli
     cards, total = gd.for_place(person("ari"), "Los Angeles")
     assert [(c.slug, c.real, c.days) for c in cards] == [(TACOS, False, 5)] and total == 1
     assert gd.for_place(person("ari"), "Los Angeles, California")[0] == cards      # a place written the way a trip writes it
-    assert gd.for_place(person("ari"), "San Diego") == ((), 0)      # the Okafors' San Diego trip is a family's trip, not a guide
+    assert gd.for_place(person("ari"), "Orange County") == ((), 0)      # no guide of Orange County, sample or real
+    assert [c.slug for c in gd.for_place(person("ari"), "San Diego")[0]] == ["san-diego-on-a-budget"]      # the Okafors' blog sample (F-263: the matrix's default place has one)
     assert gd.for_place(person("ari"), "") == ((), 0) and gd.for_place(person("ari"), "Boise") == ((), 0)
 
 
@@ -193,7 +194,7 @@ def test_the_sheet_refuses_what_it_does_not_know_and_a_viewer_is_told_why_there_
     client, _, viewer = crew
     assert sheet(client, slug=TACOS, ctx="nowhere").status_code == 400
     assert sheet(client, slug="no-such-guide", ctx="plan").json() == {"error": "That guide is not here any more."}
-    assert sheet(client, slug="san-diego-on-a-budget", ctx="plan").status_code == 404      # a family's trip is not a guide
+    assert sheet(client, slug="la-for-two-slow-mornings", ctx="plan").status_code == 404      # a family's trip is not a guide
     html = sheet(viewer, slug=TACOS, ctx="plan").json()["html"]
     assert "Only editors of the family can change its plan." in html and "data-add" not in html and "is free." not in html
 
@@ -208,8 +209,8 @@ def test_booking_rail_lists_the_places_guides_labelled_sample_and_each_opens_its
     q = parse_qs(urlsplit(href).query)
     assert urlsplit(href).path == "/guides/sheet" and (q["slug"], q["ctx"], q["lane"], q["w"], q["to"], q["d"]) == (["sun-tacos-and-tide-pools"], ["book"], ["losangeles"], ["2026-12-12"], ["Los Angeles"], ["2026-12-12"])
     assert re.search(r'<a [^>]*href="/guides\?q=Los%20Angeles"[^>]*>All Los Angeles guides</a>', html)
-    san_diego = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["html"]
-    assert "Guides for" not in san_diego      # no guide of San Diego: no card, not an empty one
+    oc = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()["html"]
+    assert "Guides for" not in oc      # no guide of Orange County: no card, not an empty one
 
 
 def test_planning_rail_lists_the_trips_guides_and_off_the_showcase_with_none_published_nothing(client, monkeypatch):
