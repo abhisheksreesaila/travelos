@@ -1646,7 +1646,7 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [x] honesty rules stand: the creator's own words and links only, nothing invented
 Built in D-710..D-721 (docs/decisions.md): `/guides`, `/guides/make`, the guide at `/trips/<slug>` and `/creators/import/<id>/guide`, Add to my plan, a draft from the planned trip, the share dialog with the Instagram card. Prototype-vs-build screenshots: docs/report/f262-*.png. Where it differs from the prototype: D-721.
 
-## F-263 Guides in context [review]
+## F-263 Guides in context [done]
 Needs: F-262
 - [x] booking's rail: "Guides for <place>" opens a guide in a sheet over the matrix; closing returns exactly where you were
 - [x] planning's rail: a guide in a sheet; "Add to my plan" drops stops into free slots (skips clashes, says so, Undo)
