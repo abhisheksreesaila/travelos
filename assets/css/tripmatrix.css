@@ -4,6 +4,19 @@
    Motion is liquid at every width (D-439, the matrix's own exception to the calm desktop): a square settles into its answer (scale and opacity on the spring tokens),
    the panel and the sheet grow out of the square tapped (GA.motion, assets/js/tripmatrix.js). Reduced motion: fades only. Sizes are rem off the one root. */
 .mx { padding: 0.75rem 1.25rem 6rem; display: grid; gap: 1rem; }
+
+/* F-245 (D-590): the whole matrix is one card, like the cover's frame (docs/report/f245-*.png). The card is translucent over a soft wash of sky, sun and indigo: the founder asked
+   for it by name, a recorded exception to "no glass" (alpha only, no blur; every word still 4.5:1 in light and dark). One lit square carries the emphasis: the find, or the
+   square you opened. Everything else is a quiet tint of the flight indigo (--mx-cell). */
+.mx-wrap { position: relative; isolation: isolate; padding: 0.5rem 0.75rem 5rem; }
+.mx-wrap::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(70% 38% at 12% 0%, color-mix(in srgb, var(--k-wx-t) 95%, transparent), transparent),
+              radial-gradient(60% 34% at 92% 14%, color-mix(in srgb, var(--k-ride-t) 85%, transparent), transparent),
+              radial-gradient(80% 44% at 50% 100%, color-mix(in srgb, var(--k-flight-t) 90%, transparent), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 4rem); }
+.mx-wrap > .mx { --up-bg: var(--k-flight); --up-fg: var(--k-on); --up-fg2: color-mix(in srgb, var(--k-on) 82%, var(--k-flight)); --mx-cell: color-mix(in srgb, var(--k-flight-t) 55%, transparent);
+  max-width: 120rem; margin: 0 auto; box-sizing: border-box; padding: 1rem 1rem 1.25rem; gap: 0.875rem; border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--card) 78%, transparent); box-shadow: var(--sh3), inset 0 0 0 1px color-mix(in srgb, var(--card) 70%, transparent); }
 .mx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mx-label { font-size: max(var(--label-min), 0.75rem); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
 
@@ -22,6 +35,13 @@
 .mx-edit .mx-pop, .mx-about .mx-pop { left: auto; right: 0; }
 .mx-about { position: static; margin-left: auto; }      /* its popover hangs from the top row's edge, whichever word is where */
 @media (max-width: 720px) {      /* a phone: every popover is the sentence's width, so none can run off the screen */
+  .mx-wrap { padding: 0.25rem 0.5rem 5rem; }
+  .mx-wrap > .mx { padding: 0.875rem 0.875rem 1rem; border-radius: var(--r-lg); }
+  .mx-sent { font-size: 1.25rem; }      /* F-245: denser: the sentence is three lines, not five (the cover's phone frame sets it small too) */
+  .mx-meta { align-items: center; }
+  .mx-meta > .mx-sample { order: 0; }
+  .mx-meta > .mx-about { order: 1; margin-left: auto; }
+  .mx-meta > .mx-import { order: 2; flex-basis: 100%; }      /* "Sample prices" and "About these prices" share a row; the import link has the next one */
   .mx-tk { position: static; }
   .mx-pop, .mx-edit .mx-pop, .mx-about .mx-pop { left: 0; right: 0; min-width: 0; }
 }
@@ -77,7 +97,7 @@
 /* the news: the find, and a fact about the place while squares are searched */
 .mx-news { display: grid; gap: 0.75rem; }
 .mx-news:has(> .mx-find.is-empty) { display: none; }
-.mx-find { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; padding: 0.5rem 1.125rem; border-radius: var(--r-lg); background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); }
+.mx-find { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; padding: 0.375rem 1.125rem; border-radius: var(--r-md); background: var(--up-bg); color: var(--up-fg); }
 .mx-find.is-empty { display: none; }
 .mx-found { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--k-ride); color: var(--k-ride-on);
   font-size: max(var(--label-min), 0.8125rem); font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -109,8 +129,8 @@
 .mx[data-slow="1"] .mx-slow { display: inline; animation: mx-fade var(--motion-dur) var(--motion-ease) both; }
 
 /* a square: the whole trip for one place and one start day */
-.mx-sq { position: relative; display: grid; place-items: center; align-content: center; gap: 0.125rem; min-height: var(--target); padding: 0.25rem 0.375rem; border-radius: 0.875rem;
-  background: var(--paper-2); color: var(--ink); text-decoration: none; text-align: center; transition: box-shadow var(--motion-quick) var(--motion-ease); }
+.mx-sq { position: relative; display: grid; place-items: center; align-content: center; gap: 0.125rem; min-height: var(--target); padding: 0.25rem 0.375rem; border-radius: 1rem;
+  background: var(--mx-cell, var(--paper-2)); color: var(--ink); text-decoration: none; text-align: center; transition: box-shadow var(--motion-quick) var(--motion-ease); }
 .mx-sq:active { transform: scale(0.96); }
 .mx-v { font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
 .mx-sqw { display: inline-flex; align-items: center; gap: 0.1875rem; color: var(--ink-2); font-size: max(var(--text-min), 0.75rem); font-weight: 550; line-height: 1.1; }
@@ -118,22 +138,23 @@
 .mx-sqw.is-typ .mx-sqw-t { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the notes under the matrix say so) */
 .mx-sqw.is-wet .mx-sqw-i { color: var(--k-wx-i); }
 .mx-sq.is-wait .mx-sqw { visibility: hidden; }
-.mx-sq.is-find .mx-sqw { color: var(--up-fg2); }
-.mx-sq.is-find .mx-sqw-i { color: var(--up-fg); }
+.mx-sq:is(.is-find, .is-open) .mx-sqw { color: var(--up-fg2); }
+.mx-sq:is(.is-find, .is-open) .mx-sqw-i { color: var(--up-fg); }
 .mx-w { font-size: max(var(--label-min), 0.75rem); font-weight: 650; color: var(--ink-2); line-height: 1.15; }
 .mx-sq.is-low .mx-v { color: var(--ok-ink); }
-.mx-sq.is-over { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+.mx-sq.is-over { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .mx-sq.is-over .mx-v { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 0.0625rem; }
-.mx-sq.is-find { background: var(--up-bg); color: var(--up-fg); box-shadow: var(--sh2); }
-.mx-sq.is-find .mx-v { color: var(--up-fg); text-decoration: none; }
-.mx-sq.is-open { box-shadow: 0 0 0 0.1875rem var(--ink); }
+/* the lit square (F-245): the find, or the one opened; when you open another the find steps back to a ringed tint, so only one square is lit */
+.mx-wrap .mx .mx-sq:is(.is-find, .is-open) { background: var(--up-bg); color: var(--up-fg); box-shadow: 0 0 0 0.25rem var(--k-flight-t), var(--sh2); }
+.mx-wrap .mx .mx-sq:is(.is-find, .is-open) .mx-v { color: var(--up-fg); text-decoration: none; }
+.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) { background: var(--k-flight-t); color: var(--k-flight-i); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }
+.mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) :is(.mx-v, .mx-sqw, .mx-sqw-i, .mx-d) { color: var(--k-flight-i); }
 .mx-sq.is-wait { color: transparent; }
 /* an estimate while the slider moves (F-237): "about" and a plainer number, never a mark; the answer settles over it */
 .mx-est { display: inline-flex; flex-direction: column; align-items: center; gap: 0; color: var(--ink-2); font-weight: 600; }
 .mx-about { font-size: max(var(--label-min), 0.75rem); font-weight: 650; line-height: 1.1; }
 .mx-sq.is-est .mx-est-n { font-size: 0.8em; }
 .mx-lane .mx-sq.is-est .mx-est { color: var(--ink-2); }
-.mx-lane .mx-sq.is-on.is-est .mx-est { color: var(--on-ink); }
 @keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* the art: the place's own drawing (gitaway/placeart.py), or its plain tint */
@@ -151,25 +172,22 @@
 
 /* the phone and the tablet: a card per place */
 .mx-stage { display: none; }
-.mx-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.875rem; }
-.mx-card { display: grid; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--sh1); overflow: hidden; }
-.mx-card.is-asked { box-shadow: var(--sh2); }
-.mx-c-top { display: grid; }
-.mx-c-art { height: 6.5rem; }
-.mx-c-n { margin: 0; padding: 0.75rem 1rem 0; font-size: 1.25rem; font-weight: 720; letter-spacing: -0.03em; line-height: 1.15; }
-.mx-c-bd { display: grid; gap: 0.5rem; padding: 0.25rem 1rem 1rem; }
-.mx-c-best { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; min-height: 2rem; }
-.mx-c-v { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }      /* a total in the body font with even digits: in the mono a comma takes a whole cell ("$1 , 536") */
-.mx-c-s { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); }
+.mx-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+.mx-card { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto; grid-template-areas: "art name best" "art sub best" "wins wins wins"; align-items: center; gap: 0 0.75rem; }      /* F-245: a place is a row of the one card: its art, name and best total, then its start days */
+.mx-c-top, .mx-c-bd, .mx-c-best { display: contents; }
+.mx-c-art { grid-area: art; align-self: stretch; height: auto; min-height: 3.25rem; border-radius: 0.875rem; }
+.mx-c-n { grid-area: name; align-self: end; margin: 0; font-size: 1.25rem; font-weight: 720; letter-spacing: -0.03em; line-height: 1.15; }
+.mx-wins { grid-area: wins; margin-top: 0.625rem; }
+.mx-c-v { grid-area: best; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }      /* a total in the body font with even digits: in the mono a comma takes a whole cell ("$1 , 536") */
+.mx-c-s { grid-area: sub; align-self: start; margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.2; }
 .mx-wins { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr)); gap: 0.5rem; }
 .mx-wins .mx-sq { min-height: 5.25rem; padding: 0.375rem 0.25rem; gap: 0.25rem; border-radius: 0.875rem; }
 .mx-wins .mx-v { font-size: 1.375rem; }
-.mx-wins .mx-sq.is-on { background: var(--card); box-shadow: 0 0 0 0.125rem var(--ink); }
-.mx-wins .mx-sq.is-find.is-on { background: var(--up-bg); }
+.mx-wins .mx-sq.is-on { background: var(--k-flight-t); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }      /* the start whose days this place shows */
 .mx-d { font-size: max(var(--label-min), 0.75rem); font-weight: 650; color: var(--ink-2); }
-.mx-sq.is-find .mx-d { color: var(--up-fg2); }
+.mx-sq:is(.is-find, .is-open) .mx-d { color: var(--up-fg2); }
 .mx-sq.is-asked .mx-d { color: var(--ink); font-weight: 800; }
-.mx-sq.is-find.is-asked .mx-d { color: var(--up-fg); }
+.mx-sq:is(.is-find, .is-open).is-asked .mx-d { color: var(--up-fg); }
 .mx-dd { display: none; }
 .mx-sq.is-wait .mx-d { color: var(--ink-2); }
 
@@ -215,13 +233,14 @@
    that holds those days, labelled on its top edge; under each start day its total in a bold pill (ink: the nights shown, yellow: the find, green: the cheapest start).
    Days are never coloured: neutral cells, the asked day's head in ink. Sizes are rem off the 12px desktop root (design px / 12). */
 @media (min-width: 1020px) {
-  .mx { padding: 0.5rem 1.5rem 2rem; gap: 0.625rem; }
+  .mx-wrap { padding: 0.5rem 1.5rem 3rem; }
+  .mx-wrap > .mx { padding: 1.25rem 1.5rem 1.5rem; gap: 0.75rem; }
   .mx-lead { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
   .mx-sent { font-size: 2rem; }
   .mx-meta { justify-content: flex-end; }
   .mx-cards { display: none; }
   .mx-stage { display: grid; gap: 1rem; }
-  .mx-cal { border-radius: var(--r-lg); background: var(--card); box-shadow: var(--sh1); padding: 0.5rem 0.625rem 0.625rem; min-width: 0; }
+  .mx-cal { min-width: 0; }
   .mx-lanes { display: grid; overflow-x: auto; }
   .mx-axis, .mx-lane { display: grid; grid-template-columns: 18rem repeat(var(--mx-days), minmax(4.75rem, 1fr)); column-gap: 0.25rem; }
   .mx-axis { padding: 0.25rem 0; }
@@ -231,48 +250,41 @@
   .mx-ad { display: grid; justify-items: center; gap: 0.125rem; padding: 0.375rem 0; border-radius: 0.75rem; }
   .mx-adw { font-size: max(var(--label-min), 0.75rem); font-weight: 650; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
   .mx-adn { font-size: 1.25rem; font-weight: 700; }
-  .mx-ad.is-ask { background: var(--ink); color: var(--on-ink); }
-  .mx-ad.is-ask .mx-adw { color: var(--on-ink); }
-  .mx-lane { position: relative; grid-template-rows: 3rem auto; row-gap: 0.25rem; padding: 0.875rem 0 0.4375rem; border-top: 1px solid var(--line); }
+  .mx-ad.is-ask { background: var(--k-flight-t); color: var(--k-flight-i); }
+  .mx-ad.is-ask .mx-adw { color: var(--k-flight-i); }
+  .mx-lane { position: relative; grid-template-rows: 2.5rem auto; row-gap: 0.25rem; padding: 0.875rem 0 0.4375rem; }
   .mx-lh { grid-row: 1 / 3; grid-column: 1; display: flex; align-items: center; gap: 0.75rem; padding-right: 0.5rem; }
-  .mx-thumb { flex: none; width: 4.75rem; height: 4.5rem; border-radius: 0.875rem; }
+  .mx-thumb { flex: none; width: 4.5rem; height: 3.75rem; border-radius: 0.875rem; }
   .mx-l-n { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
   .mx-l-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
   .mx-l-s:empty, .mx-l-best:empty { display: none; }
   .mx-l-best { margin: 0.25rem 0 0; font-size: 1.75rem; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
 
   /* a day wearing its sky */
-  .mx-day { grid-row: 1; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1875rem; padding-top: 0.3125rem; border-radius: 0.625rem; color: var(--ink-2); }
-  .mx-day-i { flex: none; color: var(--k-wx); }
+  .mx-day { grid-row: 1; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; padding-top: 0.25rem; border-radius: 0.625rem; color: var(--ink-2); }      /* the sky is kept but quiet: small, plain */
+  .mx-day-i { flex: none; width: 1.0833rem; height: 1.0833rem; color: var(--k-wx); }
   .mx-day.is-wet .mx-day-i { color: var(--k-wx-i); }
-  .mx-day-t { font-size: max(var(--text-min), 1rem); font-weight: 550; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+  .mx-day-t { font-size: max(var(--text-min), 0.9167rem); font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
   .mx-day.is-typ .mx-day-t { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the notes under the matrix say so) */
 
   /* the nights: a ringed band holding its days, its words on the top edge, never past the grid (its columns are the grid's) */
-  .mx-band { position: relative; grid-row: 1; z-index: 0; align-self: stretch; margin: -0.25rem -0.125rem; border-radius: 0.875rem; background: var(--paper-2);
-    box-shadow: inset 0 0 0 0.1875rem var(--ink); pointer-events: none; }
-  .mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.875rem; padding: 0.3125rem 0.625rem; border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink);
+  .mx-band { position: relative; grid-row: 1; z-index: 0; align-self: stretch; margin: -0.25rem -0.125rem; border-radius: 1rem; background: var(--mx-cell);
+    box-shadow: inset 0 0 0 0.125rem color-mix(in srgb, var(--k-flight) 45%, transparent); pointer-events: none; }
+  .mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.875rem; padding: 0.3125rem 0.625rem; border-radius: var(--r-pill); background: var(--k-flight-t); color: var(--k-flight-i);
     font-size: max(var(--label-min), 0.75rem); font-weight: 650; line-height: 1; white-space: nowrap; }
-  .mx-lane.is-lit .mx-band { background: var(--up-bg); box-shadow: var(--sh2); }
+  .mx-lane.is-lit .mx-band { background: color-mix(in srgb, var(--k-flight) 12%, transparent); box-shadow: inset 0 0 0 0.1875rem var(--k-flight); }
   .mx-lane.is-lit .mx-band::after { background: var(--k-ride); color: var(--k-ride-on); }
-  .mx-lane.is-lit .mx-day.is-in { color: var(--up-fg2); }
-  .mx-lane.is-lit .mx-day.is-in .mx-day-i { color: var(--up-fg); }
 
   /* the start prices: the big numbers */
-  .mx-lane > .mx-sq { grid-row: 2; z-index: 1; align-self: start; min-height: 2.5rem; padding: 0 0.25rem; border-radius: var(--r-pill); gap: 0; }
+  .mx-lane > .mx-sq { grid-row: 2; z-index: 1; align-self: start; min-height: 3rem; padding: 0 0.25rem; border-radius: 1rem; gap: 0; }
   .mx-lane .mx-v { font-size: 1.5rem; font-weight: 750; letter-spacing: -0.03em; line-height: 1; }
   .mx-lane .mx-w { font-size: max(var(--label-min), 0.75rem); }
   .mx-lane .mx-sq.is-low .mx-v { color: var(--ok-ink); }
-  .mx-lane .mx-sq.is-on { background: var(--ink); color: var(--on-ink); }
-  .mx-lane .mx-sq.is-on .mx-v { color: var(--on-ink); }
-  .mx-lane .mx-sq.is-find { background: var(--k-ride); color: var(--k-ride-on); box-shadow: none; }
-  .mx-lane .mx-sq.is-find .mx-v { color: var(--k-ride-on); }
-  .mx-lane .mx-sq.is-find.is-on { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
-  .mx-lane .mx-sq.is-over { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
-  .mx-lane .mx-sq.is-over.is-on { background: var(--ink); box-shadow: none; }
-  .mx-lane .mx-sq.is-over.is-on .mx-v { color: var(--on-ink); }
-  .mx-lane .mx-sq.is-open { box-shadow: none; }
-  .mx-lane .mx-sq.is-find.is-open { box-shadow: inset 0 0 0 0.1875rem var(--ink); }
+  .mx-lane .mx-sq.is-on { background: var(--k-flight-t); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }      /* the start whose nights the band shows */
+  .mx-lane .mx-sq.is-over { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+  .mx-lane .mx-sq.is-over.is-on { box-shadow: inset 0 0 0 0.125rem var(--k-flight); }
+  .mx-p-art { height: 9rem; }
+
 }
 
 @media (min-width: 1020px) {

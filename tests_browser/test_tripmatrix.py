@@ -58,7 +58,7 @@ def matrix(browser, base_url, stand):
     contexts = []
 
     def matrix(viewport=DESKTOP, js=True, scheme="light", motion=False, url=URL, wait=True, signed_in=False, touch=False):
-        phone = viewport is PHONE
+        phone = viewport is PHONE or viewport["width"] < 600
         ctx = browser.new_context(viewport=viewport, reduced_motion="no-preference" if motion else "reduce", java_script_enabled=js, color_scheme=scheme,
                                   has_touch=phone or touch, is_mobile=phone)
         ctx.set_default_timeout(8000)
@@ -137,11 +137,11 @@ def test_only_squares_in_view_are_asked_for_and_the_rest_wait_as_skeletons(matri
 
 def test_a_square_scrolled_past_before_its_turn_is_never_asked_for(matrix, stand, slow_server):
     slow_server(r"/plan/matrix/tile", 0.6)
-    page = matrix(PHONE, wait=False)
+    page = matrix({**PHONE, "height": 300}, wait=False)      # F-245: the cards are denser, so the prefetch margin is a screen tall, so on a 844px screen a jump to the bottom still reaches the second card; a 300px screen passes the first three
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     page.wait_for_function("() => document.querySelectorAll('.mx-card[data-lane=\"orangecounty+sandiego\"] .mx-sq.is-wait').length === 0", timeout=15000)
-    middle = [k for k in stand.asked if k.startswith("losangeles|")]
-    assert middle == [], middle                                                               # passed by before its turn: never searched (F-238: the page is shorter now, so the second card is the one a jump to the bottom passes)
+    middle = [k for k in stand.asked if k.split("|")[0] in ("sandiego", "losangeles", "orangecounty")]
+    assert middle == [], middle                                                               # passed by before its turn: never searched (F-245: on this screen the third card is the one a jump to the bottom passes)
 
 
 def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_is_said(matrix, slow_server):
@@ -287,7 +287,7 @@ def test_the_laptop_lane_days_wear_their_sky_and_the_totals_are_big_and_ringed_i
     assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l").startswith("Found · +")
     colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find'), o = document.querySelector('.mx-lane:not(.is-lit) .mx-sq.is-on');
         return [c(f), c(o)]; }""")
-    assert colours[0] == "rgb(255, 212, 59)" and colours[1] == "rgb(11, 11, 13)", colours      # the find is yellow, the nights shown are ink
+    assert colours[0] == "rgb(67, 56, 202)" and colours[1] == "rgb(228, 227, 251)", colours      # F-245: the find is the one lit square (the flight indigo), the nights shown a quiet tint of it
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
 
 
@@ -700,3 +700,49 @@ def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_popover_and_tabbi
     page.keyboard.press("Escape")
     expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
     focused(page, '.mx-tk-flex > summary')       # and Escape gives focus back to the word
+
+
+WORDS_JS = """() => [...document.querySelectorAll('#mx *')].filter(e => !(e instanceof SVGElement) && e.closest('.mx-sr') === null &&
+  [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+  return {t: e.textContent.trim().slice(0, 24), c: s.color, x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height,
+          shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && !e.closest('.mx-pop, .mx-isle, .mx-side, .is-off') }; })"""
+
+
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_every_word_on_the_translucent_card_is_4_5_to_1_on_what_is_really_painted(matrix, viewport, scheme, tmp_path):
+    """F-245 (D-590): the card is see-through over a wash, which tests_browser/look.py cannot measure (it skips a gradient under the text), so measure the pixels:
+    hide every word, photograph the page, and compare each word's own colour with the median of the pixels where it sits."""
+    from io import BytesIO
+    from PIL import Image
+    page = matrix(viewport)
+    page.evaluate(f"localStorage.setItem('ga-mode', '{scheme}')")
+    page.reload()
+    page.wait_for_selector("#mx.is-live")
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    page.wait_for_timeout(700)
+    words = [w for w in page.evaluate(WORDS_JS) if w["shown"]]
+    assert len(words) > 30
+    page.add_style_tag(content="#mx, #mx * { color: transparent !important; text-decoration-color: transparent !important; text-shadow: none !important; }")
+    shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
+
+    def lum(c):
+        v = [x / 255 for x in c[:3]]
+        v = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in v]
+        return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]
+    low = []
+    for w in words:
+        box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
+        if box[2] > shot.width or box[3] > shot.height:
+            continue
+        px = sorted(shot.crop(box).getdata(), key=lum)
+        bg = px[len(px) // 2]
+        m = re.findall(r"[\d.]+", w["c"])
+        scale = 255 if w["c"].startswith("color(srgb") else 1      # a color-mix() answers as color(srgb 0.9 0.9 0.95 / a)
+        fg = [float(x) * scale for x in m[:3]]
+        a = float(m[3]) if len(m) > 3 else 1.0
+        fg = [f * a + b * (1 - a) for f, b in zip(fg, bg)]
+        hi, lo = max(lum(fg), lum(bg)), min(lum(fg), lum(bg))
+        if (hi + 0.05) / (lo + 0.05) < 4.5:
+            low.append((w["t"], round((hi + 0.05) / (lo + 0.05), 2)))
+    assert not low, low

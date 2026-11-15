@@ -517,13 +517,14 @@ def matrix_page(s: State, family="", typed="", problems=()):
                Span(SAMPLE, cls="mx-sample") if meta_sample else "", P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"),
                import_el(), about_el(s, skies, meta_sample), cls="mx-meta", id="mx-meta")
     waiting = len(known) < total
-    body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
+    card = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="mx-sr"),
                Div(sentence(s, typed, problems), meta, cls="mx-lead"),
                Div(find_el(s, found), cls="mx-news", id="mx-news"),
                stage, cards, credit_el(skies),
                Script(NotStr(page_data(s, lanes, windows, known)), type="application/json", id="mx-data"),
                fact_el(s),      # last in the matrix: sticky to the bottom of the screen while the matrix is in view, never over the footer below it
                cls="mx", id="mx", data_waiting="1" if waiting else "0")
+    body = Div(card, cls="mx-wrap")      # F-245: the whole matrix is one card (translucent) over a soft wash, like the cover's frame
     return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False)
 
 
