@@ -18,7 +18,7 @@ COCKPIT = "/trip/cockpit"
 
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
-    links = ([("Community trips", "/community")] if showcase.on() else []) + [("For creators", "/for-creators")]
+    links = [("Guides", "/guides")]
     return links if ses.request_traveler() else [*links, ("Sign in", ses.signin_href())]
 
 

@@ -17,6 +17,7 @@ OPEN_FOR_VIEWERS = {
     "/signin", "/logout", "/signout",                         # signing in and out
     "/family/phone",                                         # my own phone number (F-069)
     "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
+    "/guides/make/trip",                                      # F-262: a draft of my planned trip is the person's own
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/creators/import", "/creators/import/{token}",           # a creator's import of their own post (F-183): their own draft and their own page, not a family's plan
     "/join/{token}",                                          # using an invite link: joining another family

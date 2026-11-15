@@ -67,7 +67,7 @@ def paste_page(session, link="", text="", error="", status=200):
                        form, creatordrafts.bulk_card() if mode != "manual" else "",
                        P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), id="landing", cls="ci ga-wrap"),
                studio.stage(), studio.foot(), cls="cv-paste")
-    return FtResponse(page("Turn your post into a trip", body, current="/for-creators", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv"), status_code=status)
+    return FtResponse(page("Turn your post into a trip", body, current="/guides", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv"), status_code=status)
 
 
 def _steps(session, link, text, how):
@@ -119,7 +119,7 @@ def _told(step, value) -> str:
     d = value
     heard = iter(creatorbook.said(d.get("words") or [], [s["name"] for day in d["days"] for s in day["stops"]]))      # the post's own sentence that names each stop, "" when it names none
     return _line(event="draft", id=d["id"], title=d["title"], place=d["place_name"] or cd.PLACES.get(d["place"], ""), editor=f"{PATH}/{d['id']}", preview=f"{PATH}/{d['id']}/preview",
-                 book=f"{PATH}/{d['id']}/book", days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"], "kind": creatorbook.kind_of(s["name"]), "said": next(heard)} for s in day["stops"]]} for day in d["days"]],
+                 guide=f"{PATH}/{d['id']}/guide", days=[{"title": day["title"], "stops": [{"time": s["time"], "name": s["name"], "note": s["note"], "kind": creatorbook.kind_of(s["name"]), "said": next(heard)} for s in day["stops"]]} for day in d["days"]],
                  tips=d["tips"], unsure=cd.UNNAMED)
 
 
@@ -176,10 +176,10 @@ async def _book_act(session, me, d, do, f):
 def _published(me, d, row) -> dict:
     """What the book's script shows once a draft is published: its link, the blog badge's code, the stamp, and whether it is listed or waits for the captain (D-189)."""
     from gitaway import blogbutton
-    from gitaway.pages import creatorbook
+    from gitaway.pages import guidepage
     state = community.review_state(d["slug"])
-    return {"ok": True, "slug": d["slug"], "link": f"{blogbutton.base_url()}/trips/{d['slug']}/book", "code": blogbutton.html_snippet(d["slug"], (community.creator_of(me.id) or {}).get("handle", "")),
-            "stamp": creatorbook.stamp_of(row["updated_at"]), "listed": state != "pending", "state": state, "host": cd.domain_of(d)}
+    return {"ok": True, "slug": d["slug"], "link": f"{blogbutton.base_url()}/trips/{d['slug']}", "card": f"/trips/{d['slug']}/card.png", "code": blogbutton.html_snippet(d["slug"], (community.creator_of(me.id) or {}).get("handle", "")),
+            "stamp": guidepage.stamp_of(row["updated_at"]), "listed": state != "pending", "state": state, "host": cd.domain_of(d)}
 
 
 def register(app):
@@ -247,7 +247,7 @@ def register(app):
             await run_in_threadpool(cd.apply, me.id, d, f, do)     # may fetch and re-encode the picked pictures
         except HubError as e:
             return editor_page(getattr(e, "draft", None) or d, error=str(e))      # a refused link shows the form as typed, with the sentence (F-196)
-        return RedirectResponse({"preview": f"{PATH}/{token}/preview", "book": f"{PATH}/{token}/book"}.get(do, f"{PATH}/{token}"), status_code=303)
+        return RedirectResponse({"preview": f"{PATH}/{token}/preview", "book": f"{PATH}/{token}/guide", "guide": f"{PATH}/{token}/guide"}.get(do, f"{PATH}/{token}"), status_code=303)
 
     @app.get(PATH + "/{token}/preview")
     def preview(session, token: str):

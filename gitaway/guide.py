@@ -63,7 +63,7 @@ class Guide:
     title: str
     place: str
     by: str
-    first: str               # the creator's first name, for "Maya's link"
+    first: str               # the creator's first name, for "Maya's link" (a site's name when nobody has vouched for the creator yet)
     days: list
     tiles: list
     tips: list
@@ -79,6 +79,15 @@ class Guide:
     @property
     def stops(self) -> int:
         return sum(len(d.stops) for d in self.days)
+
+    @property
+    def poss(self) -> str:
+        """"Maya's" (the creator's first name), or "the creator's" when the byline is a site that nobody has vouched for yet (D-189) or there is none."""
+        return f"{self.first}'s" if self.first and "." not in self.first else "the creator's"
+
+    @property
+    def Poss(self) -> str:      # noqa: N802 - the same, to start a sentence or a label
+        return self.poss[0].upper() + self.poss[1:]
 
     @property
     def nights(self) -> int:
@@ -104,20 +113,20 @@ def _stops(day, i, trip, first, tips, used) -> list:
         why = (s.said or s.note or "").strip()
         link = safe_href(s.link) if s.link else ""
         tip = cb.said(tips, [s.title], used)[0]
-        out.append(GStop(f"d{i}s{j}", i, j + 1, len(day.stops), s.title, cb.kind_of(s.title), cb.KINDS[cb.kind_of(s.title)], s.time or "", why, cost_of(why), tip, link, _host(link)))
+        out.append(GStop(f"d{i}s{j}", i + 1, j + 1, len(day.stops), s.title, cb.kind_of(s.title), cb.KINDS[cb.kind_of(s.title)], s.time or "", why, cost_of(why), tip, link, _host(link)))
     return out
 
 
 def tiles(trip: Itinerary, days: list, tips: list, host: str) -> list:
     """The at-a-glance tiles: only for what the guide knows (days always; who it suits when the creator marked it; tips when it has any; the post when it came from one)."""
     n, stops = len(days), sum(len(d.stops) for d in days)
-    out = [Tile("plan", "Days", f"{n} day{'s' if n != 1 else ''}", f"{stops} stop{'s' if stops != 1 else ''}")]
+    out = [Tile("calendar", "Days", f"{n} day{'s' if n != 1 else ''}", f"{stops} stop{'s' if stops != 1 else ''}")]
     kinds = hub.tag_keys(trip)
     suits = [word for key, word in SUITS if key in kinds]
     if suits:
         out.append(Tile("users", "Suits", " and ".join(suits[:2]), "As the creator marks it"))
     if tips:
-        out.append(Tile("bulb", "Tips", f"{len(tips)} tip{'s' if len(tips) != 1 else ''}", "In the creator's words"))
+        out.append(Tile("spark", "Tips", f"{len(tips)} tip{'s' if len(tips) != 1 else ''}", "In the creator's words"))
     if host:
         out.append(Tile("link", "From", host, "Their original post"))
     return out
@@ -128,7 +137,7 @@ def from_trip(trip: Itinerary, *, stamped: str = "", private: list | None = None
     src = trip.source
     by = (src.byline.split(" · ")[0] if src and src.byline else "") or trip.author
     place = (trip.place or "").split(",")[0].strip() or trip.title
-    first = (by.split() or ["The creator"])[0]
+    first = (by.split() or [""])[0]
     tips, used = list(trip.tips), set()
     days = [GDay(i + 1, d.title, _stops(d, i, trip, first, tips, used), d.note) for i, d in enumerate(trip.days)]
     url = safe_href(src.url) if src and src.url else ""

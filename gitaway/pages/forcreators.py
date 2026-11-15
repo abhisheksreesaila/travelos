@@ -1,13 +1,13 @@
-"""The For creators page (F-186): GET /for-creators, the page the captain sends to bloggers.
+"""Make a guide from your blog post (F-186, F-262): GET /guides/make (it was /for-creators, which redirects to the guide hub), the page the captain sends to bloggers.
 
 It sells in ten seconds: the paste box first (it posts to the F-183 import at /creators/import), a live example trip (the most-forked real published trip, or a
 drawn example, labelled, while nothing real is published), the three promises, "Free. Terms shown on day one.", the creator terms in plain words, and the questions
-bloggers ask. It lives here and not at /creators because /creators is the roster of real creators and answers 404 until someone has published (D-107).
+bloggers ask. It lives here (module name kept) and not at /creators because /creators is the roster of real creators and answers 404 until someone has published (D-107).
 
 Open to everyone, in both showcase modes, with no sample content in it: every word is about what is built.
 """
 
-from fasthtml.common import A, Button, Details, Div, Em, Form, I, H1, H2, H3, Img, Label, Li, Ol, P, Section, Span, Summary, Textarea, Ul
+from fasthtml.common import A, Button, Details, Div, Em, Form, I, H1, H2, H3, Img, Label, Li, Link, Ol, P, Section, Span, Summary, Textarea, Ul
 
 from gitaway import affiliate, community, session as ses
 from gitaway.icons import icon
@@ -77,14 +77,14 @@ def _paste(signed_in):
         bookview.ico("link"),
         Label("A link to your blog post, YouTube video or Instagram post, or the text itself", fr="fc-text", cls="v2-sr"),
         Textarea(id="fc-text", name="text", rows="1", maxlength="100000", placeholder="Paste your blog, YouTube or Instagram link", autocomplete="off", spellcheck="false"),
-        Button("Make my book", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
+        Button("Make my guide", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
         action=IMPORT, method="post", id="fc-paste", cls="paste", data_signed_in="1" if signed_in else "0")
 
 
 def hero(signed_in):
     return Section(
-        Div(Div(Span(I(), "For travel creators", cls="kicker"), H1("Paste your post. ", Em("It becomes a trip"), " families can book.", cls="disp land-h"),
-                P("Your days, your stops and your own sentences, bound into a book anyone can flip through and plan from. Your name on the cover, your link inside.", cls="land-sub"),
+        Div(Div(Span(I(), "Make a guide", cls="kicker"), H1("Paste your post. ", Em("It becomes a guide"), " families can plan from.", cls="disp land-h"),
+                P("Your days, your stops and your own sentences, laid out stop by stop so anyone can scan it and plan from it. Your name on it, your links inside.", cls="land-sub"),
                 _paste(signed_in), studio.example_chips(),
                 studio.points(Span(Span(icon("check", 17, 2.4), cls="ic", style="--k:var(--bk-tix)"), FREE, " You tick \"This is my post\" before anything goes public.", cls="point v2-glass", id="fc-free")), cls="land-copy"), studio.art(), cls="land"))
 
@@ -106,6 +106,6 @@ def page_body(signed_in):
 
 
 def register(app):
-    @app.get("/for-creators")
-    def for_creators(session):
-        return page("For creators", page_body(bool(ses.current_traveler(session))), current="/for-creators", head=studio.HEAD, description=LEDE, v2="cv")
+    @app.get("/guides/make")
+    def make_a_guide(session):
+        return page("Make a guide", page_body(bool(ses.current_traveler(session))), current="/guides", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/guides.css")), description=LEDE, v2="cv")

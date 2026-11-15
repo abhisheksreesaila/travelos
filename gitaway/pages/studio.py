@@ -6,12 +6,12 @@ tagged with the stop they name, the days and stops land under the story line, th
 
 from fasthtml.common import A, Button, Div, Footer, H2, H3, I, Img, Li, Link, Ol, P, Script, Section, Span
 
-from gitaway import creatorbook as cb, itineraries, showcase
+from gitaway import showcase
 from gitaway.pages import bookview
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/cv2.css"), Link(rel="stylesheet", href="/assets/css/placeart.css"), Script(src="/assets/js/creatorimport.js", defer=True))
 EXAMPLE = ("https://theplanetd.com/48-hours-in-lisbon-itinerary/", "The Planet D · 48 Hours in Lisbon", "P")      # the real post the recorded test fixture is (tests/fixtures/creator_import)
-STEPS = ("Reading your post", "Finding days and stops", "Binding your book")
+STEPS = ("Reading your post", "Finding days and stops", "Laying out your guide")
 
 
 def example_chips() -> Div:
@@ -26,14 +26,10 @@ def points(*more) -> Div:
 
 
 def art() -> Div:
-    """The landing's picture: on the showcase a fan of the sample books (labelled); always the example post's card, drawn."""
-    fan = ""
-    if showcase.on():
-        books = [cb.from_trip(t, sample=True) for t in list(itineraries.ITINERARIES.values())[:3]]
-        fan = Div(*[bookview.mini_cover(b) for b in books], cls="fan")
+    """The landing's picture: the example post's card, drawn (the Lisbon post the tests record)."""
     card = Div(Div(Span(), Span(), Span(), cls="bar"), Div(bookview.drawing(("bookart", "lisbon"), "A drawing of Lisbon, not a photograph"), cls="ph"), Span("48 Hours in Lisbon, Itinerary", cls="t"),
                Span("theplanetd.com", cls="s"), Span(cls="ln"), Span(cls="ln s"), cls="postcard")
-    return Div(fan, card, Span("An example post" + (" and three sample books" if fan else ""), cls="smp art-note"), cls="land-art", aria_hidden="true")
+    return Div(card, Span("An example post", cls="smp art-note"), cls="land-art", aria_hidden="true")
 
 
 def stage() -> Section:
@@ -45,12 +41,12 @@ def stage() -> Section:
                    Div(H2(Span(cls="sk"), id="postT", cls="post-t disp"), P(Span(cls="sk", style="width:40%"), id="postBy", cls="post-by"), cls="post-text"), cls="post-main"),
                Div("In the post's own words", cls="river-h"), Div(id="river", cls="river"), cls="post", id="postCard")
     itin = Section(Div(H3("Your trip, as the post tells it"), Span("0 stops", id="itinCount"), cls="itin-h"), Div(id="days"),
-                   Div(Div(Span("Your book is ready", cls="b"), Span("", id="readyLine"), A("Edit the details first", href="#", cls="ready-edit", id="readyEdit"), cls="t"),
-                       A("Open your book", bookview.ico("arrow"), href="#", cls="go", id="openBook"), cls="ready", id="ready", hidden=True),
+                   Div(Div(Span("Your guide is ready", cls="b"), Span("", id="readyLine"), A("Edit the details first", href="#", cls="ready-edit", id="readyEdit"), cls="t"),
+                       A("Open your guide", bookview.ico("arrow"), href="#", cls="go", id="openBook"), cls="ready", id="ready", hidden=True),
                    cls="itin v2-glass", id="itin", aria_live="polite")
     return Section(Div(head, Div(post, itin, cls="imp-grid"), P("", id="impNote", cls="imp-note", hidden=True), P("", role="status", cls="v2-sr", id="cm-live"), cls="imp"), id="imp", hidden=True, aria_label="Reading your post")
 
 
 def foot() -> Footer:
     """The creator pages' foot: the legal pages, and what the sample books are."""
-    return Footer(A("Privacy", href="/privacy"), A("Terms", href="/terms"), Span("Sample books are made up so you can see the shelf; real ones carry a creator's name and a link to their post.") if showcase.on() else "", cls="cb-foot")
+    return Footer(A("Privacy", href="/privacy"), A("Terms", href="/terms"), Span("Sample guides are made up so you can see how they read; real ones carry a creator's name and a link to their post.") if showcase.on() else "", cls="cb-foot")

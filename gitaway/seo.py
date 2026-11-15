@@ -14,13 +14,19 @@ from sqlalchemy import text
 
 from gitaway import blogbutton, community, creatordraft
 
-STATIC = ("/", "/for-creators", "/privacy", "/terms")      # the pages that exist in both modes and say nothing private
+STATIC = ("/", "/guides", "/privacy", "/terms")      # the pages that exist in both modes and say nothing private
 DISALLOW = ("/admin", "/claim/", "/go/", "/creators/import", "/report")      # the captain's page, a claim link, the partner redirect, a creator's private drafts, the report form
 
 
 def imported(slug) -> bool:
     with creatordraft._db() as db:
         return db.conn.execute(text("SELECT 1 FROM creator_drafts WHERE slug = :s"), {"s": str(slug)}).fetchone() is not None
+
+
+def imported_slugs() -> set:
+    """Every slug that came through the creator import (or "from my trip"): the guides that were made by a person, as `imported` says for one."""
+    with creatordraft._db() as db:
+        return {r[0] for r in db.conn.execute(text("SELECT slug FROM creator_drafts"))}
 
 
 def indexable_trips() -> list:

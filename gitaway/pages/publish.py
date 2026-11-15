@@ -96,7 +96,7 @@ def editor_page(session, live=None, fresh=(), error="", just=False):
     done = Div(Span(icon("check", 22, 2.6), "It's live", cls="pb-chip pb-chip-live"),
                P("Anyone can read it and fork it now. Publish again to update it."),
                Div(A(icon("share", 20), "View your trip page", href=f"/trips/{live['slug']}", cls="btn btn-primary", id="pb-view"),
-                   A("See it in Community trips", href="/community", cls="btn"), cls="pb-actions"), cls="pb-live card", role="status") if live and just else ""
+                   A("See it in Guides", href="/guides", cls="btn"), cls="pb-actions"), cls="pb-live card", role="status") if live and just else ""
     add = Div(Label(icon("plus", 20, 2.4), Span("Add photos from your phone"), Input(type="file", name="photo", accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*", multiple=True, id="pb-add", cls="sr-only"), cls="btn pb-add-b", fr="pb-add"),
               Span(role="status", aria_live="polite", id="pb-add-say", cls="pb-hint"), cls="pb-addrow")
     form = Form(

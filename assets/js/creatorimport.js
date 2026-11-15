@@ -1,5 +1,5 @@
-// The magic import (F-183, F-235, F-253): "Make my book" asks the server to tell the page as it works (X-Magic: one JSON line per step). The post's card grows with its title and picture as soon as
-// they are read, its own sentences arrive highlighted while the draft is made, then the days and stops land under the story line, tagged with the sentence that names them, and "Your book is ready".
+// The magic import (F-183, F-235, F-253): "Make my guide" asks the server to tell the page as it works (X-Magic: one JSON line per step). The post's card grows with its title and picture as soon as
+// they are read, its own sentences arrive highlighted while the draft is made, then the days and stops land under the story line, tagged with the sentence that names them, and "Your guide is ready".
 // Every word shown is the post's or the draft's. All time is a --cv-d* token (v2-tokens.css) read with getComputedStyle; reduced motion shows everything at once. Without fetch streaming, or without
 // script, the form just submits and the browser waits (the server answers with the editor).
 (function () {
@@ -127,13 +127,13 @@
       await wait('--cv-d250'); if (!ok()) return;
     }
     compactDay(d.days.length - 1);
-    step(2); story('Binding your book: cover, ' + d.days.length + (d.days.length === 1 ? ' day, ' : ' days, ') + (d.tips.length === 1 ? 'one tip' : d.tips.length + ' tips')); prog(94);
+    step(2); story('Laying out your guide: ' + d.days.length + (d.days.length === 1 ? ' day, ' : ' days, ') + (d.tips.length === 1 ? 'one tip' : d.tips.length + ' tips')); prog(94);
     await wait('--cv-d800'); if (!ok()) return;
     step(3); prog(100); story('Done. Every word is from your post.', true);
     $('readyLine').textContent = d.days.length + (d.days.length === 1 ? ' day · ' : ' days · ') + total + (total === 1 ? ' stop · ' : ' stops · ') + d.tips.length + (d.tips.length === 1 ? ' tip' : ' tips') + ', from your post' +
-      (unsure ? '. ' + unsure + (unsure === 1 ? ' stop needs a name: fix it in the book.' : ' stops need a name: fix them in the book.') : '');
-    $('openBook').href = d.book; $('readyEdit').href = d.editor;
-    $('ready').hidden = false; $('cm-live').textContent = 'Your book is ready: ' + $('readyLine').textContent;
+      (unsure ? '. ' + unsure + (unsure === 1 ? ' stop needs a name: fix it in the guide.' : ' stops need a name: fix them in the guide.') : '');
+    $('openBook').href = d.guide; $('readyEdit').href = d.editor;
+    $('ready').hidden = false; $('cm-live').textContent = 'Your guide is ready: ' + $('readyLine').textContent;
     if (PHONE.matches) $('ready').scrollIntoView({ block: 'nearest', behavior: RM.matches ? 'auto' : 'smooth' });
   }
 

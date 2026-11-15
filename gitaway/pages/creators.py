@@ -21,7 +21,7 @@ from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
-from gitaway.pages.communitytrips import HEAD as HUB_HEAD, card as hub_card
+from gitaway.pages.guides import HEAD as HUB_HEAD, card as hub_card
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/creators.css"), Script(src="/assets/js/creators.js", defer=True))
 SAMPLES = (("a YouTube sample", "https://www.youtube.com/watch?v=our-la-family-week"), ("an Instagram sample", "https://www.instagram.com/reel/Cxyz123/"))
@@ -94,7 +94,7 @@ def real_profile(handle, mine=False):
         Div(Img(src=cover[0], alt=cover[1], loading="lazy", cls="cr-cover") if cover else "",
             Div(real_avatar(c["name"], "cr-avatar cr-avatar-lg"), H1(c["name"]), cls="cr-name-row"),
             P(f"{len(cards)} trip{'s' if len(cards) != 1 else ''} published on GitAway.", cls="cr-bio"), cls="cr-profile-head"),
-        Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="shelf hub-grid"), cls="cr-profile-trips"),
+        Section(H2(f"{c['name'].split()[0]}'s trips"), Div(*[hub_card(x, i) for i, x in enumerate(cards)], cls="gh-grid"), cls="cr-profile-trips"),
         Div(A("All creators", href="/creators", cls="btn btn-sm"), A(icon("flag", 18, 2.2), "Report this creator", href=f"/report?creator={handle}", cls="btn btn-sm", id="report-creator"),
           A(icon("ledger", 18, 2.2), "Your stats", href="/creators/stats", cls="btn btn-sm", id="cr-stats") if mine else "", cls="cr-profile-links"), cls="cr cr-profile ga-wrap")
     return page(c["name"], body, current="/creators", head=(*HUB_HEAD, *HEAD), v2="cv is-results")
@@ -262,7 +262,7 @@ def done_page(session, slug):
             H1("It's live!"),
             P(f"Your trip is in the community hub. Every fork links back to {d.fx.creator} on {d.platform}."),
             Div(A(icon("share", 20), "See your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
-                A("See it in Community trips", href="/community", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
+                A("See it in Guides", href="/guides", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
             cls="cr-done-copy"),
         Div(hub_card(c) if c else "", cls="cr-done-card"), cls="cr cr-done ga-wrap", role="status")
     return page("It's live", body, current="/creators", head=(*HUB_HEAD, *HEAD), v2="cv is-results")
