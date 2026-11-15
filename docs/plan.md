@@ -1536,7 +1536,7 @@ Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on t
 - [ ] the checkout: modern, short, in one flow (guest, payment as LiteAPI's best case, confirm), with the confirmation showing the hotel's contact and the flight's record locator
 - [ ] a compare page with a pick per option and device; the founder picks before F-240 builds it
 
-## F-240 Sign-in: the two halves contrast [review]
+## F-240 Sign-in: the two halves contrast [done]
 Founder, 2026-11-14: "The login page can be slightly improved with some contrast. There's no contrast to the two sides of the page."
 - [x] on a laptop the left half is a sunset in the story's colours (flight indigo → stay violet → food raspberry, a sun, two drifting clouds) with the cover's line in white and yellow; the trip's widgets are white postcards tilted on it; the right half keeps the card on the light canvas (D-550)
 - [x] one voice: the line is the cover's ("Compare the whole trip. Choose it together."), no longer "Take a trip. Leave a trail."

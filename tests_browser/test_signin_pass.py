@@ -91,3 +91,26 @@ def test_the_dev_summary_shows_a_chevron_that_turns_when_open(open_signin):
     open_t = chev.evaluate("e => getComputedStyle(e).transform")
     page.click(".si-sum")
     assert chev.evaluate("e => getComputedStyle(e).transform") != open_t
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_the_sunset_half_reads_in_both_modes(browser, base_url, scheme):
+    """F-240 (D-550): the laptop's left half is the story's colours; its words and the postcards' icons must read on them in light and dark
+    (white words on each stop of the gradient 4.5:1, the yellow line is large text 3:1, each postcard's icon on its card 3:1)."""
+    from tests_browser.test_bubbles import contrast
+    ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce", color_scheme=scheme)
+    try:
+        page = ctx.new_page()
+        page.goto(base_url + CONTEXTS["cold"])
+        page.evaluate(f"document.documentElement.dataset.mode = '{scheme}'")
+        got = page.evaluate("""() => {
+            const rgb = s => s.match(/[\\d.]+/g).slice(0, 3).map(Number), probe = v => { const d = document.createElement('i'); d.style.color = `var(${v})`; document.body.append(d); const c = rgb(getComputedStyle(d).color); d.remove(); return c; };
+            const sky = document.querySelector('.si-sky'), cs = getComputedStyle(sky);
+            return {stops: ['--k-flight', '--k-stay', '--k-food'].map(probe), text: rgb(cs.color), two: rgb(getComputedStyle(document.querySelector('.si-line-two')).color),
+                    icons: [...document.querySelectorAll('.si-w')].map(w => [rgb(getComputedStyle(w.querySelector('svg')).color), rgb(getComputedStyle(w).backgroundColor)])};
+        }""")
+    finally:
+        ctx.close()
+    assert all(contrast(got["text"], s) >= 4.5 for s in got["stops"]), got
+    assert all(contrast(got["two"], s) >= 3 for s in got["stops"]), got
+    assert len(got["icons"]) == 3 and all(contrast(i, bg) >= 3 for i, bg in got["icons"]), got

@@ -75,19 +75,18 @@
   .si-sky > :not(.si-sun, .si-cloud) { position: relative; }
   .si-sun { display: block; position: absolute; z-index: -1; right: -6rem; bottom: -6rem; width: 22rem; height: 22rem; border-radius: 50%; background: var(--k-ride);
             box-shadow: 0 0 0 2.5rem color-mix(in srgb, var(--k-ride) 22%, transparent), 0 0 0 5.5rem color-mix(in srgb, var(--k-ride) 10%, transparent); }
-  .si-cloud { display: block; position: absolute; z-index: -1; fill: color-mix(in srgb, var(--k-on) 16%, transparent); animation: si-drift calc(var(--motion-screen-dur) * 30) var(--motion-ease) infinite alternate; }
+  .si-cloud { display: block; position: absolute; z-index: -1; fill: color-mix(in srgb, var(--k-on) 16%, transparent); }
   .si-cloud.c1 { left: 58%; top: 12%; width: 10rem; } .si-cloud.c2 { left: -2rem; top: 70%; width: 13rem; animation-direction: alternate-reverse; }
-  @keyframes si-drift { to { translate: 3rem 0; } }
   .si-line { margin: 0; font: 760 clamp(3rem, 4.4vw, 4.5rem)/1 var(--font-display); letter-spacing: -0.05em; text-wrap: balance; max-width: 42rem; }
   .si-line-two { display: block; color: var(--k-ride); }
   .si-line-sub { margin: 0; max-width: 34rem; font-size: var(--t-body); font-weight: 520; line-height: 1.5; color: var(--k-on); }
   .si-widgets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.3333rem; max-width: 43.3333rem; margin-top: 2rem; }
   .si-w { position: relative; display: flex; flex-direction: column; gap: 0.3333rem; padding: 1.5rem 1.5rem 1.3333rem; border-radius: 1.8333rem; background: var(--card); color: var(--ink);
-          box-shadow: 0 1.5rem 3rem -1rem rgb(var(--shadow-c) / .45); rotate: var(--r, 0deg); transition: rotate var(--motion-dur) var(--motion-spring), translate var(--motion-dur) var(--motion-spring); }
+          box-shadow: 0 1.5rem 3rem -1rem rgb(var(--shadow-c) / .45); rotate: var(--r, 0deg); transition: rotate var(--motion-desk) var(--motion-ease), translate var(--motion-desk) var(--motion-ease); }      /* the calm desktop (F-156): a short fade-speed settle, no spring */
   .si-w::before { content: ""; position: absolute; left: 1.5rem; right: 1.5rem; top: 0; height: 0.375rem; border-radius: 0 0 0.375rem 0.375rem; background: var(--kf); }
   .si-w-route { --r: -2deg; } .si-w-small:nth-child(2) { --r: 2.5deg; } .si-w-small:last-child { --r: -1deg; }
   @media (hover: hover) and (pointer: fine) { .si-w:hover { rotate: 0deg; translate: 0 -0.5rem; } }
-  .si-w svg { position: absolute; right: 1.5rem; top: 1.5rem; color: var(--kf); }
+  .si-w svg { position: absolute; right: 1.5rem; top: 1.5rem; color: var(--kfi); }      /* the kind's ink: dark on a light card, light on a dark one (3:1 and up) */
   .si-w-route, .si-w-small:nth-child(2) { min-height: 15rem; justify-content: flex-end; }
   .si-w-small:last-child { grid-column: 1 / -1; min-height: 8rem; justify-content: flex-end; }
   .si-w-k { position: absolute; left: 1.5rem; top: 1.5rem; font-size: var(--t-label); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
@@ -100,5 +99,5 @@
   #si-title { font-size: var(--t-h1); }
   .si-google, .si-faceid, .si-dev { min-height: 4.6667rem; }
 }
-@media (min-width: 1020px) and (prefers-reduced-motion: reduce) { .si-cloud { animation: none; } .si-w { transition: none; } }
-.k-flight { --kf: var(--k-flight); } .k-stay { --kf: var(--k-stay); } .k-see { --kf: var(--k-see); } .k-food { --kf: var(--k-food); }
+@media (min-width: 1020px) and (prefers-reduced-motion: reduce) { .si-w { transition: none; } }
+.k-flight { --kf: var(--k-flight); --kfi: var(--k-flight-i); } .k-stay { --kf: var(--k-stay); --kfi: var(--k-stay-i); } .k-see { --kf: var(--k-see); --kfi: var(--k-see-i); } .k-food { --kf: var(--k-food); --kfi: var(--k-food-i); }
