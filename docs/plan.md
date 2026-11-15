@@ -1598,14 +1598,14 @@ Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) wi
 ## F-253 Creators v2 [done]
 Needs: F-250. Build docs/design/creators-v2 over the existing magic import (F-235): the landing, the live import, the book with page turns, edit and publish, the community shelf (real published books only off the showcase).
 
-## F-254 Subtract the old app [todo]
+## F-254 Subtract the old app [review]
 Needs: F-251, F-252, F-253. Remove the pages the v2 journey replaced (the /plan lanes, /plan/grid, the old checkout, Where to?, forks, the cockpit, day pages, canvas, add screens, partner log …), redirecting their addresses into the journey; Direction A's tokens retire.
 
 ## F-255 The v2 top bar can take you places [done]
 Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand, the sample pill, light/dark and the avatar, but no way to the trip's sections (Plan, Book, Family) and no sign-out or Admin. Design it in the prototypes' language (a frosted pill of 3 to 4 items, the current one marked with aria-current; the avatar opens a small menu with Family, Admin for the captain, Sign out); phone: the same pill at the bottom. Retarget access.refusal's "Back to the trip" to /trip/plan.
 
 ## F-256 Small leftovers from the v2 build [todo]
-- [ ] tests_browser/test_topbar.py `test_the_brand_goes_home` and `test_a_family_with_no_trip_gets_start` still expect the old .ga-topbar on v2 pages: rewrite them for the v2 bar or retire them with F-254
+- [x] tests_browser/test_topbar.py retired with the old bar (F-254); tests_browser/test_v2_topbar.py is the bar test
 - [x] the matrix's "Look at <place>" link is 44px at 390 (tests_browser/test_direction_a_pages.py): now var(--target)
 - [ ] the community shelf's captions under the books sit at uneven heights (maker and days misaligned): one baseline
 - [ ] tests_browser/test_tripmatrix.py `test_letting_go_searches_only_the_squares_in_view…` fails at 390 on master (seen during F-258)
