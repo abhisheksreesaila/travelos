@@ -1542,20 +1542,6 @@ Founder, 2026-11-14: "The login page can be slightly improved with some contrast
 - [x] one voice: the line is the cover's ("Compare the whole trip. Choose it together."), no longer "Take a trip. Leave a trail."
 - [x] fits 1280x800 and 1440x900; tests_browser/test_signin_pass.py and the contrast sweep (test_direction_a_pages.py) pass
 
-## F-241 "What are you after?": a search before the matrix [todo]
-Founder, 2026-11-14: "You don't go to the matrix directly ... some sort of a Google search: what do you want, what are you interested in ... press submit ... a skeleton-like page, then the matrix." Needs: F-240
-- [ ] a signed-in person with no trip lands on one big, joyful ask: a sentence box (where, when, how many nights, who) plus tap-to-pick interests (vegetarian, seafood, beaches, museums, hikes, nightlife, kids...); Submit
-- [ ] the sentence is read by tripsentence's plain rules (nothing guessed); the interests are kept for the family (for planning's recommendations, F-243)
-- [ ] Submit shows a skeleton of the matrix at once, then the matrix fills in square by square
-- [ ] phone and laptop, light and dark, 4.5:1, 48px targets; Plan a trip in the nav opens it
-
-## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [todo]
-Founder, 2026-11-14: "I click on a square, I open up the details ... this hotel, this flight ... I say book this trip. Book this trip should be bold and very easy to find ... it spins and spins, then a confirmation with confetti ... then plan this trip." Builds F-239's recommended picks (A2 on laptop, A3 on phone, B1 ending in B2's stamp) unless the founder picks others. Needs: F-241
-- [ ] the opened square shows the hotel (photo, room, rating, address), the flight (times, airline, stops) and the weather for those nights in one view; another hotel or flight can be chosen right there and the total updates
-- [ ] "Book this trip" is the boldest thing on the screen
-- [ ] booking plays out step by step (holding the room, confirming the flight, paying: LiteAPI's sandbox best case), then a confirmation with confetti, the hotel's contact and a confirmation number, and "Plan this trip"
-- [ ] says "Sandbox booking: nothing is charged"; no guest data kept (D-480..D-489 still hold)
-
 ## F-243 Plan: a joyful calendar that helps [todo]
 See docs/briefs/world-class-journey.md step 6. Needs: F-242
 
@@ -1576,3 +1562,12 @@ Founder, 2026-11-14: "Then you log in. You don't go to the matrix directly, you 
 - [x] on Search a skeleton of the matrix shows at once (three places, five days each, shimmering on the --motion-* tokens; plain under reduced motion), then the matrix
 - [x] colourful in both modes, 4.5:1, 48px targets, phone and laptop; tests: `tests/test_trip_ask.py`, `tests_browser/test_trip_ask.py`
 - Decisions D-560 to D-565.
+## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [review]
+Founder, 2026-11-14: "I click on a square, I open up the details behind it. I like this hotel, I like this flight, this is a perfect combination. I say book this trip. Book this trip should be bold and very easy to find. Then it simulates what would have happened ... It spins and spins. Then finally a confirmation with confetti. Then I'd say plan this trip, leading me to plan." Builds F-239's picks: A2 Trip line (laptop), A3 Bento (phone), checkout B1 Folding cards ending in B2's stamped pass.
+- [x] the opened square shows the hotel (the source's photo, else the place's drawing), room, rating, address; the flight (times, airline, stops); the sky for those nights (typical days say so); the total
+- [x] the hotel and the flight switch in place where the source gave alternatives, the total moves by exactly the difference, and Book and Save use the choice (priced again on the server)
+- [x] "Book this trip" is the boldest thing on screen: yellow, 64px, sticky on the phone
+- [x] the checkout is three folding cards (guest, payment, confirm); the booking plays out in four steps with a spinner while the real prebook and book calls run (staged for the payment and for the sample); a mistake folds the cards back
+- [x] the confirmation is a stamped pass with the booking id, the hotel's confirmation code and address (only what the answer gives) and confetti (CSS, tokens, none under reduced motion); "Plan this trip" goes to the trip's cockpit
+- [x] every F-233 rule kept (no guest data kept, validate/escape/never log, budgets, viewers refused, "Sandbox booking: nothing is charged" / "Sample booking: ..."); light and dark at 4.5:1, 48px targets (audited at 390 and 1440)
+- [x] screenshots at 390 and 1440 (opened square, checkout, mid-booking, confirmation) in docs/report/f242-*.png; decisions D-570 to D-578

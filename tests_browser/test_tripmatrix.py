@@ -300,7 +300,8 @@ def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_t
     expect(lane.locator(".mx-band")).to_have_attribute("style", re.compile(r"grid-column: 7 / span 5"))
     expect(lane.locator(".mx-l-best")).to_have_text("$2,400")
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles · Dec 13 to 17")
-    assert page.locator("#mx-side").bounding_box()["y"] + page.locator("#mx-side").bounding_box()["height"] <= 900      # the bar is in view, at the bottom
+    box = page.locator("#mx-side").bounding_box()
+    assert 0 <= box["y"] < 900 and page.locator("#mx-side .mx-book").bounding_box()["y"] < 900      # F-242: the opened trip is under the calendar and a tap brings it into view, Book this trip with it
     assert page.errors == []
 
 
@@ -613,16 +614,16 @@ def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand)
 
 
 def test_at_1100_the_band_label_and_the_trip_bars_chips_stay_inside(matrix):
-    """F-236 review: the band's words sit inside the band and the bar's chips inside the bar at the laptop's narrow end."""
+    """F-236 review: the band's words sit inside the band and the opened trip's tiles, timeline blocks and cost card inside it at the laptop's narrow end."""
     page = matrix(TABLET)
     page.click("#mx-find-a")
     fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), a = getComputedStyle(b, '::after'), w = parseFloat(a.width);
         return [w > 0 && r.right - parseFloat(a.right) - w >= r.left - 1, r.width]; })""")
     assert len(fit) == 5 and all(ok for ok, _ in fit), fit
-    bar = page.evaluate("""() => { const b = document.querySelector('#mx-side .mx-b').getBoundingClientRect(), s = document.getElementById('mx-side'),
-        chips = [...document.querySelectorAll('#mx-side .mx-part')].map(e => e.getBoundingClientRect());
-        return [chips.length, chips.every(c => c.left >= b.left - 1 && c.right <= b.right + 1), s.scrollWidth <= s.clientWidth + 1, document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1]; }""")
-    assert bar[0] >= 4 and all(bar[1:]), bar
+    bar = page.evaluate("""() => { const b = document.getElementById('mx-side').getBoundingClientRect(), s = document.getElementById('mx-side'),
+        parts = [...document.querySelectorAll('#mx-side .mx-tile, #mx-side .mx-g-b, #mx-side .mx-buy')].map(e => e.getBoundingClientRect());
+        return [parts.length, parts.every(c => c.left >= b.left - 1 && c.right <= b.right + 1), s.scrollWidth <= s.clientWidth + 1, document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1]; }""")
+    assert bar[0] >= 6 and all(bar[1:]), bar
 
 
 def test_the_floating_note_sits_above_the_bar_whatever_its_height_not_at_a_magic_number(matrix, slow_server):

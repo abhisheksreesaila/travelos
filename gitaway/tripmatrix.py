@@ -13,7 +13,7 @@ Nothing here fetches or invents: a total is a source's (gitaway/gridsource.py `s
 marks the squares with the same rules as answers land (`marks`, `find`): change one, change the other (tests_browser/test_tripmatrix.py compares them).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 
 from gitaway.partners import places as places_
@@ -78,6 +78,7 @@ class StayPart:
     rating: str           # "9.4 of 10 · 1,063 reviews", or ""
     cents: int            # all its nights, the whole party, fees paid at the hotel included
     offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
+    address: str = ""     # the hotel's street address from the source, or "" (F-242: the opened square and the pass show it)
 
 
 @dataclass(frozen=True)
@@ -90,6 +91,8 @@ class Square:
     drive: int | None = None          # minutes from the first airport to the first stay's town, when a router said
     fetched: datetime | None = None   # when the older of its answers was fetched
     sample: bool = False
+    flights: tuple = ()               # F-242: the flights the source gave (the shown one first, at most MAX_ALTS); one or none means there is no choice
+    stay_alts: tuple = ()             # F-242: for each stay of `stays`, the stays the source gave for it (the shown one first, at most MAX_ALTS)
 
     @property
     def key(self) -> str:
@@ -115,6 +118,33 @@ class Find:
     @property
     def key(self) -> str:
         return key(self.lane, self.window)
+
+
+MAX_ALTS = 3
+
+
+def clamp(sq: Square, pk: tuple) -> tuple:
+    """`pk` (the flight index and one index per stay, as `picks` read them) made to fit `sq`: an index the square does not have (a stale or forged form) is the shown part."""
+    flight = pk[0] if 0 <= pk[0] < len(sq.flights) else 0
+    alts = sq.stay_alts or ((),) * len(sq.stays)
+    return flight, tuple(i if i is not None and 0 <= i < len(a) else 0 for i, a in zip(tuple(pk[1]) + (None,) * len(sq.stays), alts))
+
+
+def pick(sq: Square, flight: int = 0, stays: tuple = ()) -> Square:
+    """The square with another flight and/or other stays chosen (F-242: "switch in place"): `flight` is an index into `sq.flights`, `stays` one index per stay into its
+    `stay_alts`. An index the square does not have keeps the shown part, never raises. The total moves with the choice."""
+    fl, st = clamp(sq, (flight, stays))
+    if not sq.flights:
+        return sq if not any(st) else replace(sq, stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)))
+    return replace(sq, flight=sq.flights[fl], stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)) if sq.stay_alts else sq.stays)
+
+
+def picks(flight="", stays="") -> tuple:
+    """What a form said was chosen (F-242): ("1", "0,2") is (1, (0, 2)). Anything else (a letter, a long number, nothing) is the shown part, never an error."""
+    def n(v):
+        v = str(v).strip()
+        return int(v) if v.isdigit() and len(v) <= 2 else None
+    return (n(flight) or 0, tuple(n(x) for x in str(stays).split(",")[:2]))
 
 
 def key(lane_key, window_key) -> str:
