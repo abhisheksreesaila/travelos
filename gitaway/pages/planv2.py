@@ -18,13 +18,13 @@ import json
 from fasthtml.common import A, Aside, B, Button, Div, H1, H2, Header, Input, Li, Link, NotStr, P, Script, Section, Small, Span, Ul, to_xml
 from starlette.responses import HTMLResponse, JSONResponse
 
-from gitaway import access, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
+from gitaway import access, guide as gd, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import tripcanvas, tripshare
 
 PATH = "/trip/plan"
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
 WX_ICON = {"sun": "sun", "cloud": "cloud", "rain": "rain", "snow": "snow", "wind": "wind"}
 COLS = 7
 
@@ -82,6 +82,8 @@ def _ev(e, lane, across, can_edit, gs, i=0):
     body = [B(e.title), Span(e.when, cls="tm")]
     if e.by and not e.locked:
         body.append(Span(e.by, cls="by"))
+    if e.tag:
+        body.append(Span(icon("list", 13, 2.4), e.tag, cls="gtag"))      # F-263: a plan dropped in from a guide says whose
     if e.locked:
         body.append(icon("lock", 14, 2.4, cls="lk"))
         return A(*body, href=e.href, cls=cls, style=style, data_id=e.id, data_locked="1", aria_label=f"{e.title}, {e.when}. Booked: opens the booking")
@@ -265,8 +267,18 @@ def _facts_widget(v, i):
     return _wg(f"About {v.place}", "info", "flight", Ul(*[Li(P(f.text), A("Source", href=f.source, rel="noopener", cls="fine")) for f in facts[:2]], cls="facts"), i=i)
 
 
-def _rail(v, sugg):
-    ws = [_weather_widget(v, 0), _fits_widget(v, sugg, 1), _went_widget(v, sugg, 2), _facts_widget(v, 3)]
+def _guides_widget(guides, v, i):
+    """"Guides for <place>" (F-263): the guides of the trip's place, each opening in a sheet over the calendar that names the free time it found and drops stops into it."""
+    from gitaway.pages import guidesheet as gs
+    cards, total = guides
+    if not cards:
+        return ""
+    return _wg(f"Guides for {v.place}", "list", "see", P("What other families did there. It opens over your plan, so you keep your place.", cls="fine"),
+               gs.widget_rows(cards, lambda c: gs.sheet_href(c.slug, "plan")), gs.widget_foot(v.place, total, len(cards)), sample=all(not c.real for c in cards), i=i)
+
+
+def _rail(v, sugg, guides=((), 0)):
+    ws = [_guides_widget(guides, v, 0), _weather_widget(v, 0), _fits_widget(v, sugg, 1), _went_widget(v, sugg, 2), _facts_widget(v, 3)]
     ws = [w for w in ws if w != ""]
     return Div(Div(Span(icon("spark", 20, 2.2), cls="ic ai"), Div(B("Help for this trip", cls="disp"), Span("Tap + to drop it into a free slot")), cls="rail-head"),
                Div(*ws, cls="rail-row"), cls="rail-in") if ws else ""
@@ -312,7 +324,7 @@ def plan_page(session, request, arrive=False):
               Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), Span("Plan together"), Span(str(unread), cls="badge", id="pl-badge", hidden=not unread), type="button", cls="together", id="pl-together", aria_haspopup="dialog"),
               Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", id="pl-save"), cls="pl-bar")
     body = Div(bar, _trip_card(v, role),
-               Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
+               Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg, gd.for_place(session, v.place)), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
                Div(Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), "Together", type="button", cls="together", data_together="1"),
                    Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", data_save="1"), cls="dock v2-glass", id="pl-dock"),
                _drawer(v, request), Div(cls="pl-scrim", id="pl-scrim"), Div(id="pl-pop", cls="pop", role="dialog", hidden=True),

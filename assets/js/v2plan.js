@@ -415,6 +415,7 @@
 
   // ---- coming back to the tab: read the trip again (no live channel: a change someone else made shows on return) ----
   function again() { if (document.hidden || drag || !pop.hidden) return; refresh().catch(function () { /* offline: what is drawn stays */ }); if (!side.hidden) loadThread(key); }
+  document.addEventListener('pl:changed', function () { refresh().catch(function () { /* the next return reads it again */ }); });      // a guide's sheet (guidesheet.js) added or took out plans: redraw them (F-263)
   document.addEventListener('visibilitychange', again);
   window.addEventListener('focus', again);
   if (wantCols() !== state.cols) go({ cols: wantCols(), view: state.view });

@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from urllib.parse import quote, urlsplit
 
-from gitaway import asksuggest, creatorbook as cb, hub
+from gitaway import asksuggest, creatorbook as cb, forks, hub, seo
 from gitaway.itineraries import Itinerary, safe_href
 from gitaway.partners import places
 
@@ -168,3 +168,21 @@ def plan_href(place: str, nights: int = 0) -> str:
         start = asksuggest.first_start()
         out += f"&d={start.isoformat()}&r={(start + timedelta(days=nights)).isoformat()}"
     return out
+
+
+def is_guide(found) -> bool:
+    """Does this trip read as a guide? One a creator made (it has a source card, or came through the creator import or "from my trip") or a creator's sample; a family's own published trip and the
+    other samples keep the trip page."""
+    return found is not None and (found.source is not None or (found.real and seo.imported(found.slug)))
+
+
+def for_place(session, place: str, limit: int = 3) -> tuple:
+    """The guides the booking and planning rails offer for `place` (F-263, D-730): (the first `limit` cards, how many in all). Only what the hub lists: published guides (not a trip waiting for the
+    captain's yes, nor one taken down) and, on the showcase, the labelled sample guides; a family's own published trip is not a guide. The place is the guide's own place, matched by name. Off the
+    showcase with none published this is ((), 0) and the rails draw nothing."""
+    want = (place or "").split(",")[0].strip().casefold()
+    if not want:
+        return (), 0
+    found = [c for c in hub.cards(session, q=want) if c.place.casefold() == want and is_guide(forks.resolve(c.slug))]
+    found.sort(key=lambda c: (c.real, -c.days))      # the samples read first on the showcase; the sort is stable among real ones (newest first)
+    return tuple(found[:limit]), len(found)

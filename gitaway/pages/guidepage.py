@@ -21,12 +21,6 @@ from gitaway.layout import page
 from gitaway.pages import guideview
 
 
-def is_guide(found) -> bool:
-    """Does this trip read as a guide? One a creator made (it has a source card, or came through the creator import or "from my trip") or a creator's sample; a family's own published trip and the
-    other samples keep the trip page."""
-    return found is not None and (found.source is not None or (found.real and seo.imported(found.slug)))
-
-
 def stamp_of(iso: str = "") -> str:
     """"Nov 15, 2026" from a stored time, or today."""
     when = datetime.fromisoformat(iso) if iso else datetime.now(timezone.utc)
@@ -73,7 +67,7 @@ def register(app):
     def card(slug: str):
         found = forks_model.resolve(slug)
         row = community.get(slug) if found is not None and found.real else None
-        if row is None or not is_guide(found):
+        if row is None or not gd.is_guide(found):
             return Response("not found", status_code=404, media_type="text/plain")
         g = gd.from_trip(found)
         png = sharecard.render(sharecard.Card(g.title, g.place, (), "", len(g.days), "", f"gitaway.me/trips/{slug}", tripshare.art_for(g.place)))
@@ -100,17 +94,23 @@ def register(app):
         """Add to my plan. The route is not open to a viewer (access.py): only an editor or an admin of the family changes its plan."""
         form = await request.form()
         found = forks_model.resolve(str(form.get("slug") or "")[:80])
-        if not is_guide(found):
+        if not gd.is_guide(found):
             return JSONResponse({"error": "That guide is not here any more."}, status_code=404)
         g = gd.from_trip(found)
         keys = [k for k in form.getlist("k") if isinstance(k, str)][:guideplan.MAX_AT_ONCE]
+        to, after = str(form.get("to") or ""), str(form.get("after") or "")
+        day = int(to) if to.isdigit() and len(to) < 3 else None      # a free morning (F-263): the trip's day it goes into, in order from the minute it starts
         try:
-            got = guideplan.add(session, g, keys)
+            got = guideplan.add(session, g, keys, day, int(after) if after.isdigit() and len(after) < 5 else 0)
         except tripcal.CalendarError as e:
             return JSONResponse({"error": str(e)}, status_code=422)
         n, m = len(got["added"]), len(got["skipped"])
         if not n:
             said = "Already in your plan." if m and len(keys) == 1 else "There is no free time left that fits." if m else "Nothing to add."
             return JSONResponse({**got, "toast": said}, headers={"Cache-Control": "no-store"})
-        said = f"{got['added'][0]['title']} added, {got['added'][0]['when']}" if n == 1 else f"{n} stops added to your plan"
+        if day is not None and n > 1:
+            first, last = got["added"][0], got["added"][-1]
+            said = f"{n} stops added to {first['when'].split(' ')[0]}, {tripcal.fmt_time(first['start'])} to {tripcal.fmt_time(last['end'])}"
+        else:
+            said = f"{got['added'][0]['title']} added, {got['added'][0]['when']}" if n == 1 else f"{n} stops added to your plan"
         return JSONResponse({**got, "toast": said + (f". {m} left out: already there, or no free time." if m else "")}, headers={"Cache-Control": "no-store"})

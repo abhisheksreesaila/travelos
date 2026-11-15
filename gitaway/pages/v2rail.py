@@ -129,13 +129,26 @@ def trend_widget(sample, i):
     return wg("Happening that week", "flame", "stay", _ul([Li(Span(Span(n, cls="b"), Span(d), cls="t")) for n, d in sample["trend"]]), sample=True, i=i)
 
 
-def rail(s, lane, w, *, sq=None, lanes=(), known=None, picked=(), look_up=True):
+def guides_widget(s, lane, w, guides, i):
+    """"Guides for San Diego" (F-263): the published guides of the lane's place (and, on the showcase, the labelled sample ones), each opening in a sheet over the matrix that grows out of its row;
+    nothing when there are none, which off the showcase is most places."""
+    from gitaway.pages import guidesheet as gs, tripmatrix as mx
+    cards, total = guides
+    if not cards:
+        return ""
+    place = lane.places[0].name
+    base = mx.href(s, "/guides/sheet", lane=lane.key, w=w.key, ctx="book").split("?", 1)[1]
+    return wg(f"Guides for {place}", "list", "see", P("What other families did there. It opens over your trips, so you keep your place.", cls="fine"),
+              gs.widget_rows(cards, lambda c: f"/guides/sheet?slug={c.slug}&{base}"), gs.widget_foot(place, total, len(cards)), sample=all(not c.real for c in cards), i=i)
+
+
+def rail(s, lane, w, *, sq=None, lanes=(), known=None, picked=(), look_up=True, guides=((), 0)):
     """The rail's widgets for `lane` on start day `w`: the head, then the widgets that have something real (or, on the showcase, made-up) to say."""
     from gitaway.pages import tripmatrix as mx
     place = lane.places[0]
     sample = v2rail.sample(place) if showcase.on() else None
     hotel = sq.stays[0].name if sq is not None and sq.ok else place.city
-    items = [weather_widget(place, w, 1), where_widget(s, lane, 2, look_up),
+    items = [guides_widget(s, lane, w, guides, 0), weather_widget(place, w, 1), where_widget(s, lane, 2, look_up),
              uber_widget(sample, place, hotel, 3) if sample else "", traffic_widget(sample, 4) if sample else "",
              cheaper_widget(s, lane, w, lanes, known, 5) if known else "", food_widget(sq, place, picked, 6), trend_widget(sample, 7) if sample else "", about_widget(place, 8)]
     head = Div(mx._art(place, "rl-art"), Div(Span(f"Around {place.name}", cls="rl-h"), Span("Follows the place you look at", cls="rl-s")), cls="rl-head")
