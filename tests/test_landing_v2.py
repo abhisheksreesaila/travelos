@@ -36,7 +36,7 @@ def test_other_pages_keep_their_header_nav(client):
     assert "/community" in header and "/for-creators" in header and 'href="/signin"' in header      # signed out, Plan a trip signs in first, and / then decides (D-458, D-461)
     for path in ["/community", "/for-creators"]:       # F-253: the creator pages wear the v2 top bar, which carries the same way in
         top = re.search(r'<div class="v2-top">.*?(?=<main)', _get(client, path), re.S).group(0)
-        assert _hrefs(top)[1:4] == ["/for-creators", "/community", "/signin"] and _hrefs(top)[4].startswith("/signin?next="), path      # Plan a trip signs in first; so does Sign in
+        assert _hrefs(top)[1:4] == ["/signin", "/community", "/for-creators"] and _hrefs(top)[4].startswith("/signin?next="), path      # F-255: the pill begins with Plan a trip (it signs in first), then Community trips and For creators; then Sign in
 
 
 def test_footer_carries_the_links_that_left_the_header(client):
