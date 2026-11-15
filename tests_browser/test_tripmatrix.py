@@ -583,7 +583,7 @@ def test_the_picker_goes_away_on_a_tap_elsewhere_or_escape_and_one_word_opens_at
     expect(page.locator("#v2-pop")).to_be_hidden()
     page.click(".mx-about-btn")
     expect(page.locator(".mx-pop-about")).to_be_visible()
-    page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=1")
+    page.locator(".mx-lane").last.locator(".mx-sq").first.click()      # a square the open About panel does not cover (F-251's panel is taller)
     expect(page.locator(".mx-pop-about")).to_be_hidden()
 
 
