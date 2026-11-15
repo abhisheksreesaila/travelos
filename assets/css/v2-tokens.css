@@ -69,6 +69,10 @@
   --v2-pane: 380ms;        /* the next question sliding in */
   --v2-step: 850ms;        /* one booking step spinning */
   --v2-confetti: 2600ms;   /* the confetti falling */
+  --v2-land-delay: 400ms;  /* planning (F-252): the first booking landing in the calendar after the arrival */
+  --v2-land-stagger: 90ms; /* each next booking landing */
+  --v2-arrive-delay: 120ms; /* the calendar rising after the header */
+  --v2-stamp-delay: 300ms; /* the saved stamp thumping onto the pass */
 
   --r-xl: 2rem; --r-lg: 1.5rem; --r-md: 1.125rem; --r-sm: 0.75rem;
   --lead: 14.125rem; --cw: 6.25rem; --ch: 4.375rem;
