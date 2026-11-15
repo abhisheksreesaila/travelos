@@ -27,7 +27,7 @@ def test_a_signed_in_page_has_the_bar_with_trip_family_ask_picker_sos_and_the_av
     b = bar(client.get("/family").text)
     assert b
     nav = b.split("</nav>")[0]
-    for href in ("/trip", "/trip/family", "/trip/ask"):
+    for href in ("/trip/plan", "/trip/family", "/trip/ask"):
         assert f'href="{href}"' in nav
     for label in ("Trip", "Family", "Ask"):
         assert f">{label}<" in nav.replace(" <kbd>", "<") or label in nav
@@ -120,7 +120,7 @@ def test_trip_opens_day_one_before_the_trip_and_today_during_it(client, monkeypa
     from gitaway import showcase, catalog
     from tests.test_family_storage import THREE_NIGHTS
     book(client, **THREE_NIGHTS)
-    assert 'href="/trip"' in bar(client.get("/family").text)
+    assert 'href="/trip/plan"' in bar(client.get("/family").text)      # F-252: the bar's Trip leads to planning
     assert client.get("/trip", follow_redirects=False).headers["location"].startswith("/trip/cockpit")
     assert 'data-open="0"' in client.get("/trip").text      # today is Sep 30
     monkeypatch.setattr(catalog, "today", lambda: date(2026, 10, 18), raising=False)

@@ -64,9 +64,8 @@ def test_the_section_you_are_in_is_marked(signed_in):
 def test_trip_opens_the_trips_day(signed_in):
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-trip")
-    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201), open on its first day before the trip
-    expect(page.locator("#ck-stub-0.is-open")).to_be_visible()
-    expect(page.locator(f"{BAR} .ga-tb-nav a[aria-current='page']")).to_have_text(["Trip"])
+    page.wait_for_url("**/trip/plan")      # F-252: the bar's Trip leads to the planning calendar, with the booking placed on its first day
+    expect(page.locator(".pl-cal .ev[data-locked]").first).to_be_visible()
 
 
 def test_family_opens_the_family_chat(signed_in):

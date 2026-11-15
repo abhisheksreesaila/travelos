@@ -1,6 +1,6 @@
 """F-233 in a real browser, redone for F-242: Book this trip. A square is opened, the bold button grows the checkout out of it (laptop 1440 and phone 390), the checkout is three
 folding cards (guest, payment, confirm), booking plays out step by step through a recorded LiteAPI sandbox (tests/fixtures/liteapi: prebook.json, book.json) while the real call
-runs, the stamped pass shows LiteAPI's booking id and the hotel's confirmation code with the confetti, and Plan this trip lands on the cockpit with the stay on it.
+runs, the stamped pass shows LiteAPI's booking id and the hotel's confirmation code with the confetti, and Plan this trip lands on the planning calendar with the stay on it.
 Set F233_SHOTS=1 for docs/report/f233-*.png."""
 import json
 import os
@@ -185,9 +185,9 @@ def test_the_button_spins_the_sheet_grows_out_of_it_four_questions_book_and_the_
     assert page.errors == []
     expect(sheet.locator(".mxb-plan")).to_have_text("Plan this trip")
     sheet.locator(".mxb-plan").click()
-    page.wait_for_url("**/trip/cockpit")
+    page.wait_for_url("**/trip/plan?arrive=1")
     page.wait_for_timeout(400)
-    expect(page.locator("body")).to_contain_text("Check in")                                   # the booked stay is on the trip's days
+    expect(page.locator(".pl-cal")).to_contain_text("Check in")                                 # the booked stay is placed in the calendar (F-252)
 
 
 def test_a_sample_square_books_a_sample_stay_and_says_so(matrix, monkeypatch, stand):  # noqa: F811
