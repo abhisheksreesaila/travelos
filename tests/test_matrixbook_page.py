@@ -105,7 +105,7 @@ def test_a_square_on_the_showcase_is_a_sample_booking_and_liteapi_is_never_asked
     done = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST})
     words = text(done.text)
     assert "Booked" in words and "Anne-Marie O’Neil, your sample booking is confirmed." in words and "SAMPLE-" in words
-    assert 'href="/trip/cockpit"' in done.text and "Plan this trip" in words
+    assert 'href="/trip/plan?arrive=1"' in done.text and "Plan this trip" in words
     assert fake.calls(PREBOOK) == [] and fake.calls(BOOK) == []
     rows = stays_booked()
     assert len(rows) == 1 and rows[0]["sample"] == 1
@@ -133,7 +133,7 @@ def test_booking_through_the_sandbox_shows_liteapis_booking_id_and_makes_the_tri
     words = text(done.text)
     assert "Booking id _5hnX-MI7" in re.sub(r"\s+", " ", words) and "Hotel confirmation test" in re.sub(r"\s+", " ", words)
     assert "Sandbox booking: nothing is charged" in words and "Anne-Marie O’Neil, your booking is confirmed." in words and "Search flights on" in words
-    assert 'href="/trip/cockpit"' in done.text
+    assert 'href="/trip/plan?arrive=1"' in done.text
     sent = real.calls(BOOK)
     assert len(sent) == 1 and sent[0]["payment"] == {"method": "ACC_CREDIT_CARD"} and sent[0]["holder"]["email"] == "anne@example.com" and sent[0]["prebookId"] == "mxB7A2bfb"
     assert [(r["booking_id"], r["sample"], r["total_cents"]) for r in stays_booked()] == [("_5hnX-MI7", 0, 35900 + 12000)]

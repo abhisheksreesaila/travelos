@@ -145,7 +145,7 @@ def bar(path=None):
         A("Skip to content", href="#main", cls="ga-skip"),
         Div(A(mark(), Span("GitAway", cls="ga-brand-name"), href="/", cls="ga-brand", aria_label="GitAway home"),
             preview(), cls="ga-tb-l"),       # the honest "Early preview" label, beside the brand
-        Nav(_link("Trip", "/trip", "trip", current, "calendar") if has_trip else _link("Start", showcase.planning_path(), "trip", current, "plus"),
+        Nav(_link("Trip", "/trip/plan", "trip", current, "calendar") if has_trip else _link("Start", showcase.planning_path(), "trip", current, "plus"),
             _link("Book", "/trip/book", "book", current, "ticket") if has_trip else "",
             _link("Family", "/trip/family" if has_trip else "/family", "family", current, "users"),
             A(icon("mic", 15, 2.2), "Ask", Kbd("/", cls="ga-tb-kbd"), href="/trip/ask", cls="ga-tb-link ga-tb-ask", id="ga-tb-ask", aria_current="page" if current == "ask" else None,

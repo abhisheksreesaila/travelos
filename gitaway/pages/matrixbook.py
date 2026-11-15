@@ -190,7 +190,7 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
                      *([P("Hotel confirmation", cls="mxb-k"), P(Span(d.confirmation, cls="mxb-id"), cls="mxb-code")] if d.confirmation else []), cls="mxb-stub-i") for d in res.done], cls="mxb-stub")
     return Div(_confetti(), H3("You’re going to " + lane.name + "!", cls="mxb-q mxb-going"),
                P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), Div(top, mid, stub, cls="mxb-pass"),
-               A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/cockpit", cls="mxb-plan", data_trip="1"),
+               A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1"),
                A(f"Search flights on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener") if flight else "",
                cls="mxb-confirm", data_step="booked")
 

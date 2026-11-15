@@ -66,7 +66,7 @@
   function go(change) { for (var k in change) state[k] = change[k]; closePop(); return refresh(); }
   function post(path, data) {
     var body = new URLSearchParams(); for (var k in data) body.set(k, data[k]);
-    var v = qs({}).split('&'); v.forEach(function (p) { var kv = p.split('='); body.set(kv[0], decodeURIComponent(kv[1])); });
+    body.set('view', state.view); body.set('frm', state.frm); body.set('cols', state.cols); body.set('vday', state.day);      // what the calendar shows, so the answer redraws it (a plan's own day is the body's `day`)
     return fetch(path, { method: 'POST', body: body, credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return { error: 'That did not work.' }; }).then(function (j) { j.ok = r.ok; return j; });
     });
@@ -151,7 +151,7 @@
     input.addEventListener('input', function () { s.title = input.value; });
     var sugList = null;
     if (add && D.sugg.length) {
-      pop.appendChild(label('Suggestions'));
+      var lb = label('Suggestions'); lb.appendChild(el('span', 'smp', 'Sample')); pop.appendChild(lb);
       sugList = el('div', 'sugs');
       sugList.setAttribute('role', 'radiogroup');
       D.sugg.slice(0, 4).forEach(function (x) {
@@ -164,7 +164,6 @@
         sugList.appendChild(b);
       });
       pop.appendChild(sugList);
-      var smp = el('span', 'smp', 'Sample'); pop.insertBefore(smp, sugList);
     }
     pop.appendChild(label('Starts'));
     var st = stepper(function () { return s.start; }, function (v) { s.start = v; clampStart(); st.paint(); paint(); }, function () { return lo; }, function () { return hi - s.len; });
@@ -342,6 +341,7 @@
   function openSide(k) {
     closePop(); side.hidden = false; side.classList.add('in'); root.classList.add('side-open');
     if (phone()) scrim.classList.add('on');
+    fetch('/trip/plan/together', { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (h) { var top = document.getElementById('pl-top'); if (top) top.innerHTML = h; });
     loadThread(k || key); clearInterval(poller); poller = setInterval(function () { if (!document.hidden) loadThread(key); }, POLL);
     var f = $('#pl-say'); if (f && !phone()) f.focus({ preventScroll: true });
   }
@@ -408,6 +408,7 @@
     back.type = 'button'; back.addEventListener('click', closeSheet); foot.appendChild(back); foot.appendChild(el('span', 'sp'));
     if (share) { var s = el('button', 'btn1 sun'); s.type = 'button'; s.innerHTML = icon('share'); s.appendChild(document.createTextNode('Share the trip')); s.addEventListener('click', function () { closeSheet(); share.click(); }); foot.appendChild(s); }
     sheet.appendChild(foot);
+    if (window.GA && GA.hideToast) GA.hideToast(true);
     sheet.hidden = false; sheet.classList.add('in'); root.classList.add('sheet-open'); scrim.classList.add('on'); back.focus({ preventScroll: true });
   }
   $$('#pl-save, [data-save]').forEach(function (b) { b.addEventListener('click', function () { saveNow(b); }); });

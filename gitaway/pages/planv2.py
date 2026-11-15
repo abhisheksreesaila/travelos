@@ -8,6 +8,7 @@ GET  /trip/plan/cal           the calendar as an HTML fragment for `view` (week 
 POST /trip/plan/write         one change of the plan: `op` add (day, start, end, title, kind), edit (act, start, end, day, title, kind), delete (act) or undo (the snapshot an earlier answer gave).
                               JSON {toast, undo, plan, grid}; a refusal is 422 {error} in the calendar's own words. Editors only (gitaway.access gates every write)
 POST /trip/plan/suggest       the rail's "+": put a suggestion in a free slot that avoids a forecast of rain (planv2.pick_slot); JSON as above plus {landed: "Wed 16 · 12:00 PM"}
+GET  /trip/plan/together      the drawer's top (who is in, the waiting invites, what changed) as an HTML fragment, read again each time the drawer opens
 GET  /trip/plan/thread?key=   a chat of the trip as JSON {threads, items, last}: "trip" or a plan's id (the existing chats: gitaway/familychats.py); opening it marks it read. Messages are written through the
                               existing POST /trip/family/message and POST /trip/talk/message, open to every member
 """
@@ -156,7 +157,7 @@ def calendar(v, view="week", frm=0, cols=COLS, day=0, role="viewer"):
     top = Div(Div(Button("Week", type="button", data_view="week", aria_pressed=str(view == "week").lower()), Button("Day", type="button", data_view="day", aria_pressed=str(view == "day").lower()),
                   cls="seg", role="group", aria_label="Calendar view"),
               nav, Span(title, Small_(sub), cls="cal-title", aria_live="polite"),
-              Div(*[Span(Span(cls=f"sw k-{k}"), lab, cls="lg") for k, lab in pv.LEGEND], cls="legend"),
+              Div(*[Span(Span(cls=f"sw k-{k}"), lab, cls="lg") for k, lab in pv.LEGEND if k in {e.kind for e in v.events}], cls="legend"),
               Button(icon("plus", 18, 2.8), "Add", type="button", cls="addbtn", data_add="1", disabled=not can_edit) if can_edit else "", cls="cal-top")
     chips = Div(*[Button(Span(_wx(v.sky[i]) or "", cls="w"), B(f"{dates[i].strftime('%a')}"), Span(f"{dates[i].strftime('%b')} {dates[i].day}", cls="num"), type="button", cls="dchip", data_day=str(i),
                          aria_pressed=str(i == day).lower()) for i in range(n)], cls="chipsrow", role="group", aria_label="Pick a day") if view == "day" else ""
@@ -273,20 +274,25 @@ def _rail(v, sugg):
 
 # ---- planning together ------------------------------------------------------------------------------------------------------------------
 
-def _drawer(v, request):
-    people = [Div(_avatar(p, True), Div(B(p.name + (" (you)" if p.me else "")), Small_(p.initials and "")), Span(members.ROLE_WORDS.get(p.role, p.role), cls="role"), cls="person") for p in v.people]
+def _together(v, request) -> list:
+    """The drawer's top: who is in (with roles), an admin's waiting invites, and what changed. Drawn with the page and again each time the drawer opens (GET /trip/plan/together)."""
+    people = [Div(_avatar(p, True), Div(B(p.name + (" (you)" if p.me else ""))), Span(members.ROLE_WORDS.get(p.role, p.role), cls="role"), cls="person") for p in v.people]
     invite = ""
     if v.role == "admin":
         base = str(request.base_url).rstrip("/")
         rows = [Div(Span(i["email"], cls="em"), Button("Copy link", type="button", cls="copy", data_copy=f"{base}/join/{i['token']}")) for i in v.pending]
         invite = Section(H2("Invite"), *rows, A("Invite someone", href="/family#invite", cls="v2-import"), cls="sd-sec")
     changes = Section(H2("What changed"), Ul(*[Li(Span(B(c.text)), Span(c.at, cls="tm")) for c in v.changes], cls="feed"), cls="sd-sec", id="pl-changes") if v.changes else ""
+    return [Section(H2("Who is in"), Div(*people, cls="people"), cls="sd-sec"), invite, changes]
+
+
+def _drawer(v, request):
     return Aside(Div(Div(Small_("Planning together"), B(v.title, cls="disp"), cls="t"), Button(icon("x", 16, 2.6), type="button", cls="v2-round pl-x", data_close="1", aria_label="Close"), cls="sd-head"),
-                  Div(Section(H2("Who is in"), Div(*people, cls="people"), cls="sd-sec"), invite, changes,
-                      Section(H2("Talk"), Div(cls="threads", id="pl-threads", role="group", aria_label="Chats"), Div(cls="bubbles", id="pl-bubbles", role="log", aria_live="polite"),
-                              Div(Input(type="text", id="pl-say", placeholder="Say something", aria_label="Say something", maxlength="500", autocomplete="off"),
-                                  Button(icon("arrow-right", 18, 2.6), type="button", id="pl-send", cls="send", aria_label="Send"), cls="composer"), cls="sd-sec"),
-                      cls="sd-body"), id="pl-side", cls="side", role="dialog", aria_label="Planning together", hidden=True)
+                 Div(Div(*_together(v, request), id="pl-top", cls="sd-top"),
+                     Section(H2("Talk"), Div(cls="threads", id="pl-threads", role="group", aria_label="Chats"), Div(cls="bubbles", id="pl-bubbles", role="log", aria_live="polite"),
+                             Div(Input(type="text", id="pl-say", placeholder="Say something", aria_label="Say something", maxlength="500", autocomplete="off"),
+                                 Button(icon("arrow-right", 18, 2.6), type="button", id="pl-send", cls="send", aria_label="Send"), cls="composer"), cls="sd-sec"),
+                     cls="sd-body"), id="pl-side", cls="side v2-glass", role="dialog", aria_label="Planning together", hidden=True)
 
 
 # ---- the page ----------------------------------------------------------------------------------------------------------------------------
@@ -308,7 +314,7 @@ def plan_page(session, request, arrive=False):
     body = Div(bar, _trip_card(v, role),
                Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
                Div(Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), "Together", type="button", cls="together", data_together="1"),
-                   Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", data_save="1"), cls="dock", id="pl-dock"),
+                   Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", data_save="1"), cls="dock v2-glass", id="pl-dock"),
                _drawer(v, request), Div(cls="pl-scrim", id="pl-scrim"), Div(id="pl-pop", cls="pop", role="dialog", hidden=True),
                Div(id="pl-sheet", cls="sheet", role="dialog", aria_modal="true", aria_label="Plan saved", hidden=True),
                Script(NotStr(_safe(data)), type="application/json", id="pl-data"),
@@ -330,6 +336,12 @@ def register(app):
             return r
         return HTMLResponse(_fragment(session, request, view, frm, cols, day), headers={"Cache-Control": "no-store"})
 
+    @app.get(f"{PATH}/together")
+    def together(session, request):
+        if (r := phone.guard(session, PATH)):
+            return r
+        return HTMLResponse(to_xml(Div(*_together(pv.view(session, curl), request))), headers={"Cache-Control": "no-store"})
+
     @app.post(f"{PATH}/write")
     async def write(session, request):
         if (r := phone.guard(session, PATH)):
@@ -339,7 +351,7 @@ def register(app):
             got = write_op(session, str(form.get("op") or "")[:8], form)
         except cal.CalendarError as e:
             return _json({"error": str(e)}, 422)
-        return _json({**got, "grid": _fragment(session, request, form.get("view") or "week", form.get("frm"), form.get("cols"), form.get("day"))})
+        return _json({**got, "grid": _fragment(session, request, form.get("view") or "week", form.get("frm"), form.get("cols"), form.get("vday"))})
 
     @app.post(f"{PATH}/suggest")
     async def suggest(session, request):
@@ -361,7 +373,7 @@ def register(app):
         a = got["act"]
         when = f"{dict(v.days)[a.day].strftime('%a')} {dict(v.days)[a.day].day} · {cal.fmt_time(a.start)}"
         return _json({"toast": f"{a.title} added, {when}", "undo": got["undo"], "plan": plan_of(a), "landed": when,
-                      "grid": _fragment(session, request, form.get("view") or "week", form.get("frm"), form.get("cols"), form.get("day"))})
+                      "grid": _fragment(session, request, form.get("view") or "week", form.get("frm"), form.get("cols"), form.get("vday"))})
 
     @app.get(f"{PATH}/thread")
     def thread(session, key: str = "trip"):
