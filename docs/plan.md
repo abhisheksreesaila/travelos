@@ -1611,11 +1611,11 @@ Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand
 - [ ] tests_browser/test_showcase_js.py front-door tests and test_publish.py's phone publish test (failing before tonight): fix or retire
 
 ## Founder's walk of the v2 build (2026-11-15): "planning is spot on"; these follow
-## F-257 The landing invites: a soft search box with autocomplete [todo]
+## F-257 The landing invites: a soft search box with autocomplete [review]
 Founder: "the search … is too big and too bold … it has to be soft, asking: hey, what do you want? and then give some autocomplete … inviting … a nice background and a good search button to start." Replaces F-250's giant sentence on /plan/ask (the results page keeps its tappable sentence).
-- [ ] one calm, inviting box ("Where to?" with a friendly line above it), modest type, the sky behind; typing shows autocomplete of real places (partners/places and its NEARBY; nothing invented) and sentence completions (who, when, nights) that tripsentence can read; arrow keys, Enter, tap
-- [ ] a clear Search button; Search glides into the results as today (skeleton, matrix)
-- [ ] phone and laptop, 48px, 4.5:1
+- [x] one calm, inviting box ("Where to?" with a friendly line above it), modest type, the sky behind; typing shows autocomplete of real places (partners/places and its NEARBY; nothing invented) and sentence completions (who, when, nights) that tripsentence can read; arrow keys, Enter, tap
+- [x] a clear Search button; Search glides into the results as today (skeleton, matrix)
+- [x] phone and laptop, 48px, 4.5:1
 
 ## F-258 The drawer shows one thing at a time; buttons press [todo]
 Founder: "never show side by side … let them get the hotel first, and if they want, click the card and expand the flights … autofocus is irritating … too much movement for the eyes"; "the omxqua pattern where buttons go in and out when pressed".

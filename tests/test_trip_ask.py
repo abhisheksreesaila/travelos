@@ -47,30 +47,55 @@ def test_with_a_liteapi_key_off_the_showcase_the_ask_exists(client, real):
     assert client.get("/plan/ask").status_code == 200
 
 
-def test_the_page_is_one_sentence_of_eight_words_and_no_box_to_type_in(client):
+def test_the_page_is_one_calm_line_one_box_and_a_search(client):
     sign_in(client, "ari")
     html = client.get("/plan/ask").text
+    assert "<h1" in html and "Where would you like to go?" in html
+    box = re.search(r'<input[^>]*name="q"[^>]*>', html).group(0)
+    assert 'role="combobox"' in box and 'aria-autocomplete="list"' in box and 'aria-controls="v2-list"' in box and 'aria-expanded="false"' in box and 'value=""' in box
+    assert 'role="listbox"' in html and ">Search<" in html and "Show me the trips" not in html
+    assert 'class="v2-w"' not in html and "v2-sent" not in html      # the tappable sentence is the results page's
+    assert 'class="ga-page v2"' in html and "v2-tokens.css" in html and "/assets/js/v2ask.js" in html
+
+
+def test_the_results_page_is_one_sentence_of_eight_words_and_no_box_to_type_in(client):
+    sign_in(client, "ari")
+    html = client.get("/plan/matrix").text
     assert [re.search(r'data-k="(\w+)"', t).group(1) for t in re.findall(r'<span[^>]*class="v2-w"[^>]*>', html)] == list(v2sentence.WORD_KEYS)
     assert "A family of 4" in html and ">SFO<" in html and "San Diego, or nearby" in html and "any budget" in html and "anything" in html
     assert "<textarea" not in html and 'type="text"' not in html and 'name="q"' not in html
-    assert "Show me the trips" in html and "v2-tokens.css" in html and 'class="ga-page v2"' in html
 
 
-def test_the_forms_hidden_fields_say_the_words_as_the_matrixs_parameters(client):
-    sign_in(client, "ari")
-    html = client.get("/plan/ask?to=Lake+Tahoe&home=OAK&d=2027-01-09&r=2027-01-13&a=2&k=&x=1&nb=0&b=3000").text
-    fields = dict(re.findall(r'<input type="hidden" name="(\w+)" value="([^"]*)"', html))
-    assert (fields["to"], fields["home"], fields["a"], fields["x"], fields["nb"], fields["b"], fields["n"]) == ("Lake Tahoe", "OAK", "2", "1", "0", "3000", "4")
-    assert fields["d"] == "2027-01-09"
-    assert "The two of us" in html and "give or take 1 day" in html and "$3,000" in html and "Lake Tahoe</span>" in html
-
-
-def test_every_interest_is_an_option_the_picker_offers(client):
+def test_the_examples_are_places_a_search_can_price(client):
     sign_in(client, "ari")
     html = client.get("/plan/ask").text
-    spec = v2sentence.json.loads(re.search(r'id="v2-data">(.*?)</script>', html, re.S).group(1))
-    assert [i[0] for i in spec["interests"]] == list(interests.KEYS)
-    assert "Lake Tahoe" in [p["n"] for p in spec["places"]] or "San Diego" in [p["n"] for p in spec["places"]]
+    assert re.findall(r'<a href="/plan/ask\?to=([^"]+)" class="ak-ex"', html) == ["San%20Diego", "Los%20Angeles", "New%20York", "Honolulu"]
+
+
+def test_a_link_in_fills_the_box_with_what_it_said(client):
+    sign_in(client, "ari")
+    html = client.get("/plan/ask?to=San+Diego&home=OAK&d=2027-01-09&r=2027-01-13&a=2&k=7,10").text
+    assert 'value="San Diego · a family of 4 · Jan 9–13"' in html
+    assert 'name="home" value="OAK"' in html
+    assert 'value="San Diego"' in client.get("/plan/ask?to=San+Diego").text
+    assert 'value="Atlantis"' not in client.get("/plan/ask?to=Atlantis").text      # a place nothing can price is never put in the box
+
+
+def test_the_results_forms_hidden_fields_say_the_words_as_the_matrixs_parameters(client):
+    sign_in(client, "ari")
+    html = client.get("/plan/matrix?to=San+Diego&home=OAK&d=2027-01-09&r=2027-01-13&a=2&k=&x=1&nb=0&b=3000").text
+    fields = dict(re.findall(r'<input type="hidden" name="(\w+)" value="([^"]*)"', html))
+    assert (fields["to"], fields["home"], fields["a"], fields["x"], fields["nb"], fields["b"], fields["n"]) == ("San Diego", "OAK", "2", "1", "0", "3000", "4")
+    assert fields["d"] == "2027-01-09"
+    assert "The two of us" in html and "give or take 1 day" in html and "$3,000" in html
+
+
+def test_every_interest_is_a_chip_in_the_lists_order(client):
+    sign_in(client, "ari")
+    html = client.get("/plan/ask").text
+    assert re.findall(r'<input type="checkbox" name="i" value="(\w+)"', html) == list(interests.KEYS)
+    spec = v2sentence.json.loads(re.search(r'id="v2-data">(.*?)</script>', client.get("/plan/matrix").text, re.S).group(1))
+    assert [i[0] for i in spec["interests"]] == list(interests.KEYS)      # and the results' picker offers the same
 
 
 def test_words_say_who_when_how_long_and_how_much():
@@ -126,7 +151,7 @@ def test_interests_are_kept_for_the_family_in_the_lists_order(client):
     assert r.status_code == 303
     assert interests.get(person("ari")) == ("vegetarian", "seafood", "hikes")
     html = client.get("/plan/ask").text
-    assert "vegetarian, seafood &amp; hikes" in html or "vegetarian, seafood & hikes" in html      # the sentence says them again
+    assert re.findall(r'<input type="checkbox" name="i" value="(\w+)" checked', html) == ["vegetarian", "seafood", "hikes"]      # the chips show them again
 
 
 def test_unknown_and_repeated_interests_are_dropped_not_stored(client):
@@ -164,3 +189,20 @@ def test_a_viewer_may_search_but_never_changes_the_familys_interests(crew):
     admin, _, viewer = crew
     r = viewer.post("/plan/ask", data={**WORDS, "i": ["seafood", "hikes"]}, follow_redirects=False)
     assert r.status_code == 303 and interests.get(person("ari")) == ()
+
+
+def test_the_boxs_sentence_opens_the_matrix_on_what_it_said(client):
+    sign_in(client, "ari")
+    r = client.post("/plan/ask", data={"q": "San Diego · 2 adults · Dec 19–23", "home": "SFO", "i": ["hikes"]}, follow_redirects=False)
+    assert r.status_code == 303 and where(r).startswith("/plan/matrix?to=San+Diego&home=SFO&d=2026-12-19&r=2026-12-23&a=2")
+    assert interests.get(person("ari")) == ("hikes",)
+    ok = client.post("/plan/ask", data={"q": "san diego, a family of 4, Dec 19 to 23", "home": "SFO"}, headers={"x-v2": "1"})
+    assert ok.json()["to"].startswith("/plan/matrix?to=San+Diego&home=SFO&d=2026-12-19&r=2026-12-23&a=2&k=8%2C8")
+
+
+def test_a_box_that_cannot_search_says_why_in_words_and_keeps_what_was_typed(client):
+    sign_in(client, "ari")
+    r = client.post("/plan/ask", data={"q": "Narnia", "home": "SFO"}, follow_redirects=False)
+    assert r.status_code == 200 and 'value="Narnia"' in r.text and "know that place yet" in r.text
+    bad = client.post("/plan/ask", data={"q": "San Diego", "home": "SFO"}, headers={"x-v2": "1"})
+    assert bad.status_code == 400 and bad.json()["error"] == "Say when, like “Dec 12 to 16”."

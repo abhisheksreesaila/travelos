@@ -1,7 +1,7 @@
-// The v2 sentence (F-250, D-611): the search as one sentence whose every word opens its own picker, never a box you type in. Used by the landing (/plan/ask) and the
-// results (/plan/matrix). Reference: docs/design/booking-v2/index.html. The page works without this script as a plain form (its hidden fields hold the sentence's state;
-// Search posts them); the script adds the pickers (a popover under the word on a laptop, a bottom sheet on a phone), the glide of the sentence up into the results, and
-// the re-search when a word changes on the results. `text` says the same words as gitaway/v2sentence.py `words`: change one, change the other
+// The v2 sentence (F-250, D-611): the search as one sentence whose every word opens its own picker, never a box you type in. Used by the results (/plan/matrix); the landing
+// (/plan/ask) is a soft search box now (assets/js/v2ask.js, F-257). Reference: docs/design/booking-v2/index.html. The page works without this script as a plain form (its hidden fields hold the sentence's state;
+// Search posts them); the script adds the pickers (a popover under the word on a laptop, a bottom sheet on a phone), and the
+// re-search when a word changes on the results. `text` says the same words as gitaway/v2sentence.py `words`: change one, change the other
 // (tests_browser/test_v2_sentence.py compares them). Motion: only the --v2-* tokens in v2-tokens.css, read here with getComputedStyle; nothing in this file is a time.
 (function () {
   var raw = document.getElementById('v2-data');
@@ -11,7 +11,7 @@
   var form = document.getElementById('v2-form');
   if (!raw || !sent || !pop) return;
   var S = JSON.parse(raw.textContent);
-  var root = document.querySelector('.v2'), stage = document.querySelector('[data-v2]');
+  var stage = document.querySelector('[data-v2]');
   var cs = getComputedStyle(document.documentElement);
   var RM = window.matchMedia('(prefers-reduced-motion: reduce)');
   var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -223,7 +223,7 @@
   document.addEventListener('pointerdown', function (e) { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest('.v2-w') && window.innerWidth >= 720) closePop(); });
   addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pop.hidden) closePop(); });
 
-  // ---- what a change does: on the landing nothing until Search; on the results it searches again (or, for the interests alone, keeps them) ----
+  // ---- what a change does: on the results it searches again (or, for the interests alone, keeps them) ----
   function post() {
     syncForm();
     return fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'X-V2': '1', Accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) { return r.json(); });
@@ -237,33 +237,7 @@
   }
   function go(to) { document.documentElement.classList.add('v2-leaving'); location.assign(to); }
 
-  // ---- Search on the landing: the sentence glides to the top and the results' skeleton plays, then the matrix opens ----
-  function glide() {
-    var a = sent.getBoundingClientRect(), fa = parseFloat(getComputedStyle(sent).fontSize);
-    root.classList.add('is-results');
-    var b = sent.getBoundingClientRect(), fb = parseFloat(getComputedStyle(sent).fontSize);
-    if (RM.matches) return Promise.resolve();
-    var s = fa / fb, kf = [{ transform: 'translate(' + (a.left - b.left) + 'px, ' + (a.top - b.top) + 'px) scale(' + s + ')', opacity: 0.85 }, { transform: 'none', opacity: 1 }];
-    return sent.animate(kf, { duration: tok('--v2-glide'), easing: ease('--spring-soft') }).finished.catch(function () {});
-  }
-  if (form && stage.dataset.v2 === 'landing') {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var skel = document.getElementById('v2-skel');
-      var moved = glide();
-      if (skel) { skel.hidden = false; skel.classList.add('is-in'); }
-      post().then(function (j) {
-        if (j.error) { root.classList.remove('is-results'); if (skel) skel.hidden = true; showError(j.error); return; }
-        moved.then(function () { go(j.to); });
-      }).catch(function () { form.submit(); });
-    });
-  }
-  function showError(msg) {
-    var p = document.getElementById('v2-error');
-    if (!p) return;
-    p.textContent = msg; p.hidden = false;
-  }
-  window.addEventListener('pageshow', function (e) { if (e.persisted) { root.classList.remove('is-results'); document.documentElement.classList.remove('v2-leaving'); } });      // back from the matrix: the landing, not a skeleton
+  window.addEventListener('pageshow', function (e) { if (e.persisted) document.documentElement.classList.remove('v2-leaving'); });      // back from the matrix
   window.V2 = { spec: S, text: text, drawSentence: drawSentence };
   syncForm();
 })();
