@@ -185,13 +185,14 @@ def share_templates() -> Template:
 
 
 def book_markup(b: cb.Book, *, mode: str, owner_state: dict | None = None, saved=False, signed=False, lead=False) -> list:
-    """The page's content. mode "creator" (the owner's draft or live book: Edit, Publish) or "reader" (Save, Plan this trip)."""
+    """The page's content. mode "creator" (the owner's draft or live book: Edit a word, Edit details (the editor, F-259), Publish) or "reader" (Save, Plan this trip)."""
     creator = mode == "creator"
     st = owner_state or {}
     if creator:
         top = [Span(I(), "Published", Span(f" · {st.get('where', '')}", cls="long") if st.get("where") else "", cls="tag live") if st.get("live")
                else Span(I(), "Draft · only you can see it", cls="tag"),
-               Span("Tap any underlined word to fix it", Button("Done", type="button", id="editDone"), cls="hint")]
+               Span("Tap any underlined word to fix it", Button("Done", type="button", id="editDone"), cls="hint"),
+               A(ico("edit"), Span("Edit details", cls="t"), href=st["editor"], cls="tonal", id="detailsBtn") if st.get("editor") else ""]
         left = Button(ico("edit"), Span("Edit", cls="t"), type="button", cls="tonal", id="editBtn", aria_label="Edit the book", aria_pressed="false")
         right = (Button(ico("share"), Span("Share", cls="t"), type="button", cls="go", id="shareBtn", aria_label="Share") if st.get("live") else Button("Publish", type="button", cls="go", id="pubBtn"))
     else:

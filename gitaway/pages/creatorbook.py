@@ -39,7 +39,7 @@ def owner_page(session, d):
     trip = cd.preview(session, d)
     row = community.get(d["slug"]) if d["live"] else None
     book = cb.from_trip(trip, stamped=stamp_of(row["updated_at"]) if row else "")
-    state = {"live": d["live"], "where": f"gitaway.me/trips/{d['slug']}/book", "post": cd.domain_of(d)}
+    state = {"live": d["live"], "where": f"gitaway.me/trips/{d['slug']}/book", "post": cd.domain_of(d), "editor": f"/creators/import/{d['id']}"}
     return page(book.title, *bookview.book_markup(book, mode="creator", owner_state=state, lead=bool(d.get("images")) and not d["picks"]), current="/for-creators", head=HEAD, v2="cv is-results",
                 noindex=True, description="Your book, before anyone else sees it.")
 

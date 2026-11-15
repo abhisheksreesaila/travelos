@@ -114,8 +114,8 @@ def test_find_my_posts_tick_some_and_watch_them_become_drafts(setup, creator, ba
         assert not too_small(page, "main .cdr-acts .btn, main .cdr-acts summary, main a.cdr-name")
     shot(page, f"ready-{w}")
 
-    page.locator(".cdr-acts .btn", has_text="Open").first.click()
-    expect(page.locator("h1")).to_have_text("Check your draft")
+    page.locator(".cdr-acts .btn", has_text="Details").first.click()
+    expect(page.locator("h1")).to_have_text("The details of your book")
     page.go_back()
     expect(page.locator(".cdr-item")).to_have_count(2)
     page.locator(".cdr-del summary").first.click()

@@ -375,7 +375,7 @@ def _link(stop, own, refused) -> str:
 
 def apply(owner, d, form, action="save") -> dict:
     """Keep what the editor posted. `form` has: title, name, place, place_name, stickers (list), tip (list), d<i>_title, d<i>_note, d<i>s<j>_name|time|note, pick (list of
-    picture numbers), cover; `action` can add or remove a stop or a day ("add_stop:1", "del_stop:0:2", "add_day", "del_day:1"). The form is the structure: rows it lacks are gone.
+    picture numbers), cover; `action` can add, remove or move a stop, or add or remove a day ("add_stop:1", "del_stop:0:2", "up_stop:0:3", "down_stop:0:3", "add_day", "del_day:1"). The form is the structure: rows it lacks are gone.
     Raises HubError (a sentence fit to show) when a text holds an email address, or LinkRefused when a stop's link is not allowed; the draft is then unchanged."""
     def val(k):
         v = form.get(k)
@@ -401,6 +401,10 @@ def apply(owner, d, form, action="save") -> dict:
                 continue
             s = rows[i]["stops"][j]
             stops.append({"time": _plain(s.get("time"), 12), "name": _plain(s.get("name"), MAX_STOP), "note": _plain(s.get("note"), MAX_STOP_NOTE), "link": _link(s, own, refused)})
+        for step, name in ((-1, "up_stop"), (1, "down_stop")):      # reorder: the form's own row j swaps with its neighbour (F-259)
+            if (m := re.fullmatch(rf"{name}:{i}:(\d+)", action)) and 0 <= int(m.group(1)) < len(stops) and 0 <= int(m.group(1)) + step < len(stops):
+                j = int(m.group(1))
+                stops[j], stops[j + step] = stops[j + step], stops[j]
         if action == f"add_stop:{i}" and len(stops) < MAX_STOPS:
             stops.append({"time": "", "name": "", "note": "", "link": ""})
         days.append({"title": _plain(rows[i].get("title"), MAX_DAY_TITLE), "note": _plain(rows[i].get("note"), MAX_NOTE), "stops": stops})
