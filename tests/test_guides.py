@@ -121,6 +121,7 @@ def test_the_guide_is_the_run_sheet_of_the_posts_own_words(lisbon):
     assert publish(client, d)["ok"]
     html = stranger(client).get(f"/trips/{d['slug']}").text
     assert 'id="gpage"' in html and 'data-mode="reader"' in html
+    assert 'data-sky="quiet"' in html      # F-261: a guide is a reading page, its sky quiet (review of F-261/F-262)
     assert [t for t in re.findall(r'<small>(Days|Suits|Tips|From[^<]*)</small><span class="gl-v">(.*?)</span>', html)] == [("Days", "3 days"), ("Tips", "4 tips"), ("From the blog", "theplanetd.com")]
     assert re.findall(r'<span class="dn">(Day \d)</span>', html) == ["Day 1", "Day 2", "Day 3"]      # the sticky day strip
     first = re.search(r'<li [^>]*id="g-d0s0"[^>]*>.*?</li>', html, re.S).group(0)
@@ -211,6 +212,13 @@ def test_make_a_guide_from_the_planned_trip_keeps_the_flights_and_stays_private(
     assert stops == ["Taco lunch"]
     for p in d["private"]:
         assert f">{p['title']}<" not in html.split('id="g-day1"')[1]      # a flight or a hotel is no stop of the sheet, only a line saying it is kept
+    d = named(client, d)
+    pub = publish(client, d)
+    assert pub["ok"], pub
+    public = stranger(client).get(f"/trips/{cd.get(tid(), did)['slug']}").text
+    assert "Taco lunch" in public and "kept private" not in public
+    for p in d["private"]:
+        assert p["title"] not in public      # review of F-262: a booking from the trip never reaches the published guide
 
 
 def test_make_a_guide_from_a_trip_needs_something_planned_and_a_trip(client):

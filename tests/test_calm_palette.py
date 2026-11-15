@@ -52,4 +52,4 @@ def test_reading_pages_ask_for_the_quiet_sky_and_booking_and_the_cover_do_not(cl
     assert 'data-sky="quiet"' in client.get("/creators/import").text
     ask = client.get("/plan/ask").text
     assert "sunball" in ask and 'data-sky="quiet"' not in ask
-    assert "sunball" in client.get("/for-creators").text
+    assert "sunball" in client.get("/guides").text      # the hub is for browsing, not reading: it keeps its sky (D-701)

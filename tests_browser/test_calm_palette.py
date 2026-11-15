@@ -53,8 +53,9 @@ def painted_words_read(page):
     low = []
     for w in words:
         box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
-        if box[0] < 0 or box[1] < 0 or box[2] > img.width or box[3] > img.height:
-            continue      # off the screen (the guide's tiles scroll sideways on a phone): there are no painted pixels to read it on
+        if box[2] <= 0 or box[3] <= 0 or box[0] >= img.width or box[1] >= img.height:
+            continue      # wholly off the screen (the guide's tiles scroll sideways on a phone): there are no painted pixels to read it on
+        box = (max(box[0], 0), max(box[1], 0), min(box[2], img.width), min(box[3], img.height))      # a word cut at the edge is read on what is painted of it
         px = sorted(img.crop(box).getdata(), key=lum)
         bg = px[len(px) // 2]
         m = re.findall(r"[\d.]+", w["c"])

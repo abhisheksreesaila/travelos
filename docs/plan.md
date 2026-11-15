@@ -1638,7 +1638,7 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [ ] reading pages (a guide, the guide editor, a creator's import) get a quiet sky: no sun, clouds or mood object, a soft gradient that frames the content column; booking and planning keep theirs
 - [ ] 4.5:1 everywhere, light and dark
 
-## F-262 Book · Plan · Guides, and the guide page [review]
+## F-262 Book · Plan · Guides, and the guide page [done]
 - [x] the v2 top bar is Book · Plan · Guides (Family leaves the bar; the avatar menu keeps account items; the family lives in Planning's Together drawer)
 - [x] /guides (was /community) is the hub: search, filters, popular guides, "Make a guide" (from your planned trip, or paste your blog); old /community and /for-creators addresses redirect
 - [x] a guide is the prototype's run sheet: at-a-glance tiles, a sticky day strip, a time rail of stop cards, master-detail (side panel on a laptop, sheet on a phone) with the creator's words, details, tip and their own link labelled as theirs; replaces the book view
