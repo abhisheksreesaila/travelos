@@ -62,8 +62,8 @@ def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
     no_sideways_scroll(page)
     page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Plan a trip").click()
-    page.wait_for_url("**/plan/matrix")
-    expect(page.locator("#mx-import")).to_be_visible()      # F-231: planning is the matrix, and a trip already booked has its way in beside it
+    page.wait_for_url("**/plan/ask")
+    expect(page.locator("#ak-import")).to_be_visible()      # F-231: planning is the matrix, and a trip already booked has its way in beside it
     no_sideways_scroll(page)
 
 

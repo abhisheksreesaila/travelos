@@ -43,7 +43,7 @@ def real(monkeypatch):
 def test_a_family_with_no_trip_lands_on_the_matrix(client):
     sign_in(client, "ari")
     r = client.get("/", follow_redirects=False)
-    assert r.status_code == 303 and where(r) == "/plan/matrix"
+    assert r.status_code == 303 and where(r) == "/plan/ask"
 
 
 def test_a_family_with_a_trip_lands_on_its_cockpit(client):
@@ -56,7 +56,7 @@ def test_a_family_with_a_trip_lands_on_its_cockpit(client):
 def test_signing_in_with_no_next_comes_to_the_front_door(client):
     r = client.post("/signin", data={"email": "ari.rivera@gmail.com"}, follow_redirects=False)
     assert where(r) == "/"
-    assert where(client.get("/", follow_redirects=False)) == "/plan/matrix"
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
 
 
 def test_without_the_matrix_a_family_with_no_trip_lands_on_the_import(client, no_matrix):
@@ -77,7 +77,7 @@ def test_signed_out_plan_a_trip_and_start_a_trip_sign_in_then_come_back_to_the_f
 def test_signed_in_plan_a_trip_opens_the_matrix(client):
     sign_in(client, "ari")
     for path in ("/community", "/for-creators", "/family"):
-        assert "/plan/matrix" in hrefs(header_of(client.get(path).text)), path
+        assert "/plan/ask" in hrefs(header_of(client.get(path).text)), path
 
 
 def test_where_the_matrix_does_not_exist_plan_a_trip_opens_the_import(client, no_matrix):
@@ -88,7 +88,7 @@ def test_where_the_matrix_does_not_exist_plan_a_trip_opens_the_import(client, no
 
 def test_with_a_key_off_the_showcase_the_matrix_is_the_way_in(client, real):
     sign_in(client, "ari")
-    assert where(client.get("/", follow_redirects=False)) == "/plan/matrix"
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
 
 
 # ---- /start ------------------------------------------------------------------------------------------------------------
@@ -134,12 +134,12 @@ def test_the_matrix_offers_a_trip_already_booked_to_the_import_when_signed_in(cl
 def test_the_cockpit_has_plan_another_trip_opening_the_matrix(client):
     book(client)
     html = client.get("/trip/cockpit").text
-    assert re.search(r'<a[^>]*href="/plan/matrix"[^>]*id="ck-plan-another"[^>]*>.*?Plan another trip</a>', html, re.S)
+    assert re.search(r'<a[^>]*href="/plan/ask"[^>]*id="ck-plan-another"[^>]*>.*?Plan another trip</a>', html, re.S)
 
 
 def test_saving_a_square_still_makes_the_family_a_trip_and_lands_it_on_the_cockpit(client):
     sign_in(client, "ari")
-    assert where(client.get("/", follow_redirects=False)) == "/plan/matrix"
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
     r = client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-05", "r": "2027-03-09", "a": "2", "k": "", "home": "SFO"}, follow_redirects=False)
     assert where(r) == "/trip/cockpit"
     assert where(client.get("/", follow_redirects=False)) == "/trip/cockpit"
@@ -240,7 +240,7 @@ def test_a_family_whose_trip_a_matrix_save_made_lands_on_its_cockpit_with_a_book
     from tests.test_signin import person
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     sign_in(client, "ari")
-    assert where(client.get("/", follow_redirects=False)) == "/plan/matrix"
+    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
     form = {"to": "San Diego", "home": "SFO", "d": "2026-12-12", "r": "2026-12-16", "a": "2", "k": "7,10", "x": "2", "lane": "losangeles+sandiego", "w": "2026-12-12"}
     assert client.post("/plan/matrix/save", data=form, follow_redirects=False).status_code == 303
     assert ses.trips(person("ari")) and ses.booking(person("ari"))      # a trip without a booking cannot be made this way

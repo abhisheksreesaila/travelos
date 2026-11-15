@@ -200,7 +200,7 @@ def test_the_cover_sells_one_thing_start_a_trip(client, monkeypatch):
 def test_a_signed_in_visitor_never_gets_the_cover(client):
     sign_in(client)
     r = client.get("/", follow_redirects=False)      # F-231: / sends them on to their trip, or the matrix (tests/test_way_in.py)
-    assert r.status_code == 303 and r.headers["location"] == "/plan/matrix"
+    assert r.status_code == 303 and r.headers["location"] == "/plan/ask"
     html = client.get("/").text
     assert "cv-root" not in html and "/assets/js/cover.js" not in html and "/assets/css/cover.css" not in html
 

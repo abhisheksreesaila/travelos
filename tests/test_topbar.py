@@ -68,7 +68,7 @@ def test_a_family_with_no_trip_gets_start_instead_of_trip(client):
     sign_in(client)
     b = bar(client.get("/family").text)
     nav = b.split("</nav>")[0]
-    assert 'href="/plan/matrix"' in nav and ">Start<" in nav
+    assert 'href="/plan/ask"' in nav and ">Start<" in nav
     assert 'href="/trip"' not in nav
     assert "/trips/switch" not in b                                # no trips to pick
     assert "sos=1" not in b                                        # nothing to send help about
@@ -142,7 +142,7 @@ def test_the_phone_screens_carry_the_trip_menu_with_the_same_items_as_the_bar(cl
         html = client.get(path).text
         menu = phone_pick(html)
         assert menu, path
-        assert menu.count('action="/trips/switch"') == 2 and 'href="/plan/matrix"' in menu and 'href="/trips/import"' in menu, path
+        assert menu.count('action="/trips/switch"') == 2 and 'href="/plan/ask"' in menu and 'href="/trips/import"' in menu, path
         assert "Plan another trip" in menu and "Import a trip you booked" in menu
 
 

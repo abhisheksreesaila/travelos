@@ -1568,3 +1568,11 @@ Founder, 2026-11-14: "The cover page is very nicely done, especially the first m
 - [ ] translucency where the founder asked for it (the card over the place's colour): an explicit exception to omxqua's "no glass" for this page, recorded as a decision, and still 4.5:1 for every word
 - [ ] dense but quiet: everything F-236..F-238 shows stays reachable, nothing extra on the surface
 - [ ] click a square → F-242's opened square, unchanged
+## F-241 "What are you after?": a search before the matrix [review]
+Founder, 2026-11-14: "Then you log in. You don't go to the matrix directly, you have some sort of a Google search saying: what do you want to search? What are you interested in? People say I want to do this, this, this and press submit. Then you get a skeleton-like page, then you provide the matrix." Later, planning (F-243) reads the interests ("if they said vegetarian, show vegetarian restaurants").
+- [x] a signed-in family with no booked trip lands on `/plan/ask` (home, "Plan a trip" and every other door through `showcase.planning_path()`); `/trips/import` stays the door where the matrix does not exist
+- [x] one big ask: a sentence box read by tripsentence (a sentence with no place stays and says so in place), nine tap-to-pick interest chips, three example sentences to tap, "Already booked? Bring your trip in"
+- [x] the picked interests are kept for the family (`family_prefs` key `interests`, validated against the fixed list in `gitaway/interests.py`) for F-243 to read
+- [x] on Search a skeleton of the matrix shows at once (three places, five days each, shimmering on the --motion-* tokens; plain under reduced motion), then the matrix
+- [x] colourful in both modes, 4.5:1, 48px targets, phone and laptop; tests: `tests/test_trip_ask.py`, `tests_browser/test_trip_ask.py`
+- Decisions D-560 to D-565.

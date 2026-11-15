@@ -139,7 +139,7 @@ def test_the_page_says_plainly_what_it_is_with_both_calls_to_action(client):
     html = client.get("/community").text
     assert "Trips shared by travelers and creators. Fork one into your calendar." in html
     head = html[:html.index('class="hub-grid"')]  # both are up front, above the trips
-    assert re.search(r'<a [^>]*href="/plan/matrix"[^>]*>(<svg.*?</svg>)?Share yours<', head, re.S)  # no trip yet: start one
+    assert re.search(r'<a [^>]*href="/plan/ask"[^>]*>(<svg.*?</svg>)?Share yours<', head, re.S)  # no trip yet: start one
     assert re.search(r'<a [^>]*href="/creators"[^>]*>(<svg.*?</svg>)?Turn a link into a trip<', head, re.S)
 
 

@@ -279,7 +279,7 @@ def nav_plan(html):
 def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_not(client, monkeypatch):
     """D-461, D-463: signed out it signs in first (and / then decides); signed in it is the matrix, or off the showcase with no LiteAPI key, the import of a trip already booked."""
     for showcase, key, signed_in, want in (("0", None, False, "/signin"), ("0", KEY, False, "/signin"), ("1", None, False, "/signin"),
-                                           ("0", None, True, "/trips/import"), ("0", KEY, True, "/plan/matrix"), ("1", None, True, "/plan/matrix")):
+                                           ("0", None, True, "/trips/import"), ("0", KEY, True, "/plan/ask"), ("1", None, True, "/plan/ask")):
         monkeypatch.setenv("GITAWAY_SHOWCASE", showcase)
         if key:
             monkeypatch.setenv("LITEAPI_KEY", key)

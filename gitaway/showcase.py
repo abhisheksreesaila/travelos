@@ -26,7 +26,7 @@ HIDDEN = ("/share",  # the old one-tap demo share (F-022); real trips are publis
           "/creators/draft", "/creators/finish", "/creators/done",  # the paste-a-link import is simulated (F-023)
           "/plan/quote", "/plan/explore",  # the invented catalog's prices and stay explorer (F-198: production shows only the honest lanes at /plan; /plan/pay already says booking is not open)
           "/dev")  # F-223: the designer's previews (/dev/placeart)
-LITEAPI_PAGES = ("/plan/grid", "/plan/matrix")   # the trip grid and the trip matrix (F-217, F-222): off the showcase they exist only with LITEAPI_KEY, the one real source of their prices
+LITEAPI_PAGES = ("/plan/grid", "/plan/matrix", "/plan/ask")   # the trip grid and the trip matrix (F-217, F-222): off the showcase they exist only with LITEAPI_KEY, the one real source of their prices
 # These exist off the showcase only once a real trip is published (F-181); then they list and fork real content alone.
 REAL = ("/community", "/discover", "/creators", "/forks", "/save", "/unsave", "/fork")
 REAL_ALWAYS = ("/creators/import", "/creators/settings", "/creators/drafts", "/creators/stats")   # (F-190: their drafts and a batch of their posts; F-192: their stats) a creator's import of their own post (F-183) exists off the showcase before anyone has published: it is how the first trip gets published
@@ -50,8 +50,8 @@ def matrix_open() -> bool:
 
 
 def planning_path() -> str:
-    """The way in to a new trip (F-231): the matrix where it exists, else the import of a trip already booked (D-461)."""
-    return "/plan/matrix" if matrix_open() else "/trips/import"
+    """The way in to a new trip (F-231, F-241): the ask ("What are you after?") that leads to the matrix where it exists, else the import of a trip already booked (D-461)."""
+    return "/plan/ask" if matrix_open() else "/trips/import"
 
 
 def community_open() -> bool:
