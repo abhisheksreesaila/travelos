@@ -1592,7 +1592,7 @@ Needs: F-250
 - [ ] a square opens the prototype's drawer: hotel gallery and rooms from LiteAPI (sample on the showcase), flights, focus one to shrink the other, switching in place (F-242's index rules stand)
 - [ ] Book my trip: the prototype's stepped questions, review, spinning steps, confirmation pass and Plan this trip, over F-233's sandbox booking (its rules stand)
 
-## F-252 Planning v2 [review]
+## F-252 Planning v2 [done]
 Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) with bookings placed, quick add, drag and resize, the help rail (weather nudges only from a real forecast), planning together (members, threads, hearts), save and share. Replaces the cockpit and the day pages.
 
 ## F-253 Creators v2 [todo]
@@ -1600,3 +1600,6 @@ Needs: F-250. Build docs/design/creators-v2 over the existing magic import (F-23
 
 ## F-254 Subtract the old app [todo]
 Needs: F-251, F-252, F-253. Remove the pages the v2 journey replaced (the /plan lanes, /plan/grid, the old checkout, Where to?, forks, the cockpit, day pages, canvas, add screens, partner log …), redirecting their addresses into the journey; Direction A's tokens retire.
+
+## F-255 The v2 top bar can take you places [todo]
+Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand, the sample pill, light/dark and the avatar, but no way to the trip's sections (Plan, Book, Family) and no sign-out or Admin. Design it in the prototypes' language (a frosted pill of 3 to 4 items, the current one marked with aria-current; the avatar opens a small menu with Family, Admin for the captain, Sign out); phone: the same pill at the bottom. Retarget access.refusal's "Back to the trip" to /trip/plan.
