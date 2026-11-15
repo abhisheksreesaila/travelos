@@ -56,9 +56,9 @@ def test_each_way_in_lands_on_a_working_page(new_family, base_url, viewport):
     no_sideways_scroll(page)
     page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Browse community trips").click()
-    expect(page.locator("h1")).to_have_text("Community trips")
+    expect(page.locator("h1")).to_have_text("Trips people have taken")      # F-253: the shelf's heading
     expect(page.get_by_role("link", name="Share yours").first).to_be_visible()
-    expect(page.get_by_role("link", name="Turn a link into a trip").first).to_be_visible()
+    expect(page.get_by_role("link", name="Turn a post into a book").first).to_be_visible()      # F-253
     no_sideways_scroll(page)
     page.goto(f"{base_url}/forks")
     page.locator(".fr-path", has_text="Plan a trip").click()
