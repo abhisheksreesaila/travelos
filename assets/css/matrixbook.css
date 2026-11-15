@@ -38,7 +38,7 @@
 .mxb-f[hidden] { display: none; }
 .mxb-prog { display: flex; gap: 0.375rem; padding: 0.25rem 1.5rem 0.375rem; }
 .mxb-prog span { position: relative; flex: 1; height: 0.3125rem; border-radius: 62.4375rem; background: var(--card-2); overflow: hidden; }
-.mxb-prog span::after { content: ""; position: absolute; inset: 0; background: var(--sunset); transform: scaleX(0); transform-origin: left; transition: transform var(--v2-drawer-again) var(--spring-soft); }
+.mxb-prog span::after { content: ""; position: absolute; inset: 0; background: var(--cta-bg); transform: scaleX(0); transform-origin: left; transition: transform var(--v2-drawer-again) var(--spring-soft); }
 .mxb-prog span.on::after { transform: none; }
 .mxb-f:not(.is-fold) .mxb-prog { display: none; }
 .mxb-panes { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.875rem 1.5rem 1.125rem; }
@@ -99,7 +99,7 @@
 .mxb-b1 { display: inline-flex; align-items: center; justify-content: center; gap: 0.625rem; height: 3.5rem; padding: 0 1.75rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); cursor: pointer;
   font: 680 1.125rem/1 var(--f-ui); }
 .mxb-b1 svg { width: 1.25rem; height: 1.25rem; }
-.mxb-b1.sun { background: var(--sunset); color: var(--on); }
+.mxb-b1.sun { background: var(--cta-bg); color: var(--cta-fg); }
 .mxb-b1:disabled { opacity: .45; cursor: default; }
 .mxb-f:not(.is-fold) .mxb-b2, .mxb-f:not(.is-fold) .mxb-stepn, .mxb-f:not(.is-fold) [data-cont] { display: none; }
 .mxb-f:not(.is-fold) .mxb-go { width: 100%; }
@@ -123,11 +123,11 @@
 .mxb-stages li[data-state="done"] .mxb-st-i { background: var(--k-see); color: var(--on); box-shadow: none; animation: mxb-pop var(--v2-pane) var(--spring); }
 @keyframes mxb-pop { from { transform: scale(.4); } to { transform: none; } }
 
-/* the pass: the sunset, a stamp, a perforation and a stub; confetti thrown once when it lands */
+/* the pass: deep indigo, a stamp, a perforation and a stub; confetti thrown once when it lands */
 .mxb-confirm { position: relative; justify-items: stretch; }
 .mxb-going { text-align: center; font-size: 2.125rem; line-height: 1.05; }
 .mxb-confirm > .mxb-hint { text-align: center; }
-.mxb-pass { position: relative; border-radius: 1.625rem; overflow: hidden; background: var(--sunset); color: var(--on); box-shadow: var(--sh2); }
+.mxb-pass { position: relative; border-radius: 1.625rem; overflow: hidden; background: var(--pass-bg); color: var(--on); box-shadow: var(--sh2); }
 .mxb-pass-top { position: relative; display: grid; gap: 0.5rem; padding: 0 1.25rem 0.875rem; }
 .mxb-pass-art { height: 8.5rem; margin: 0 -1.25rem; }
 .mxb-pass-art .mx-art-i > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -150,8 +150,8 @@
 .mxb-stub-i { display: grid; gap: 0.25rem; }
 .mxb-code { margin: 0 0 0.25rem; }
 .mxb-id { font: 780 1.625rem/1.1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: .04em; overflow-wrap: anywhere; }
-.mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4rem; padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--sunset); color: var(--on);
-  font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: 0 0.75rem 1.875rem -0.625rem rgb(139 47 201 / .6); position: sticky; bottom: 0.25rem; z-index: 4; }
+.mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4rem; padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--cta-bg); color: var(--cta-fg);
+  font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: var(--cta-sh); position: sticky; bottom: 0.25rem; z-index: 4; }
 .mxb-plan:hover { color: var(--on); }
 .mxb-plan:focus-visible, .mxb-go:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .mxb-flight { justify-self: center; min-height: var(--target); }

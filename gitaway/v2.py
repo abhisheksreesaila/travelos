@@ -37,8 +37,10 @@ def _shore() -> str:
             '<g transform="translate(860 150)"><path d="M0 0 h60 l-8 10 h-44z" fill="#C2410C"/><path d="M28 0 V-46 L56 -4z" fill="#FFD43B"/><path d="M26 -2 V-38 L6 -4z" fill="#fff"/></g>')
 
 
-def bg(mood: str = "") -> Div:
+def bg(mood: str = "", quiet: bool = False) -> Div:
     """The sky: a gradient, a sun that becomes a moon in the dark, clouds and the mood's one object at the foot (beach: the shore; F-260, gitaway/moods.py). A `?mood=` preview wins on the showcase."""
+    if quiet:      # a reading page (F-261, D-701): no sun, moon, clouds, shore or mood object, only a soft gradient framing the content column (v2.css `.v2-bg.is-quiet`)
+        return Div(cls="v2-bg is-quiet", aria_hidden="true", data_sky="quiet")
     from gitaway import moodart, moods
     mood = moods.preview(session_.request_path()) or (mood if mood in moods.MOODS else moods.DEFAULT)
     cloud = lambda style: NotStr(f'<svg class="cloud" style="{style}" viewBox="0 0 120 50">{CLOUD}</svg>')      # noqa: E731

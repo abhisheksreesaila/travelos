@@ -35,7 +35,12 @@
   --sh2: 0 0.125rem 0.375rem rgb(20 20 60 / .08), 0 0.875rem 2rem -0.625rem rgb(40 30 110 / .22);
   --sh3: 0 0.25rem 0.875rem rgb(20 20 60 / .07), 0 2.125rem 4.375rem -1.5rem rgb(40 30 110 / .32);
   --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
-  --sunset: linear-gradient(120deg, #4338CA 0%, #8B2FC9 52%, #C92A5E 100%);
+  /* the calm palette (F-261, D-700): ink and indigo carry the UI, one place to change it. A primary action is solid indigo, a header is a card, the pass a deep indigo.
+     The pink-to-violet gradient is the Instagram share card's alone (gitaway/sharecard.py); tests/test_calm_palette.py forbids it in these stylesheets. */
+  --cta-bg: #4338CA; --cta-fg: #FFFFFF; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(67 56 202 / .7); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(67 56 202 / .75);
+  --head-bg: var(--card-solid); --head-fg: var(--ink); --head-fg2: var(--ink-2); --head-chip: var(--card-2);
+  --pass-bg: #1E1B4B;
+  --quiet-edge: #D8DEF3; --quiet-mid: #ECEEFB; --quiet-glow: #F8F9FE;      /* the reading sky: a soft glow where the column is, a little deeper at the sides (D-701) */
   --cloud: color-mix(in srgb, #fff 85%, transparent);
   --v2-map-land: #E8EFE3; --v2-map-water: #A9D3F0; --v2-map-road: #FFFFFF;      /* the rail's schematic map */
   --v2-thump: cubic-bezier(.2, 1.4, .4, 1);      /* the stamp landing on the pass */
@@ -144,7 +149,9 @@
   --hatch: rgb(255 255 255 / .06); --scrim: rgb(10 10 30 / .5);
   --sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
   --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
-  --sunset: linear-gradient(120deg, #4F46E5 0%, #9333EA 52%, #DB2777 100%);
+  --cta-bg: #4F46E5; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .7); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(0 0 0 / .75);
+  --pass-bg: #2A2670;
+  --quiet-edge: #0C1128; --quiet-mid: #151A3A; --quiet-glow: #1F2550;
   --cloud: rgb(255 255 255 / .06);
   --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A3F5C;
   --bk-paper: #EDE4D1; --bk-paper-2: #E2D7C1; --bk-card: #F5EFE2;

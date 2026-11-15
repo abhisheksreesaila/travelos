@@ -67,7 +67,7 @@ def paste_page(session, link="", text="", error="", status=200):
                        form, creatordrafts.bulk_card() if mode != "manual" else "",
                        P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), id="landing", cls="ci ga-wrap"),
                studio.stage(), studio.foot(), cls="cv-paste")
-    return FtResponse(page("Turn your post into a trip", body, current="/for-creators", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv"), status_code=status)
+    return FtResponse(page("Turn your post into a trip", body, current="/for-creators", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv", quiet=True), status_code=status)
 
 
 def _steps(session, link, text, how):

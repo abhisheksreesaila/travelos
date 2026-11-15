@@ -19,6 +19,9 @@ html:has(.v2) body { background: transparent; }
               radial-gradient(48% 36% at 96% 8%, color-mix(in srgb, var(--ride-t) 90%, transparent), transparent 70%),
               radial-gradient(70% 50% at 50% 104%, color-mix(in srgb, var(--flight-t) 95%, transparent), transparent 70%),
               linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); }
+.v2-bg.is-quiet { background: radial-gradient(ellipse 62% 78% at 50% 34%, var(--quiet-glow), transparent 100%), linear-gradient(180deg, var(--quiet-mid), var(--quiet-edge)); }
+html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
+@media (max-width: 719px) { .v2-bg.is-quiet { background: radial-gradient(ellipse 120% 70% at 50% 30%, var(--quiet-glow), transparent 100%), linear-gradient(180deg, var(--quiet-mid), var(--quiet-edge)); } }
 .v2-bg .sunball { position: absolute; right: 7%; top: 13%; width: 10rem; height: 10rem; border-radius: 50%; background: var(--sun);
   box-shadow: 0 0 0 2.4rem color-mix(in srgb, var(--sun) 20%, transparent), 0 0 0 5.2rem color-mix(in srgb, var(--sun) 9%, transparent);
   transition: opacity var(--v2-slow) var(--v2-ease), transform var(--v2-slow) var(--spring-soft); }

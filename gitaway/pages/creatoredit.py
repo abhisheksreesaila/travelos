@@ -119,4 +119,4 @@ def editor_page(d, error="", just=False, captain=False):
     unpub = confirm("Unpublish", "pb-unpublish", "This takes the page off GitAway for everyone. Your draft stays here, so you can publish again; its pictures are deleted and picked again then.", "unpublish", "Yes, take it down", "pb-unpublish-yes") if d["live"] else ""
     delete = confirm("Delete this draft", "ci-delete", "This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone.", "delete", "Yes, delete it", "ci-delete-yes")
     body = Div(top, done, _source(d), paste, form, *([] if captain else [unpub, delete]), cls="ed ci-edit")
-    return page("Check this pre-draft" if captain else "The details of your book", body, current="/for-creators", head=HEAD, v2="cv is-results", noindex=True)
+    return page("Check this pre-draft" if captain else "The details of your book", body, current="/for-creators", head=HEAD, v2="cv is-results", quiet=True, noindex=True)

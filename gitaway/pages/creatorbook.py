@@ -13,7 +13,7 @@ from fasthtml.common import Link, Script, Section, Div, H1, P, A
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import community, creatorbook as cb, creatordraft as cd, forks as forks_model, moods, seo, session as ses, stats
+from gitaway import community, creatorbook as cb, creatordraft as cd, forks as forks_model, seo, session as ses, stats
 from gitaway.layout import page
 from gitaway.pages import bookview, trips as trips_page
 
@@ -30,7 +30,7 @@ def reader_page(session, slug, found, auto=True):
     saved = slug in ses.saved(session)
     book = cb.from_trip(found, sample=not found.real)
     waiting = found.real and community.review_state(slug) == "pending"
-    body = page(book.title, *bookview.book_markup(book, mode="reader", saved=saved, signed=bool(ses.current_traveler(session)), owner_state={"auto": auto}), current="/community", head=HEAD, v2="cv is-results", mood=moods.of_text(found.place),
+    body = page(book.title, *bookview.book_markup(book, mode="reader", saved=saved, signed=bool(ses.current_traveler(session)), owner_state={"auto": auto}), current="/community", head=HEAD, v2="cv is-results", quiet=True,
                 description=f"{book.title}: a trip by {book.by}, as a book you can flip through and plan from.", noindex=waiting or (found.real and seo.imported(slug)))
     return FtResponse(body, headers={"X-Robots-Tag": "noindex, nofollow"}) if waiting else body
 
@@ -40,7 +40,7 @@ def owner_page(session, d):
     row = community.get(d["slug"]) if d["live"] else None
     book = cb.from_trip(trip, stamped=stamp_of(row["updated_at"]) if row else "")
     state = {"live": d["live"], "where": f"gitaway.me/trips/{d['slug']}/book", "post": cd.domain_of(d), "editor": f"/creators/import/{d['id']}"}
-    return page(book.title, *bookview.book_markup(book, mode="creator", owner_state=state, lead=bool(d.get("images")) and not d["picks"]), current="/for-creators", head=HEAD, v2="cv is-results",
+    return page(book.title, *bookview.book_markup(book, mode="creator", owner_state=state, lead=bool(d.get("images")) and not d["picks"]), current="/for-creators", head=HEAD, v2="cv is-results", quiet=True,
                 noindex=True, description="Your book, before anyone else sees it.")
 
 
