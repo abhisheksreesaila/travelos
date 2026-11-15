@@ -1607,4 +1607,5 @@ Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand
 ## F-256 Small leftovers from the v2 build [todo]
 - [ ] tests_browser/test_topbar.py `test_the_brand_goes_home` and `test_a_family_with_no_trip_gets_start` still expect the old .ga-topbar on v2 pages: rewrite them for the v2 bar or retire them with F-254
 - [ ] the matrix's "Look at <place>" link is 44px at 390 (tests_browser/test_direction_a_pages.py): make it 48px
+- [ ] the community shelf's captions under the books sit at uneven heights (maker and days misaligned): one baseline
 - [ ] tests_browser/test_showcase_js.py front-door tests and test_publish.py's phone publish test (failing before tonight): fix or retire
