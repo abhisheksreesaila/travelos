@@ -347,6 +347,34 @@ def sample(owner, m: Material, name="", job="") -> dict:
 
 # ---- the editor's form --------------------------------------------------------------------------------------------------------
 
+NO_PLANS = "Add a few things to your calendar first, then make a guide of the trip."
+PRIVATE_KINDS = ("flight", "stay", "car", "tix", "travel")      # a booked block is never published: its title can name a hotel, a flight or a ticket holder
+
+
+def _clock(minutes) -> str:
+    """"9:30 AM" for a minute of the day, the way a draft keeps a stop's time."""
+    return _time(f"{minutes // 60:02d}:{minutes % 60:02d}")
+
+
+def from_plan(owner, session, name="") -> dict:
+    """A draft of the family's planned trip: the calendar's plans become the days and stops, in the order and at the times the family gave them (their own words, F-262). What the family booked
+    (flights, stays, cars, tickets) is kept on the draft as `private` ([{"day", "title", "kind"}]) for its owner to see and never reaches `build()`, so never a public page. The draft is the
+    person's own like any other: it needs the editor's details (the name, the place) and "This is my post" before it is public. Raises HubError (NO_PLANS) when nothing is planned."""
+    from gitaway import planv2 as pv      # here: planv2 reads the family's calendar, which this module otherwise never does
+    v = pv.view(session, lambda day=0, booked="": "")
+    days = []
+    for i, _date in v.days:
+        stops = [{"time": _clock(e.start), "name": _plain(e.title, MAX_STOP), "note": "", "link": ""} for e in v.on(i) if not e.locked and _plain(e.title, MAX_STOP)][:MAX_STOPS]
+        if stops:
+            days.append({"title": stops[0]["name"][:MAX_DAY_TITLE], "note": "", "stops": stops})
+    if not days:
+        raise HubError(NO_PLANS)
+    private = [{"day": e.day, "title": _plain(e.title, MAX_STOP), "kind": e.kind if e.kind in PRIVATE_KINDS else "tix"} for e in v.booked][:40]
+    key = pub.place_key(v.place)
+    return _create(owner, {"title": _plain(v.title, MAX_TITLE) or "My trip", "place": key or "other", "place_name": "" if key else _plain(v.place, MAX_PLACE), "days": days[:MAX_DAYS], "tips": [], "stickers": [],
+                           "name": name, "source": {}, "images": [], "picks": [], "copies": {}, "cover": "", "notices": [], "text": "", "words": [], "private": private})
+
+
 def _check_text(d):
     texts = [d["title"], d["name"], d["place_name"], *d["tips"], *(x for day in d["days"] for x in (day["title"], day["note"], *(v for s in day["stops"] for v in (s["name"], s["note"]))))]
     pub._check_text(*texts)
@@ -541,9 +569,11 @@ def build(d, src, handle="", verified=True) -> Itinerary:
     booking sites' links stay), since nobody has checked yet that the site is theirs (F-194)."""
     place = PLACES.get(d["place"]) or d["place_name"]
     name = d["name"] or "a traveler"
-    days, words, used = [], d.get("words") or [], set()
+    days, words, used, heard = [], d.get("words") or [], set(), set()
     for n, day in enumerate(d["days"], start=1):
-        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "") if verified else stoplinks.clean(s.get("link", ""))) for s in day["stops"] if s["name"]]
+        named = [s for s in day["stops"] if s["name"]]
+        said = creatorbook.said(words, [s["name"] for s in named], heard)      # the post's own sentence that names each stop (F-262)
+        stops = [Stop(s["time"], s["name"], "star", "sun", note=s["note"], link=s.get("link", "") if verified else stoplinks.clean(s.get("link", "")), said=said[i]) for i, s in enumerate(named)]
         days.append(Day(n, f"DAY {n}", day["title"] or (stops[0].title if stops else "Free day"), "", stops, collapsed=False, note=day["note"],
                         quote=creatorbook.day_quote(words, [s.title for s in stops], used)))
     order = ([int(d["cover"])] if d["cover"] != "" else []) + [p for p in d["picks"] if str(p) != d["cover"]]

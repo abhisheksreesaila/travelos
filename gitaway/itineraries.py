@@ -25,6 +25,7 @@ class Stop:
     photo: str = ""
     photo_alt: str = ""
     link: str = ""              # a creator's own booking or ticket link for this stop (F-196: gitaway/stoplinks.py lists where it may go)
+    said: str = ""              # the post's own sentence that names this stop, exactly as the creator wrote it (F-262: the guide's one-line why); "" when it names none
 
 
 @dataclass(frozen=True)

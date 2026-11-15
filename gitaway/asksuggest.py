@@ -51,6 +51,11 @@ def _starts():
     return [first + timedelta(days=7 * i) for i in range(STARTS)]
 
 
+def first_start():
+    """The start day the matrix offers first (the first Saturday four weeks ahead): where a guide's "Plan this trip" starts its dates, for the reader to change in the sentence."""
+    return _starts()[0]
+
+
 def _split(rest) -> list:
     return [s.strip() for s in re.split(r"[·,]", rest) if s.strip()]
 
