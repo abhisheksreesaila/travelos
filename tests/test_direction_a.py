@@ -52,9 +52,15 @@ def test_the_type_scale_on_the_phone_and_on_the_desktop():
     assert "font-size: var(--t-body)" in (CSS / "base.css").read_text()
 
 
-def test_no_glass_or_blur_anywhere():
+def test_no_glass_or_blur_anywhere_but_the_v2_glass_widget():
+    """D-610: design language v2 supersedes "no glass" for the pages that opt in, in ONE place: the `.v2-glass` rule of v2.css (a widget over the sky). Everywhere else none."""
     for path in CSS.glob("*.css"):
         css = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
+        if path.name == "v2.css":
+            for rule in re.findall(r"[^{}]+\{[^{}]*\}", css):
+                if "backdrop-filter" in rule or "blur(" in rule:
+                    assert rule.strip().startswith(".v2-glass"), rule.strip()[:80]
+            continue
         assert "backdrop-filter" not in css and "blur(" not in css, path.name
 
 
@@ -65,7 +71,7 @@ def test_white_and_old_ink_are_never_written_where_dark_mode_would_lose_them():
     """White text or a white surface written as a colour, and the old ink with alpha, do not change with the mode: text on ink is --on-ink, a white surface --card (a photo's
     caption and a switch's knob stay white). The lesson of F-200: these were the parts that went white on white in dark mode."""
     for path in CSS.glob("*.css"):
-        if path.name == "tokens.css":
+        if path.name in ("tokens.css", "v2-tokens.css"):      # the tokens files are where a colour is defined
             continue
         for rule in re.findall(r"[^{}]+\{[^{}]*\}", re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)):
             if ALLOWED_WHITE.search(rule):

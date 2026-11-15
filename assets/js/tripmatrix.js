@@ -28,8 +28,6 @@
   function use(n) { var s = store(n); N = n; known = s.known; panels = s.panels; bars = s.bars; asked = s.asked; tries = s.tries; }
   use(N);
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
-  var dayIx = {};
-  data.days.forEach(function (d, i) { dayIx[d] = i; });
   var wide = window.matchMedia('(min-width: 1020px)');
   var M = function () { return window.GA && GA.motion; };
   var lanes = data.lanes, windows = data.windows;
@@ -93,7 +91,7 @@
     if (!best) return null;
     var x = best.lane, d = best.diff;
     var said = d < 0 ? money(-d) + ' less than ' + a.n : d === 0 ? 'the same as ' + a.n : money(d) + ' more than ' + a.n + (x.c ? ' alone' : '');
-    return { key: key(x.k, best.w.k), lane: x.k, w: best.w.k, words: x.n + ', ' + said, when: best.w.when };
+    return { key: key(x.k, best.w.k), lane: x.k, w: best.w.k, name: x.n, said: said, words: x.n + ', ' + said, when: best.w.when };
   }
   function less(a, b) { for (var i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] < b[i]; } return false; }
   function marks(t) {
@@ -132,29 +130,29 @@
     lanes.forEach(function (x) {
       var got = windows.map(function (w, j) { return [t[key(x.k, w.k)], j, w]; }).filter(function (g) { return g[0] != null; });
       var best = got.length ? got.reduce(function (m, g) { return (g[0] < m[0] || (g[0] === m[0] && g[1] < m[1])) ? g : m; }) : null;
-      root.querySelectorAll('[data-lane-best="' + x.k + '"]').forEach(function (el) {
-        el.textContent = best ? (el.classList.contains('mx-l-best') ? 'from ' + money(best[0]) : money(best[0])) : '';
-      });
-      root.querySelectorAll('[data-lane-when="' + x.k + '"]').forEach(function (el) { el.textContent = best ? best[2].when + ' · its cheapest' : ''; });
+      root.querySelectorAll('[data-lane-best="' + x.k + '"]').forEach(function (el) { el.textContent = best ? 'from ' + money(best[0]) : 'Pricing…'; });
       var at = chosen[x.k] || (r.find && r.find.lane === x.k ? r.find.w : (best ? best[2].k : '')) || bandAt[x.k];      // pages/tripmatrix.py `band_window`; none known yet: where it was
       if (at) band(x.k, at);
     });
     drawFind(r.find);
-    var n = Object.keys(known).length, count = document.getElementById('mx-count-n');
+    var n = Object.keys(known).length, count = document.getElementById('mx-count-n'), of = document.getElementById('mx-done-of'), doneN = document.getElementById('mx-done-n');
     if (count) count.textContent = String(n);
+    if (doneN) doneN.textContent = String(n);
+    if (of) of.textContent = n < lanes.length * windows.length ? ' of ' + lanes.length * windows.length : '';
     return r;
   }
-  function drawFind(f) {
+  function drawFind(f) {      // the pick bar: the find (the prototype's "Our pick"), drawn from what is known: its art, its place and days, what it beats, its total
     var box = document.getElementById('mx-find');
     if (!box) return;
-    var w = box.querySelector('#mx-find-w');
-    if (!f) { box.classList.add('is-empty'); box.innerHTML = ''; box.dataset.key = ''; return; }
-    if (box.dataset.key === f.key && w && w.textContent === f.words) return;
-    var link = root.querySelector('.mx-sq[data-sq="' + f.key + '"]');
-    box.innerHTML = '<span class="mx-found">Found</span><a class="mx-find-a" id="mx-find-a" data-open="' + f.key + '" href="' + (link ? link.getAttribute('href') : '#') + '">' +
-      '<span class="mx-find-w" id="mx-find-w"></span><span class="mx-find-d" id="mx-find-d"></span></a>';
-    box.querySelector('#mx-find-w').textContent = f.words;
-    box.querySelector('#mx-find-d').textContent = ' · ' + f.when;
+    if (!f) { box.classList.add('is-empty'); box.dataset.open = ''; box.dataset.key = ''; return; }
+    if (box.dataset.key === f.key) { box.querySelector('.mx-pk-p').textContent = money(known[f.key].c); return; }
+    var link = root.querySelector('.mx-sq[data-sq="' + f.key + '"]'), art = root.querySelector('.mx-lane[data-lane="' + f.lane + '"] .mx-thumb');
+    box.querySelector('.mx-pk-art').innerHTML = art ? art.outerHTML : '';
+    box.querySelector('.mx-pk-h').textContent = f.name + ', ' + f.when;
+    box.querySelector('.mx-pk-s').textContent = f.said.charAt(0).toUpperCase() + f.said.slice(1);
+    box.querySelector('.mx-pk-p').textContent = money(known[f.key].c);
+    box.setAttribute('href', link ? link.getAttribute('href') : '#');
+    box.dataset.open = f.key;
     box.dataset.key = f.key;
     var fresh = box.classList.contains('is-empty');
     box.classList.remove('is-empty');
@@ -169,25 +167,20 @@
     if (curFind && curFind.key === key(x.k, w.k)) return 'Found · ' + vs(curFind.key);
     return w.n + ' nights · ' + money(got.c);
   }
-  function band(laneKey, wKey) {
-    var el = root.querySelector('[data-band="' + laneKey + '"]'), w = windows.filter(function (x) { return x.k === wKey; })[0];
-    var x = lanes.filter(function (l) { return l.k === laneKey; })[0];
+  function band(laneKey, wKey) {      // the ringed nights on a lane's start: its columns are the lane's squares', so it spans as many start days as the trip has nights, as far as there are any
+    var el = root.querySelector('[data-band="' + laneKey + '"]'), at = windows.map(function (x) { return x.k; }).indexOf(wKey);
+    var w = windows[at], x = lanes.filter(function (l) { return l.k === laneKey; })[0];
     if (!el || !w || !x) return;
-    var at = data.days.indexOf(w.k), col = at + 2, from = el.getBoundingClientRect(), want = col + ' / span ' + (w.n + 1);
+    var from = el.getBoundingClientRect(), want = (at + 2) + ' / span ' + Math.max(1, Math.min(w.n, windows.length - at));
     if (el.style.gridColumn.replace(/\s/g, '') !== want.replace(/\s/g, '')) {
       el.style.gridColumn = want;
       if (M() && from.width) M().land(el, from);
     }
     bandAt[laneKey] = wKey;
-    var last = data.days[at + w.n], got = known[key(laneKey, wKey)];
+    var got = known[key(laneKey, wKey)];
     el.dataset.l = bandWords(x, w);
     var lane = root.querySelector('.mx-lane[data-lane="' + laneKey + '"]');
-    if (lane) {
-      lane.classList.toggle('is-lit', !!(curFind && curFind.lane === laneKey && curFind.w === wKey));
-      lane.querySelectorAll('.mx-day[data-day]').forEach(function (d) { d.classList.toggle('is-in', d.dataset.day >= w.k && d.dataset.day <= last); });
-    }
-    var guess = touched && !(got && got.s === 'ok') ? estimate(key(laneKey, wKey), N) : null;
-    root.querySelectorAll('[data-lane-total="' + laneKey + '"]').forEach(function (t) { t.textContent = got && got.s === 'ok' ? money(got.c) : (guess != null ? 'about ' + money(guess) : ''); });
+    if (lane) lane.classList.toggle('is-lit', !!(curFind && curFind.lane === laneKey && curFind.w === wKey));
     root.querySelectorAll('.mx-sq[data-sq^="' + laneKey + '|"]').forEach(function (sq) { sq.classList.toggle('is-on', sq.dataset.sq === key(laneKey, wKey)); });
   }
   function waiting() {
@@ -238,7 +231,7 @@
     }
     var g = touched ? estimate(k, N) : null;
     if (g != null) {
-      box.innerHTML = '<span class="mx-v mx-est"><span class="mx-about">about</span> <span class="mx-est-n"></span></span>';
+      box.innerHTML = '<span class="mx-v mx-est"><span class="mx-about-w">about</span> <span class="mx-est-n"></span></span>';
       box.querySelector('.mx-est-n').textContent = money(g);
       el.classList.add('is-est');
       el.setAttribute('aria-label', head + ': about ' + money(g) + ' for the whole trip, an estimate');
@@ -322,7 +315,7 @@
   root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { if (!known[el.dataset.sq]) { io.observe(el); watched++; } });
   if (!watched) root.dataset.busy = '0';
   else {
-    if (data.warm) fetch(data.warm, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(function () {});      // the head start, once
+    if (data.warm) fetch(data.warm, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } }).then(function (r) { return r.text(); }).catch(function () {});      // the head start, once (its answer read, so the request ends)
     if (!firstIn()) isleIn();
   }
 
@@ -435,7 +428,7 @@
     if (!open.length) close();
   });
   root.addEventListener('click', function (e) {
-    var a = e.target.closest('.mx-sq[data-sq], .mx-find-a[data-open]');
+    var a = e.target.closest('.mx-sq[data-sq], .mx-find[data-open]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
     e.preventDefault();
     var k = a.dataset.sq || a.dataset.open, from = a.classList.contains('mx-sq') ? a : (Array.prototype.filter.call(els(k), function (el) { return el.offsetParent; })[0] || a);
@@ -457,19 +450,12 @@
     looking = n > 0;      // the observer reports on its next frame: until it has, the page is not idle (the tests wait on it)
   }
   function setNights(n) {      // at once, on every move: the words, the days, the squares as estimates or what is kept, the band; nothing is searched
-    var prev = N, ai = windows.map(function (w) { return w.a; }).indexOf(true);
     touched = true;
     use(n);
     windows.forEach(function (w, i) { w.n = n; w.when = data.whens[n][i]; });
     document.querySelectorAll('[data-nights-out]').forEach(function (el) { el.textContent = nightsWords(n); });
     var pct = Math.round((n - data.lo) * 100 / (data.hi - data.lo)) + '%';
     document.querySelectorAll('input[data-nights]').forEach(function (r) { r.value = n; r.setAttribute('aria-valuetext', nightsWords(n)); r.style.setProperty('--fill', pct); });
-    var dates = document.querySelector('[data-dates]'), q = document.getElementById('mx-q');
-    if (dates && ai >= 0) dates.textContent = data.whens[n][ai];
-    if (q && ai >= 0) q.value = q.value.replace(data.whens[prev][ai], data.whens[n][ai]);
-    var grid = root.querySelector('.mx-lanes');
-    if (grid) grid.style.setProperty('--mx-days', data.nlast[n]);
-    root.querySelectorAll('[data-day]').forEach(function (el) { el.classList.toggle('is-off', dayIx[el.dataset.day] >= data.nlast[n]); });
     root.querySelectorAll('a[href^="/plan/matrix"]').forEach(function (a) { var h = a.getAttribute('href'); if (/[?&]r=/.test(h)) a.setAttribute('href', withNights(h, n)); });
     root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { paint(el, el.dataset.sq); });
     remark();

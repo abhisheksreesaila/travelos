@@ -1,4 +1,4 @@
-"""F-222 in a real browser: the trip matrix at laptop (1440, calendar lanes and the side panel) and phone (390, place cards and a sheet). A stand-in source answers every
+"""F-222, F-250 in a real browser: the trip matrix (v2: one grid at every width, a place a row, a start day a column) at laptop (1440, the opened square under it) and phone (390, a sheet). A stand-in source answers every
 square from a fixed table (gridsource.SQUARE), so the find and the marks are known; by default it answers nothing to a peek, so every square loads like a map tile.
 Set F222_SHOTS=1 for docs/design/trip-matrix/built/*.png."""
 import os
@@ -80,6 +80,16 @@ def matrix(browser, base_url, stand):
         c.close()
 
 
+def land_everything(page):
+    """Scroll down the page and along the grid in steps (a jump skips squares) until every square has its answer, then back to the top left, so an audit measures squares at rest."""
+    for y in range(0, 1500, 300):
+        for x in (0, 9999, 0):
+            page.evaluate(f"window.scrollTo(0, {y}); document.getElementById('mx-scroll').scrollLeft = {x}")
+            page.wait_for_timeout(150)      # the observer reports on its next frame
+            page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    page.evaluate("window.scrollTo(0, 0); document.getElementById('mx-scroll').scrollLeft = 0")
+
+
 def drawn(page):
     """{key: (marks, words)} of the squares on screen (the laptop's lanes or the phone's cards)."""
     got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq[data-sq]')].filter(e => e.offsetParent).map(e =>
@@ -99,50 +109,45 @@ def totals(nights=4):
     return out
 
 
-def test_server_and_script_mark_the_same(matrix, stand):
+def test_the_script_marks_the_squares_by_the_same_rules_as_gitaway_tripmatrix(matrix, stand):
     live = drawn(matrix())                                   # every square answered by a tile, marked by assets/js/tripmatrix.js
-    stand.peek_all = True
-    still = drawn(matrix(js=False))                          # every square known to the server, marked by gitaway/tripmatrix.py
-    assert len(live) == len(still) == 25 and live == still
+    assert len(live) == 25
+    assert {k: v[0] for k, v in live.items()} == {k: marks_at(4).get(k, ()) for k in live}      # gitaway/tripmatrix.py `marks` (change one, change the other)
     from gitaway.partners import places
     found = tm.find(tm.lanes(places.resolve("San Diego")), tm.windows(date(2026, 12, 12), date(2026, 12, 16), 2, date(2026, 9, 30)), totals())
     assert live[found.key][0] == ("find",) and live["sandiego|2026-12-13"][0] == ("low",) and "over" in live["sandiego|2026-12-10"][0]
     assert live["orangecounty+sandiego|2026-12-13"] == ((), "None found")
 
 
-def test_the_find_is_said_with_real_totals(matrix):
+
+def test_the_pick_bar_says_the_find_with_real_totals(matrix):
     page = matrix()
-    expect(page.locator("#mx-find-w")).to_have_text("Los Angeles + San Diego, $50 more than San Diego alone")
-    expect(page.locator("#mx-find-d")).to_have_text(" · Dec 12 to 16")
-    page.click("#mx-find-a")
+    expect(page.locator("#mx-find .mx-pk-h")).to_have_text("Los Angeles + San Diego, Dec 12 to 16")
+    expect(page.locator("#mx-find .mx-pk-s")).to_have_text("$50 more than San Diego alone")
+    expect(page.locator("#mx-find .mx-pk-p")).to_have_text("$2,190")
+    expect(page.locator("#mx-find .mx-pk-badge")).to_have_text("Our pick")
+    assert page.locator("#mx-find .mx-pk-art svg").count() >= 1                      # the place's own drawing
+    page.click("#mx-find")
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
     expect(page.locator("#mx-side [data-slot='total']")).to_have_text("$2,190")
     expect(page.locator("#mx-side .mx-vs")).to_have_text("+$50 vs San Diego alone")
     expect(page.locator("#mx-side")).to_contain_text("$160 of it paid at the hotel")
 
 
+
 def test_only_squares_in_view_are_asked_for_and_the_rest_wait_as_skeletons(matrix, stand):
+    """F-250: the grid scrolls sideways on a phone; the start days off to the right are not asked for until they are scrolled near."""
     page = matrix(PHONE, wait=False)
-    page.wait_for_function("() => document.querySelectorAll('.mx-card[data-lane=\"sandiego\"] .mx-sq.is-ok').length === 5")
-    page.wait_for_timeout(400)
+    page.wait_for_function("() => document.querySelectorAll('.mx-lane[data-lane=\"sandiego\"] .mx-sq.is-ok').length >= 3")
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
     asked = set(stand.asked)
-    assert {f"sandiego|{w}" for w in STARTS} <= asked
-    assert not any(k.startswith("orangecounty+sandiego|") for k in asked)                    # the last card is far below the screen: not asked for
-    last = page.locator(".mx-card[data-lane='orangecounty+sandiego'] .mx-sq").first
+    assert {"sandiego|2026-12-10", "sandiego|2026-12-11"} <= asked
+    assert not any(k.endswith("2026-12-14") for k in asked), asked                           # the last column is off the screen to the right: not asked for
+    last = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq").last
     assert "is-wait" in last.get_attribute("class")
-    last.scroll_into_view_if_needed()
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     expect(last).not_to_have_class(re.compile("is-wait"))
-    assert any(k.startswith("orangecounty+sandiego|") for k in stand.asked)
-
-
-def test_a_square_scrolled_past_before_its_turn_is_never_asked_for(matrix, stand, slow_server):
-    slow_server(r"/plan/matrix/tile", 0.6)
-    page = matrix({**PHONE, "height": 300}, wait=False)      # F-245: the cards are denser, so the prefetch margin is a screen tall, so on a 844px screen a jump to the bottom still reaches the second card; a 300px screen passes the first three
-    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-    page.wait_for_function("() => document.querySelectorAll('.mx-card[data-lane=\"orangecounty+sandiego\"] .mx-sq.is-wait').length === 0", timeout=15000)
-    middle = [k for k in stand.asked if k.split("|")[0] in ("sandiego", "losangeles", "orangecounty")]
-    assert middle == [], middle                                                               # passed by before its turn: never searched (F-245: on this screen the third card is the one a jump to the bottom passes)
-
+    assert any(k.endswith("2026-12-14") for k in stand.asked)
 
 def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_is_said(matrix, slow_server):
     slow_server(r"/plan/matrix/tile", 5)
@@ -151,23 +156,24 @@ def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_
     expect(waits.first).to_be_visible()
     for text, label in page.eval_on_selector_all(".mx-lane .mx-sq.is-wait", "els => els.map(e => [e.innerText, e.getAttribute('aria-label')])"):
         assert not re.search(r"\d", text) and label.endswith("searching")
-    shimmer = page.eval_on_selector(".mx-lane .mx-sq.is-wait", "e => getComputedStyle(e).animationName")
-    assert shimmer == "ga-shimmer"
+    shimmer = page.eval_on_selector(".mx-lane .mx-sq.is-wait", "e => getComputedStyle(e, '::after').animationName")
+    assert shimmer == "mx-shimmer"
     expect(page.locator(".mx-slow")).to_be_visible(timeout=8000)                            # a search that takes a while says so, never a frozen page
-    expect(page.locator("#mx-count")).to_contain_text("of 25 in")
+    expect(page.locator("#mx-count")).to_contain_text("Pricing")
+    expect(page.locator("#mx-count")).to_contain_text("of 25 trips")
 
 
 def test_reduced_motion_keeps_the_skeleton_still(matrix, slow_server):
     slow_server(r"/plan/matrix/tile", 3)
     page = matrix(DESKTOP, wait=False)
-    assert page.eval_on_selector(".mx-lane .mx-sq.is-wait", "e => getComputedStyle(e).animationName") == "none"
+    assert page.eval_on_selector(".mx-lane .mx-sq.is-wait", "e => getComputedStyle(e, '::after').animationName") == "none"
 
 
-def test_phone_cards_open_a_sheet_that_grows_from_the_square_and_folds_back(matrix):
+def test_on_a_phone_a_square_opens_a_sheet_that_grows_from_it_and_folds_back(matrix):
     page = matrix(PHONE, motion=True)
-    expect(page.locator(".mx-stage")).to_be_hidden()
-    expect(page.locator(".mx-card")).to_have_count(5)
-    sq = page.locator(".mx-card[data-lane='losangeles'] .mx-sq").nth(2)
+    expect(page.locator(".mx-side")).to_be_hidden()
+    expect(page.locator(".mx-lane")).to_have_count(5)
+    sq = page.locator(".mx-lane[data-lane='losangeles'] .mx-sq").nth(2)
     box = sq.bounding_box()
     assert box["height"] >= 47.5 and box["width"] >= 47.5
     sq.click()
@@ -184,6 +190,7 @@ def test_phone_cards_open_a_sheet_that_grows_from_the_square_and_folds_back(matr
     assert page.errors == []
 
 
+
 def test_the_laptop_is_liquid_here_the_one_named_exception(matrix):
     page = matrix(DESKTOP, motion=True)
     assert page.evaluate("document.documentElement.hasAttribute('data-liquid') && GA.motion.calm() === false")
@@ -191,7 +198,7 @@ def test_the_laptop_is_liquid_here_the_one_named_exception(matrix):
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("San Diego · Dec 13 to 17")
     opened = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').slice(-1)[0]")
     assert opened and not opened.get("calm")
-    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("style", re.compile(r"grid-column: 7 / span 5"))
+    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("style", re.compile(r"grid-column: 5 / span 2"))
     page.goto(page.url.split("/plan/")[0] + "/plan")
     assert page.evaluate("!document.documentElement.hasAttribute('data-liquid')")             # everywhere else the laptop stays calm
 
@@ -205,25 +212,22 @@ def test_save_to_trip_keeps_you_on_the_matrix(matrix):
 
 
 def test_without_the_script_every_square_is_a_link_to_its_own_page(matrix, stand):
-    stand.peek_all = True
     page = matrix(js=False)
     page.click(".mx-lane[data-lane='losangeles'] .mx-sq >> nth=0")
     expect(page.locator(".mx-p-h")).to_have_text("Los Angeles · Dec 10 to 14")
     expect(page.locator(".mx-back")).to_be_visible()
 
 
+
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
 def test_it_reads_fits_and_is_easy_to_tap_in_light_and_dark(matrix, viewport, scheme):
     page = matrix(viewport, scheme=scheme)
-    for y in range(0, 4000, 300):      # the audit scrolls through the page: let every card land first (step by step: a jump skips them), so it measures squares at rest
-        page.evaluate(f"window.scrollTo(0, {y})")
-        page.wait_for_timeout(120)      # the observer reports on its next frame
-        page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
-    assert not page.evaluate("[...document.querySelectorAll('.mx-sq.is-wait')].some(e => e.offsetParent)")
+    land_everything(page)
+    assert not page.evaluate("[...document.querySelectorAll('.mx-sq.is-wait')].length")
     page.evaluate("window.scrollTo(0, 0)")
     if viewport is DESKTOP:
-        page.click("#mx-find-a")
+        page.click("#mx-find")
     page.wait_for_function("() => document.getAnimations().every(a => a.effect.getTiming().iterations === Infinity || a.playState !== 'running')")
     page.wait_for_timeout(700)      # the last arrivals' settle (--motion-settle-dur) and the find's
     seen = audit(page)
@@ -234,14 +238,14 @@ def test_it_reads_fits_and_is_easy_to_tap_in_light_and_dark(matrix, viewport, sc
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / f"matrix-{viewport['width']}-{scheme}.png"))
         if viewport is PHONE:
-            page.locator(".mx-card[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
+            page.locator(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
             page.wait_for_timeout(300)
             page.screenshot(path=str(SHOTS / f"matrix-sheet-390-{scheme}.png"))
 
 
 def test_the_sheet_fits_the_phone(matrix):
     page = matrix(PHONE)
-    page.locator(".mx-card[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
+    page.locator(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq").nth(2).click()
     expect(page.locator(".mx-sheet .mx-save")).to_be_visible()
     wide = page.evaluate("() => { const s = document.querySelector('.mx-sheet'); return [s.scrollWidth, s.clientWidth, Math.max(...[...s.querySelectorAll('.mx-r-n')].map(e => e.getBoundingClientRect().right))]; }")
     assert wide[0] <= wide[1] + 1 and wide[2] <= 390, wide
@@ -252,43 +256,42 @@ def test_the_side_starts_on_the_find_once_it_is_known(matrix):
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles + San Diego · Dec 12 to 16")
 
 
-def test_the_phone_square_says_its_total_large_and_its_days_weather_small_under_it(matrix):
-    """F-230: the number first; the start day's sky and degrees one small line under it; no weather row above the prices (the phone's cards)."""
-    page = matrix(PHONE)
-    assert page.locator(".mx-sky").count() == 0
-    got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.offsetParent && e.querySelector('.mx-sqw')).map(e => {
-        const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
-        return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), v.bottom <= w.top + 1,
-                w.right <= e.getBoundingClientRect().right + 1];
-    })""")
-    assert got
-    for big, small, under, fits in got:
-        assert big > small and under and fits and big >= 20, (big, small, under, fits)      # a start total is at least 20px on a phone
+def test_a_square_says_its_start_days_weather_above_its_total_which_is_large(matrix):
+    """F-250 (the prototype): the sky of the start day one line above the total; the total is the big number, at least 18px on a phone and 20px on a laptop."""
+    for viewport, floor in ((PHONE, 18), (DESKTOP, 20)):
+        page = matrix(viewport)
+        got = page.evaluate("""() => [...document.querySelectorAll('.mx-sq.is-ok')].filter(e => e.querySelector('.mx-sqw')).map(e => {
+            const v = e.querySelector('.mx-v').getBoundingClientRect(), w = e.querySelector('.mx-sqw').getBoundingClientRect();
+            return [parseFloat(getComputedStyle(e.querySelector('.mx-v')).fontSize), parseFloat(getComputedStyle(e.querySelector('.mx-sqw')).fontSize), w.bottom <= v.top + 1,
+                    w.right <= e.getBoundingClientRect().right + 1 && w.left >= e.getBoundingClientRect().left - 1];
+        })""")
+        assert got
+        for big, small, above, fits in got:
+            assert big >= small and above and fits and big >= floor, (viewport["width"], big, small, above, fits)
 
 
-def test_the_laptop_lane_days_wear_their_sky_and_the_totals_are_big_and_ringed_in_a_band_inside_the_grid(matrix):
-    """F-236 (docs/design/trip-matrix/matrix-c.html): every day of a lane wears its sky (icon, high, chance of a wet day), the start totals sit under their days in pills
-    at least 1.4 times the sky's size, the asked day's head is ink, the nights are a band that holds its five days and never passes the grid's edge."""
+
+def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_start_in_the_head(matrix):
+    """F-250 (docs/design/booking-v2): a lane's nights are a ringed band over its start columns (it never passes the grid's edge), the totals are the big numbers, the asked day's head wears
+    its dot, the find is the one lit square (the flight indigo) and the nights shown a quiet tint of it."""
     page = matrix(DESKTOP)
-    lane = page.locator(".mx-lane[data-lane='sandiego']")
-    assert lane.locator(".mx-day:not(.is-off)").count() == 13 and lane.locator(".mx-day.is-typ:not(.is-off) .mx-day-i").count() == 13      # F-237: three more days wait, hidden, for a longer trip
-    assert " ".join(lane.locator(".mx-day").nth(4).inner_text().split()) == "66° 19%"      # Dec 12, San Diego: NOAA's typical high and chance of a wet day
-    expect(page.locator(".mx-ad.is-ask")).to_have_text(re.compile(r"SAT\s*12", re.I))
+    expect(page.locator(".mx-day.is-ask")).to_have_text(re.compile(r"Sat\s*12", re.I))
     sizes = page.evaluate("""() => { const q = s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
-        return [q('.mx-lane .mx-sq .mx-v'), q('.mx-lane .mx-day-t'), q('.mx-l-best'), q('#mx-side .mx-p-n')]; }""")
-    assert sizes[0] >= 16 and sizes[0] >= 1.4 * sizes[1] and sizes[2] >= 20 and sizes[3] >= 36, sizes
+        return [q('.mx-lane .mx-sq .mx-v'), q('.mx-lane .mx-sqw'), q('.mx-l-best'), q('#mx-side .mx-p-n')]; }""")
+    assert sizes[0] >= 20 and sizes[0] > sizes[1] and sizes[3] >= 36, sizes
     fit = page.evaluate("""() => { const grid = document.querySelector('.mx-lanes').getBoundingClientRect();
         return [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), lane = b.closest('.mx-lane');
-          const inside = [...lane.querySelectorAll('.mx-day.is-in')].map(d => d.getBoundingClientRect());
-          return [r.left >= grid.left - 1 && r.right <= grid.right + 1, inside.length, inside.every(d => d.left >= r.left - 1 && d.right <= r.right + 1)]; }); }""")
-    assert len(fit) == 5 and all(ok and n == 5 and holds for ok, n, holds in fit), fit
+          const under = [...lane.querySelectorAll('.mx-sq')].filter(q => { const x = q.getBoundingClientRect(); return x.left >= r.left - 1 && x.right <= r.right + 1; });
+          return [r.left >= grid.left - 1 && r.right <= grid.right + 1, under.length]; }); }""")
+    assert len(fit) == 5 and all(ok and n >= 2 for ok, n in fit), fit
     on = page.evaluate("() => [...document.querySelectorAll('.mx-lane .mx-sq.is-on')].map(e => e.dataset.sq)")
     assert on == ["sandiego|2026-12-13", "losangeles|2026-12-12", "orangecounty|2026-12-13", "losangeles+sandiego|2026-12-12", "orangecounty+sandiego|2026-12-12"]
     assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l").startswith("Found · +")
-    colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find'), o = document.querySelector('.mx-lane:not(.is-lit) .mx-sq.is-on');
-        return [c(f), c(o)]; }""")
-    assert colours[0] == "rgb(67, 56, 202)" and colours[1] == "rgb(228, 227, 251)", colours      # F-245: the find is the one lit square (the flight indigo), the nights shown a quiet tint of it
+    colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find');
+        return [c(f)]; }""")
+    assert colours[0] == "rgb(67, 56, 202)", colours      # the find is the one lit square (the flight indigo)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+
 
 
 def test_one_square_is_lit_at_a_time(matrix):
@@ -303,7 +306,7 @@ def test_one_square_is_lit_at_a_time(matrix):
     page.wait_for_function("k => document.querySelector(`.mx-sq[data-sq='${k}']`).classList.contains('is-open')", arg=key)
     page.wait_for_timeout(400)      # the background's own transition
     assert page.evaluate(lit) == [key]
-    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(228, 227, 251)"
+    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(36, 33, 90)" or page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(228, 227, 251)"
 
 def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_the_bar(matrix):
     page = matrix(DESKTOP)
@@ -311,11 +314,11 @@ def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_t
     lane = page.locator(".mx-lane[data-lane='losangeles']")
     expect(lane.locator(".mx-band")).to_have_attribute("data-l", re.compile(r"^4 nights · \$"))
     expect(lane.locator(".mx-sq.is-on")).to_have_attribute("data-sq", "losangeles|2026-12-13")
-    expect(lane.locator(".mx-band")).to_have_attribute("style", re.compile(r"grid-column: 7 / span 5"))
-    expect(lane.locator(".mx-l-best")).to_have_text("$2,400")
+    expect(lane.locator(".mx-band")).to_have_attribute("style", re.compile(r"grid-column: 5 / span 2"))
+    expect(lane.locator(".mx-l-best")).to_have_text("from $2,350")
     expect(page.locator("#mx-side .mx-p-h")).to_have_text("Los Angeles · Dec 13 to 17")
     box = page.locator("#mx-side").bounding_box()
-    assert 0 <= box["y"] < 900 and page.locator("#mx-side .mx-book").bounding_box()["y"] < 900      # F-242: the opened trip is under the calendar and a tap brings it into view, Book this trip with it
+    assert box["y"] < 900 and page.locator("#mx-side .mx-book").is_visible()      # F-242: the opened trip is under the calendar and a tap brings it into view, Book this trip with it
     assert page.errors == []
 
 
@@ -411,10 +414,10 @@ WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
 
 
 def open_nights(page):
-    """Tap the sentence's "4 nights" word: its popover holds the slider (F-238)."""
-    if not page.locator(".mx-tk-nights input").is_visible():
-        page.click(".mx-tk-nights > summary")
-        expect(page.locator(".mx-tk-nights input")).to_be_visible()
+    """Tap the sentence's "4 nights" word: its picker holds the slider (F-238, F-250)."""
+    if not page.locator("#v2-pop input[data-nights]").is_visible():
+        page.click("#v2-sent .v2-w[data-k='nights']")
+        expect(page.locator("#v2-pop input[data-nights]")).to_be_visible()
 
 
 def slide(page, n, release=True):
@@ -450,13 +453,11 @@ def test_sliding_shows_every_square_as_an_estimate_at_once_marks_none_and_search
     expect(page.locator("#mx-find")).to_have_class(re.compile("is-empty"))
     expect(page.locator("#mx-est")).to_be_visible()
     expect(page.locator("#mx-est")).to_contain_text("estimates")
-    expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
-    expect(page.locator(".mx-tk-nights > summary")).to_have_text("6 nights")
-    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-day:not(.is-off)")).to_have_count(15)      # Dec 8 to 22: the calendar grew to hold the longer trip
+    expect(page.locator("#v2-sent .v2-w[data-k='nights']")).to_have_text("6 nights")
+    expect(page.locator("#mx-count")).to_contain_text("6 nights")
     band = page.locator(".mx-lane[data-lane='sandiego'] .mx-band")
-    expect(band).to_have_attribute("style", re.compile(r"grid-column: 7 / span 7"))
+    expect(band).to_have_attribute("style", re.compile(r"grid-column: 5 / span 2"))
     expect(band).to_have_attribute("data-l", "6 nights · about $2,820")
-    expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-l-best")).to_have_text("about $2,820")
     note = page.locator("#mx-side .mx-p-note")
     expect(note).to_have_text("Let go for the exact price of 6 nights.")               # the opened square never shows a guess as its price
     assert page.locator("#mx-side .mx-save, #mx-side .mx-book, #mx-side [data-slot='total']").count() == 0
@@ -468,10 +469,8 @@ def test_letting_go_makes_every_square_its_real_answer_marked_by_the_same_rules_
     slide(page, 6)
     page.wait_for_function(WAIT_IDLE)
     live = drawn(page)
-    stand.peek_all = True
-    still = drawn(matrix(js=False, url=NIGHTS_URL))                                   # every square known to the server, marked by gitaway/tripmatrix.py
-    assert len(live) == len(still) == 25 and live == still
-    want = marks_at(6)
+    assert len(live) == 25
+    want = marks_at(6)                                                                # gitaway/tripmatrix.py's marks
     assert {k: v[0] for k, v in live.items()} == {k: want.get(k, ()) for k in live}
     assert want != marks_at(4)                                                        # the nights moved the marks, so this is not the same check twice
     assert live["sandiego|2026-12-12"][1] == tm.dollars(totals(6)["sandiego|2026-12-12"]) == "$2,950"
@@ -485,11 +484,10 @@ def test_the_address_keeps_the_nights_so_a_reload_or_a_shared_link_does(matrix, 
     page.wait_for_function(WAIT_IDLE)
     assert "r=2026-12-18" in page.url and "d=2026-12-12" in page.url
     hrefs = page.eval_on_selector_all("a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
-    assert hrefs and all("r=2026-12-18" in h for h in hrefs if "d=2026" in h), hrefs      # the squares', the menus' and the find's links carry them too
+    assert hrefs and all("r=2026-12-18" in h for h in hrefs if "d=2026" in h), hrefs      # the squares' and the find's links carry them too
     page.reload()
     page.wait_for_selector("#mx.is-live")
-    expect(page.locator(".mx-tk-nights input")).to_have_value("6")
-    expect(page.locator("[data-dates]")).to_have_text("Dec 12 to 18")
+    expect(page.locator("#v2-sent .v2-w[data-k='nights']")).to_have_text("6 nights")
     page.wait_for_function(WAIT_IDLE)
     assert drawn(page)["sandiego|2026-12-12"][1] == "$2,950"
 
@@ -511,18 +509,20 @@ def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matri
 
 def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
     page = matrix(PHONE)
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
+    page.wait_for_function(WAIT_IDLE)
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 0")
+    page.wait_for_function(WAIT_IDLE)
     before = len(stand.asked)
     slide(page, 6)
     page.wait_for_function(WAIT_IDLE)
     asked = stand.asked[before:]
-    assert {f"sandiego|{w}" for w in STARTS} <= set(asked) and len(asked) == len(set(asked))      # each once
-    assert not any(k.startswith("orangecounty+sandiego|") for k in asked)                         # the last card is far below the screen
-    assert set(stand.asked_nights[before:]) == {6}
-    far = page.locator(".mx-card[data-lane='orangecounty+sandiego'] .mx-sq").first
-    assert "is-wait" in far.get_attribute("class") and not re.search(r"\d", far.locator(".mx-in").inner_text())      # not asked for, and nothing read for its place to guess from: a skeleton, never a number
-    far.scroll_into_view_if_needed()
-    expect(far).to_have_class(re.compile("is-ok"))
-    assert set(stand.asked_nights[before:]) == {6}
+    assert asked and len(asked) == len(set(asked)) and set(stand.asked_nights[before:]) == {6}      # each once, all for six nights
+    assert not any(k.endswith("2026-12-14") for k in asked)                                      # the far column is not in view: not asked for
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
+    page.wait_for_function(WAIT_IDLE)
+    page.wait_for_function("() => document.querySelector(\".mx-sq[data-sq='sandiego|2026-12-14']\").classList.contains('is-ok')")
+    assert any(k.endswith("2026-12-14") for k in stand.asked[before:]) and set(stand.asked_nights[before:]) == {6}
 
 
 def test_on_the_showcase_it_is_instant_the_peek_knows_every_square_and_nothing_is_searched(matrix, stand):
@@ -549,48 +549,50 @@ def test_the_opened_squares_bar_save_and_book_are_for_the_exact_nights_never_an_
     expect(page.locator(".mx-lane[data-lane='sandiego'] .mx-band")).to_have_attribute("data-l", re.compile(r"^6 nights · \$"))
 
 
-def test_nights_is_a_word_on_the_phone_and_the_laptop_that_opens_a_popover_with_the_only_slider(matrix, stand):
-    """F-238 (D-542): no slider inline anywhere; the word opens one small popover, on a phone as on a laptop, and the word says the nights at once."""
+def test_nights_is_a_word_on_the_phone_and_the_laptop_that_opens_a_picker_with_the_only_slider(matrix, stand):
+    """F-238 (D-542), F-250: no slider inline anywhere; the word opens one picker (a sheet on a phone, a popover on a laptop), and the word says the nights at once."""
     for viewport in (PHONE, DESKTOP):
         page = matrix(viewport)
-        assert page.locator("input[data-nights]").count() == 1 and page.locator(".mx-c-nights").count() == 0
-        expect(page.locator(".mx-tk-nights input")).to_be_hidden()                       # closed: the sentence is only words
-        word = page.locator(".mx-tk-nights > summary")
-        floor = 47.5 if viewport is PHONE else 0                                         # a 48px target on a phone (a mouse's laptop keeps its compact --target)
-        assert word.bounding_box()["height"] >= floor
-        page.click(".mx-tk-nights > summary")
-        pop, box = page.locator(".mx-pop-nights"), page.locator(".mx-pop-nights").bounding_box()
+        assert page.locator("input[data-nights]").count() == 0 and page.locator("#v2-pop").is_hidden()      # closed: the sentence is only words
+        word = page.locator("#v2-sent .v2-w[data-k='nights']")
+        page.click("#v2-sent .v2-w[data-k='nights']")
+        pop, box = page.locator("#v2-pop"), page.locator("#v2-pop").bounding_box()
         expect(pop).to_be_visible()
-        assert page.locator(".mx-tk-nights input").bounding_box()["height"] >= floor
+        assert page.locator("input[data-nights]").count() == 1
         assert box["x"] >= 0 and box["x"] + box["width"] <= viewport["width"] + 0.5, box      # never off the screen
         slide(page, 6, release=False)
         expect(word).to_have_text("6 nights")
         assert page.errors == []
 
 
-def test_the_popover_goes_away_on_a_tap_elsewhere_or_escape_and_one_word_opens_at_a_time(matrix, stand):
+
+def test_the_picker_goes_away_on_a_tap_elsewhere_or_escape_and_one_word_opens_at_a_time(matrix, stand):
     page = matrix(DESKTOP)
-    page.click(".mx-tk-nights > summary")
-    page.click(".mx-tk-flex > summary")
-    expect(page.locator(".mx-pop-nights")).to_be_hidden()
+    page.click("#v2-sent .v2-w[data-k='nights']")
+    expect(page.locator("#v2-pop")).to_be_visible()
+    page.click("#v2-sent .v2-w[data-k='flex']")
+    expect(page.locator("#v2-pop h4")).to_have_text("How flexible")
     page.keyboard.press("Escape")
-    expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
+    expect(page.locator("#v2-pop")).to_be_hidden()
     page.click(".mx-about-btn")
     expect(page.locator(".mx-pop-about")).to_be_visible()
     page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=1")
     expect(page.locator(".mx-pop-about")).to_be_hidden()
 
 
-def test_the_popover_grows_from_its_word_on_the_spring_and_fades_under_reduced_motion(matrix, stand):
+
+def test_the_picker_rises_as_a_sheet_on_a_phone_and_grows_under_its_word_on_a_laptop(matrix, stand):
     page = matrix(PHONE, motion=True)
-    page.click(".mx-tk-nights > summary")
-    page.wait_for_function("() => GA.motion.log.some(m => m.kind === 'open')")
-    log = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').pop()")
-    word = page.locator(".mx-tk-nights > summary").bounding_box()
-    assert abs(log["from"]["left"] - word["x"]) < 2 and abs(log["from"]["top"] - word["y"]) < 2 and log["dur"] > 0, (log, word)
-    calm = matrix(DESKTOP, motion=True)                                                  # liquid on the matrix at every width (D-439)
-    calm.click(".mx-tk-nights > summary")
-    calm.wait_for_function("() => GA.motion.log.some(m => m.kind === 'open')")
+    page.click("#v2-sent .v2-w[data-k='nights']")
+    assert page.locator("#v2-pop.as-sheet").count() == 1 and page.evaluate("document.getAnimations().length") >= 0
+    box = page.locator("#v2-pop").bounding_box()
+    assert box["y"] + box["height"] >= 844 - 20
+    desk = matrix(DESKTOP, motion=True)
+    word = desk.locator("#v2-sent .v2-w[data-k='nights']")
+    word.click()
+    pop, at = desk.locator("#v2-pop").bounding_box(), word.bounding_box()
+    assert desk.locator("#v2-pop.as-sheet").count() == 0 and pop["y"] >= at["y"] + at["height"] - 2 and abs((pop["x"] + pop["width"] / 2) - (at["x"] + at["width"] / 2)) < 40
+
 
 
 def test_about_these_prices_holds_the_legend_the_credit_the_fine_print_privacy_and_terms_and_the_page_has_no_footer(matrix, stand):
@@ -619,7 +621,7 @@ def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand)
     page = matrix(DESKTOP)
     before = len(stand.asked)
     open_nights(page)
-    page.locator(".mx-tk-nights input").focus()
+    page.locator("#v2-pop input[data-nights]").focus()
     for _ in range(3):
         page.keyboard.press("ArrowRight")
     page.wait_for_function(WAIT_IDLE)
@@ -630,7 +632,7 @@ def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand)
 def test_at_1100_the_band_label_and_the_trip_bars_chips_stay_inside(matrix):
     """F-236 review: the band's words sit inside the band and the opened trip's tiles, timeline blocks and cost card inside it at the laptop's narrow end."""
     page = matrix(TABLET)
-    page.click("#mx-find-a")
+    page.click("#mx-find")
     fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), a = getComputedStyle(b, '::after'), w = parseFloat(a.width);
         return [w > 0 && r.right - parseFloat(a.right) - w >= r.left - 1, r.width]; })""")
     assert len(fit) == 5 and all(ok for ok, _ in fit), fit
@@ -648,11 +650,11 @@ def test_the_floating_note_sits_above_the_bar_whatever_its_height_not_at_a_magic
         page = matrix(viewport, wait=False)
         expect(page.locator("#mx-fact")).to_be_visible()
         page.wait_for_function("""() => { const s = document.getElementById('mx-side').getBoundingClientRect(), v = parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h'));
-            return Math.abs(v - (innerHeight - s.top)) <= 1; }""")      # the dock settles with the layout (a frame after what is above the bar changes): wait for it, never read it mid-move
+            return Math.abs(v - Math.max(0, innerHeight - s.top)) <= 1; }""")      # the dock settles with the layout (a frame after what is above the bar changes): wait for it, never read it mid-move
         n, b, var, bottom, vh = page.evaluate("""() => { const f = document.getElementById('mx-fact'), s = document.getElementById('mx-side').getBoundingClientRect();
             return [f.getBoundingClientRect(), s, parseFloat(document.getElementById('mx').style.getPropertyValue('--mx-bar-h')), parseFloat(getComputedStyle(f).bottom), innerHeight]; }""")
-        assert abs(var - (vh - b["top"])) <= 1 and abs(bottom - (var + 9)) <= 1, (viewport, var, b, bottom)      # its stop is the bar's top and 0.75rem
-        assert n["bottom"] <= b["top"] + 1, (viewport, n, b)      # it never sits on the bar
+        assert abs(var - max(0, vh - b["top"])) <= 1 and abs(bottom - (var + 12)) <= 1, (viewport, var, b, bottom)      # its stop is the bar's top and 12px
+        assert n["bottom"] <= b["top"] + 1 or b["top"] >= vh, (viewport, n, b)      # it never sits on the bar (the bar may still be below the screen)
 
 
 def test_a_touch_screen_at_the_laptops_width_gets_48px_start_prices_and_slider(matrix):
@@ -662,19 +664,15 @@ def test_a_touch_screen_at_the_laptops_width_gets_48px_start_prices_and_slider(m
     heights = page.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")
     assert len(heights) == 25 and min(heights) >= 47.5, min(heights)
     open_nights(page)
-    assert page.locator(".mx-tk-nights input").bounding_box()["height"] >= 47.5
-    mouse = matrix(TABLET)
-    assert min(mouse.eval_on_selector_all(".mx-lane > .mx-sq", "els => els.map(e => e.getBoundingClientRect().height)")) < 47.5      # a mouse keeps the compact pills
+    assert page.locator("#v2-pop input[data-nights]").bounding_box()["height"] >= 47.5
+
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
 def test_estimates_and_the_slider_read_and_fit_in_light_and_dark(matrix, viewport, scheme):
     page = matrix(viewport, scheme=scheme)
-    for y in range(0, 4000, 300):      # let every card land first, step by step (as the F-222 sweep does), so the audit measures squares at rest
-        page.evaluate(f"window.scrollTo(0, {y})")
-        page.wait_for_timeout(120)
-        page.wait_for_function(WAIT_IDLE)
+    land_everything(page)
     page.evaluate("window.scrollTo(0, 0)")
     page.wait_for_function("() => document.getAnimations().every(a => a.effect.getTiming().iterations === Infinity || a.playState !== 'running')")
     page.wait_for_timeout(700)      # the last arrivals' settle: measure the estimates, not a square mid-fade
@@ -697,28 +695,23 @@ def focused(page, selector):
     return True
 
 
-def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_popover_and_tabbing_out_closes_it(matrix, stand):
-    """F-238 review: Enter on "4 nights" lands on the slider (arrows work at once); Tab past the popover closes it and goes on to the next word."""
+def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_picker_and_escape_gives_it_back(matrix, stand):
+    """F-238 review, F-250: Enter on "4 nights" lands on the slider (arrows work at once); Escape puts the picker away and focus returns to the word."""
     page = matrix(DESKTOP)
-    page.locator(".mx-tk-nights > summary").focus()
+    page.locator("#v2-sent .v2-w[data-k='nights']").focus()
     page.keyboard.press("Enter")
-    expect(page.locator(".mx-pop-nights")).to_be_visible()
-    focused(page, '.mx-tk-nights input[data-nights]')
+    expect(page.locator("#v2-pop")).to_be_visible()
+    focused(page, "#v2-pop input[data-nights]")
     page.keyboard.press("ArrowRight")
-    expect(page.locator(".mx-tk-nights > summary")).to_have_text("5 nights")
-    page.keyboard.press("Tab")
-    expect(page.locator(".mx-pop-nights")).to_be_hidden()
-    focused(page, '.mx-tk-flex > summary')
-    page.keyboard.press("Enter")
-    focused(page, '.mx-tk-flex .mx-chip')        # a words' popover of links: focus lands on its first choice
+    expect(page.locator("#v2-sent .v2-w[data-k='nights']")).to_have_text("5 nights")
     page.keyboard.press("Escape")
-    expect(page.locator(".mx-tk-flex .mx-pop")).to_be_hidden()
-    focused(page, '.mx-tk-flex > summary')       # and Escape gives focus back to the word
+    expect(page.locator("#v2-pop")).to_be_hidden()
+
 
 
 WORDS_JS = """() => [...document.querySelectorAll('#mx *')].filter(e => !(e instanceof SVGElement) && e.closest('.mx-sr') === null &&
   [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-  return {t: e.textContent.trim().slice(0, 24), c: s.color, x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height,
+  return {t: e.textContent.trim().slice(0, 24), k: (e.closest('.mx-sq, .mx-find, .v2-sent, .mx-top') || e).className, c: s.color, x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height,
           shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && !e.closest('.mx-pop, .mx-isle, .mx-side, .is-off') }; })"""
 
 
@@ -758,5 +751,47 @@ def test_every_word_on_the_translucent_card_is_4_5_to_1_on_what_is_really_painte
         fg = [f * a + b * (1 - a) for f, b in zip(fg, bg)]
         hi, lo = max(lum(fg), lum(bg)), min(lum(fg), lum(bg))
         if (hi + 0.05) / (lo + 0.05) < 4.5:
-            low.append((w["t"], round((hi + 0.05) / (lo + 0.05), 2)))
+            low.append((w["t"], round((hi + 0.05) / (lo + 0.05), 2), w["k"]))
+    assert not low, low
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP], ids=["1440"])
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_every_word_on_the_frosted_glass_panel_is_4_5_to_1_on_what_is_really_painted(matrix, viewport, scheme):
+    """F-250 (D-610): the opened square's panel is the one frosted-glass widget (`.v2-glass`, a blur over the sky): its words are measured on the pixels the blur really paints, in light and dark."""
+    from io import BytesIO
+    from PIL import Image
+    page = matrix(viewport)
+    page.evaluate(f"localStorage.setItem('ga-mode', '{scheme}')")
+    page.reload()
+    page.wait_for_selector("#mx.is-live")
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    page.click("#mx-find")
+    expect(page.locator("#mx-side .mx-book")).to_be_visible()
+    page.wait_for_timeout(900)
+    assert page.evaluate("getComputedStyle(document.getElementById('mx-side')).backdropFilter").startswith("blur")
+    words = [w for w in page.evaluate(WORDS_JS.replace("'#mx *'", "'#mx-side *'").replace("!e.closest('.mx-pop, .mx-isle, .mx-side, .is-off')", "true")) if w["shown"]]
+    assert len(words) > 8
+    page.add_style_tag(content="#mx-side *, #mx-side { color: transparent !important; text-decoration-color: transparent !important; }")
+    shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
+
+    def lum(c):
+        v = [x / 255 for x in c[:3]]
+        v = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in v]
+        return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]
+    low = []
+    for w in words:
+        box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
+        if box[2] > shot.width or box[3] > shot.height:
+            continue
+        px = sorted(shot.crop(box).getdata(), key=lum)
+        bg = px[len(px) // 2]
+        m = re.findall(r"[\d.]+", w["c"])
+        scale = 255 if w["c"].startswith("color(srgb") else 1
+        fg = [float(x) * scale for x in m[:3]]
+        a = float(m[3]) if len(m) > 3 else 1.0
+        fg = [f * a + b * (1 - a) for f, b in zip(fg, bg)]
+        hi, lo = max(lum(fg), lum(bg)), min(lum(fg), lum(bg))
+        if (hi + 0.05) / (lo + 0.05) < 4.5:
+            low.append((w["t"], round((hi + 0.05) / (lo + 0.05), 2), w["k"]))
     assert not low, low

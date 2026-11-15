@@ -1,16 +1,17 @@
-"""F-241: "What are you after?", the search before the trip matrix (gitaway/pages/tripask.py, gitaway/interests.py). A signed-in family with no booked trip lands here; Search opens
-the matrix on what the sentence said and keeps the picked interests for the family."""
+"""F-241, F-250: "What are you after?", the v2 landing (gitaway/pages/tripask.py, gitaway/v2sentence.py, gitaway/interests.py). A signed-in family with no booked trip lands here; the sentence's
+words (no free typing) are the matrix's real search parameters; Search opens the matrix on them and keeps the picked interests for the family."""
 import re
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from gitaway import interests, tripsentence
-from gitaway.pages import tripask
-from tests.test_calendar import book
+from gitaway import interests, v2sentence
+from gitaway.pages import tripmatrix
 from tests.test_liteapi import KEY
 from tests.test_signin import person, sign_in
 from tests.test_roles import crew  # noqa: F401 (fixture)
+
+WORDS = {"to": "San Diego", "home": "SFO", "d": "2026-12-12", "n": "4", "a": "2", "k": "7,10", "x": "2", "nb": "", "b": "2300"}
 
 
 def where(r):
@@ -29,15 +30,10 @@ def real(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", KEY)
 
 
-def test_a_family_with_no_trip_lands_on_the_ask(client):
+def test_a_signed_in_person_lands_on_the_ask(client):
     sign_in(client, "ari")
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 303 and where(r) == "/plan/ask"
-
-
-def test_a_family_with_a_trip_still_lands_on_its_cockpit(client):
-    assert book(client).status_code == 303
-    assert where(client.get("/", follow_redirects=False)) == "/trip/cockpit"
 
 
 def test_without_the_matrix_the_door_is_still_the_import(client, no_matrix):
@@ -48,94 +44,113 @@ def test_without_the_matrix_the_door_is_still_the_import(client, no_matrix):
 
 def test_with_a_liteapi_key_off_the_showcase_the_ask_exists(client, real):
     sign_in(client, "ari")
-    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
     assert client.get("/plan/ask").status_code == 200
 
 
-def test_the_page_asks_and_shows_every_interest_and_idea_with_the_top_bar(client):
+def test_the_page_is_one_sentence_of_eight_words_and_no_box_to_type_in(client):
     sign_in(client, "ari")
     html = client.get("/plan/ask").text
-    assert "What are you after?" in html and 'name="q"' in html and 'class="ga-tb' in html
-    assert re.findall(r'name="i" value="([a-z]+)"', html) == list(interests.KEYS)
-    assert len(re.findall(r'class="ak-ex"', html)) == 3
-    assert "tripask.css" in html and "tripask.js" in html
+    assert [re.search(r'data-k="(\w+)"', t).group(1) for t in re.findall(r'<span[^>]*class="v2-w"[^>]*>', html)] == list(v2sentence.WORD_KEYS)
+    assert "A family of 4" in html and ">SFO<" in html and "San Diego, or nearby" in html and "any budget" in html and "anything" in html
+    assert "<textarea" not in html and 'type="text"' not in html and 'name="q"' not in html
+    assert "Show me the trips" in html and "v2-tokens.css" in html and 'class="ga-page v2"' in html
 
 
-def test_every_example_reads_whole_and_opens_a_matrix_with_no_problem(client):
+def test_the_forms_hidden_fields_say_the_words_as_the_matrixs_parameters(client):
     sign_in(client, "ari")
-    for text in tripask.examples():
-        ask = tripsentence.read(text)
-        assert ask.unread == (), text
-        r = client.post("/plan/ask", data={"q": text}, follow_redirects=False)
-        assert r.status_code == 303, text
-        assert client.get(where(r)).status_code == 200
+    html = client.get("/plan/ask?to=Lake+Tahoe&home=OAK&d=2027-01-09&r=2027-01-13&a=2&k=&x=1&nb=0&b=3000").text
+    fields = dict(re.findall(r'<input type="hidden" name="(\w+)" value="([^"]*)"', html))
+    assert (fields["to"], fields["home"], fields["a"], fields["x"], fields["nb"], fields["b"], fields["n"]) == ("Lake Tahoe", "OAK", "2", "1", "0", "3000", "4")
+    assert fields["d"] == "2027-01-09"
+    assert "The two of us" in html and "give or take 1 day" in html and "$3,000" in html and "Lake Tahoe</span>" in html
 
 
-def test_search_opens_the_matrix_on_the_sentences_place_dates_and_party(client):
+def test_every_interest_is_an_option_the_picker_offers(client):
     sign_in(client, "ari")
-    r = client.post("/plan/ask", data={"q": "A family of 4, SFO to San Diego, Dec 12 to 16"}, follow_redirects=False)
-    assert r.status_code == 303
-    url = urlsplit(where(r))
-    q = {k: v[0] for k, v in parse_qs(url.query).items()}
-    assert url.path == "/plan/matrix"
-    assert (q["to"], q["home"], q["d"], q["r"], q["a"]) == ("San Diego", "SFO", "2026-12-12", "2026-12-16", "2")
+    html = client.get("/plan/ask").text
+    spec = v2sentence.json.loads(re.search(r'id="v2-data">(.*?)</script>', html, re.S).group(1))
+    assert [i[0] for i in spec["interests"]] == list(interests.KEYS)
+    assert "Lake Tahoe" in [p["n"] for p in spec["places"]] or "San Diego" in [p["n"] for p in spec["places"]]
 
 
-def test_a_place_without_dates_opens_the_matrix_on_its_own_default_dates(client):
+def test_words_say_who_when_how_long_and_how_much():
+    s = tripmatrix.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2", "", "2300")
+    assert v2sentence.words(v2sentence.spec_of(s, ("beaches", "vegetarian"))) == {
+        "who": "A family of 4", "from": "SFO", "where": "San Diego, or nearby", "start": "Sat, Dec 12", "flex": "give or take 2 days", "nights": "4 nights", "budget": "$2,300",
+        "into": "vegetarian & beaches"}
+    s = tripmatrix.state("Lake Tahoe", "OAK", "2026-12-12", "2026-12-15", "1", "", "0", "0", "")
+    w = v2sentence.words(v2sentence.spec_of(s, ()))
+    assert (w["who"], w["where"], w["flex"], w["nights"], w["budget"], w["into"]) == ("Just me", "Lake Tahoe", "on the dot", "3 nights", "any budget", "anything")
+
+
+def test_the_words_become_the_matrixs_search_parameters():
+    to, problem = v2sentence.address(WORDS)
+    q = {k: v[0] for k, v in parse_qs(urlsplit(to).query).items()}
+    assert problem == "" and urlsplit(to).path == "/plan/matrix"
+    assert q == {"to": "San Diego", "home": "SFO", "d": "2026-12-12", "r": "2026-12-16", "a": "2", "k": "7,10", "x": "2", "b": "2300"}
+    to, _ = v2sentence.address({**WORDS, "nb": "0", "n": "6", "k": "", "b": ""})
+    q = {k: v[0] for k, v in parse_qs(urlsplit(to).query).items()}
+    assert (q["r"], q["nb"], q["k"] if "k" in q else "", "b" in q) == ("2026-12-18", "0", "", False)
+
+
+@pytest.mark.parametrize("over,words", [({"d": "soon"}, "Pick a start day"), ({"n": "0"}, "Pick how many nights"), ({"a": "9"}, "more than 8 travelers"), ({"to": "Atlantis"}, "does not know that place")])
+def test_a_search_that_cannot_run_says_why_in_words(over, words):
+    to, problem = v2sentence.address({**WORDS, **over})
+    assert to == "" and words in problem
+
+
+def test_search_opens_the_matrix_on_what_the_words_said(client):
     sign_in(client, "ari")
-    r = client.post("/plan/ask", data={"q": "from SFO to Lake Tahoe"}, follow_redirects=False)
-    assert r.status_code == 303
-    q = {k: v[0] for k, v in parse_qs(urlsplit(where(r)).query).items()}
-    assert (q["to"], q["home"]) == ("Lake Tahoe", "SFO") and q["d"] < q["r"]
+    r = client.post("/plan/ask", data=WORDS, follow_redirects=False)
+    assert r.status_code == 303 and where(r).startswith("/plan/matrix?to=San+Diego&home=SFO&d=2026-12-12&r=2026-12-16")
+    assert client.get(where(r)).status_code == 200
 
 
-@pytest.mark.parametrize("text", ["", "somewhere warm", "Lisbon", "   "])
-def test_a_sentence_with_no_place_stays_here_and_says_so_in_place(client, text):
+def test_the_scripts_own_post_answers_json_with_the_address_or_the_problem(client):
     sign_in(client, "ari")
-    r = client.post("/plan/ask", data={"q": text, "i": ["seafood"]}, follow_redirects=False)
-    assert r.status_code == 200
-    assert "I could not find a place in that." in r.text
-    assert 'aria-invalid="true"' in r.text and 'role="alert"' in r.text
-    assert re.findall(r'<input[^>]*value="(\w+)"[^>]*checked|<input[^>]*checked[^>]*value="(\w+)"', r.text) == [("seafood", "")] or [a or b for a, b in re.findall(r'<input[^>]*value="(\w+)"[^>]*checked|<input[^>]*checked[^>]*value="(\w+)"', r.text)] == ["seafood"]      # what they picked is kept
+    ok = client.post("/plan/ask", data=WORDS, headers={"x-v2": "1"})
+    assert ok.json()["to"].startswith("/plan/matrix?to=San+Diego")
+    bad = client.post("/plan/ask", data={**WORDS, "to": "Atlantis"}, headers={"x-v2": "1"})
+    assert bad.status_code == 400 and "does not know that place" in bad.json()["error"]
 
 
-def test_a_place_it_cannot_find_an_airport_for_says_so_and_never_guesses(client):
+def test_a_search_that_cannot_run_comes_back_here_with_the_problem_in_place(client):
     sign_in(client, "ari")
-    r = client.post("/plan/ask", data={"q": "SFO to Atlantis, Dec 12 to 16"}, follow_redirects=False)
-    assert r.status_code == 200 and "does not know that place" in r.text
+    r = client.post("/plan/ask", data={**WORDS, "to": "Atlantis"}, follow_redirects=False)
+    assert r.status_code == 200 and "does not know that place" in r.text and 'role="alert"' in r.text
 
 
 def test_interests_are_kept_for_the_family_in_the_lists_order(client):
     sign_in(client, "ari")
-    r = client.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["hikes", "vegetarian", "seafood"]}, follow_redirects=False)
+    r = client.post("/plan/ask", data={**WORDS, "i": ["hikes", "vegetarian", "seafood"]}, follow_redirects=False)
     assert r.status_code == 303
     assert interests.get(person("ari")) == ("vegetarian", "seafood", "hikes")
     html = client.get("/plan/ask").text
-    assert len(re.findall(r"checked", html)) == 3      # the ask shows them picked again
+    assert "vegetarian, seafood &amp; hikes" in html or "vegetarian, seafood & hikes" in html      # the sentence says them again
 
 
 def test_unknown_and_repeated_interests_are_dropped_not_stored(client):
     sign_in(client, "ari")
-    client.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["seafood", "seafood", "skydiving", "<b>x</b>", "SEAFOOD"]}, follow_redirects=False)
+    client.post("/plan/ask", data={**WORDS, "i": ["seafood", "seafood", "skydiving", "<b>x</b>", "SEAFOOD"]}, follow_redirects=False)
     assert interests.get(person("ari")) == ("seafood",)
 
 
 def test_picking_nothing_clears_the_interests(client):
     sign_in(client, "ari")
-    client.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["seafood"]}, follow_redirects=False)
-    client.post("/plan/ask", data={"q": tripask.examples()[0]}, follow_redirects=False)
+    client.post("/plan/ask", data={**WORDS, "i": ["seafood"]}, follow_redirects=False)
+    client.post("/plan/ask", data=WORDS, follow_redirects=False)
     assert interests.get(person("ari")) == ()
 
 
 def test_interests_belong_to_the_family_not_to_anyone_else(client):
     sign_in(client, "ari")
-    client.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["beaches"]}, follow_redirects=False)
+    client.post("/plan/ask", data={**WORDS, "i": ["beaches"]}, follow_redirects=False)
     assert interests.get(person("sam")) == ()
 
 
 def test_signed_out_may_search_like_the_matrix_it_leads_to_but_keeps_nothing(client):
     assert client.get("/plan/ask").status_code == 200
-    r = client.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["beaches"]}, follow_redirects=False)
+    r = client.post("/plan/ask", data={**WORDS, "i": ["beaches"]}, follow_redirects=False)
     assert r.status_code == 303 and urlsplit(where(r)).path == "/plan/matrix"
 
 
@@ -147,5 +162,5 @@ def test_clean_keeps_only_the_fixed_list():
 def test_a_viewer_may_search_but_never_changes_the_familys_interests(crew):
     """Review of F-241: /plan/ask is an open post (a viewer may search), so the one write behind it, the family's interests, is an editor's or admin's alone."""
     admin, _, viewer = crew
-    r = viewer.post("/plan/ask", data={"q": tripask.examples()[0], "i": ["seafood", "hikes"]}, follow_redirects=False)
+    r = viewer.post("/plan/ask", data={**WORDS, "i": ["seafood", "hikes"]}, follow_redirects=False)
     assert r.status_code == 303 and interests.get(person("ari")) == ()

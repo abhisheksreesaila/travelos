@@ -128,7 +128,7 @@ def test_the_hub_is_named_community_trips_and_never_discover(client):
         for path in ("/", "/community", "/plan/matrix", "/creators", "/forks", "/family", "/signin"):
             html = client.get(path).text
             assert "Discover" not in html and "discover" not in html.lower().replace("discoverable", ""), path
-            if 'id="si-dialog"' not in html:      # F-200: sign-in is a full-screen page (the brand and Cancel only), so it has no nav
+            if 'id="si-dialog"' not in html and "ga-page v2" not in html:      # D-610: a v2 page (the ask, the matrix) has no site nav; F-200: sign-in is a full-screen page (the brand and Cancel only), so it has no nav
                 assert re.search(r'<nav[^>]*>.*?href="/community"[^>]*>Community trips<', html, re.S), path
     html = client.get("/community").text
     assert "<title>GitAway · Community trips</title>" in html

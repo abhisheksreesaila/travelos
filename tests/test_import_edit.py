@@ -138,7 +138,7 @@ def test_the_import_link_waits_beside_the_matrix_where_trips_start(client):
     client.post("/trips/import/save", data={"text": TEMPLATE})
     html = client.get("/plan/matrix").text
     assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Already booked\? Bring your trip in', html, re.S)
-    assert html.index('id="mx-sent"') < html.index('id="mx-import"') < html.index('id="mx-data"')      # planning a new trip comes first; the import is a quiet link in its meta row
+    assert html.index('id="v2-sent"') < html.index('id="mx-import"') < html.index('id="mx-data"')      # planning a new trip comes first; the import is a quiet link in its meta row
     bar = client.get("/trip/canvas").text      # and the top bar's trip menu, on the trip itself
     assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Import a trip you booked', bar, re.S)
 

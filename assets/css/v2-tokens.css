@@ -1,0 +1,102 @@
+/* GitAway design language v2 (F-250, D-610): the booking prototype's look, docs/design/booking-v2/index.html, which the founder approved ("it just felt like water").
+   A sky gradient with a sun and clouds behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
+   accent; the kinds' colours; Newsreader for the display and Inter for everything you read and every price (tabular figures). It supersedes Direction A's grey canvas
+   and Geist, and omxqua's "no glass or blur", for the pages that opt in. A page opts in with ONE class: `v2` on its wrapper (layout.page(v2=True)).
+   These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
+   The old token names (--ink, --card, --k-flight ...) are pointed at v2's values on a v2 page, so the parts not redrawn yet (the opened square, the booking sheet) take the new look. */
+@font-face { font-family: "Inter"; src: url("/assets/fonts/inter-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Newsreader"; src: url("/assets/fonts/newsreader-variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
+
+:root:has(.v2) {
+  font-size: 100%;      /* a rem is 16px on a v2 page (Direction A's 12px root made the old pages thin and small: the founder's complaint) */
+  --text-min: 1rem; --label-min: 0.8125rem; --target: 3rem;
+  --f-display: "Newsreader", Georgia, serif;
+  --f-ui: "Inter", system-ui, sans-serif;
+  --d-wt: 560; --d-track: -0.022em; --d-lh: 1.08;
+  --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
+
+  --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
+  --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73; --on-ink: #FFFFFF;
+  --card-t: rgb(255 255 255 / .86); --card-solid: #FFFFFF; --card-2: #F2F3FA; --lead-bg: #F8F8FD;
+  --line: rgb(15 17 36 / .10); --line-2: rgb(15 17 36 / .18);
+  --glass: rgb(255 255 255 / .62); --glass-line: rgb(255 255 255 / .75);
+  --word: #372DB0;      /* the sentence's tappable words: the indigo a little deeper, so each stays 4.5:1 on the sky */
+  --flight: #4338CA; --flight-t: #E4E3FB; --flight-i: #2A2185;
+  --stay: #8B2FC9; --stay-t: #F1E3FA; --stay-i: #5A1785;
+  --food: #C92A5E; --food-t: #FBE1EA; --food-i: #7E1538;
+  --see: #0F766E; --see-t: #D9F2EF; --see-i: #0B4D48;
+  --tix: #C2410C; --tix-t: #FCE6DA; --tix-i: #7A2906;
+  --wx: #0369A1; --wx-t: #DBEFFA; --wx-i: #034769;
+  --ride: #FFD43B; --ride-t: #FFF4C2; --ride-i: #5C4300; --ride-on: #17140A;
+  --sun: #FFB547; --sun-ink: #D97706; --on: #FFFFFF; --pill-on: #0F1124; --pill-fg: #FFFFFF;
+  --cell: rgb(228 227 251 / .70); --cell-hover: rgb(214 212 250 / .95); --pick: #4338CA; --pick-band: #8B2FC9; --band-label: #8B2FC9;
+  --hatch: rgb(15 17 36 / .06); --scrim: rgb(10 10 30 / .28);
+  --sh1: 0 1px 0.125rem rgb(20 20 60 / .06), 0 0.125rem 0.5rem rgb(20 20 60 / .06);
+  --sh2: 0 0.125rem 0.375rem rgb(20 20 60 / .08), 0 0.875rem 2rem -0.625rem rgb(40 30 110 / .22);
+  --sh3: 0 0.25rem 0.875rem rgb(20 20 60 / .07), 0 2.125rem 4.375rem -1.5rem rgb(40 30 110 / .32);
+  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
+  --sunset: linear-gradient(120deg, #4338CA 0%, #8B2FC9 52%, #C92A5E 100%);
+  --cloud: color-mix(in srgb, #fff 85%, transparent);
+
+  /* the motion: springs as linear() curves (the prototype's), durations in one place; assets/js/v2.js reads them with getComputedStyle, so no script writes a time */
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  --spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+  --v2-ease: cubic-bezier(.2, .8, .2, 1);
+  --v2-glide: 760ms;       /* the sentence gliding up into the results */
+  --v2-sheet: 420ms;       /* a phone's picker rising */
+  --v2-pop: 220ms;         /* a laptop's picker growing from its word */
+  --v2-out: 150ms;         /* a picker leaving */
+  --v2-settle: 620ms;      /* a square settling into its answer */
+  --v2-band: 450ms;        /* the nights band moving */
+  --v2-pick: 520ms;        /* the pick bar arriving */
+  --v2-quick: 200ms;       /* a hover, a tap, a colour */
+  --v2-slow: 1000ms;       /* the sun and the shore leaving for the results */
+  --v2-shimmer: 1300ms;    /* one pass of a waiting square's shimmer */
+  --v2-flash: 700ms;       /* the flash on a word that just changed */
+  --v2-spin-t: 800ms;      /* one turn of the spinner */
+  --v2-drift: 60s;         /* a cloud drifting */
+
+  --r-xl: 2rem; --r-lg: 1.5rem; --r-md: 1.125rem; --r-sm: 0.75rem;
+  --lead: 14.125rem; --cw: 6.25rem; --ch: 4.375rem;
+  --v2-sheet-w: min(23.75rem, calc(100vw - 1.5rem));
+
+  /* the old names, pointed at v2 */
+  --paper: var(--card-2); --paper-2: var(--card-2); --ground: var(--sky-3);
+  --card: var(--card-solid);
+  --k-flight: var(--flight); --k-flight-t: var(--flight-t); --k-flight-i: var(--flight-i);
+  --k-stay: var(--stay); --k-stay-t: var(--stay-t); --k-stay-i: var(--stay-i);
+  --k-food: var(--food); --k-food-t: var(--food-t); --k-food-i: var(--food-i);
+  --k-see: var(--see); --k-see-t: var(--see-t); --k-see-i: var(--see-i);
+  --k-tix: var(--tix); --k-tix-t: var(--tix-t); --k-tix-i: var(--tix-i);
+  --k-wx: var(--wx); --k-wx-t: var(--wx-t); --k-wx-i: var(--wx-i);
+  --k-ride: var(--ride); --k-ride-t: var(--ride-t); --k-ride-on: var(--ride-on);
+  --k-on: var(--on);
+  --font-display: var(--f-display); --font-body: var(--f-ui);
+  color-scheme: light;
+}
+:root[data-mode="dark"]:has(.v2) {
+  --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F;
+  --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4; --on-ink: #0F1124;
+  --card-t: rgb(20 22 44 / .80); --card-solid: #171A33; --card-2: #22264A; --lead-bg: #1A1D39;
+  --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
+  --glass: rgb(26 28 56 / .60); --glass-line: rgb(255 255 255 / .10);
+  --word: #9A94FF;
+  --flight: #7B73FF; --flight-t: #24215A; --flight-i: #D2CFFF;
+  --stay: #C084FC; --stay-t: #321A4A; --stay-i: #EBD4FD;
+  --food: #FF6B9A; --food-t: #401528; --food-i: #FFD0DF;
+  --see: #2DD4BF; --see-t: #0E302D; --see-i: #BCF0E8;
+  --tix: #FB923C; --tix-t: #3D1E0E; --tix-i: #FFD6BC;
+  --wx: #38BDF8; --wx-t: #0C2A3E; --wx-i: #C6EAFC;
+  --ride-t: #3A300C; --ride-i: #FFE89A;
+  --sun-ink: #FBBF24; --pill-on: #F4F5FB; --pill-fg: #0F1124;
+  --cell: rgb(52 50 120 / .55); --cell-hover: rgb(70 66 150 / .75); --pick: #4F46E5; --pick-band: #9333EA; --band-label: #9333EA;
+  --hatch: rgb(255 255 255 / .06); --scrim: rgb(10 10 30 / .5);
+  --sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
+  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
+  --sunset: linear-gradient(120deg, #4F46E5 0%, #9333EA 52%, #DB2777 100%);
+  --cloud: rgb(255 255 255 / .06);
+  /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); v2's own bright kind colours above are for text and rings on the dark sky */
+  --k-flight: #4338CA; --k-stay: #8B2FC9; --k-food: #C92A5E; --k-see: #0F766E; --k-tix: #C2410C; --k-wx: #0369A1;
+  color-scheme: dark;
+}
+@media (max-width: 719px) { :root:has(.v2) { --lead: 6.25rem; --cw: 5rem; --ch: 4.125rem; } }

@@ -1580,7 +1580,7 @@ Founder, 2026-11-14: "The cover page is very nicely done, especially the first m
 ## The v2 build (founder approved booking v2's look, 2026-11-14; planning v2 and creators v2 designed to match)
 Build to the prototypes in docs/design/booking-v2, planning-v2 and creators-v2: the sky gradient, restrained frosted-glass cards, Newsreader with Inter, liquid springs. Real data wherever the app has it (LiteAPI squares, NOAA/MET weather, OSRM drives); a widget without a real source is left out in production, never invented (sample only on the showcase). Old pages go once their v2 replacement is live.
 
-## F-250 Design system v2 and booking's first screen [todo]
+## F-250 Design system v2 and booking's first screen [review]
 - [ ] `assets/css/v2.css`: the prototype's tokens (sky, glass, ink, kind colours, Newsreader + Inter, radii, springs) in light and dark, plus its base components; pages opt in with one class
 - [ ] `/plan/ask` becomes the prototype's landing: the sentence is the search, every part a tappable word with its picker (who, from, where, day, give or take, nights, budget, interests), no free typing; read by tripsentence; interests kept (gitaway/interests.py)
 - [ ] Search turns the same page into the results: the sentence glides to the top, the skeleton plays, then /plan/matrix's real squares fill in (tiles, marks, band, weather) in the prototype's matrix look; changing a word re-runs it

@@ -47,7 +47,7 @@ def test_the_old_calendar_address_sends_a_new_family_to_the_matrix_instead_of_a_
     assert new.get("/calendar", follow_redirects=False).headers["location"] == "/plan/ask"
     html = new.get("/calendar").text
     assert "<h1" in html and "Book a trip first" not in html
-    assert {"/trips/import", "/community"} <= links(html) and 'id="ak-import"' in html
+    assert "/trips/import" in links(html) and 'id="ak-import"' in html      # D-610: the v2 ask has no site nav, only its way to import
 
 
 def test_the_forks_page_has_next_steps_on_both_sides(new):

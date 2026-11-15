@@ -223,11 +223,19 @@ def _footer_line() -> str:
     return f"Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; {taken}"
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True):
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = False):
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
 
     `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options.
-    `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`). `footer=False` leaves the site footer out (the trip matrix, F-238: its Privacy and Terms sit in its own ⓘ)."""
+    `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`). `footer=False` leaves the site footer out (the trip matrix, F-238: its Privacy and Terms sit in its own ⓘ).
+    `v2=True` (F-250, D-610; a string adds its classes, "is-results" for the results look) opts the page into design language v2 with one class: the sky, the v2 top bar, Newsreader and Inter (gitaway/v2.py); there is no site header, top bar or footer."""
+    if v2:
+        from gitaway import v2 as v2_
+        return (
+            Title(f"GitAway · {title}" if title else "GitAway"),
+            *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
+            Div(v2_.bg(), v2_.top(), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
+        )
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
