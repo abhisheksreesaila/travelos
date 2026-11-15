@@ -20,10 +20,11 @@ def parts(html):
     return pills, links, bool(menu and 'action="/signout"' in menu.group(0) and ">Sign out<" in menu.group(0))
 
 
-def test_a_visitor_sees_community_trips_and_for_creators_and_sign_in_and_no_menu(client):
+def test_a_visitor_sees_plan_a_trip_community_trips_and_for_creators_and_sign_in_and_no_menu(client):
     html = client.get(MATRIX).text
     pills, menu, out = parts(html)
-    assert pills == [("Community trips", "/community", False), ("For creators", "/for-creators", False)]
+    assert [p[0] for p in pills] == ["Plan a trip", "Community trips", "For creators"]      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar
+    assert pills[1:] == [("Community trips", "/community", False), ("For creators", "/for-creators", False)] and pills[0][1].startswith("/signin")
     assert menu == [] and not out
     assert ">Sign in<" in html
 

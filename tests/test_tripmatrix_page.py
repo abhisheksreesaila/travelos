@@ -248,7 +248,7 @@ def test_while_squares_wait_a_sourced_fact_floats_in_a_small_note_not_a_band(rea
 
 
 def nav_plan(html):
-    return (re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S) or re.search(r'<nav [^>]*class="v2-nav"[^>]*>.*?</nav>', html, re.S)).group(0)      # F-253: the creator pages' v2 bar
+    return (re.search(r'<nav [^>]*class="ga-nav"[^>]*>.*?</nav>', html, re.S) or re.search(r'<nav [^>]*class="v2-sections[^"]*"[^>]*>.*?</nav>', html, re.S)).group(0)      # F-255: the v2 bar's sections pill
 
 
 def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_not(client, monkeypatch):
@@ -263,7 +263,7 @@ def test_plan_a_trip_is_the_matrix_where_it_exists_and_the_import_where_it_does_
         if signed_in:
             sign_in(client)
         nav = nav_plan(client.get("/community").text)
-        assert re.search(rf'href="{want}"[^>]*>Plan a trip<', nav), (showcase, key, signed_in)
+        assert re.search(rf'href="{want}"[^>]*>(Plan a trip|Book)<', nav), (showcase, key, signed_in)      # F-255: a visitor's pill says Plan a trip, a family's says Book; the same one door
 
 
 def test_off_the_showcase_the_bare_matrix_asks_where_you_fly_from_and_searches_nothing(real, client):

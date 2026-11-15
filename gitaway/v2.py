@@ -43,12 +43,6 @@ def bg() -> Div:
                NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{_shore()}</svg>'), cls="v2-bg", aria_hidden="true")
 
 
-def cv_nav() -> tuple:
-    """The creator pages' links in the top bar (F-253): For creators, Community, and the site's way in (D-458), Plan a trip."""
-    from gitaway.layout import plan_href      # here: layout imports this module
-    return (("For creators", "/for-creators"), ("Community", "/community"), ("Plan a trip", plan_href()))
-
-
 def section_of(current: str) -> str:
     """Which of the pill's sections a page's `current` names: "trip" is Plan, the planning ask and matrix are Book, "family" is Family, anything else none."""
     c = (current or "").rstrip("/")
@@ -72,9 +66,11 @@ def _state(traveler):
 
 
 def items(signed_in: bool, has_trip: bool) -> list:
-    """The section pill's items as (key, label, href): Plan (only with a trip), Book and Family for a signed-in person; Community trips and For creators for a visitor."""
+    """The section pill's items as (key, label, href): Plan (only with a trip), Book and Family for a signed-in person; Plan a trip (the one door, layout.plan_href), Community
+    trips and For creators for a visitor."""
     if not signed_in:
-        return [("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
+        from gitaway.layout import plan_href      # here: layout imports this module
+        return [("start", "Plan a trip", plan_href()), ("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
     return ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("book", "Book", showcase.planning_path()), ("family", "Family", "/family")]
 
 
