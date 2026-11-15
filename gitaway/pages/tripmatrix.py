@@ -39,7 +39,7 @@ TILE, SQUARE, SAVE, WARM, BOOK, PEEK, RAIL = PATH + "/tile", PATH + "/square", P
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/v2rail.css"), Link(rel="stylesheet", href="/assets/css/v2drawer.css"),
         Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
-        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
+        Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip already longer or shorter in the address widens the range to hold it
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead
