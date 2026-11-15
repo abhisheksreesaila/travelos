@@ -1609,3 +1609,24 @@ Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand
 - [ ] the matrix's "Look at <place>" link is 44px at 390 (tests_browser/test_direction_a_pages.py): make it 48px
 - [ ] the community shelf's captions under the books sit at uneven heights (maker and days misaligned): one baseline
 - [ ] tests_browser/test_showcase_js.py front-door tests and test_publish.py's phone publish test (failing before tonight): fix or retire
+
+## Founder's walk of the v2 build (2026-11-15): "planning is spot on"; these follow
+## F-257 The landing invites: a soft search box with autocomplete [todo]
+Founder: "the search … is too big and too bold … it has to be soft, asking: hey, what do you want? and then give some autocomplete … inviting … a nice background and a good search button to start." Replaces F-250's giant sentence on /plan/ask (the results page keeps its tappable sentence).
+- [ ] one calm, inviting box ("Where to?" with a friendly line above it), modest type, the sky behind; typing shows autocomplete of real places (partners/places and its NEARBY; nothing invented) and sentence completions (who, when, nights) that tripsentence can read; arrow keys, Enter, tap
+- [ ] a clear Search button; Search glides into the results as today (skeleton, matrix)
+- [ ] phone and laptop, 48px, 4.5:1
+
+## F-258 The drawer shows one thing at a time; buttons press [todo]
+Founder: "never show side by side … let them get the hotel first, and if they want, click the card and expand the flights … autofocus is irritating … too much movement for the eyes"; "the omxqua pattern where buttons go in and out when pressed".
+- [ ] the drawer opens on the stay alone; the flights are a compact summary card (times, airline, price) that expands in place on tap, the stay folding to its summary; no automatic focus moves, no side-by-side layout at any width; motion short and calm
+- [ ] every v2 button and tappable card presses in and springs back (omxqua's press: scale on :active with the v2 spring; none under reduced motion)
+
+## F-259 A creator's edit stays in the v2 look [todo]
+Founder: "when I went to edit the details for the creator it went back to the old form … a boring form". Every edit path from the creator pages (the draft's Edit, the book's fix, My drafts) lands on a v2 editor in the book's language (cv2), not the old /creators editor; the old form retires for these paths.
+
+## F-260 Moods: the sky follows the trip (and the sun becomes the moon) [todo]
+Founder: "when you switch to dark the sun has to become the moon … make them chuckle"; "several themes: snow, hike, beach, a main event … Tahoe in December is snow, New York at New Year is a celebration … just a gradient at the top and one cartoonish object, not to distract."
+- [ ] dark mode turns the sun into a moon (with a few stars), with a small delightful transition
+- [ ] 5 moods for the v2 sky: beach (today's), snow, hike, celebration, city; each a gradient and one simple cartoon object, light and dark, calm and readable (4.5:1 over each)
+- [ ] the mood is chosen by a plain rule from the trip's place and dates (a small table with tests: Tahoe or Denver in winter → snow, a coast in summer → beach, a mountain or park in summer → hike, New York around Dec 31 → celebration, else city or beach); the cover and sign-in keep theirs
