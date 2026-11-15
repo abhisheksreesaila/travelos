@@ -13,7 +13,7 @@ Nothing here fetches or invents: a total is a source's (gitaway/gridsource.py `s
 marks the squares with the same rules as answers land (`marks`, `find`): change one, change the other (tests_browser/test_tripmatrix.py compares them).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 
 from gitaway.partners import places as places_
@@ -78,6 +78,7 @@ class StayPart:
     rating: str           # "9.4 of 10 · 1,063 reviews", or ""
     cents: int            # all its nights, the whole party, fees paid at the hotel included
     offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
+    address: str = ""     # the hotel's street address from the source, or "" (F-242: the opened square and the pass show it)
 
 
 @dataclass(frozen=True)
@@ -90,6 +91,8 @@ class Square:
     drive: int | None = None          # minutes from the first airport to the first stay's town, when a router said
     fetched: datetime | None = None   # when the older of its answers was fetched
     sample: bool = False
+    flights: tuple = ()               # F-242: the flights the source gave (the shown one first, at most MAX_ALTS); one or none means there is no choice
+    stay_alts: tuple = ()             # F-242: for each stay of `stays`, the stays the source gave for it (the shown one first, at most MAX_ALTS)
 
     @property
     def key(self) -> str:
@@ -115,6 +118,18 @@ class Find:
     @property
     def key(self) -> str:
         return key(self.lane, self.window)
+
+
+MAX_ALTS = 3
+
+
+def pick(sq: Square, flight: int = 0, stays: tuple = ()) -> Square:
+    """The square with another flight and/or other stays chosen (F-242: "switch in place"): `flight` is an index into `sq.flights`, `stays` one index per stay
+    into its `stay_alts`. An index the square does not have (a stale or forged form) keeps the shown one, never raises. The total moves with the choice."""
+    fl = sq.flights[flight] if 0 <= flight < len(sq.flights) else sq.flight
+    chosen = tuple(alts[i] if i is not None and 0 <= i < len(alts) else st
+                   for st, alts, i in zip(sq.stays, sq.stay_alts or ((),) * len(sq.stays), tuple(stays) + (None,) * len(sq.stays)))
+    return replace(sq, flight=fl, stays=chosen)
 
 
 def key(lane_key, window_key) -> str:

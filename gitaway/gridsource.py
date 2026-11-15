@@ -183,32 +183,36 @@ def _catalog_square(lane, w, adults, kid_ages, home):
         first = catalog.parse_trip(home, dests[0].key, w.depart.isoformat(), w.return_.isoformat(), str(adults), kids) if dests[0] else None
     except catalog.TripError:
         return tm.Square(lane.key, w.key, tm.NONE, sample=True)
+    flights = ()
     if first is not None:
-        f = min(catalog.offers("flight", first), key=lambda o: (o.price_cents, o.id))
-        flight = tm.FlightPart(f.name, f"{_day_clock(w.depart)}{first.origin} {tripgrid.clock(f.depart_min)} → {f.airport} {tripgrid.clock(f.arrive_min)} · {f.stops or 'Nonstop'}",
-                               f"{_day_clock(w.return_)}{back} {tripgrid.clock(f.back_depart_min)} → {first.origin} {tripgrid.clock(f.back_arrive_min)}", _stops(f.stops),
-                               sample_day(f.price_cents, w.depart))
+        fl = sorted(catalog.offers("flight", first), key=lambda o: (o.price_cents, o.id))[:tm.MAX_ALTS]
+        flights = tuple(tm.FlightPart(f.name, f"{_day_clock(w.depart)}{first.origin} {tripgrid.clock(f.depart_min)} → {f.airport} {tripgrid.clock(f.arrive_min)} · {f.stops or 'Nonstop'}",
+                                      f"{_day_clock(w.return_)}{back} {tripgrid.clock(f.back_depart_min)} → {first.origin} {tripgrid.clock(f.back_arrive_min)}", _stops(f.stops),
+                                      sample_day(f.price_cents, w.depart)) for f in fl)
+        flight = flights[0]
         first_stay = min(catalog.offers("stay", trips[0]), key=lambda o: (o.price_cents, o.id))
-        drive = catalog.ride_base(f.airport, catalog.ride_area(f.airport, first_stay), "arrive")[1]
+        drive = catalog.ride_base(fl[0].airport, catalog.ride_area(fl[0].airport, first_stay), "arrive")[1]
     else:
         sp = SAMPLE_PLACES[lane.places[0].name]
         flight, drive = _sample_flight(sp, w, adults, kid_ages, home, back), sp.drive
-    stays = []
+        flights = (flight,)
+    alts = []
     for place, trip, (_, a, b) in zip(lane.places, trips, split):
         if trip is not None:
-            st = min(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))
-            stays.append(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)))
+            offers_ = sorted(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))[:tm.MAX_ALTS]
+            alts.append(tuple(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)) for st in offers_))
         else:
             sp = SAMPLE_PLACES[place.name]
             rooms = -(-(adults + len(kid_ages)) // 4)
-            stays.append(tm.StayPart(place.name, (b - a).days, sp.stay, sp.room, "room only", True, 0, "", sp.rating, sample_day(sp.night_cents * rooms * (b - a).days, a)))
-    return tm.Square(lane.key, w.key, tm.OK, flight, tuple(stays), drive, None, True)
+            alts.append((tm.StayPart(place.name, (b - a).days, sp.stay, sp.room, "room only", True, 0, "", sp.rating, sample_day(sp.night_cents * rooms * (b - a).days, a)),))
+    stays = tuple(x[0] for x in alts)
+    return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive, None, True, flights, tuple(alts))
 
 
 def _stay_part(place, a, b, s: liteapi.Stay) -> tm.StayPart:
     board = "breakfast" if s.board == "breakfast" else s.board
     rating = " · ".join(x for x in (f"{s.rating:g} of 10" if s.rating else "", f"{s.reviews:,} reviews" if s.reviews else "") if x)
-    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents, s.offer_id)
+    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents, s.offer_id, s.address)
 
 
 def _leg_words(leg) -> str:
@@ -218,6 +222,12 @@ def _leg_words(leg) -> str:
 
 def _pick_stay(items):
     return next((s for s in items if (s.rating or 0) >= RATED), items[0])
+
+
+def _stay_choices(items):
+    """The shown stay first (`_pick_stay`), then the others in the source's order, at most MAX_ALTS (F-242)."""
+    first = _pick_stay(items)
+    return [first] + [s for s in items if s is not first][:tm.MAX_ALTS - 1]
 
 
 def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0, wait=None):
@@ -244,12 +254,13 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0, wait=
     fl, *st = answers
     if not fl.items or not all(a.items for a in st):
         return tm.Square(lane.key, w.key, tm.NONE, fetched=fetched)
-    f = fl.items[0]
-    flight = tm.FlightPart(f.airline, _leg_words(f.legs[0]), _leg_words(f.legs[-1]) if len(f.legs) > 1 else "", f.stops, f.cents, fl.complete)
-    stays = tuple(_stay_part(p, a, b, _pick_stay(ans.items)) for (p, a, b), ans in zip(split, st))
+    flights = tuple(tm.FlightPart(x.airline, _leg_words(x.legs[0]), _leg_words(x.legs[-1]) if len(x.legs) > 1 else "", x.stops, x.cents, fl.complete) for x in fl.items[:tm.MAX_ALTS])
+    flight = flights[0]
+    alts = tuple(tuple(_stay_part(p, a, b, x) for x in _stay_choices(ans.items)) for (p, a, b), ans in zip(split, st))
+    stays = tuple(x[0] for x in alts)
     first = lane.places[0]
     drive = airportdrive.kept(first.iata, first.town) if peek else airportdrive.drive(first.iata, first.town)
-    return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive.minutes if drive else None, fetched)
+    return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive.minutes if drive else None, fetched, False, flights, alts)
 
 
 def _square(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):

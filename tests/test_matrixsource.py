@@ -171,3 +171,31 @@ def test_a_tile_waits_a_short_while_and_the_head_start_longer(real, monkeypatch)
     square(wait=liteapi.TILE_WAIT)
     square()
     assert waits == [liteapi.TILE_WAIT, None]
+
+
+# ---- F-242: the alternatives behind a square ---------------------------------------------------------------------------------------------------------------
+
+def test_on_the_showcase_a_square_holds_up_to_three_flights_and_stays_cheapest_first_with_the_shown_one_first(sample):
+    sq = square()
+    trip = catalog.parse_trip("SFO", "sd", "2026-12-12", "2026-12-16", "2", "7,10")
+    cheapest = sorted(catalog.offers("flight", trip), key=lambda o: (o.price_cents, o.id))[:3]
+    assert [f.airline for f in sq.flights] == [o.name for o in cheapest] and sq.flights[0] == sq.flight
+    assert len(sq.stay_alts) == 1 and len(sq.stay_alts[0]) == 3 and sq.stay_alts[0][0] == sq.stays[0]
+    other = tm.pick(sq, 1, (2,))
+    assert other.cents == sq.flights[1].cents + sq.stay_alts[0][2].cents
+
+
+def test_a_sampled_nearby_place_has_one_flight_and_one_stay_so_there_is_nothing_to_switch(sample):
+    oc = square("orangecounty")
+    assert len(oc.flights) == 1 and [len(a) for a in oc.stay_alts] == [1]
+
+
+def test_off_the_showcase_the_alternatives_are_liteapis_own_flights_and_stays_and_the_stay_has_its_address(real):
+    sq = square()
+    at = datetime(2026, 11, 12, tzinfo=timezone.utc)
+    flights = liteapi.read_flights(answer("flight_rates.json"), at)
+    stays = liteapi.read_stays(answer("hotel_rates.json"), at)
+    assert [f.cents for f in sq.flights] == [f.cents for f in flights[:3]] and sq.flights[0] == sq.flight
+    shown = sq.stay_alts[0]
+    assert shown[0] == sq.stays[0] and len(shown) == 3 and len({s.name for s in shown}) == 3 and {s.name for s in shown} <= {s.name for s in stays}
+    assert sq.stays[0].address == next(s for s in stays if s.name == sq.stays[0].name).address != ""

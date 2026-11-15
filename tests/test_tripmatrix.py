@@ -117,3 +117,31 @@ def test_the_order_squares_are_asked_for_is_the_asked_square_then_nearest_dates_
 def test_over_is_strictly_over(cents, budget, marks):
     lanes, ws = tm.lanes(SD, nearby=False), tm.windows(D, R, 0, TODAY)
     assert tm.marks(lanes, ws, {tm.key("sandiego", "2026-12-12"): cents}, budget)["sandiego|2026-12-12"] == marks
+
+
+# ---- F-242: switch the flight or the stay in place ---------------------------------------------------------------------------------------------------------
+
+def _alt_square():
+    f = [tm.FlightPart("Alaska", "out A", "back A", 0, 61_200), tm.FlightPart("United", "out U", "back U", 0, 55_200), tm.FlightPart("Nuitée", "out N", "back N", 1, 41_600)]
+    s = [tm.StayPart("San Diego", 4, name, "Two queens", "room only", True, 0, "", "8.7 of 10", cents) for name, cents in (("Harbor", 86_400), ("Bay", 112_800), ("Pool", 79_200))]
+    return tm.Square("sandiego", "2026-12-12", tm.OK, f[0], (s[0],), 12, None, True, tuple(f), (tuple(s),))
+
+
+def test_picking_another_flight_and_stay_moves_the_total_by_exactly_the_difference():
+    sq = _alt_square()
+    assert sq.cents == 61_200 + 86_400
+    other = tm.pick(sq, 1, (2,))
+    assert (other.flight.airline, other.stays[0].name, other.cents) == ("United", "Pool", 55_200 + 79_200)
+    assert tm.pick(sq).cents == sq.cents      # nothing picked: the shown trip
+
+
+@pytest.mark.parametrize("flight, stays", [(-1, (0,)), (3, (9,)), (99, ()), (0, (None,))])
+def test_a_pick_the_square_does_not_have_keeps_the_shown_part_instead_of_failing(flight, stays):
+    sq = _alt_square()
+    got = tm.pick(sq, flight, stays)
+    assert (got.flight.airline, got.stays[0].name) == ("Alaska", "Harbor")
+
+
+def test_a_square_with_no_alternatives_is_unchanged_by_a_pick():
+    sq = tm.Square("sandiego", "k", tm.OK, tm.FlightPart("A", "o", "b", 0, 100), (tm.StayPart("SD", 1, "H", "r", "x", True, 0, "", "", 200),))
+    assert tm.pick(sq, 2, (1,)) == sq
