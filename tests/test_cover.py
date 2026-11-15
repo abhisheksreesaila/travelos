@@ -379,7 +379,7 @@ def test_the_looping_motion_stands_still_without_motion_allowed():
 
 def test_the_scene_has_a_day_and_a_night_the_same_for_the_system_and_the_person():
     css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
-    light = dict(re.findall(r"(--(?:sk-day-[abc]|cv-sun|cv-glow|cv-cloud|cv-sea-[12]|cv-star|cv-cell-a)):\s*([^;]+);", css[css.index(".cv-root {\n  /* D-472"):css.index("the scene's palettes, dark")]))
+    light = dict(re.findall(r"(--(?:sk-day-[abc]|cv-sun|cv-glow|cv-cloud|cv-sea-[12]|cv-star|cv-cell-a|cv-sail|cv-sand|cv-trunk|cv-leaf)):\s*([^;]+);", css[css.index(".cv-root {\n  /* D-472"):css.index("the scene's palettes, dark")]))
     chosen = re.search(r'\.cv-root\[data-mode="dark"\] \{([^}]*)\}', css).group(1)
     system = re.search(r'\.cv-root:not\(\[data-mode="light"\]\) \{([^}]*)\}', css[css.index("the scene's palettes, dark"):]).group(1)
     assert chosen.strip() == system.strip()

@@ -19,7 +19,7 @@
   /* D-472: the scene's sky (day: the opening, dusk: the close), sun, clouds and sea; light here, dark at the end of this file with the art's palettes */
   --sk-day-a: #C9E4F8; --sk-day-b: #DDEBF8; --sk-day-c: #FDE8CF;
   --sk-dusk-a: color-mix(in srgb, var(--k-tix) 8%, var(--paper)); --sk-dusk-b: var(--k-food-t); --sk-dusk-c: var(--k-flight-t);      /* the last wash's own colour, then the story's: it melts into the close */
-  --cv-sun: #FFB547; --cv-glow: #FFE2A8; --cv-cloud: #FFFFFF; --cv-sea-1: #A7D3EE; --cv-sea-2: #78B8E3; --cv-star: 0; --cv-cell-a: #ECEBFA;
+  --cv-sun: #FFB547; --cv-glow: #FFE2A8; --cv-cloud: #FFFFFF; --cv-sail: #FFFFFF; --cv-sand: #F4D9A0; --cv-trunk: #7A4E26; --cv-leaf: #1F8A5B; --cv-sea-1: #A7D3EE; --cv-sea-2: #78B8E3; --cv-star: 0; --cv-cell-a: #ECEBFA;
 }
 @media (max-width: 720px) { .cv-root { --cv-gut: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)); --fh-s: min(33rem, 64svh); } }
 .cv-root body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--t-body)/1.5 var(--font-body); overflow-x: hidden; overflow-x: clip; }
@@ -91,6 +91,13 @@
 .cv-wave.w2 { --wh: 10rem; --wb: -1rem; --wc: var(--cv-sea-2); z-index: 3; }
 .cv-wave.w3 { --wh: 5rem; --wb: -1.5rem; --wc: var(--paper); z-index: 4; }
 .cv-close .cv-sun { top: auto; bottom: 3rem; right: 10%; }
+/* the close's "together" (D-477): the family in one boat sailing in to an island, between the far sea and the near one; it sails in once when the close is seen
+   (cover.js pauses a scene out of sight, so it waits for you), then rocks; with reduced motion it is already moored beside the island */
+.cv-isle { position: absolute; z-index: 1; right: 4%; bottom: 6.5rem; width: 17rem; height: auto; }
+.cv-sand { fill: var(--cv-sand); } .cv-trunk { fill: none; stroke: var(--cv-trunk); stroke-width: 6; stroke-linecap: round; } .cv-leaf { fill: var(--cv-leaf); }
+.cv-boat { position: absolute; z-index: 2; right: calc(4% + 15rem); bottom: 7rem; width: 12rem; height: auto; overflow: visible; }
+.cv-hull { fill: var(--k-tix); } .cv-sail { fill: var(--cv-sail); stroke: var(--cv-trunk); stroke-width: 1.2; stroke-linejoin: round; } .cv-sail.main { fill: var(--k-ride); } .cv-mast { fill: none; stroke: var(--cv-trunk); stroke-width: 3; stroke-linecap: round; }
+.cv-mate { fill: var(--sc); } .cv-mate.d1 { --sc: var(--k-flight); } .cv-mate.d2 { --sc: var(--k-stay); } .cv-mate.d3 { --sc: var(--k-food); } .cv-mate.d4 { --sc: var(--k-see); }
 
 /* the place art (scripts/cover_art.py): the sky is the box's gradient; the scene is one <use> of the sprite, coloured by the place's palette */
 .pa-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -400,6 +407,8 @@
 @keyframes cv-sunrise { from { transform: translateY(9rem); } }
 @keyframes cv-breathe { 0%, 100% { transform: scale(.92); opacity: .75; } 50% { transform: scale(1.12); opacity: 1; } }
 @keyframes cv-twinkle { 0%, 100% { opacity: var(--cv-star); } 50% { opacity: calc(var(--cv-star) * .25); } }
+@keyframes cv-sail { from { translate: -70vw 0.5rem; } }
+@keyframes cv-rock { 0%, 100% { rotate: -2.5deg; } 50% { rotate: 2.5deg; } }
 @keyframes cv-drift { from { transform: translateX(-24rem); } to { transform: translateX(calc(100vw + 4rem)); } }
 @keyframes cv-roll { to { transform: translateX(-50%); } }
 
@@ -418,6 +427,7 @@
   .cv-cloud.c1 { --cd: 110; --co: 40; } .cv-cloud.c2 { --cd: 86; --co: 20; } .cv-cloud.c3 { --cd: 140; --co: 90; } .cv-cloud.c4 { --cd: 70; --co: 10; }
   .cv-wave { animation: cv-roll calc(var(--motion-screen-dur) * var(--ws)) linear infinite; }
   .cv-wave.w1 { --ws: 40; } .cv-wave.w2 { --ws: 30; animation-direction: reverse; } .cv-wave.w3 { --ws: 22; }
+  .cv-boat { animation: cv-sail calc(var(--motion-screen-dur) * 24) var(--motion-zoom) both, cv-rock calc(var(--motion-screen-dur) * 7) ease-in-out infinite; transform-origin: 50% 90%; }
   .cv-scene.cv-off *, .cv-scene.cv-off .cv-sun::before { animation-play-state: paused; }      /* cover.js: a scene out of sight stands still */
 }
 /* the one trip's morph between the parts (cover.js, D-456) */
@@ -507,6 +517,7 @@
 
   .cv-close { padding: 5rem var(--cv-gut) 9rem; }
   .cv-close .cv-sun { right: -2rem; bottom: 1rem; }
+  .cv-isle { width: 9rem; bottom: 3.5rem; right: 2%; } .cv-boat { width: 5.5rem; bottom: 4rem; right: calc(2% + 7.5rem); }
   .cv-close h2 { font-size: 2.625rem; }
   .cv-close > p { font-size: 1.0625rem; }
   .cv-close .cv-ctas { align-self: stretch; }
@@ -524,8 +535,8 @@
 }
 
 /* ---------- the scene's palettes, dark (the person's choice, then the system's: the same values twice, as the art's below) ---------- */
-.cv-root[data-mode="dark"] { --sk-day-a: #0A1830; --sk-day-b: #18274A; --sk-day-c: #3A2C4E; --cv-sun: #F3EBD3; --cv-glow: #3A4A78; --cv-cloud: #26324F; --cv-sea-1: #123A5A; --cv-sea-2: #0E2C47; --cv-star: .9; --cv-cell-a: #201F30; }
-@media (prefers-color-scheme: dark) { .cv-root:not([data-mode="light"]) { --sk-day-a: #0A1830; --sk-day-b: #18274A; --sk-day-c: #3A2C4E; --cv-sun: #F3EBD3; --cv-glow: #3A4A78; --cv-cloud: #26324F; --cv-sea-1: #123A5A; --cv-sea-2: #0E2C47; --cv-star: .9; --cv-cell-a: #201F30; } }
+.cv-root[data-mode="dark"] { --sk-day-a: #0A1830; --sk-day-b: #18274A; --sk-day-c: #3A2C4E; --cv-sun: #F3EBD3; --cv-glow: #3A4A78; --cv-cloud: #26324F; --cv-sail: #F3EBD3; --cv-sand: #4A3F5C; --cv-trunk: #2A2036; --cv-leaf: #1E5A48; --cv-sea-1: #123A5A; --cv-sea-2: #0E2C47; --cv-star: .9; --cv-cell-a: #201F30; }
+@media (prefers-color-scheme: dark) { .cv-root:not([data-mode="light"]) { --sk-day-a: #0A1830; --sk-day-b: #18274A; --sk-day-c: #3A2C4E; --cv-sun: #F3EBD3; --cv-glow: #3A4A78; --cv-cloud: #26324F; --cv-sail: #F3EBD3; --cv-sand: #4A3F5C; --cv-trunk: #2A2036; --cv-leaf: #1E5A48; --cv-sea-1: #123A5A; --cv-sea-2: #0E2C47; --cv-star: .9; --cv-cell-a: #201F30; } }
 
 /* ---------- the place art's palettes, light and dark (generated) ---------- */
 /* art:begin (scripts/cover_art.py writes this block) */

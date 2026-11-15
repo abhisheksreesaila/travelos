@@ -1561,3 +1561,10 @@ See docs/briefs/world-class-journey.md step 6. Needs: F-242
 
 ## F-244 Share as a scrapbook; a creator's blog becomes the same book [todo]
 See docs/briefs/world-class-journey.md step 7. Needs: F-243
+
+## F-245 The matrix is the cover's card [todo]
+Founder, 2026-11-14: "The cover page is very nicely done, especially the first matrix. That's how the matrix has to be designed: like a card, very simply put, with some translucency; minimalistic yet denser information. I should be able to look at a square and the emphasis is exactly there. Click, check the hotels out, get the information, boom, done." Needs: F-242 (it touches the same page)
+- [ ] /plan/matrix looks like the cover's part-1 frame (gitaway/pages/cover.py screen_compare, cover.css): one card holding the sentence, the lanes and the squares; big totals; one lit square carries the emphasis; the days' sky under it
+- [ ] translucency where the founder asked for it (the card over the place's colour): an explicit exception to omxqua's "no glass" for this page, recorded as a decision, and still 4.5:1 for every word
+- [ ] dense but quiet: everything F-236..F-238 shows stays reachable, nothing extra on the surface
+- [ ] click a square → F-242's opened square, unchanged

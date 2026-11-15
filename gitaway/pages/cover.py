@@ -165,11 +165,26 @@ WAVE = ('<svg class="cv-wave {c}" viewBox="0 0 1200 120" preserveAspectRatio="no
 STARS = ((6, 1.2), (15, 2.2), (27, 0.8), (41, 1.8), (53, 1.1), (66, 2.2), (78, 1.3), (88, 2), (95, 0.9), (2, 14), (97, 12), (3, 30), (98, 33))     # left %, top %: in the strip above the words and in the side gutters, never behind a word
 
 
+# the close's "together" (founder, 2026-11-14: "there has to be something which says together ... a boat where everyone is going together, reaching an island"):
+# the family in one boat, four heads in the four steps' colours, sailing in over the sea to an island with two palms; decorative, CSS only
+BOAT = ('<svg class="cv-boat" viewBox="0 0 120 90" aria-hidden="true" focusable="false">'
+        '<path class="cv-sail main" d="M60 8 L60 44 L96 44 Z"/><path class="cv-sail" d="M56 16 L56 44 L30 44 Z"/><path class="cv-mast" d="M58 6 V62"/>'
+        + "".join(f'<g class="cv-mate d{k}"><circle cx="{x}" cy="50" r="5.5"/><rect x="{x - 5}" y="55" width="10" height="9" rx="3"/></g>' for k, x in enumerate((26, 42, 74, 90), 1))
+        + '<path class="cv-hull" d="M6 62 H114 L100 82 H20 Z"/></svg>')
+ISLE = ('<svg class="cv-isle" viewBox="0 0 220 120" aria-hidden="true" focusable="false"><path class="cv-sand" d="M0 120 Q110 52 220 120 Z"/>'
+        '<path class="cv-trunk" d="M128 82 Q136 46 120 18"/><path class="cv-trunk" d="M84 92 Q80 66 92 48"/>'
+        + "".join(f'<ellipse class="cv-leaf" cx="{cx}" cy="{cy}" rx="{rx}" ry="7" transform="rotate({r} {px} {py})"/>'
+                  for cx, cy, rx, r, px, py in ((100, 18, 22, -20, 120, 18), (140, 18, 22, 20, 120, 18), (118, 6, 16, -80, 120, 18), (108, 30, 18, -50, 120, 18), (134, 32, 18, 45, 120, 18),
+                                                 (78, 48, 16, -15, 92, 48), (106, 48, 16, 15, 92, 48), (92, 38, 12, -80, 92, 48)))
+        + '</svg>')
+
+
 def _scene(mood):
     """The sky behind the opening (mood "day": a sun that rises and breathes, clouds that drift, a sea that rolls, at night a moon and stars) and
     behind the close (mood "dusk": the story's own colours). Drawn, decorative (aria-hidden), moving only on CSS loops with motion allowed."""
     return Div(Span(cls="cv-sun"), *[Span(cls="cv-star", style=f"left:{x}%;top:{y}%;--s:{k}") for k, (x, y) in enumerate(STARS)],
-               *[NotStr(CLOUD.format(n=n)) for n in range(1, 5)], NotStr(WAVE.format(c="w1")), NotStr(WAVE.format(c="w2")), NotStr(WAVE.format(c="w3")),
+               *[NotStr(CLOUD.format(n=n)) for n in range(1, 5)], NotStr(WAVE.format(c="w1")),
+               *((NotStr(ISLE), NotStr(BOAT)) if mood == "dusk" else ()), NotStr(WAVE.format(c="w2")), NotStr(WAVE.format(c="w3")),
                cls=f"cv-scene {mood}", aria_hidden="true")
 
 
