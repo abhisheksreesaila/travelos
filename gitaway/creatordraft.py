@@ -363,10 +363,10 @@ def from_plan(owner, session, name="") -> dict:
     from gitaway import planv2 as pv      # here: planv2 reads the family's calendar, which this module otherwise never does
     v = pv.view(session, lambda day=0, booked="": "")
     days = []
-    for i, _date in v.days:
+    for i, date in v.days:
         stops = [{"time": _clock(e.start), "name": _plain(e.title, MAX_STOP), "note": "", "link": ""} for e in v.on(i) if not e.locked and _plain(e.title, MAX_STOP)][:MAX_STOPS]
         if stops:
-            days.append({"title": stops[0]["name"][:MAX_DAY_TITLE], "note": "", "stops": stops})
+            days.append({"title": f"{date.strftime('%A')}, {date.strftime('%b')} {date.day}", "note": "", "stops": stops})      # the calendar's own day, since the family wrote no heading
     if not days:
         raise HubError(NO_PLANS)
     private = [{"day": e.day, "title": _plain(e.title, MAX_STOP), "kind": e.kind if e.kind in PRIVATE_KINDS else "tix"} for e in v.booked][:40]

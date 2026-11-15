@@ -12,7 +12,7 @@ The page of one guide is gitaway/pages/guidepage.py.
 
 from urllib.parse import urlencode
 
-from fasthtml.common import A, Button, Div, Em, Form, H1, H2, H3, I, Img, Input, Label, Li, Link, P, Script, Span, Ul
+from fasthtml.common import A, Button, Div, Em, Form, H1, H2, H3, Img, Input, Label, Li, Link, P, Script, Span, Ul
 from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
@@ -41,11 +41,11 @@ def chip(label, to, on) -> A:
 
 
 def guides(session, who="", length="", q="") -> list:
-    """The hub's cards: the published creator trips (and the creator samples on the showcase) that match what is asked. `who` is one of hub.TAGS, `length` one of LENGTHS, `q` a place or a
+    """The hub's cards: every published trip (a creator's guide, or a family's own, which keeps its trip page) and the creator samples on the showcase that match what is asked. `who` is one of hub.TAGS, `length` one of LENGTHS, `q` a place or a
     word of the title. Most planned-from first, then the rest in the order the hub lists them."""
     made = seo.imported_slugs()
     low = [(a, b) for k, _, a, b in LENGTHS if k == length]
-    out = [c for c in hub.cards(session, tags=(who,) if who in hub.TAGS else (), q=q) if (c.source or c.slug in made) and (not low or low[0][0] <= c.days <= low[0][1])]
+    out = [c for c in hub.cards(session, tags=(who,) if who in hub.TAGS else (), q=q) if (c.source or c.real or c.slug in made) and (not low or low[0][0] <= c.days <= low[0][1])]
     return sorted(out, key=lambda c: -community.fork_count(c.slug) if c.real else 0)
 
 

@@ -2,6 +2,7 @@
 own fetcher (tests/fixtures/creator_import); nothing here reaches the network or a model. Every word of a guide is the creator's own: a stop's why is the post's sentence naming it, a cost only a
 price that sentence says, a tip only one of the creator's tips naming the stop, and no travel time between stops (a stop has no coordinates)."""
 import json
+import re
 
 import pytest
 
@@ -36,7 +37,7 @@ def test_a_stops_why_is_the_posts_own_sentence_that_names_it(lisbon):
     g = gd.from_trip(trip_of(lisbon))
     day1 = g.days[0].stops
     assert [s.name for s in day1][:2] == ["Belem Tower", "Jerónimos Monastery"]
-    assert day1[0].why == BELEM
+    assert day1[0].why == BELEM and day1[0].note == "Go before the crowds."      # the creator's own note is kept beside the post's sentence, not instead of it
     assert day1[1].why.startswith("Just a short walk from Belém Tower is Jerónimos Monastery")
     assert day1[2].why == ""      # the post names Monument of Discoveries in no sentence of its own: nothing is invented to fill the line
 
@@ -73,7 +74,7 @@ def test_a_draft_of_the_planned_trip_keeps_the_plans_and_marks_the_bookings_priv
     me = person()
     d = creatordraft.from_plan(tid(), me, "Ari")
     stops = [(s["time"], s["name"]) for day in d["days"] for s in day["stops"]]
-    assert stops == [("12:00 PM", "Taco lunch")] and d["days"][0]["title"] == "Taco lunch" and d["name"] == "Ari"
+    assert stops == [("12:00 PM", "Taco lunch")] and re.fullmatch(r"\w+day, \w{3} \d+", d["days"][0]["title"]) and d["name"] == "Ari"      # the day is the calendar's own, e.g. "Saturday, Dec 19"
     assert d["private"] and {p["kind"] for p in d["private"]} <= set(creatordraft.PRIVATE_KINDS)
     trip = creatordraft.build(d, creatordraft.private_src(d["id"]), "ari", True)
     shown = json.dumps([(s.title, s.time, s.note) for day in trip.days for s in day.stops])

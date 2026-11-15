@@ -1,5 +1,5 @@
 """F-235, F-253: a creator pastes a popular post (The Planet D's "48 Hours in Lisbon", recorded through the app's own safe fetcher and robots check: tests/fixtures/creator_import), watches it
-become a trip (the post's card grows with its title and lead picture, its own sentences arrive highlighted, the days and stops land under the story line, "Your book is ready"), opens the book,
+become a trip (the post's card grows with its title and lead picture, its own sentences arrive highlighted, the days and stops land under the story line, "Your guide is ready"), opens the book,
 turns its pages, fixes a word in place and publishes it, and a stranger reads it. In headless Chromium at phone (390) and laptop (1440) width; the post's picture is served from the recording, the
 model's answer from the recording. Set F253_SHOTS=1 to save docs/report/f253-*.png (the prototype-vs-build screenshots are made by scripts/f253_shots.py)."""
 import os
@@ -57,8 +57,8 @@ def open_import(browser, base_url, viewport, path="/creators/import", **ctx):
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
-def test_the_post_becomes_a_book_that_is_turned_fixed_and_published(lisbon, browser, base_url, viewport):
-    ctx, page = open_import(browser, base_url, viewport, "/for-creators")
+def test_the_post_becomes_a_guide_that_is_opened_fixed_and_published(lisbon, browser, base_url, viewport):
+    ctx, page = open_import(browser, base_url, viewport, "/guides/make")
     page.click("#fc-example-chip")
     expect(page.locator("#fc-text")).to_have_value(lisbon)       # the example chip is the real post the fixture records
     page.click("#fc-draft")
@@ -86,52 +86,53 @@ def test_the_post_becomes_a_book_that_is_turned_fixed_and_published(lisbon, brow
     assert overflow(page) <= 1
     shot(page, f"import-ready-{viewport['width']}")
     page.click("#openBook")
-    # the book: a cover, then page turns by the arrow, the key and a swipe-sized drag
-    expect(page.locator("#bookv .cover .h1").first).to_have_text("48 hours in Lisbon")
-    expect(page.locator("#pageLbl")).to_contain_text("Cover")
+    # the guide: the run sheet of the post's own words, the day strip, a card per stop
+    page.wait_for_url("**/guide")
+    expect(page.locator("h1 .ed")).to_have_text("48 hours in Lisbon")
+    expect(page.locator(".dbtn")).to_have_count(3)
+    expect(page.locator(".g-card")).to_have_count(17)
     assert overflow(page) <= 1
-    shot(page, f"book-cover-{viewport['width']}")
-    page.click("#next")
-    expect(page.locator("#pageLbl")).to_contain_text("Before you go" if viewport is DESKTOP else "Before you go")
-    expect(page.locator(".leaf.turned")).to_have_count(1)
-    page.keyboard.press("ArrowRight")
-    expect(page.locator(".leaf.turned")).to_have_count(2)
-    page.keyboard.press("ArrowLeft")
-    expect(page.locator(".leaf.turned")).to_have_count(1)
-    expect(page.locator("#bookv")).to_contain_text("Before you go")
-    page.click("#next")
-    page.click("#next")
-    shot(page, f"book-day-{viewport['width']}")
+    shot(page, f"guide-owner-{viewport['width']}")
+    # a stop opens its details: a panel beside the sheet on a laptop, a sheet over it on a phone; the arrow keys step through the stops
+    page.locator(".g-chev.g-open").first.click()
+    expect(page.locator("#g-panel")).to_be_visible()
+    expect(page.locator("#g-pbody h2")).to_have_text("Belem Tower")
+    expect(page.locator("#g-pbody .g-words p")).to_contain_text("admired it from the outside")
+    expect(page.locator("#g-pbody .g-tipbox")).to_contain_text("Go to Belém Tower before the crowds.")
+    shot(page, f"guide-stop-{viewport['width']}")
+    page.keyboard.press("ArrowDown")
+    expect(page.locator("#g-pbody h2")).to_have_text("Jerónimos Monastery")
+    expect(page.locator(".g-pk")).to_have_text("Sight")
+    page.click("#g-close")
+    expect(page.locator("#g-panel")).to_be_hidden()
     # a word fixed in place, kept by the server
-    page.click("#editBtn")
-    expect(page.locator("#editBtn")).to_have_attribute("aria-pressed", "true")
-    word = page.locator('[data-k="d0.head"]' if viewport is PHONE else '[data-k="d1.head"]')      # the day heading on the page now open (a phone's third page, a laptop's third spread)
+    word = page.locator('[data-k="d0.head"]')
     word.click()
     page.keyboard.press("Control+A")
     page.keyboard.type("A better heading")
     page.keyboard.press("Enter")
-    expect(page.locator("#toast")).to_contain_text("Fixed in the book")
-    page.click("#editDone")
-    # Publish: the tick first, then the stamp, the link and the badge
+    expect(page.locator("#toast")).to_contain_text("Fixed in the guide")
+    # Publish: the tick first, then the link, the Instagram card and the badge
     page.click("#pubBtn")
     expect(page.locator("#pubGo")).to_be_disabled()
     page.click("#mine")
     page.click("#pubGo")
-    expect(page.locator("#bookv .cover .stamp").first).to_contain_text("Published")
     expect(page.locator("#sharep")).to_be_visible()
-    expect(page.locator("#sharep")).to_contain_text("Your book is out")
+    expect(page.locator("#sharep")).to_contain_text("Your guide is out")
     link = page.locator("#shLink").inner_text()
-    assert link.startswith("gitaway.me/trips/") and link.endswith("/book")
+    assert link.startswith("gitaway.me/trips/") and not link.endswith("/book")
     assert 'src="https://gitaway.me/badge/plan-this-trip.svg"' in page.locator("#shCode").inner_text()
-    shot(page, f"book-published-{viewport['width']}")
-    # a stranger opens it: the same book, as a reader's, with Plan this trip and no editing
+    expect(page.locator("#shCard")).to_have_attribute("src", f"/trips/{link.split('/trips/')[1]}/card.png")
+    page.wait_for_function("document.getElementById('shCard').complete && document.getElementById('shCard').naturalWidth === 1080")
+    shot(page, f"guide-published-{viewport['width']}")
+    # a stranger opens it: the same guide, as a reader's, with Plan this trip and no editing
     reader = browser.new_context(viewport=viewport)
     rp = reader.new_page()
     rp.goto(f"{base_url}/trips/{link.split('/trips/')[1]}")
-    expect(rp.locator("#bookv")).to_have_attribute("data-mode", "reader")
-    expect(rp.locator("#pageLbl")).to_contain_text("Before you go")       # a reader's book opens itself
-    assert rp.locator("#editBtn").count() == 0 and rp.locator("[data-k]").count() == 0
-    expect(rp.locator("#planBtn")).to_have_attribute("href", "/plan/ask")
+    expect(rp.locator("#gpage")).to_have_attribute("data-mode", "reader")
+    expect(rp.locator("#g-day1 h2")).to_have_text("A better heading")
+    assert rp.locator(".ed").count() == 0 and rp.locator("[data-k].ed").count() == 0
+    expect(rp.locator("#g-plan")).to_have_attribute("href", "/plan/ask")
     reader.close()
     ctx.close()
 

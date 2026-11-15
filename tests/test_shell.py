@@ -6,8 +6,8 @@ def test_pages_are_gitaway_pages_with_the_main_navigation(client):
     r = client.get("/")
     assert r.status_code == 200
     assert "<title>GitAway" in r.text and "TravelOS" not in r.text
-    html = client.get("/community").text
-    for label, href in [("Community trips", "/community"), ("Plan a trip", "/signin"), ("For creators", "/for-creators")]:
+    html = client.get("/guides").text
+    for label, href in [("Guides", "/guides"), ("Plan a trip", "/signin")]:      # F-262: Guides replaced Community trips and For creators
         assert f'href="{href}"' in html and label in html
     assert "/assets/css/tokens.css" in html and "/assets/css/base.css" in html
 
@@ -45,7 +45,7 @@ def test_an_unknown_trip_gets_a_friendly_not_found_page(client):
     assert r.status_code == 404
     assert "This trip wandered off" in r.text and "TravelOS" not in r.text
     assert "/assets/css/tokens.css" in r.text
-    assert 'href="/community"' in r.text
+    assert 'href="/guides"' in r.text
 
 
 def test_every_page_offers_a_skip_link_to_the_main_content(client):

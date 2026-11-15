@@ -31,6 +31,7 @@ class GStop:
     label: str               # "Sight", "Food"...
     time: str = ""           # as the post says it, "" when it does not
     why: str = ""            # the creator's own sentence about it
+    note: str = ""           # what the creator wrote about it in the editor, when the line above is the post's own sentence and this is something more
     cost: str = ""           # a price written in that sentence
     tip: str = ""            # one of the creator's tips that names the stop
     link: str = ""           # the creator's own link for this stop (allow-listed upstream, stoplinks.py)
@@ -111,9 +112,10 @@ def _stops(day, i, trip, first, tips, used) -> list:
     out = []
     for j, s in enumerate(day.stops):
         why = (s.said or s.note or "").strip()
+        note = s.note.strip() if s.said and s.note.strip() and s.note.strip() != s.said.strip() else ""
         link = safe_href(s.link) if s.link else ""
         tip = cb.said(tips, [s.title], used)[0]
-        out.append(GStop(f"d{i}s{j}", i + 1, j + 1, len(day.stops), s.title, cb.kind_of(s.title), cb.KINDS[cb.kind_of(s.title)], s.time or "", why, cost_of(why), tip, link, _host(link)))
+        out.append(GStop(f"d{i}s{j}", i + 1, j + 1, len(day.stops), s.title, cb.kind_of(s.title), cb.KINDS[cb.kind_of(s.title)], s.time or "", why, note, cost_of(why) or cost_of(note), tip, link, _host(link)))
     return out
 
 

@@ -216,8 +216,8 @@ def test_the_picker_menu_imports_a_booked_trip(signed_in):
     expect(page.locator(BAR)).to_be_visible()
 
 
-@pytest.mark.parametrize("label,url", [("Community trips", "**/community"), ("For creators", "**/for-creators")])
-def test_the_avatar_menu_links_to_the_community_and_creators_with_the_showcase_on(signed_in, monkeypatch, label, url):
+@pytest.mark.parametrize("label,url", [("Guides", "**/guides")])
+def test_the_avatar_menu_links_to_the_guides_with_the_showcase_on(signed_in, monkeypatch, label, url):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-account summary")
@@ -226,12 +226,12 @@ def test_the_avatar_menu_links_to_the_community_and_creators_with_the_showcase_o
     expect(page.locator(".v2-top")).to_be_visible()      # F-253: the creator pages wear the v2 top bar (the avatar goes back to /family)
 
 
-def test_the_avatar_menu_has_community_with_the_showcase_off(signed_in, monkeypatch):
-    """D-458: Community trips is in every header; its page says when nobody has shared yet."""
+def test_the_avatar_menu_has_guides_with_the_showcase_off(signed_in, monkeypatch):
+    """D-458, F-262: Guides is in every header; its page says when nobody has shared yet."""
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     page = signed_in(DESKTOP, path="/family")
     page.click(f"{BAR} .ga-tb-account summary")
-    expect(page.locator(f"{BAR} .ga-tb-pop-me")).to_contain_text("Community trips")
+    expect(page.locator(f"{BAR} .ga-tb-pop-me")).to_contain_text("Guides")
 
 
 FITS = ["/trip/canvas", "/trip/family", "/trip/ask", "/trip?tab=notes", "/trip/help", "/trip/map"]

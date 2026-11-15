@@ -82,11 +82,11 @@
     $('#g-close').addEventListener('click', close);
     $('#g-prev').addEventListener('click', function () { if (cur > 0) open(cur - 1, { scroll: true, keep: true }); });
     $('#g-next').addEventListener('click', function () { if (cur < cards.length - 1) open(cur + 1, { scroll: true, keep: true }); });
-    $('#scrim').addEventListener('click', function () { if (!$('#sheet').hidden) closeSheet(); else close(); });
+    $('#scrim').addEventListener('click', function () { if (!$('#sheet').hidden) closeSheet(); else if (!$('#sharep').hidden) hideShare(); else close(); });
   }
   addEventListener('keydown', function (e) {
     var typing = document.activeElement && (document.activeElement.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
-    if (e.key === 'Escape') { if (!$('#sheet').hidden) closeSheet(); else if (cur >= 0 && !typing) close(); return; }
+    if (e.key === 'Escape') { if (!$('#sheet').hidden) closeSheet(); else if (!$('#sharep').hidden) hideShare(); else if (cur >= 0 && !typing) close(); return; }
     if (typing || cur < 0 || !$('#sheet').hidden || e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -247,9 +247,9 @@
     $$('[data-copy]', p).forEach(function (b) {
       b.addEventListener('click', function () { try { navigator.clipboard.writeText(b.dataset.copy === 'code' ? j.code : j.link); } catch (err) { /* the toast still says it */ } b.innerHTML = ICON.check + 'Copied'; toast('Copied'); });
     });
-    p.hidden = false; cv.classList.add('share-open');
+    p.hidden = false; cv.classList.add('share-open'); $('#scrim').classList.add('on');
   }
-  function hideShare() { $('#sharep').hidden = true; cv.classList.remove('share-open'); }
+  function hideShare() { $('#sharep').hidden = true; cv.classList.remove('share-open'); $('#scrim').classList.remove('on'); }
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest('#pubBtn')) publishSheet();

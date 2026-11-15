@@ -7,12 +7,11 @@ card shows its details under it. Honest by construction: a drawing is labelled "
 Reader: Plan this trip, Add to my plan, Save. Owner (the draft, or their live guide): fix a word in place, edit the details, Publish.
 """
 
-from html import escape
 from urllib.parse import quote
 
 from fasthtml.common import A, Aside, Blockquote, Button, Div, H1, H2, H3, I, Img, Li, Link, Ol, P, Pre, Script, Section, Small, Span, Template
 
-from gitaway import creatorbook as cb, guide as gd, showcase
+from gitaway import guide as gd
 from gitaway.icons import icon
 from gitaway.pages import bookview
 
@@ -22,7 +21,7 @@ KIND_ICON = {"see": "see", "food": "food", "tix": "tix", "ride": "ride", "show":
 ADD_NOTE = {"signin": "Sign in to add this to your plan.", "trip": "You need a trip first: add stops to its calendar from here.", "viewer": "Only editors of the family can change its plan."}
 
 
-def kt(kind: str, big=False) -> Span:
+def kt(kind: str) -> Span:
     return Span(bookview.ico(KIND_ICON[kind]), cls=f"kt{' dark' if kind == 'ride' else ''}", style=f"--k:var(--bk-{kind})", aria_hidden="true")
 
 
@@ -39,6 +38,7 @@ def details(g: gd.Guide, s: gd.GStop) -> Div:
     facts = [Div(Small("When"), Span(s.time), cls="g-fact") if s.time else "", Div(Small("Cost"), Span(s.cost), cls="g-fact") if s.cost else ""]
     return Div(
         Blockquote(Small(bookview.ico("quote"), f"In {g.poss} words" if not g.sample else "In the sample creator's words"), P(s.why), cls="g-words") if s.why else "",
+        P(s.note, cls="g-extra") if s.note else "",
         Div(*[f for f in facts if f], cls="g-facts") if any(facts) else "",
         Div(Span(icon("spark", 18, 2), cls="g-ti"), Small(f"{g.Poss} tip"), P(s.tip), cls="g-tipbox") if s.tip else "",
         Div(icon("pin", 20, 2), Div(Small("Where"), Span(f"{s.name}, {g.place}")), A("Maps", href=maps_href(s, g.place), target="_blank", rel="noopener noreferrer", cls="g-maps"), cls="g-where"),
@@ -50,13 +50,14 @@ def details(g: gd.Guide, s: gd.GStop) -> Div:
 def stop_li(g: gd.Guide, s: gd.GStop, last: bool, owner: bool, add: str) -> Li:
     badges = [Span(s.cost, cls="bdg cost") if s.cost else "", Span(icon("spark", 14, 2.2), "Tip", cls="bdg tip") if s.tip else "",
               A(bookview.ico("link"), f"{g.Poss} link", href=s.link, target="_blank", rel="noopener noreferrer sponsored", cls="bdg lnk", aria_label=f"{g.Poss} link for {s.name}, opens their site") if s.link else ""]
-    name = (Span(s.name, cls="ed", data_k=f"d{s.day - 1}.s{s.n - 1}", title="Tap to fix the name") if owner else Button(s.name, type="button", cls="g-open", aria_expanded="false", aria_controls="g-panel", data_k=s.key))
+    name = Span(s.name, cls="ed", data_k=f"d{s.day - 1}.s{s.n - 1}", title="Tap to fix the name") if owner else Span(s.name, cls="g-nm")
+    cover = "" if owner else Button(Span(f"Open {s.name}", cls="v2-sr"), type="button", cls="g-open g-cover", aria_expanded="false", aria_controls="g-panel", data_k=s.key)      # the whole card is the press
     sub = " · ".join(x for x in (s.label, f"stop {s.n} of {s.of}") if x)
     side = [Button(icon("plus", 20, 2.4), type="button", cls="g-plus", data_add=s.key, aria_label=f"Add {s.name} to my plan") if add == "yes" else "",
             Button(icon("chev-right", 20, 2.2), type="button", cls="g-open g-chev", aria_expanded="false", aria_controls="g-panel", data_k=s.key, aria_label=f"Open {s.name}") if owner else Span(icon("chev-right", 20, 2.2), cls="g-chev", aria_hidden="true")]
     return Li(
         Div(Span(s.time or str(s.n), cls="g-tmv"), cls="g-tm"), Div(I(), cls="g-ln"),
-        Div(kt(s.kind), Div(name, Span(sub, cls="sub"), P(s.why, cls="g-why") if s.why else "", Div(*[b for b in badges if b], cls="g-badges") if any(badges) else "", details(g, s), cls="g-t"),
+        Div(cover, kt(s.kind), Div(name, Span(sub, cls="sub"), P(s.why, cls="g-why") if s.why else "", Div(*[b for b in badges if b], cls="g-badges") if any(badges) else "", details(g, s), cls="g-t"),
             Div(*[x for x in side if x], cls="g-side"),
             cls="g-card", data_k=s.key, data_name=s.name, data_kind=s.kind, data_label=s.label, data_day=str(s.day), data_n=str(s.n), data_of=str(s.of)),
         cls="g-stop" + (" last" if last else ""), style=f"--k:var(--bk-{s.kind})", id=f"g-{s.key}")
@@ -124,7 +125,7 @@ def share_template() -> Template:
                         Div(H3("Its link"), Div(Span(id="shLink", cls="linkout"), Button(bookview.ico("copy"), "Copy", type="button", cls="tonal", data_copy="link"), cls="linkrow"), cls="sh-sec"),
                         Div(H3("For Instagram"), Img(src="", alt="The guide's card for Instagram: its title, its place and its length", id="shCard", cls="g-card-img", width="270", height="338"),
                             Div(A(bookview.ico("share"), "Download the card", href="#", id="shDown", cls="tonal", download="guide-card.png"), Button(bookview.ico("share"), "Share", type="button", cls="tonal", id="shNative", hidden=True), cls="sh-foot g-left"),
-                            cls="sh-sec"),
+                            cls="sh-sec sh-ig"),
                         Div(H3("A badge for your post"), Div(Img(src=blogbutton.LIGHT, alt=blogbutton.ALT, width="248", height="56"), cls="badge-pic"), Pre("", id="shCode", cls="code"),
                             Button(bookview.ico("copy"), "Copy the code", type="button", cls="tonal", data_copy="code"), cls="sh-sec"),
                         Div(A(bookview.ico("shelf"), "See it in Guides", href="/guides", cls="go"), cls="sh-foot"), P("", id="shFine", cls="sh-fine")), id="t-share")

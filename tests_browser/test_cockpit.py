@@ -153,7 +153,7 @@ def test_the_paper_map_works_offline_once_loaded(browser, base_url, monkeypatch,
     ctxs.append(ctx)
     seed(base_url, ctx, monkeypatch)
     page = ctx.new_page()
-    page.goto(f"{base_url}/community")
+    page.goto(f"{base_url}/guides")
     page.evaluate("navigator.serviceWorker.ready.then(() => true)")
     page.reload()
     page.wait_for_function("navigator.serviceWorker.controller !== null")

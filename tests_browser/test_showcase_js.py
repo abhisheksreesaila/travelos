@@ -46,7 +46,7 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/signin")
-    page.goto(page.url.split("/signin")[0] + "/community")
+    page.goto(page.url.split("/signin")[0] + "/guides")
     assert page.get_by_text("No one has shared a trip yet").is_visible()
 
 
