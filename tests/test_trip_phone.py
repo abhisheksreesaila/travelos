@@ -65,10 +65,10 @@ def test_every_screen_size_is_sent_from_the_old_calendar_to_the_trips_day(client
             assert r.status_code == 303 and r.headers["location"].startswith("/trip/canvas"), (path, headers)
 
 
-def test_the_installed_app_opens_on_the_trip_view_and_the_front_door_lands_there(client):
+def test_the_installed_app_opens_on_the_trip_view_and_the_front_door_opens_the_journey(client):
     assert client.get("/manifest.webmanifest").json()["start_url"] == "/trip"
     book(client)
-    assert client.get("/", headers=IPHONE, follow_redirects=False).headers["location"] == "/trip/cockpit"      # F-231: the Continue card on Where to? is gone
+    assert client.get("/", headers=IPHONE, follow_redirects=False).headers["location"] == "/plan/ask"      # D-600: the front door is always the journey's first step
 
 
 # ---- before, during and after ----------------------------------------------------------------------------------------------

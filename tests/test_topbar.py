@@ -86,7 +86,7 @@ def test_the_front_door_opens_a_signed_in_visitors_trip_and_its_bar(client):    
     book(client)
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == showcase.planning_path()      # D-600: the journey's first step, booked or not
-    assert bar(client.get("/").text)
+    assert 'class="v2-top"' in client.get("/").text      # F-250: the journey's pages wear the v2 top bar
 
 
 def test_the_old_header_stays_in_the_page_for_the_tablet(client):
