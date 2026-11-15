@@ -1,0 +1,293 @@
+/* liquid.css: the "liquid" design kit, extracted from GitAway's design language v2 (F-264). Newsreader for display, Inter for everything you read.
+   A sky behind everything, near-opaque cards for text, restrained frosted glass only over the sky, ink plus ONE brand hue, springs on every press and every opening.
+   Put class `lq` on <body>, set data-mode="light|dark" on <html> (liquid.js does), draw a sky with <div class="lq-sky" data-mood="shore"></div> (liquid.js draws its objects).
+   1. BRAND: the only block to change per site.  2. Neutrals, moods, motion tokens.  3. Components.  Motion: durations and curves only from the --lq-t-* and spring tokens. */
+@font-face { font-family: "Inter"; src: url("fonts/inter-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Newsreader"; src: url("fonts/newsreader-variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
+
+/* ================= 1. BRAND: change these, nothing else ================= */
+:root {
+  --lq-brand: #4338CA;          /* the one accent: primary buttons, the current section, selected states (white on it must stay 4.5:1) */
+  --lq-brand-text: #372DB0;     /* the accent as TEXT on the sky or a card: a little deeper, so it stays 4.5:1 */
+  --lq-brand-tint: #E4E3FB;     /* its pale fill, and the ink on that fill: */
+  --lq-brand-ink: #2A2185;
+  --lq-on-brand: #FFFFFF;
+  /* kinds: colour only for kinds of thing (a category), never for decoration. tint = a chip's fill, ink = text on it, solid = a dot or ring */
+  --lq-k1: #0369A1; --lq-k1-t: #DBEFFA; --lq-k1-i: #034769;
+  --lq-k2: #8B2FC9; --lq-k2-t: #F1E3FA; --lq-k2-i: #5A1785;
+  --lq-k3: #C92A5E; --lq-k3-t: #FBE1EA; --lq-k3-i: #7E1538;
+  --lq-k4: #0F766E; --lq-k4-t: #D9F2EF; --lq-k4-i: #0B4D48;
+  --lq-k5: #C2410C; --lq-k5-t: #FCE6DA; --lq-k5-i: #7A2906;
+}
+:root[data-mode="dark"] {
+  --lq-brand: #4F46E5; --lq-brand-text: #9A94FF; --lq-brand-tint: #24215A; --lq-brand-ink: #D2CFFF;
+  --lq-k1: #38BDF8; --lq-k1-t: #0C2A3E; --lq-k1-i: #C6EAFC;
+  --lq-k2: #C084FC; --lq-k2-t: #321A4A; --lq-k2-i: #EBD4FD;
+  --lq-k3: #FF6B9A; --lq-k3-t: #401528; --lq-k3-i: #FFD0DF;
+  --lq-k4: #2DD4BF; --lq-k4-t: #0E302D; --lq-k4-i: #BCF0E8;
+  --lq-k5: #FB923C; --lq-k5-t: #3D1E0E; --lq-k5-i: #FFD6BC;
+}
+
+/* ================= 2. neutrals, the default sky, motion ================= */
+:root {
+  --lq-f-display: "Newsreader", Georgia, serif;
+  --lq-f-ui: "Inter", system-ui, sans-serif;
+  --lq-d-wt: 560; --lq-d-track: -0.022em;
+  --lq-num: "tnum" 1, "cv11" 1, "ss01" 1;
+  --lq-label-min: 0.8125rem; --lq-target: 3rem;      /* a target is 48px, a label never under 13px */
+
+  --lq-sky-1: #C6E2F8; --lq-sky-2: #E3E5FA; --lq-sky-3: #FDE5CF; --lq-glow-a: #DBEFFA; --lq-glow-b: #FFF4C2;
+  --lq-ink: #0F1124; --lq-ink-2: #41455E; --lq-ink-3: #555A73; --lq-on-ink: #FFFFFF;
+  --lq-card-t: rgb(255 255 255 / .86); --lq-card: #FFFFFF; --lq-card-2: #F2F3FA;
+  --lq-line: rgb(15 17 36 / .10); --lq-line-2: rgb(15 17 36 / .18);
+  --lq-glass: rgb(255 255 255 / .62); --lq-glass-line: rgb(255 255 255 / .75);
+  --lq-sun: #FFB547; --lq-pill-on: #0F1124; --lq-pill-fg: #FFFFFF; --lq-scrim: rgb(10 10 30 / .28);
+  --lq-sh1: 0 1px 0.125rem rgb(20 20 60 / .06), 0 0.125rem 0.5rem rgb(20 20 60 / .06);
+  --lq-sh2: 0 0.125rem 0.375rem rgb(20 20 60 / .08), 0 0.875rem 2rem -0.625rem rgb(40 30 110 / .22);
+  --lq-sh3: 0 0.25rem 0.875rem rgb(20 20 60 / .07), 0 2.125rem 4.375rem -1.5rem rgb(40 30 110 / .32);
+  --lq-glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
+  --lq-cta-sh: 0 0.625rem 1.5rem -0.75rem color-mix(in srgb, var(--lq-brand) 70%, transparent);
+  --lq-hover: color-mix(in srgb, var(--lq-brand) 13%, var(--lq-card));
+  --lq-quiet-edge: #D8DEF3; --lq-quiet-mid: #ECEEFB; --lq-quiet-glow: #F8F9FE;      /* the reading sky: a soft glow where the column is, a little deeper at the sides */
+  --lq-cloud: color-mix(in srgb, #fff 85%, transparent);
+  --lq-r-xl: 2rem; --lq-r-lg: 1.5rem; --lq-r-md: 1.125rem; --lq-r-pill: 62.4375rem;
+
+  /* springs (linear() curves) and the one place durations live; liquid.js reads them with getComputedStyle, so no script writes a time */
+  --lq-spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  --lq-spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+  --lq-ease: cubic-bezier(.2, .8, .2, 1);
+  --lq-t-quick: 200ms;      /* a hover, a colour */
+  --lq-t-press: 90ms;       /* a button going in */
+  --lq-t-release: 480ms;    /* and springing back on --lq-spring */
+  --lq-press-scale: .96;
+  --lq-t-sheet: 420ms;      /* a sheet, menu or toast growing out of its source (a phone) */
+  --lq-t-out: 220ms;        /* folding back */
+  --lq-t-calm: 160ms;       /* a laptop: the same things are a short fade, nothing grows */
+  --lq-t-fold: 320ms;       /* a card opening in place, the others folding to their summary */
+  --lq-t-pop: 200ms;        /* a list appearing */
+  --lq-t-slow: 1000ms;      /* the sun setting, the moon rising */
+  --lq-t-shimmer: 1300ms;   /* one pass of a skeleton's shimmer */
+  --lq-t-drift: 60s;        /* a cloud drifting */
+  --lq-t-toast: 4500ms;     /* a toast stays; with an Undo it stays twice as long: */
+  --lq-t-toast-undo: 9000ms;
+  --lq-calm-min: 1020;      /* px: from here up (a laptop) openings are calm fades; liquid.js reads this number */
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --lq-sky-1: #0B1430; --lq-sky-2: #1D1D44; --lq-sky-3: #33203F; --lq-glow-a: #0C2A3E; --lq-glow-b: #3A300C;
+  --lq-ink: #F4F5FB; --lq-ink-2: #C3C6DA; --lq-ink-3: #A9ADC4; --lq-on-ink: #0F1124;
+  --lq-card-t: rgb(20 22 44 / .80); --lq-card: #171A33; --lq-card-2: #22264A;
+  --lq-line: rgb(255 255 255 / .10); --lq-line-2: rgb(255 255 255 / .18);
+  --lq-glass: rgb(26 28 56 / .80); --lq-glass-line: rgb(255 255 255 / .10);      /* dark glass is a step more solid: the night showed through at .60 */
+  --lq-pill-on: #F4F5FB; --lq-pill-fg: #0F1124; --lq-scrim: rgb(10 10 30 / .5);
+  --lq-sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --lq-sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --lq-sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
+  --lq-glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
+  --lq-cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .7);
+  --lq-quiet-edge: #0C1128; --lq-quiet-mid: #151A3A; --lq-quiet-glow: #1F2550;
+  --lq-cloud: rgb(255 255 255 / .06);
+  color-scheme: dark;
+}
+
+/* the moods: a gradient and ONE cartoon object (liquid.js draws it) per sky. shore is the default (the tokens above). Add a mood: two blocks here and one drawing in liquid.js. */
+:root:has(.lq-sky[data-mood="snow"]) { --m-1: #D3E6F8; --m-2: #E6EEF9; --m-3: #F4F7FC; --m-a: #C5E3F5; --m-b: #E4EAF8; }
+:root:has(.lq-sky[data-mood="hills"]) { --m-1: #DDEBC6; --m-2: #F2EFC8; --m-3: #FBE7B8; --m-a: #D2E8BE; --m-b: #FDF0C4; }
+:root:has(.lq-sky[data-mood="party"]) { --m-1: #E0D8F7; --m-2: #EBD8F0; --m-3: #FADCE0; --m-a: #D6CDF5; --m-b: #FBE3EC; }
+:root:has(.lq-sky[data-mood="city"]) { --m-1: #D5DEEA; --m-2: #E6E3EF; --m-3: #F6E3D6; --m-a: #CBD8EA; --m-b: #F2E6DC; }
+:root[data-mode="dark"]:has(.lq-sky[data-mood="snow"]) { --m-1: #0E1B33; --m-2: #172A4A; --m-3: #25395B; --m-a: #123152; --m-b: #1D2A55; }
+:root[data-mode="dark"]:has(.lq-sky[data-mood="hills"]) { --m-1: #0E2118; --m-2: #1A2D1D; --m-3: #302C18; --m-a: #123424; --m-b: #3A3016; }
+:root[data-mode="dark"]:has(.lq-sky[data-mood="party"]) { --m-1: #1A1042; --m-2: #2E1458; --m-3: #4A1B5E; --m-a: #2A1C66; --m-b: #5A1E60; }
+:root[data-mode="dark"]:has(.lq-sky[data-mood="city"]) { --m-1: #10152B; --m-2: #1B1F3C; --m-3: #2D2433; --m-a: #12294A; --m-b: #3A2740; }
+
+/* ================= 3. components ================= */
+:root:has(.lq) { font-size: 100%; }      /* a rem is 16px */
+.lq { position: relative; margin: 0; color: var(--lq-ink); font: 450 1.0625rem/1.5 var(--lq-f-ui); font-optical-sizing: auto; background: transparent; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+@media (max-width: 719px) { .lq { font-size: 1rem; } }
+.lq :is(h1, h2, h3, h4) { font-family: var(--lq-f-display); font-weight: var(--lq-d-wt); letter-spacing: var(--lq-d-track); text-wrap: balance; margin: 0; }
+.lq :where(button, input) { font: inherit; color: inherit; }
+.lq :where(a) { color: var(--lq-brand-text); }
+.lq-num { font-family: var(--lq-f-ui); font-feature-settings: var(--lq-num); font-variant-numeric: tabular-nums; }
+.lq :focus-visible { outline: 0.1875rem solid var(--lq-ink); outline-offset: 0.1875rem; border-radius: 0.625rem; }
+.lq-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.lq-display { font-family: var(--lq-f-display); font-weight: var(--lq-d-wt); letter-spacing: var(--lq-d-track); line-height: 1.08; font-size: clamp(2.25rem, 5vw, 4rem); }
+.lq-label { font: 650 max(var(--lq-label-min), 0.8125rem)/1 var(--lq-f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--lq-ink-2); }
+
+/* ---------- the sky ---------- (the page colour is on <html>, body and wrappers stay transparent, or they would paint over the fixed sky) */
+html:has(.lq-sky) { background: var(--lq-sky-3); }
+html:has(.lq-sky[data-mood]:not([data-mood="shore"])) { background: var(--m-3); }
+html:has(.lq-sky.is-quiet) { background: var(--lq-quiet-edge); }
+.lq-sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: radial-gradient(60% 42% at 8% 0%, color-mix(in srgb, var(--lq-glow-a) 90%, transparent), transparent 70%),
+              radial-gradient(48% 36% at 96% 8%, color-mix(in srgb, var(--lq-glow-b) 90%, transparent), transparent 70%),
+              radial-gradient(70% 50% at 50% 104%, color-mix(in srgb, var(--lq-brand-tint) 95%, transparent), transparent 70%),
+              linear-gradient(180deg, var(--lq-sky-1), var(--lq-sky-2) 52%, var(--lq-sky-3)); }
+.lq-sky[data-mood]:not([data-mood="shore"]) {
+  background: radial-gradient(60% 42% at 8% 0%, var(--m-a), transparent 70%), radial-gradient(48% 36% at 96% 8%, var(--m-b), transparent 70%), linear-gradient(180deg, var(--m-1), var(--m-2) 52%, var(--m-3)); }
+/* the quiet sky: behind anything people read. No objects, only a soft glow framing the content column. */
+.lq-sky.is-quiet { background: radial-gradient(ellipse 62% 78% at 50% 34%, var(--lq-quiet-glow), transparent 100%), linear-gradient(180deg, var(--lq-quiet-mid), var(--lq-quiet-edge)); }
+@media (max-width: 719px) { .lq-sky.is-quiet { background: radial-gradient(ellipse 120% 70% at 50% 30%, var(--lq-quiet-glow), transparent 100%), linear-gradient(180deg, var(--lq-quiet-mid), var(--lq-quiet-edge)); } }
+.lq-sky.is-quiet > * { display: none; }
+.lq-sky .sun { position: absolute; right: 7%; top: 13%; width: 10rem; height: 10rem; border-radius: 50%; background: var(--lq-sun);
+  box-shadow: 0 0 0 2.4rem color-mix(in srgb, var(--lq-sun) 20%, transparent), 0 0 0 5.2rem color-mix(in srgb, var(--lq-sun) 9%, transparent);
+  transition: opacity var(--lq-t-slow) var(--lq-ease), transform var(--lq-t-slow) var(--lq-spring-soft); }
+.lq-sky .moon { position: absolute; right: 7%; top: 12%; width: 9.5rem; height: 9.5rem; opacity: 0; transform: translateY(60vh) rotate(-24deg); filter: drop-shadow(0 0 1.75rem rgb(243 235 211 / .28));
+  transition: opacity var(--lq-t-slow) var(--lq-ease), transform var(--lq-t-slow) var(--lq-spring-soft); }
+.lq-sky .moon .zz { animation: lq-zz calc(var(--lq-t-shimmer) * 3) ease-in-out infinite alternate; }
+@keyframes lq-zz { from { opacity: .25; translate: 0 0.125rem; } to { opacity: 1; translate: 0 -0.125rem; } }
+.lq-sky .stars { position: absolute; left: 0; top: 0; width: 100%; height: 42vh; opacity: 0; transition: opacity var(--lq-t-slow) var(--lq-ease); }
+.lq-sky .stars circle { fill: #F3EBD3; animation: lq-twinkle calc(var(--lq-t-shimmer) * 3) ease-in-out infinite alternate; animation-delay: calc(var(--i) * var(--lq-t-quick) * -1); }
+@keyframes lq-twinkle { from { opacity: .3; } to { opacity: .9; } }
+/* dark: the sun sets and a sleepy crescent moon rises, with a few stars */
+:root[data-mode="dark"] .lq-sky .sun { opacity: 0; transform: translateY(60vh) scale(.8); }
+:root[data-mode="dark"] .lq-sky .moon { opacity: 1; transform: none; transition-delay: var(--lq-t-quick); }
+:root[data-mode="dark"] .lq-sky .stars { opacity: 1; transition-delay: calc(var(--lq-t-slow) / 2); }
+.lq-sky .cloud { position: absolute; fill: var(--lq-cloud); animation: lq-drift var(--lq-t-drift) linear infinite alternate; }
+@keyframes lq-drift { to { translate: 6vw 0; } }
+.lq-sky .foot { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 30vh; min-height: 11.25rem; }
+:root[data-mode="dark"] .lq-sky .foot { filter: brightness(.42) saturate(.8); }
+.lq-sky[data-mood="party"] :is(.sun, .cloud) { display: none; }      /* a dusk: no sun, no clouds; the fireworks are the one object */
+:root[data-mode="dark"] .lq-sky[data-mood="party"] .foot { filter: brightness(.7); }
+
+/* ---------- cards and glass ---------- */
+.lq-card { border-radius: var(--lq-r-lg); background: var(--lq-card); color: var(--lq-ink); box-shadow: var(--lq-sh2), 0 0 0 1px var(--lq-line); padding: 1.25rem; box-sizing: border-box; }
+.lq-card.is-t { background: var(--lq-card-t); }
+.lq-card > :first-child { margin-top: 0; } .lq-card > :last-child { margin-bottom: 0; }
+/* frosted glass: the one place it is allowed, a small widget directly over the sky (a pill, a menu, a suggestion list). Never over a card, never under a paragraph. */
+.lq-glass { background: var(--lq-glass); -webkit-backdrop-filter: blur(1.375rem) saturate(170%); backdrop-filter: blur(1.375rem) saturate(170%); border-radius: 1.625rem;
+  box-shadow: inset 0 0 0 1px var(--lq-glass-line), var(--lq-glass-sh); }
+.lq-card.lq-glass { background: var(--lq-glass); }
+a.lq-tap, button.lq-tap { text-decoration: none; text-align: left; border: 0; cursor: pointer; display: block; width: 100%; color: var(--lq-ink); font: inherit; }
+.lq-tap:hover { box-shadow: var(--lq-sh3), 0 0 0 1px var(--lq-line-2); }
+
+/* ---------- buttons, chips, round buttons ---------- */
+.lq-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: var(--lq-target); padding: 0 1.5rem; border: 0; border-radius: var(--lq-r-pill); cursor: pointer; box-sizing: border-box;
+  background: var(--lq-brand); color: var(--lq-on-brand); font: 650 1.0625rem/1 var(--lq-f-ui); text-decoration: none; box-shadow: var(--lq-cta-sh); }
+.lq-btn:hover { transform: translateY(-1px); }
+.lq :where(a).lq-btn { color: var(--lq-on-brand); }
+.lq-btn.is-ink { background: var(--lq-pill-on); color: var(--lq-pill-fg); box-shadow: var(--lq-sh2); }
+.lq :where(a).lq-btn.is-ink { color: var(--lq-pill-fg); }
+.lq-btn.is-soft { background: var(--lq-card-2); color: var(--lq-ink); box-shadow: inset 0 0 0 1px var(--lq-line); }
+.lq :where(a).lq-btn.is-soft { color: var(--lq-ink); }
+.lq-btn:disabled { background: var(--lq-card-2); color: var(--lq-ink-3); box-shadow: inset 0 0 0 1px var(--lq-line); cursor: default; }      /* muted, not faded: it still reads 4.5:1 */
+.lq-btn svg { width: 1.25rem; height: 1.25rem; }
+.lq-chip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--lq-target); padding: 0 1.125rem; border-radius: var(--lq-r-pill); border: 0; cursor: pointer; background: var(--lq-card); color: var(--lq-ink); font: 560 1rem/1 var(--lq-f-ui); box-shadow: inset 0 0 0 1px var(--lq-line); text-decoration: none; }
+.lq-chip[aria-pressed="true"] { background: var(--lq-pill-on); color: var(--lq-pill-fg); box-shadow: none; }
+.lq-kind { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.875rem; border-radius: var(--lq-r-pill); font: 600 1rem/1 var(--lq-f-ui); background: var(--k-t); color: var(--k-i); }
+.lq-kind::before { content: ""; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--k); }
+.lq-round { flex: none; display: inline-grid; place-items: center; width: var(--lq-target); height: var(--lq-target); border-radius: 50%; border: 0; background: var(--lq-card); box-shadow: var(--lq-sh1); cursor: pointer; color: var(--lq-ink); text-decoration: none; font: 650 1rem/1 var(--lq-f-ui); }
+.lq-round svg { width: 1.25rem; height: 1.25rem; }
+.lq-round .is-moon, .lq-round[aria-pressed="true"] .is-sun { display: none; }
+.lq-round[aria-pressed="true"] .is-moon { display: inline-flex; }
+.lq-round > span { display: inline-flex; }
+
+/* ---------- press: every button and tappable card goes in and springs back ----------
+   One rule set, the individual `scale` property (it never fights a transform), in at --lq-t-press, out on the spring. A component pressing by its own transform would press twice, so none does. */
+.lq :is(button, [role="button"], [role="tab"], summary, a.lq-btn, .lq-tap, .lq-chip, .lq-round, .lq-sections a, .lq-menu a, .lq-brand) {
+  transition: scale var(--lq-t-release) var(--lq-spring), transform var(--lq-t-quick) var(--lq-ease), background-color var(--lq-t-quick), color var(--lq-t-quick), box-shadow var(--lq-t-quick); }
+.lq :is(button, [role="button"], [role="tab"], summary, a.lq-btn, .lq-tap, .lq-chip, .lq-round, .lq-sections a, .lq-menu a, .lq-brand):active:not(:disabled, [aria-disabled="true"]) {
+  scale: var(--lq-press-scale); transition: scale var(--lq-t-press) var(--lq-ease); }
+
+/* ---------- the top: brand, the sections pill, mode, the account ---------- */
+.lq-top { position: relative; z-index: 20; display: flex; align-items: center; gap: 0.75rem; max-width: 90rem; margin: 0 auto; padding: 1.125rem 1.75rem 0; box-sizing: border-box; }
+.lq-top .sp { flex: 1; }
+.lq-brand { display: inline-flex; align-items: center; gap: 0.625rem; min-height: var(--lq-target); text-decoration: none; color: var(--lq-ink); font: 560 1.5625rem/1 var(--lq-f-display); letter-spacing: -0.03em; }
+.lq :where(a).lq-brand { color: var(--lq-ink); }
+.lq-brand svg { width: 2.125rem; height: 2.125rem; }
+.lq-sections { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: var(--lq-r-pill); }
+.lq-sections a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--lq-target); padding: 0 1.25rem; border-radius: var(--lq-r-pill); color: var(--lq-ink); text-decoration: none; font: 620 1rem/1 var(--lq-f-ui); white-space: nowrap; }
+.lq :where(.lq-sections a) { color: var(--lq-ink); }
+.lq-sections a:hover { background: var(--lq-hover); }
+.lq-sections a[aria-current="page"], .lq-sections a[aria-current="page"]:hover { background: var(--lq-brand); color: var(--lq-on-brand); }
+.lq :where(.lq-sections a[aria-current="page"]) { color: var(--lq-on-brand); }
+.lq-account { position: relative; flex: none; }
+.lq-menu { position: absolute; z-index: 30; top: calc(100% + 0.5rem); right: 0; min-width: 14rem; padding: 0.375rem; display: flex; flex-direction: column; background: var(--lq-card-t); }
+.lq-menu[hidden] { display: none; }
+.lq-menu :is(a, button) { display: flex; align-items: center; width: 100%; min-height: var(--lq-target); padding: 0 0.875rem; border: 0; border-radius: var(--lq-r-md); background: transparent; color: var(--lq-ink); text-align: left; text-decoration: none; font: 560 1rem/1 var(--lq-f-ui); cursor: pointer; box-sizing: border-box; }
+.lq :where(.lq-menu a) { color: var(--lq-ink); }
+.lq-menu :is(a, button):hover, .lq-menu :is(a, button):focus-visible { background: var(--lq-hover); outline-offset: -0.1875rem; }
+.lq-menu form { margin: 0.25rem 0 0; padding-top: 0.25rem; border-top: 1px solid var(--lq-line); }
+@media (max-width: 719px) {
+  .lq-top { padding: 0.75rem 1rem 0; gap: 0.5rem; }
+  .lq-brand { font-size: 1.375rem; }
+  /* the pill floats at the foot of a phone, over the content: near-opaque there, as a card holding text is */
+  .lq-sections { position: fixed; z-index: 40; left: 50%; translate: -50% 0; bottom: max(0.75rem, env(safe-area-inset-bottom)); max-width: calc(100vw - 1.5rem); background: var(--lq-card-t); }
+  .lq-sections a { padding: 0 1.25rem; }
+  .lq:has(.lq-sections) { padding-bottom: calc(4.75rem + env(safe-area-inset-bottom)); }
+  .lq-menu { min-width: min(16rem, calc(100vw - 2rem)); }
+}
+
+/* ---------- layout helpers ---------- */
+.lq-main { max-width: 72rem; margin: 0 auto; padding: 0 1.75rem 3rem; box-sizing: border-box; }
+.lq-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); align-items: start; }
+.lq-stack { display: grid; gap: 0.75rem; }
+.lq-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+@media (max-width: 719px) { .lq-main { padding: 0 1rem 2rem; } }
+
+/* ---------- sheets and drawers: grow from their source on a phone, a calm fade on a laptop ---------- */
+.lq-scrim { position: fixed; inset: 0; z-index: 55; background: var(--lq-scrim); opacity: 0; pointer-events: none; transition: opacity var(--lq-t-quick); }
+.lq-scrim.on { opacity: 1; pointer-events: auto; }
+.lq-sheet { position: fixed; z-index: 60; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; padding: 1.375rem; background: var(--lq-card); color: var(--lq-ink); box-shadow: var(--lq-sh3), 0 0 0 1px var(--lq-line); }
+.lq-sheet[hidden] { display: none; }
+.lq-sheet:focus { outline: 0; }
+.lq-sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; }
+.lq-sheet-h h3 { font-size: 1.625rem; line-height: 1.1; }
+@media (max-width: 719px) { .lq-sheet { left: 0.5rem; right: 0.5rem; bottom: 0.5rem; max-height: calc(100svh - 1.5rem); border-radius: 1.75rem; } }
+@media (min-width: 720px) {
+  .lq-sheet { left: 50%; top: 50%; translate: -50% -50%; width: min(30rem, calc(100vw - 3rem)); max-height: calc(100svh - 3rem); border-radius: var(--lq-r-lg); }
+  .lq-sheet.is-drawer { left: auto; right: 1rem; top: 1rem; bottom: 1rem; translate: none; width: min(28rem, calc(100vw - 2rem)); max-height: none; }
+}
+
+/* ---------- one at a time: cards that open in place, the others folding to their summary (the drawer pattern) ---------- */
+.lq-folds { display: flex; flex-direction: column; gap: 0.75rem; }
+.lq-fold { border-radius: var(--lq-r-lg); background: var(--lq-card); box-shadow: var(--lq-sh1), 0 0 0 1px var(--lq-line); overflow: hidden; transition: box-shadow var(--lq-t-fold) var(--lq-ease); }
+.lq-fold.is-open { box-shadow: var(--lq-sh2), 0 0 0 0.125rem color-mix(in srgb, var(--lq-brand) 55%, transparent); }
+.lq-fold-h { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.125rem 1rem; width: 100%; min-height: 3.5rem; padding: 0.875rem 1.125rem; border: 0; background: none; cursor: pointer; text-align: left; color: var(--lq-ink); }
+.lq-fold-t { font: 650 1.0625rem/1.2 var(--lq-f-ui); }
+.lq-fold-s { grid-column: 1; color: var(--lq-ink-2); font: 450 1rem/1.3 var(--lq-f-ui); }
+.lq-fold-c { grid-column: 2; grid-row: 1 / span 2; width: 1.25rem; height: 1.25rem; color: var(--lq-ink-2); transition: rotate var(--lq-t-fold) var(--lq-spring); }
+.lq-fold.is-open .lq-fold-c { rotate: 180deg; }
+.lq-fold-b { display: grid; grid-template-rows: 0fr; visibility: hidden; opacity: 0; transition: grid-template-rows var(--lq-t-fold) var(--lq-ease), opacity var(--lq-t-fold) var(--lq-ease), visibility 0s linear var(--lq-t-fold); }
+.lq-fold.is-open > .lq-fold-b { grid-template-rows: 1fr; visibility: visible; opacity: 1; transition-delay: 0s; }
+.lq-fold-b > div { min-height: 0; overflow: hidden; }
+.lq-fold-b > div > div { padding: 0 1.125rem 1.125rem; color: var(--lq-ink-2); }
+
+/* ---------- a soft search box with an autocomplete list ---------- */
+.lq-box { position: relative; width: 100%; max-width: 40rem; }
+.lq-field { display: flex; align-items: center; gap: 0.75rem; min-height: 4rem; padding: 0.4375rem 0.4375rem 0.4375rem 1.25rem; border-radius: var(--lq-r-pill); background: var(--lq-card); box-shadow: var(--lq-sh2), 0 0 0 1px var(--lq-line); color: var(--lq-ink-2); transition: box-shadow var(--lq-t-quick) var(--lq-ease); }
+.lq-field:focus-within { box-shadow: var(--lq-sh3), 0 0 0 0.125rem var(--lq-brand-text); }
+.lq-field > svg { flex: none; width: 1.375rem; height: 1.375rem; }
+.lq-field input { flex: 1; min-width: 0; min-height: var(--lq-target); border: 0; outline: 0; background: transparent; color: var(--lq-ink); font: 400 1.1875rem/1.2 var(--lq-f-ui); }
+.lq-field input:focus-visible { outline: 0; }
+.lq-field input::placeholder { color: var(--lq-ink-3); opacity: 1; }
+.lq-field .lq-btn { flex: none; box-shadow: none; }
+.lq-list { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 0.5rem); margin: 0; padding: 0.375rem; list-style: none; max-height: min(24rem, 50svh); overflow-y: auto; background: var(--lq-card-t); text-align: left; }
+.lq-list[hidden] { display: none; }
+.lq-opt { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: var(--lq-target); padding: 0.5rem 1rem; border-radius: var(--lq-r-md); cursor: pointer; font: 450 1.0625rem/1.3 var(--lq-f-ui); color: var(--lq-ink); -webkit-tap-highlight-color: transparent; }
+.lq-opt[aria-selected="true"], .lq-opt:hover { background: var(--lq-hover); }
+.lq-opt small { flex: none; color: var(--lq-ink-3); font: 400 1rem/1.2 var(--lq-f-ui); }
+@media (max-width: 719px) { .lq-field { padding-left: 1rem; } }
+
+/* ---------- toasts: an opaque pill with an optional Undo ---------- */
+.lq-toast { position: fixed; z-index: 80; left: 0; right: 0; margin-inline: auto; top: calc(max(1rem, env(safe-area-inset-top, 0px)) + 0.5rem); width: max-content; max-width: min(24rem, calc(100% - 2rem)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.3125rem 0.3125rem 0.3125rem 1.25rem; border-radius: 1.75rem; background: var(--lq-card); color: var(--lq-ink); box-shadow: var(--lq-sh3), 0 0 0 1px var(--lq-line); font: 650 1rem/1.3 var(--lq-f-ui); }
+.lq-toast.is-error { box-shadow: var(--lq-sh3), 0 0 0 0.125rem var(--lq-k3); }
+.lq-toast-t { flex: 1; min-width: 0; overflow-wrap: anywhere; padding: 0.25rem 0; }
+.lq-toast button { flex: none; min-width: var(--lq-target); min-height: var(--lq-target); padding: 0 1.125rem; border: 0; border-radius: var(--lq-r-pill); background: var(--lq-pill-on); color: var(--lq-pill-fg); font: 700 1rem/1 var(--lq-f-ui); cursor: pointer; }
+
+/* ---------- skeleton: a quiet shimmer while something loads ---------- */
+.lq-skel { display: block; min-height: 1rem; border-radius: 0.5rem; background: linear-gradient(100deg, var(--lq-card-2) 30%, color-mix(in srgb, var(--lq-card) 70%, var(--lq-card-2)) 50%, var(--lq-card-2) 70%) 120% 0 / 250% 100%; animation: lq-shimmer var(--lq-t-shimmer) ease-in-out infinite; }
+@keyframes lq-shimmer { to { background-position: -120% 0; } }
+.lq-skel.is-line { height: 1rem; } .lq-skel.is-block { height: 5rem; border-radius: var(--lq-r-md); }
+
+/* ---------- reduced motion: nothing moves, nothing fades; the sky is just the other one ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .lq *, .lq *::before, .lq *::after { animation: none !important; transition: none !important; }
+  .lq *:active { scale: none !important; }
+}
+
+/* kinds: .lq-kind.k1 ... .k5 */
+.lq-kind.k1 { --k: var(--lq-k1); --k-t: var(--lq-k1-t); --k-i: var(--lq-k1-i); } .lq-kind.k2 { --k: var(--lq-k2); --k-t: var(--lq-k2-t); --k-i: var(--lq-k2-i); }
+.lq-kind.k3 { --k: var(--lq-k3); --k-t: var(--lq-k3-t); --k-i: var(--lq-k3-i); } .lq-kind.k4 { --k: var(--lq-k4); --k-t: var(--lq-k4-t); --k-i: var(--lq-k4-i); }
+.lq-kind.k5 { --k: var(--lq-k5); --k-t: var(--lq-k5-t); --k-i: var(--lq-k5-i); }
+
+/* a phone: the sun and moon are smaller and sit at the edge, so they never sit behind a line of text */
+@media (max-width: 719px) { .lq-sky .sun { width: 5rem; height: 5rem; right: -1.5rem; top: 5.5rem; } .lq-sky .moon { width: 5.5rem; height: 5.5rem; right: -1rem; top: 5.25rem; } }

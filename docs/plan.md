@@ -1652,5 +1652,5 @@ Needs: F-262
 - [x] planning's rail: a guide in a sheet; "Add to my plan" drops stops into free slots (skips clashes, says so, Undo)
 Built in D-730..D-739 (docs/decisions.md): `guide.for_place`, `GET /guides/sheet`, `assets/js/guidesheet.js`, `guideplan.free_time/fit_day/add(day=)`, the calendar's "From <creator>'s guide" tag; shots docs/report/f263-*.png.
 
-## F-264 The design kit for other sites [todo]
+## F-264 The design kit for other sites [review]
 Needs: F-261, F-262. Extract the v2 language (tokens, glass card, press, springs, moods, sun/moon, quiet reading sky, sections pill, sheets) into a small reusable kit with a demo page, for the founder's other sites.
