@@ -404,12 +404,12 @@ async def bind(req, session):
     _request_session.set(session)
     req.scope[PRIVATE_SCOPE_KEY] = _request_traveler.get() is not None  # main.py's no_store_when_signed_in reads this
     asked, safe = req.query_params.get("trip"), req.method in ("GET", "HEAD")
-    if not safe and req.url.path != "/trips/switch":  # the switcher's own `trip` field names the trip to open, not the one being edited
+    if not safe:
         try:
             asked = (await req.form()).get("trip") or asked
         except Exception:  # not a form post
             pass
-    _asked_trip.set(asked if isinstance(asked, str) and asked and len(asked) <= 40 and req.url.path != "/trips/switch" else None)
+    _asked_trip.set(asked if isinstance(asked, str) and asked and len(asked) <= 40 else None)
     _asked_read_only.set(safe)
     _open_trip.set("")
     from gitaway import forks  # here, not at the top: forks imports this module

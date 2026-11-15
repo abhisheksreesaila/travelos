@@ -565,5 +565,5 @@ def register(app):
         except importer.SaveError as e:
             return square_page(s, lane_, w_, sq, asked_sq, str(e), can_save=False)
         if request.headers.get("x-matrix") == "1":
-            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/cockpit"})
+            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/plan"})
         return RedirectResponse(back + "&saved=1", status_code=303)

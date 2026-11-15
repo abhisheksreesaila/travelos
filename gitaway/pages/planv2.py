@@ -21,7 +21,7 @@ from starlette.responses import HTMLResponse, JSONResponse
 from gitaway import access, guide as gd, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import tripcanvas, tripshare
+from gitaway.pages import booking, tripshare
 
 PATH = "/trip/plan"
 HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
@@ -34,7 +34,8 @@ def _json(data, status=200):
 
 
 def curl(day=0, booked=""):
-    return tripcanvas.curl(day=day, booked=booked)
+    """A locked block's address: its booking's page (F-254)."""
+    return booking.href(booked)
 
 
 def _clamp(v, lo, hi):

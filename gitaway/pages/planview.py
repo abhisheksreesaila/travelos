@@ -1,5 +1,5 @@
 """A Plan it for me plan, read-only (F-197): the days the family gets, drawn like the delivered trip's phone week (one white card per day, a mini hour bar, a row per plan in its
-kind's colour, gitaway/pages/tripcanvas.py KIND_TINT and KIND_ICON), its summary and tips, and "What to book and when". The example plans (/plan-for-me/example/<slug>) and the
+kind's colour, KIND_TINT and KIND_ICON below), its summary and tips, and "What to book and when". The example plans (/plan-for-me/example/<slug>) and the
 captain's founder check (/admin/plan-for-me/<order>) draw with it. A plan is `planforme.validate()`'s shape: {"title", "summary", "days": [{"stops": [{"start", "end", "title", "kind",
 "note"}]}], "tips"}; the intake gives the dates and the party. Styles: assets/css/planforme.css (`.pv-*`)."""
 
@@ -9,7 +9,9 @@ from fasthtml.common import H2, H3, Div, Li, Ol, P, Section, Span, Ul
 
 from gitaway import tripcal
 from gitaway.icons import icon
-from gitaway.pages.tripcanvas import KIND_ICON, KIND_TINT
+
+KIND_TINT = {"fun": "bubble", "food": "sun", "outdoors": "mint", "culture": "grape", "travel": "sky"}
+KIND_ICON = {"fun": "spark", "food": "food", "outdoors": "tree", "culture": "sight", "travel": "car"}
 
 BAR = (7 * 60, 22 * 60)      # the mini hour bar, like the week card's: 7 AM to 10 PM
 

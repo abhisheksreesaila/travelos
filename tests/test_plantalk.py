@@ -10,7 +10,7 @@ import pytest
 from gitaway import canvas, familydb, familythread as ft, plantalk, session as ses, tripcal as cal, voicenotes
 from tests.photo_files import image
 from tests.test_canvas import announced, azure  # noqa: F401 - fixtures
-from tests.test_canvas_pages import added
+from tests.canvas_samples import added
 from tests.test_members import addr, browser, invite
 from tests.test_signin import person, sign_in, tid
 from tests.test_thread import FakePush, subscribe

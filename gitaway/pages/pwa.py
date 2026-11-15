@@ -34,7 +34,7 @@ MANIFEST = {
     "name": "GitAway",
     "short_name": "GitAway",
     "description": "Plan a family trip together: flights, stays and days on one calendar.",
-    "start_url": "/trip",
+    "start_url": "/trip/plan",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",

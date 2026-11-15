@@ -9,7 +9,7 @@ import pytest
 
 from gitaway import confirmations as cf, session as ses, tripcal as cal, tripimport as ti
 from tests.confirmation_samples import AIRBNB, ALL, BOOKING, CAR, GETYOURGUIDE, KLOOK, VRBO
-from tests.test_booking_lanes import TAHOE_TRIP
+from tests.live_trips import TAHOE_TRIP
 from tests.test_signin import person, sign_in
 
 

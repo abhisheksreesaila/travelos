@@ -8,7 +8,7 @@ import pytest
 
 from gitaway import canvas, familydb, session as ses
 from tests.test_canvas import announced, azure, rows  # noqa: F401 - fixtures
-from tests.test_canvas_pages import added
+from tests.canvas_samples import added
 from tests.test_signin import person
 
 

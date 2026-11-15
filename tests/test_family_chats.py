@@ -6,7 +6,7 @@ import pytest
 
 from gitaway import canvas, familychats as fc, familythread as ft, plantalk, tripcal as cal
 from tests.test_canvas import azure  # noqa: F401 - fixtures
-from tests.test_canvas_pages import added
+from tests.canvas_samples import added
 from tests.test_signin import person
 from tests.test_thread import crew  # noqa: F401 - fixture (Ari, an editor and a viewer)
 

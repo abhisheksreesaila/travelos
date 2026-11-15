@@ -2,7 +2,7 @@
 
 Real rows (affiliate-programs booking statistics) carry `marker`, `sub_id`, `price`, `profit`, `state` and `booked_at` (plus program and
 currency fields we do not need). A sandbox booking produces one row, so the day the real endpoint is wired (TRAVELPAYOUTS_TOKEN)
-`/partners` reads the same shape. Amounts here are decimal dollars like the API; GitAway keeps cents.
+The same shape was read by the old partner log. Amounts here are decimal dollars like the API; GitAway keeps cents.
 """
 
 from gitaway.partners import travelpayouts

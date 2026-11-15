@@ -26,7 +26,7 @@ def url(act, part="", trip=None) -> str:
     q = {"act": act, **({"part": part} if part else {})}
     if trip:
         q["trip"] = trip
-    return "/trip/talk?" + urlencode(q)
+    return "/trip/plan"      # F-254: the chat opens from the plan's own drawer ("Talk about this")
 
 
 def target(session, act, part=""):

@@ -1,6 +1,5 @@
-// The top bar's two menus (the trip picker and the avatar) and the "/" key (F-139, gitaway/topbar.py). The trip picker's twin in the heading of a phone or tablet screen (.ga-tb-phonepick, F-147) is the same <details> and behaves the same. The menus are <details>: a menu grows out of its button and folds back into it
-// with the one liquid motion (GA.motion, motion.js); it closes on Esc, on a press outside it, and when another opens. "/" goes to Ask (the link beside it), unless a field has focus.
-// The key clicks the Ask link beside it. The link is the Ask page; on the trip canvas's day and week (a laptop) day_ask.js (F-142) catches that click and opens Ask in the panel instead.
+// The top bar's avatar menu (F-139; F-254 took out the trip picker and the "/" key with the Ask page). The menu is a <details>: it grows out of its button and folds back into it
+// with the one liquid motion (GA.motion, motion.js); it closes on Esc, on a press outside it, and when another opens.
 (function () {
   var MO = window.GA && window.GA.motion;
   var bar = document.querySelector('.ga-topbar');
@@ -25,41 +24,18 @@
     if (!d.classList || !d.classList.contains('ga-tb-menu') || !d.open) return;
     menus().forEach(function (o) { if (o !== d) fold(o, false); });         // one menu open at a time
     var pop = popOf(d);
-    // F-154: the bar's menus are opened all the time, so they grow with the calm --motion-dur (240ms, no overshoot) and are still within a quarter second; the phone's trip sheet keeps the spring
-    if (MO && pop) MO.open(pop, sumOf(d), d.classList.contains('ga-tb-phonepick') ? {} : { t: 'dur', ease: 'calm' });
+    // F-154: the bar's menu is opened all the time, so it grows with the calm --motion-dur (240ms, no overshoot) and is still within a quarter second
+    if (MO && pop) MO.open(pop, sumOf(d), { t: 'dur', ease: 'calm' });
   }, true);
 
   document.addEventListener('pointerdown', function (e) {
-    menus().forEach(function (d) { if (d.open && (!d.contains(e.target) || e.target === d)) fold(d, false); });      // e.target === d: the dimmed screen behind a phone's sheet (the menu's own ::before)
+    menus().forEach(function (d) { if (d.open && (!d.contains(e.target) || e.target === d)) fold(d, false); });
   }, true);
 
-  // From 1020px the phone menu's button is only the heading's eyebrow line (topbar.css): not in the tab order and not announced as a menu or a button.
-  var wide = window.matchMedia ? window.matchMedia('(min-width: 1020px)') : { matches: false };
-  function plainEyebrow() {
-    Array.prototype.forEach.call(document.querySelectorAll('.ga-tb-phonepick'), function (d) {
-      var s = sumOf(d);
-      if (wide.matches) { d.open = false; s.setAttribute('tabindex', '-1'); s.setAttribute('role', 'presentation'); if (s.hasAttribute('aria-label')) { s.setAttribute('data-label', s.getAttribute('aria-label')); s.removeAttribute('aria-label'); } s.setAttribute('data-plain', '1'); }
-      else if (s.hasAttribute('data-plain')) { s.removeAttribute('tabindex'); s.removeAttribute('role'); s.removeAttribute('data-plain'); if (s.hasAttribute('data-label')) s.setAttribute('aria-label', s.getAttribute('data-label')); }
-    });
-  }
-  plainEyebrow();
-  if (wide.addEventListener) wide.addEventListener('change', plainEyebrow);
-  document.addEventListener('cz:swap', plainEyebrow, true);      // the canvas redraws the heading in place when the level changes (canvas_core.js): the new eyebrow is plain again too
-
-  document.addEventListener('keydown', function (e) {      // (capture: before the canvas's and the panel's own Esc)
+  document.addEventListener('keydown', function (e) {      // (capture: before a page's own Esc)
     if (e.key !== 'Escape') return;
     var shut = false;
-    menus().forEach(function (d) { if (d.open && !d.hasAttribute('data-closing')) { fold(d, true); shut = true; } });      // (a menu already folding is not closed again: a second Esc reaches the canvas)
-    if (shut) { e.preventDefault(); e.stopImmediatePropagation(); }      // F-156: Esc closed the menu and nothing else: the canvas does not also zoom out
+    menus().forEach(function (d) { if (d.open && !d.hasAttribute('data-closing')) { fold(d, true); shut = true; } });      // (a menu already folding is not closed again: a second Esc reaches the page)
+    if (shut) { e.preventDefault(); e.stopImmediatePropagation(); }      // F-156: Esc closed the menu and nothing else
   }, true);
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
-    var t = e.target, tag = t && t.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
-    var ask = document.getElementById('ga-tb-ask');
-    if (!ask || getComputedStyle(bar).display === 'none') return;           // no bar at this width (the phone and the tablet): "/" does nothing
-    e.preventDefault();
-    ask.click();
-  });
 })();

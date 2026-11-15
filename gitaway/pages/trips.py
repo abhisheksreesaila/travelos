@@ -1,13 +1,16 @@
-"""Public itinerary pages at /trips/{slug} (F-014 renders the scrapbook page for known trips) and the family's trip switcher (F-040).
+"""Public trip pages at /trips/{slug} (F-014 renders the scrapbook page for known trips; a creator's trip is a guide, gitaway/pages/guidepage.py), the Save heart and a published trip's public photos.
 
-POST /trips/switch   open another of the family's trips for the signed-in person (trip=<id>), then back to the trip
+POST /save, /unsave   the heart (signed out: through the demo sign-in with intent=save)
+GET  /pub/<slug>/<file>   a published trip's public photo, public and cacheable; the family's own photos are never here
 """
+
+from urllib.parse import quote
 
 from fasthtml.common import A, Div, H1, P, Section, cookie
 from fasthtml.core import FtResponse
-from starlette.responses import RedirectResponse
+from starlette.responses import FileResponse, RedirectResponse, Response
 
-from gitaway import affiliate, community, forks as forks_model, guide as gd, seo, session as ses, showcase, stats
+from gitaway import affiliate, community, forks as forks_model, guide as gd, publish, seo, session as ses, showcase, stats
 from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
@@ -29,13 +32,6 @@ def not_found():
 
 
 def register(app):
-    @app.get("/trips")
-    @app.get("/trips/")
-    def current_trip(session, day: str = ""):
-        """/trips has nothing of its own: it goes to the current trip (the one address that used to be a 404)."""
-        from gitaway.pages.calendar import to_the_trip
-        return to_the_trip(session, day)
-
     @app.get("/trips/{slug}")
     def trip(request, session, slug: str, theme: str = "", state: str = ""):
         found = forks_model.resolve(slug)
@@ -61,10 +57,32 @@ def register(app):
             return FtResponse((body, *via), headers={"X-Robots-Tag": "noindex, nofollow"})
         return (body, *via) if via else body
 
-    @app.post("/trips/switch")
-    def switch(session, trip: str = "", next: str = ""):
-        """Open another of the family's trips. A trip that is not the family's changes nothing. Always lands on the trip (or `next`)."""
+    def trip_path(next_path):
+        path = ses.safe_next(next_path, "")
+        return path if ses.trip_slug(path) else "/guides"
+
+    @app.post("/save")
+    def save(session, next: str = ""):
+        """The heart on a trip or a guide: save it for the signed-in person (signed out: through sign-in with intent=save)."""
+        path = trip_path(next)
         if not ses.current_traveler(session):
-            return RedirectResponse("/signin?next=%2Ftrip", status_code=303)
-        ses.switch_trip(session, trip)
-        return RedirectResponse(ses.safe_next(next, "/trip"), status_code=303)
+            return RedirectResponse(f"/signin?next={quote(path, safe='/')}&intent=save", status_code=303)
+        ses.add_save(session, path)
+        return RedirectResponse(path, status_code=303)
+
+    @app.post("/unsave")
+    def unsave(session, next: str = ""):
+        path = trip_path(next)
+        ses.remove_save(session, path)
+        return RedirectResponse(path, status_code=303)
+
+    @app.get("/pub/{slug}/{filename}")
+    def public_photo(request, slug: str, filename: str):
+        """A published trip's public photo (`<16 hex>-display.jpg` / `-thumb.jpg`), public and cacheable."""
+        path = publish.public_file(slug, filename)
+        if path is None:
+            return Response("Not found.", status_code=404)
+        headers = {"Cache-Control": "public, no-cache", "X-Content-Type-Options": "nosniff", "ETag": f'"{filename}-{path.stat().st_mtime_ns}"'}
+        if request.headers.get("if-none-match") == headers["ETag"]:
+            return Response(status_code=304, headers=headers)
+        return FileResponse(path, media_type="image/jpeg", headers=headers)

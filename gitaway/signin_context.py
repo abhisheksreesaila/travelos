@@ -72,12 +72,6 @@ def context(next_path, intent) -> Pass:
     parts = urlsplit(next_path or "")
     path = parts.path.rstrip("/")
     q = {k: v[0] for k, v in parse_qs(parts.query).items() if v}
-    if path == "/plan/pay" or (path == "/plan" and any(q.get(k) for k in ("f", "h", "c", "d", "r", "a", "k"))):
-        try:
-            return _search(intent=intent, trip=catalog.parse_trip(catalog.ORIGIN[0], "la", q.get("d", catalog.SAMPLE_TRIP.depart.isoformat()), q.get("r", catalog.SAMPLE_TRIP.return_.isoformat()),
-                                              q.get("a", str(catalog.SAMPLE_TRIP.adults)), q.get("k", ",".join(map(str, catalog.SAMPLE_TRIP.kid_ages)))))
-        except catalog.TripError:
-            return GENERIC
     if intent in ("fork", "save", "publish") and path.startswith("/trips/") and path.count("/") == 2:
         trip = forks.resolve(path.split("/")[2])
         return _fork(trip, intent) if trip else GENERIC
