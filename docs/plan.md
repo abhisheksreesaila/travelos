@@ -1617,10 +1617,10 @@ Founder: "the search … is too big and too bold … it has to be soft, asking: 
 - [ ] a clear Search button; Search glides into the results as today (skeleton, matrix)
 - [ ] phone and laptop, 48px, 4.5:1
 
-## F-258 The drawer shows one thing at a time; buttons press [todo]
+## F-258 The drawer shows one thing at a time; buttons press [review]
 Founder: "never show side by side … let them get the hotel first, and if they want, click the card and expand the flights … autofocus is irritating … too much movement for the eyes"; "the omxqua pattern where buttons go in and out when pressed".
-- [ ] the drawer opens on the stay alone; the flights are a compact summary card (times, airline, price) that expands in place on tap, the stay folding to its summary; no automatic focus moves, no side-by-side layout at any width; motion short and calm
-- [ ] every v2 button and tappable card presses in and springs back (omxqua's press: scale on :active with the v2 spring; none under reduced motion)
+- [x] the drawer opens on the stay alone; the flights are a compact summary card (times, airline, price) that expands in place on tap, the stay folding to its summary; no automatic focus moves, no side-by-side layout at any width; motion short and calm
+- [x] every v2 button and tappable card presses in and springs back (omxqua's press: scale on :active with the v2 spring; none under reduced motion)
 
 ## F-259 A creator's edit stays in the v2 look [todo]
 Founder: "when I went to edit the details for the creator it went back to the old form … a boring form". Every edit path from the creator pages (the draft's Edit, the book's fix, My drafts) lands on a v2 editor in the book's language (cv2), not the old /creators editor; the old form retires for these paths.

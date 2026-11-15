@@ -68,7 +68,6 @@
 .wg .bars .num { font: 600 max(var(--label-min), 0.8125rem)/1 var(--f-ui); color: var(--ink-2); }
 
 .wg .mini-btn { margin-top: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); font: 620 1rem/1 var(--f-ui); cursor: pointer; transition: transform var(--v2-quick) var(--v2-ease); }
-.wg .mini-btn:active { transform: scale(.95); }
 .wg .list { list-style: none; margin: 0; padding: 0; display: grid; }
 .wg .list li { display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.5rem 0; font-size: 1rem; }
 .wg .list li[hidden] { display: none; }

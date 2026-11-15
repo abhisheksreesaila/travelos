@@ -1,6 +1,6 @@
 """F-251 in a real browser (replaces F-242's opened-square view): the drawer. A square opens the prototype's drawer under the matrix, on a laptop (1440) and on a phone (390): the hotel and the
-flight side by side, Focus shrinking the other to a summary, the gallery, the rooms, other stays and flights. Choosing in place moves the total by exactly the difference (it counts there) and the
-forms carry only indexes; Book my trip then books what was chosen. A stand-in source gives each square three flights, three stays and three rooms a stay. Set F251_SHOTS=1 for docs/report/f251-*.png."""
+flight one at a time (F-258: the stay first, the flights a summary that opens in place), the gallery, the rooms, other stays and flights. Choosing in place moves the total by exactly the difference (it counts there) and the
+forms carry only indexes; Book my trip then books what was chosen. A stand-in source gives each square three flights, three stays and three rooms a stay. Set F251_SHOTS=1 for docs/report/f251-*.png, F258_SHOTS=1 for f258-*.png."""
 import os
 from dataclasses import replace
 from pathlib import Path
@@ -42,10 +42,10 @@ def alt(monkeypatch, stand):  # noqa: F811
     monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (_ for _ in ()).throw(AssertionError("LiteAPI was asked")))
 
 
-def shot(page, name):
-    if os.environ.get("F251_SHOTS"):
+def shot(page, name, ticket="f251"):
+    if os.environ.get(ticket.upper() + "_SHOTS"):
         SHOTS.mkdir(parents=True, exist_ok=True)
-        page.screenshot(path=str(SHOTS / f"f251-{name}.png"))
+        page.screenshot(path=str(SHOTS / f"{ticket}-{name}.png"))
 
 
 def cents(text):
@@ -53,7 +53,7 @@ def cents(text):
 
 
 def look(view, who):
-    """Looking at one side shows it: where it is a summary (the other side has focus), a tap on the summary brings it back."""
+    """Looking at one side shows it: where it is a summary (F-258: one side is open at a time), a tap on the summary opens it."""
     if view.locator(f".dr-pn.dr-{who}.is-mini").count():
         view.locator(f".dr-{who} .dr-mini").click()
 
@@ -91,27 +91,64 @@ def test_choosing_a_flight_a_hotel_and_a_room_in_place_moves_the_total_by_the_di
     assert page.errors == []
 
 
-def test_focus_shrinks_the_other_side_to_a_summary_and_touching_a_side_focuses_it(matrix, alt):  # noqa: F811
-    page = matrix(DESKTOP, signed_in=True)
-    view = open_square(page, DESKTOP)
-    panels = view.locator(".dr-panels")
-    assert panels.get_attribute("data-focus") == "" and view.locator(".dr-pn.is-mini").count() == 0           # side by side
-    shot(page, "1440-drawer")
-    view.locator(".dr-stay .dr-fbtn").click()
-    assert panels.get_attribute("data-focus") == "stay"
-    expect(view.locator(".dr-fly")).to_have_class("dr-pn dr-fly is-mini")
-    expect(view.locator(".dr-fly .dr-mini")).to_contain_text("Test Air")
-    expect(view.locator(".dr-stay .dr-fbtn")).to_have_text("Side by side")
-    page.wait_for_timeout(900)
-    shot(page, "1440-stay-focus")
-    view.locator(".dr-fly .dr-mini").click()      # tapping the summary shows it
-    assert panels.get_attribute("data-focus") == "fly" and view.locator(".dr-stay.is-mini").count() == 1
-    page.wait_for_timeout(900)
-    shot(page, "1440-flight-focus")
-    view.locator(".dr-fly .dr-fbtn").click()
-    assert panels.get_attribute("data-focus") == ""
-    view.locator(".dr-opt[data-fl='1']").click()      # touching an option on the flight side focuses it
-    page.wait_for_function("() => document.querySelector('.dr-panels').dataset.focus === 'fly'")
+def sides(view):
+    """Which of the drawer's two sides is open (full) and which is a summary card, as the person sees them."""
+    return {who: view.locator(f".dr-{who} .dr-full").is_visible() for who in ("stay", "fly")}, {who: view.locator(f".dr-{who} .dr-mini").is_visible() for who in ("stay", "fly")}
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_the_drawer_shows_the_stay_alone_and_the_flights_open_in_place_when_tapped(matrix, alt, viewport):  # noqa: F811
+    """F-258: the stay first and alone, the flights a summary card (times, airline, nonstop, price); tapping it opens the flights and folds the stay to its summary, tapping that brings it back.
+    Never both open, at any width, and choosing something never moves a side."""
+    w = viewport["width"]
+    page = matrix(viewport, signed_in=True)
+    view = open_square(page, viewport)
+    page.wait_for_timeout(1000)
+    assert sides(view) == ({"stay": True, "fly": False}, {"stay": False, "fly": True})
+    mini = view.locator(".dr-fly .dr-mini")
+    expect(mini).to_contain_text("Test Air")
+    expect(mini).to_contain_text("nonstop")
+    expect(mini).to_contain_text(" out")
+    expect(mini).to_contain_text("$")
+    first = view.locator("[data-slot='total']").inner_text()
+    view.locator(".dr-alt[data-hotel='1']").click()      # choosing a hotel opens nothing else
+    view.locator(".dr-rooms:not([hidden]) .dr-opt[data-room='1']").click()
+    assert sides(view)[0] == {"stay": True, "fly": False}
+    assert view.locator("[data-slot='total']").inner_text() != first
+    view.locator(".dr-alt[data-hotel='0']").click()
+    shot(page, f"drawer-stay-{w}", "f258")
+    mini.click()
+    page.wait_for_timeout(700)
+    assert sides(view) == ({"stay": False, "fly": True}, {"stay": True, "fly": False})
+    expect(view.locator(".dr-stay .dr-mini")).to_contain_text("$")
+    shot(page, f"drawer-flights-{w}", "f258")
+    view.locator(".dr-opt[data-fl='1']").click()      # choosing a flight keeps the flights open
+    assert sides(view)[0] == {"stay": False, "fly": True}
+    expect(view.locator(".dr-stay .dr-mini")).to_be_visible()
+    view.locator(".dr-stay .dr-mini").click()      # the stay's summary brings it back
+    page.wait_for_timeout(700)
+    assert sides(view) == ({"stay": True, "fly": False}, {"stay": False, "fly": True})
+    expect(view.locator(".dr-fly .dr-mini")).to_contain_text("Nuitée Air")      # the summary follows the choice
+    assert page.errors == []
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_opening_the_drawer_and_choosing_in_it_moves_no_focus_and_no_side(matrix, alt, viewport):  # noqa: F811
+    """F-258 ("autofocus is irritating"): opening the drawer leaves the keyboard focus where it was, and neither touching an option nor the gallery nor looking around
+    ever opens the other side; only a tap on a summary does."""
+    page = matrix(viewport, signed_in=True)
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq").nth(2).click()
+    expect(page.locator("#mx-drawer .dr-book")).to_be_visible()
+    page.wait_for_timeout(1000)
+    assert page.evaluate("() => !document.activeElement.closest('#mx-drawer')")      # focus did not move into the drawer
+    view = page.locator("#mx-drawer")
+    before = sides(view)
+    for sel in (".dr-alt[data-hotel='2']", ".dr-rooms:not([hidden]) .dr-opt[data-room='1']", ".dr-alt[data-hotel='0']"):
+        view.locator(sel).dispatch_event("pointerdown")
+        view.locator(sel).click()
+        page.wait_for_timeout(500)
+        assert sides(view) == before
+    assert page.evaluate("() => document.querySelectorAll('.dr-pn:not(.is-mini)').length") == 1
     assert page.errors == []
 
 

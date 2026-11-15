@@ -6,12 +6,10 @@
   font: 650 1.125rem/1 var(--f-ui); box-shadow: var(--sh2); transition: transform var(--cv-d200) var(--v2-ease), box-shadow var(--cv-d200), opacity var(--cv-d200); white-space: nowrap; }
 :root[data-mode="dark"] .cv .go { background: #F4F5FB; color: #0F1124; }
 .cv .go:hover { transform: translateY(-1px); box-shadow: var(--sh3); }
-.cv .go:active { transform: scale(.96); }
 .cv .go:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
 .cv .go svg { width: 1.25rem; height: 1.25rem; }
 .cv .tonal { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 3rem; padding: 0 1.125rem; border: 0; border-radius: 62.4375rem; cursor: pointer; background: var(--card-2); color: var(--ink); font: 620 1rem/1 var(--f-ui); transition: transform var(--cv-d150), background-color var(--cv-d200); white-space: nowrap; }
 .cv .tonal:hover { background: color-mix(in srgb, var(--card-2) 80%, var(--ink) 6%); }
-.cv .tonal:active { transform: scale(.96); }
 .cv .tonal svg { width: 1.125rem; height: 1.125rem; }
 .cv .tonal[aria-pressed="true"] { background: var(--flight-t); color: var(--flight-i); }
 .cv .kicker { display: inline-flex; gap: 0.5rem; align-items: center; padding: 0.5rem 0.875rem; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); font: 600 max(var(--text-min), 0.9375rem)/1 var(--f-ui); color: var(--ink-2); }
@@ -33,7 +31,6 @@
 .cv .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .cv .examples > span { color: var(--ink-2); font-weight: 560; margin-right: 0.125rem; }
 .cv .ex { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 0.875rem 0 0.375rem; border-radius: 62.4375rem; border: 0; cursor: pointer; background: var(--card-solid); box-shadow: var(--sh1); font: 560 1rem/1 var(--f-ui); color: var(--ink); transition: transform var(--cv-d180) var(--v2-ease); }
-.cv .ex:active { transform: scale(.95); }
 .cv .ex .fav { width: 2rem; height: 2rem; }
 .cv .fav { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; color: var(--on); font: 700 max(var(--text-min), 0.875rem)/1 var(--f-ui); flex: none; }
 .cv .points { display: flex; flex-wrap: wrap; gap: 0.625rem; margin-top: 0.375rem; }
@@ -243,14 +240,12 @@
 .cv .pager { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); }
 .cv .pager button { width: 3rem; height: 3rem; border-radius: 50%; border: 0; background: none; cursor: pointer; display: grid; place-items: center; color: var(--ink); transition: transform var(--cv-d150), background-color var(--cv-d200); }
 .cv .pager button:hover { background: var(--card-2); }
-.cv .pager button:active { transform: scale(.9); }
 .cv .pager button:disabled { opacity: .3; cursor: default; }
 .cv .pager button svg { width: 1.375rem; height: 1.375rem; }
 .cv .pager .lbl { min-width: 10.5rem; text-align: center; font: 600 1rem/1.15 var(--f-ui); }
 .cv .pager .lbl small { display: block; color: var(--ink-3); font: 500 max(var(--text-min), 0.875rem)/1.2 var(--f-num); font-feature-settings: var(--num-feat); }
 .cv .bbar .ph { display: none; }
 .cv .heartb { display: inline-flex; align-items: center; gap: 0.5rem; height: 3rem; padding: 0 1.125rem 0 0.875rem; border: 0; border-radius: 62.4375rem; cursor: pointer; background: var(--card-solid); box-shadow: var(--sh1); color: var(--ink); font: 650 1.0625rem/1 var(--f-num); font-feature-settings: var(--num-feat); position: relative; transition: transform var(--cv-d150); }
-.cv .heartb:active { transform: scale(.94); }
 .cv .heartb svg { width: 1.375rem; height: 1.375rem; color: var(--food); transition: transform var(--cv-d500) var(--spring); }
 .cv .heartb[aria-pressed="true"] svg { fill: currentColor; transform: scale(1.18); }
 .cv .heartb.pop svg { animation: cv-hpop var(--cv-d600) var(--spring); }
@@ -313,7 +308,6 @@
 .cv .sh-head p { margin: 0; color: var(--ink-2); font-size: 1.125rem; max-width: 38rem; }
 .cv .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .cv .chip { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding: 0 1rem; border-radius: 62.4375rem; border: 0; cursor: pointer; background: var(--card-solid); color: var(--ink); font: 560 1rem/1 var(--f-ui); box-shadow: var(--sh1); transition: background-color var(--cv-d200), color var(--cv-d200), transform var(--cv-d150); }
-.cv .chip:active { transform: scale(.95); }
 .cv .chip[aria-pressed="true"] { background: var(--ink); color: var(--card-solid); }
 :root[data-mode="dark"] .cv .chip[aria-pressed="true"] { background: #F4F5FB; color: #0F1124; }
 .cv .shelf { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(11.875rem, 1fr)); gap: 2.875rem 2.125rem; padding: 1.625rem 1.875rem 0; }
@@ -321,7 +315,6 @@
 .cv .bk { position: relative; min-width: 0; display: grid; gap: 0.625rem; justify-items: center; z-index: 1; animation: cv-settle var(--cv-d550) var(--spring) both; animation-delay: calc(var(--i) * var(--cv-stag)); }
 .cv .bk > button { width: 100%; border: 0; padding: 0; background: none; cursor: pointer; transform: rotate(var(--r)); transition: transform var(--cv-d500) var(--spring); border-radius: 0.25rem 0.5rem 0.5rem 0.25rem; }
 .cv .bk > button:hover, .cv .bk > button:focus-visible { transform: rotate(0) translateY(-0.625rem); }
-.cv .bk > button:active { transform: scale(.97); }
 .cv .bk .meta { display: flex; align-items: center; gap: 0.625rem; width: 100%; justify-content: space-between; padding: 0 0.25rem; }
 .cv .bk .meta span { color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); white-space: nowrap; overflow: hidden;  }
 .cv .bk .meta .hc { display: inline-flex; align-items: center; gap: 0.3125rem; color: var(--ink); font: 650 max(var(--text-min), 0.9375rem)/1 var(--f-num); font-feature-settings: var(--num-feat); flex: none; }

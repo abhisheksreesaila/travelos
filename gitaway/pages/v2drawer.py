@@ -1,5 +1,5 @@
-"""The opened square as the prototype's drawer (F-251, D-620..): the hotel and the flight side by side under the matrix, one of them minimised when you look at the other (Focus), a
-hotel gallery, the rooms to choose from, other stays, other flights, the total and "Book my trip". Reference: docs/design/booking-v2/index.html (`drawDrawer`).
+"""The opened square as the prototype's drawer (F-251, D-620..; F-258, D-670..): the stay first and alone, the flights a summary card that opens in place when tapped (the stay then folds to
+its own summary card), never side by side and never a change the person did not make; under the matrix, a hotel gallery, the rooms to choose from, other stays, other flights, the total and "Book my trip". Reference: docs/design/booking-v2/index.html (`drawDrawer`).
 
     drawer(s, lane, w, sq, asked_sq, saved, can_save)    the drawer's inside as an element: for the tile endpoint (assets/js/tripmatrix.js puts it under the card and grows it out of the
                                                           square's column), and for the square's own page (a page without the script, the same words)
@@ -150,7 +150,7 @@ def _flight_btn(f: tm.FlightPart, k: int, base: int, on: bool):
     tail = f"back {_clock(back)} · " if " → " in back else ""
     return Button(Span(cls="dr-rad"), Span(Span(head, cls="dr-t num"), Small(f"{tail}{f.airline} · {stops_words(f.stops).lower()}"), cls="dr-tx"),
                   Span("Chosen" if on else signed(f.cents - base), cls="dr-d num" + (" is-minus" if f.cents < base and not on else ""), data_d="1"), type="button", cls="dr-opt", role="radio",
-                  aria_checked="true" if on else "false", data_fl=str(k), data_c=str(f.cents), data_al=f.airline,
+                  aria_checked="true" if on else "false", data_fl=str(k), data_c=str(f.cents), data_al=f.airline, data_stops=stops_words(f.stops).lower(),
                   data_times=f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else ""))
 
 
@@ -177,7 +177,7 @@ def _why(s, lane, w, sq, asked_sq):
 
 def _mini_stay(names, room, price):
     return Div(Span("Stay", cls="dr-k"), Span(names, cls="dr-mn", data_m="stay-name"), P(room, data_m="stay-room"), Span(price, cls="dr-pp num", data_m="stay-price"),
-               Span(icon("expand", 16, 2.2), "Show stay", cls="dr-exp"), cls="dr-mini", data_focus="stay", role="button", tabindex="0", aria_label="Show the stay")
+               Span(icon("expand", 16, 2.2), "Show stay", cls="dr-exp"), cls="dr-mini", data_show="stay", role="button", tabindex="0", aria_label="Show the stay")
 
 
 def _foot_words(sq):
@@ -201,9 +201,8 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     tabs = Div(*[Button(f"{lane.places[min(i, len(lane.places) - 1)].name} · {alts[0].nights} night{'s' if alts[0].nights != 1 else ''}", type="button", aria_pressed="true" if i == 0 else "false", data_tab=str(i))
                  for i, alts in enumerate(alts_by_stay)], cls="dr-seg") if multi else ""
     flights = sq.flights if len(sq.flights) > 1 else (sq.flight,)
-    focus_btn = lambda who, label: Button(icon("expand", 16, 2.2), label, type="button", cls="dr-fbtn", data_focus=who, data_label=label)      # noqa: E731
-    stay_h = Div(Span(icon("bed", 17, 2.2), cls="dr-ic k-stay"), H3("Stays" if multi else "Stay"), focus_btn("stay", "Focus"), cls="dr-pn-h")
-    fly_h = Div(Span(icon("plane", 17, 2.2), cls="dr-ic k-flight"), H3("Flights"), focus_btn("fly", "Focus"), cls="dr-pn-h")
+    stay_h = Div(Span(icon("bed", 17, 2.2), cls="dr-ic k-stay"), H3("Stays" if multi else "Stay"), cls="dr-pn-h")
+    fly_h = Div(Span(icon("plane", 17, 2.2), cls="dr-ic k-flight"), H3("Flights"), cls="dr-pn-h")
     names = " + ".join(st.name for st in sq.stays)
     stay = Section(Div(stay_h, tabs, *stay_panes, cls="dr-full"), _mini_stay(names, sq.stays[0].room, catalog.money(sum(st.cents for st in sq.stays))), cls="dr-pn dr-stay", data_pane="stay", aria_label="Stay")
     fly = Section(Div(fly_h, *[_flight_view(f, k, w, k == 0) for k, f in enumerate(flights)],
@@ -211,8 +210,8 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
                       Div(*[_flight_btn(f, k, flights[0].cents, k == 0) for k, f in enumerate(flights)], cls="dr-rooms", role="radiogroup", aria_label="Other flights"), cls="dr-full"),
                   Div(Span("Flights", cls="dr-k"), Span(f"{s.home} ⇄ {lane.places[0].iata}", cls="dr-route num"), Span(_flight_times(flights[0]), cls="dr-mn num", data_m="fly-times"),
                       P(f"{flights[0].airline} · {stops_words(flights[0].stops).lower()}", data_m="fly-al"), Span(catalog.money(flights[0].cents), cls="dr-pp num", data_m="fly-price"),
-                      Span(icon("expand", 16, 2.2), "Show flights", cls="dr-exp"), cls="dr-mini", data_focus="fly", role="button", tabindex="0", aria_label="Show the flights"),
-                  cls="dr-pn dr-fly", data_pane="fly", aria_label="Flights")
+                      Span(icon("expand", 16, 2.2), "Show flights", cls="dr-exp"), cls="dr-mini", data_show="fly", role="button", tabindex="0", aria_label="Show the flights"),
+                  cls="dr-pn dr-fly is-mini", data_pane="fly", aria_label="Flights")
     hidden = [Input(type="hidden", name=n, value=str(v)) for n, v in mx.params(s, lane=lane.key, w=w.key).items()]
     picks = [Input(type="hidden", name="fl", value="0", data_pick="fl"), Input(type="hidden", name="st", value=",".join("0" for _ in sq.stays), data_pick="st"),
              Input(type="hidden", name="rm", value=",".join("0" for _ in sq.stays), data_pick="rm")]
@@ -225,7 +224,7 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot")
     head = Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), why, cls="dr-ti"),
                Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head")
-    out = Div(head, Div(stay, fly, cls="dr-panels", data_focus=""), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))
+    out = Div(head, Div(stay, fly, cls="dr-panels", data_open="stay"), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))
     return out
 
 

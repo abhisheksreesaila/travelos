@@ -15,13 +15,11 @@
 .pl .together { position: relative; display: inline-flex; align-items: center; gap: 0.625rem; min-height: 3rem; padding: 0 1rem 0 0.5rem; border: 0; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1);
   cursor: pointer; font: 620 1rem/1 var(--f-ui); color: var(--ink); transition: transform var(--v2-quick) var(--v2-ease), box-shadow var(--v2-quick); }
 .pl .together:hover { box-shadow: var(--sh2); transform: translateY(-1px); }
-.pl .together:active { transform: scale(.96); }
 .pl .badge { position: absolute; top: -0.25rem; right: -0.25rem; min-width: 1.375rem; height: 1.375rem; padding: 0 0.375rem; border-radius: 62.4375rem; background: var(--k-food); color: var(--on); font: 700 max(var(--label-min), 0.8125rem)/1.375rem var(--f-ui); text-align: center; box-shadow: 0 0 0 0.1875rem var(--card-solid); }
 .pl .badge[hidden] { display: none; }
 .pl .save { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.625rem; height: 3rem; min-width: 9.375rem; padding: 0 1.375rem; border: 0; border-radius: 62.4375rem; cursor: pointer;
   background: var(--sunset); color: var(--on); font: 680 1.0625rem/1 var(--f-ui); box-shadow: var(--sh2); transition: transform var(--v2-quick) var(--v2-ease), min-width var(--v2-pick) var(--spring-soft), width var(--v2-pick) var(--spring-soft), padding var(--v2-quick); }
 .pl .save:hover { transform: translateY(-1px); box-shadow: var(--sh3); }
-.pl .save:active { transform: scale(.96); }
 .pl .save svg { width: 1.1875rem; height: 1.1875rem; }
 .pl .save.busy { min-width: 3rem; width: 3rem; padding: 0; pointer-events: none; }
 .pl .save.busy span { display: none; }
@@ -77,7 +75,6 @@
 .pl .lg .sw { width: 0.75rem; height: 0.75rem; border-radius: 0.25rem; background: var(--k); }
 .pl .addbtn { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 3rem; padding: 0 1.125rem 0 0.875rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); cursor: pointer; font: 650 1rem/1 var(--f-ui); box-shadow: var(--sh1);
   transition: transform var(--v2-quick) var(--v2-ease); }
-.pl .addbtn:active { transform: scale(.95); }
 .pl .addbtn svg { width: 1.125rem; height: 1.125rem; }
 .pl .addbtn:only-child, .pl .legend + .addbtn { margin-left: 0; }
 .pl .pl-cal[data-view="day"] .legend { display: none; }
@@ -89,7 +86,6 @@
 .pl .chipsrow::-webkit-scrollbar { display: none; }
 .pl .dchip { flex: 1 0 auto; min-width: 6rem; min-height: 3rem; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.125rem 0.625rem; padding: 0.5625rem 0.875rem 0.5625rem 0.75rem; border: 0; border-radius: 1.125rem; background: var(--card-2);
   cursor: pointer; text-align: left; scroll-snap-align: start; transition: background-color var(--v2-quick), color var(--v2-quick), transform var(--v2-quick); }
-.pl .dchip:active { transform: scale(.96); }
 .pl .dchip .w { grid-row: span 2; display: inline-grid; }
 .pl .dchip .w .wxl { gap: 0; } .pl .dchip .w .wxl > span { display: none; }
 .pl .dchip b { font: 650 1rem/1.1 var(--f-ui); }
@@ -138,7 +134,6 @@
 .pl .offwin { position: absolute; left: 0; right: 0; top: calc(var(--s) / 60 * var(--hh)); height: calc(var(--d) / 60 * var(--hh)); background: repeating-linear-gradient(135deg, transparent 0 0.4375rem, var(--hatch) 0.4375rem 0.875rem); pointer-events: none; }
 .pl .more { position: absolute; right: 0.375rem; z-index: 4; top: calc(var(--s) / 60 * var(--hh)); min-width: 3rem; min-height: 3rem; padding: 0 0.625rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg);
   font: 700 1rem/1 var(--f-ui); box-shadow: var(--sh2); cursor: pointer; transition: transform var(--v2-quick) var(--v2-ease); }
-.pl .more:active { transform: scale(.92); }
 .pl .hov { position: absolute; left: 0.25rem; right: 0.25rem; z-index: 1; height: calc(var(--hh) / 2); border-radius: 0.625rem; background: color-mix(in srgb, var(--flight) 9%, transparent); box-shadow: inset 0 0 0 0.09375rem color-mix(in srgb, var(--flight) 35%, transparent);
   pointer-events: none; opacity: 0; transition: opacity var(--v2-quick); }
 .pl .hov.on { opacity: 1; }
@@ -192,23 +187,19 @@
 .pl .pop .lab { display: flex; align-items: center; gap: 0.5rem; margin: 0.875rem 0 0.5rem; font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 .pl .x { width: 3rem; height: 3rem; border-radius: 50%; border: 0; background: var(--card-2); cursor: pointer; display: grid; place-items: center; flex: none; color: var(--ink); }
 .pl .x svg { width: 1rem; height: 1rem; }
-.pl .x:active { transform: scale(.92); }
 .pl .timeline { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .pl .step { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 62.4375rem; background: var(--card-2); }
 .pl .step button { width: 3rem; height: 3rem; border: 0; border-radius: 50%; background: var(--card-solid); box-shadow: var(--sh1); cursor: pointer; display: grid; place-items: center; }
 .pl .step button svg { width: 1rem; height: 1rem; }
-.pl .step button:active { transform: scale(.9); }
 .pl .step output { min-width: 5.5rem; text-align: center; font: 700 1.1875rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
 .pl .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .pl .chip { display: inline-flex; align-items: center; gap: 0.4375rem; min-height: 3rem; padding: 0 0.875rem; border-radius: 62.4375rem; border: 0; cursor: pointer; background: var(--card-2); color: var(--ink); font: 580 1rem/1 var(--f-ui); box-shadow: inset 0 0 0 1px var(--line);
   transition: background-color var(--v2-quick), color var(--v2-quick), transform var(--v2-quick); }
-.pl .chip:active { transform: scale(.95); }
 .pl .chip i { width: 0.6875rem; height: 0.6875rem; border-radius: 0.25rem; background: var(--k); }
 .pl .chip[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); box-shadow: none; }
 .pl .chip.kind[aria-pressed="true"] { background: var(--kt); color: var(--ki); box-shadow: inset 0 0 0 0.15625rem var(--k); }
 .pl .sugs { display: grid; gap: 0.375rem; }
 .pl .sug { display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: 3rem; padding: 0.625rem 0.75rem; border: 0; border-radius: 1rem; background: var(--card-2); cursor: pointer; text-align: left; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow var(--v2-quick), transform var(--v2-quick); }
-.pl .sug:active { transform: scale(.985); }
 .pl .sug .rad { width: 1.375rem; height: 1.375rem; border-radius: 50%; box-shadow: inset 0 0 0 0.125rem var(--line-2); flex: none; transition: box-shadow var(--v2-pop) var(--spring); }
 .pl .sug[aria-checked="true"] { box-shadow: inset 0 0 0 0.15625rem var(--k); background: color-mix(in srgb, var(--kt) 55%, var(--card-2)); }
 .pl .sug[aria-checked="true"] .rad { box-shadow: inset 0 0 0 0.4375rem var(--k); }
@@ -222,12 +213,10 @@
 .pl .namefield input:focus { outline: none; box-shadow: inset 0 0 0 0.15625rem var(--flight); }
 .pl .go1 { margin-top: 0.875rem; width: 100%; height: 3.375rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); font: 680 1.0625rem/1 var(--f-ui); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.625rem;
   transition: transform var(--v2-quick); }
-.pl .go1:active { transform: scale(.97); }
 .pl .go1 svg { width: 1.125rem; height: 1.125rem; }
 .pl .row2 { display: flex; gap: 0.5rem; margin-top: 0.875rem; }
 .pl .row2 > * { flex: 1; }
 .pl .btn2 { min-height: 3.125rem; padding: 0 1.125rem; border: 0; border-radius: 62.4375rem; background: var(--card-2); cursor: pointer; font: 620 1rem/1 var(--f-ui); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: transform var(--v2-quick); }
-.pl .btn2:active { transform: scale(.96); }
 .pl .btn2.danger { color: var(--food-i); background: var(--food-t); }
 .pl .evlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.375rem; }
 .pl .evlist a, .pl .evlist button { display: flex; align-items: center; gap: 0.625rem; min-height: 3rem; width: 100%; padding: 0.5rem 0.75rem; border: 0; border-radius: 0.875rem; background: var(--kt); color: var(--ki); text-align: left; cursor: pointer; text-decoration: none; font: 620 1rem/1.2 var(--f-ui); box-shadow: inset 0.25rem 0 0 var(--k); }
@@ -255,7 +244,6 @@
 .pl .wg a.fine { display: inline-flex; align-items: center; min-height: 3rem; text-decoration: underline; text-underline-offset: 0.1875rem; }
 .pl .days5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr)); gap: 0.25rem; text-align: center; }
 .pl .days5 .d5 { min-height: 3rem; padding: 0.5rem 0; border: 0; border-radius: 0.875rem; background: color-mix(in srgb, var(--card-solid) 55%, transparent); display: grid; gap: 0.25rem; justify-items: center; font: 600 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink); cursor: pointer; transition: transform var(--v2-quick); }
-.pl .days5 .d5:active { transform: scale(.94); }
 .pl .days5 .d5 span:first-child { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .pl .days5 .d5 .lo { font-weight: 500; color: var(--ink-3); }
 .pl .days5 .d5.typ { box-shadow: inset 0 -0.125rem 0 0 var(--line-2); }
@@ -270,7 +258,6 @@
 .pl .plus { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; border: 0; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh1); cursor: pointer; flex: none; transition: transform var(--v2-quick) var(--v2-ease), background-color var(--v2-quick); }
 .pl .plus svg { width: 1.125rem; height: 1.125rem; }
 .pl .plus:hover { background: var(--pill-on); color: var(--pill-fg); }
-.pl .plus:active { transform: scale(.9); }
 .pl .plus.done { background: var(--see); color: var(--on); }
 .pl .fits { list-style: none; margin: 0; padding: 0; display: grid; }
 .pl .fits li { display: flex; align-items: center; gap: 0.75rem; padding: 0.5625rem 0; }
@@ -337,7 +324,6 @@
 .pl .sh-foot .sp { flex: 1; }
 .pl .btn1 { min-height: 3.5rem; padding: 0 1.625rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); cursor: pointer; font: 680 1.125rem/1 var(--f-ui); display: inline-flex; align-items: center; gap: 0.625rem; transition: transform var(--v2-quick); }
 .pl .btn1.sun { background: var(--sunset); color: var(--on); box-shadow: var(--sh2); }
-.pl .btn1:active { transform: scale(.96); }
 .pl .btn1 svg { width: 1.25rem; height: 1.25rem; }
 .pl .done-h { text-align: center; margin: 0.625rem 0 0.875rem; }
 .pl .done-h b { display: block; font: var(--d-wt) 2.25rem/1.05 var(--f-display); letter-spacing: var(--d-track); }
