@@ -551,6 +551,7 @@
   .cv .bk .meta span, .cv .fc-fine, .cv .fc-stop-m, .cv .cb-foot, .cv .point, .cv .v2-nav a, .cv .ci-hint, .cv .hub-count { font-size: 1rem; }
   .cv .ex, .cv .chip, .cv .v2-nav a, .cv .cb-foot a, .cv .tonal, .cv .hub-search { min-height: var(--target); }
   .cv .v2-nav a { height: auto; }
+  .cv .pager button { min-width: var(--target); min-height: var(--target); }      /* review of F-253: the page-turn arrows were 44px */
   .cv .cb-foot a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target); }
   .cv .fc-chip, .cv .fc-eyebrow, .cv .fc-ex .fc-chip { font-size: 1rem; }
 }
