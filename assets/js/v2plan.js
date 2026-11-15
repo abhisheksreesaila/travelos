@@ -334,7 +334,7 @@
       return;
     }
     var day = e.target.closest('[data-day], [data-show]');
-    if (day) go({ view: 'day', day: +(day.dataset.day || day.dataset.show), cols: wantCols() });
+    if (day) go({ view: 'day', day: +(day.dataset.day || day.dataset.show), cols: wantCols() }).then(function () { cal.scrollIntoView({ block: 'start', behavior: RM.matches ? 'auto' : 'smooth' }); });      // on a phone the rail is under the calendar: bring the day up
   });
 
   // ---- planning together ----

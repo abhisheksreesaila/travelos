@@ -164,7 +164,7 @@ def calendar(v, view="week", frm=0, cols=COLS, day=0, role="viewer"):
     head = Div(Span(), *[Button(Span(dates[i].strftime("%a"), cls="dw"), Span(str(dates[i].day), cls="dn"), _wx(v.sky[i]) or Span(),
                                 Span(icon("rain", 15, 2.2), "Rain likely", cls="note") if v.sky[i].wet else "",
                                 type="button", cls="dh" + (" wet" if v.sky[i].wet else ""), data_day=str(i), aria_label=f"{dates[i].strftime('%A, %b')} {dates[i].day}: open the day") for i in shown],
-               cls="g-head")
+               cls="g-head") if view == "week" or v.sky[day].wet else ""      # the day view names its day in the chips: its header row is only there to say "Rain likely"
     allday = Div(Span(icon("bed", 16, 2.2), Span("Stay", cls="lblt"), cls="lbl"), stay, cls="g-all") if stay else ""
     gut = Div(*[Span(_fmt_h(gs + k * 60), style=f"--k:{k}") for k in range(hours)], cls="gut")
     body = Div(Div(gut, *[_column(v, i, can_edit, gs, view == "day") for i in shown], cls="g-inner", style=f"--hours:{hours};--n:{len(shown)};--gs:{gs}", data_gs=str(gs)), cls="g-body")

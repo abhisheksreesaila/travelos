@@ -22,8 +22,10 @@ def plan(browser, base_url):
 
     def make(viewport, scheme="light"):
         phone = viewport["width"] < 720
-        ctx = browser.new_context(viewport=viewport, color_scheme=scheme, reduced_motion="reduce", has_touch=phone, is_mobile=phone)
+        ctx = browser.new_context(viewport=viewport, reduced_motion="reduce", has_touch=phone, is_mobile=phone)
         ctx.set_default_timeout(5000)
+        if scheme == "dark":
+            ctx.add_init_script("localStorage.setItem('ga-mode', 'dark')")      # the site's mode is the person's choice kept on the device (mode.js), not the system's
         contexts.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": f"plan{time.time_ns()}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         ctx.request.post(f"{base_url}/pay", form=PICK, max_redirects=0)
@@ -166,6 +168,7 @@ def test_a_finger_holds_then_drags_a_plan_and_a_plain_swipe_still_scrolls(plan):
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
 def test_the_page_keeps_4_5_to_1_over_the_glass_with_48px_targets_and_no_sideways_scroll(plan, viewport, scheme):
     page = plan(viewport, scheme)
+    assert page.evaluate("document.documentElement.dataset.mode") == scheme
     add(page, 1, 12, "Pier walk")
     for name in ("calendar", "drawer"):
         if name == "drawer":

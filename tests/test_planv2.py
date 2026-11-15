@@ -290,3 +290,18 @@ def test_the_viewport_of_a_long_trip_is_a_window_of_seven_days(booked):
     assert html.count('data-day=') >= 3 and 'data-state="week|0|3|0"' in html
     day = booked.get("/trip/plan/cal?view=day&day=9").text
     assert 'data-state="day|0|7|4"' in day and html.count('class="col') == 3
+
+
+def test_a_write_made_while_looking_at_another_day_lands_on_the_plans_own_day(booked):
+    j = write(booked, op="add", day="1", start="600", end="660", title="Venice Canals stroll", kind="outdoors", view="day", frm="0", cols="5", vday="3").json()
+    assert j["plan"]["day"] == 1 and [a.day for a in cal.activities(person("ari"))] == [1]
+    assert 'data-state="day|0|5|3"' in j["grid"] and 'data-title="Venice Canals stroll"' not in j["grid"]      # the grid answers for the day being looked at (day 3), the plan is on day 1
+
+
+def test_the_day_view_names_its_day_in_the_chips_and_keeps_a_header_row_only_to_say_rain(booked, monkeypatch):
+    day = booked.get("/trip/plan/cal?view=day&day=2").text
+    assert 'class="g-head"' not in day and day.count('class="dchip"') == 5 and 'aria-pressed="true"' in day
+    dry = pv.Wx(74, 52, "Sunny", "sun", False, False, "Forecast · MET Norway")
+    wet = replace(dry, word="Rain", cond="rain")
+    monkeypatch.setattr(pv, "sky", lambda t: ([dry, dry, wet, dry, dry], []))
+    assert "Rain likely" in booked.get("/trip/plan/cal?view=day&day=2").text

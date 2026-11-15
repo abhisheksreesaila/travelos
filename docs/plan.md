@@ -1592,7 +1592,7 @@ Needs: F-250
 - [ ] a square opens the prototype's drawer: hotel gallery and rooms from LiteAPI (sample on the showcase), flights, focus one to shrink the other, switching in place (F-242's index rules stand)
 - [ ] Book my trip: the prototype's stepped questions, review, spinning steps, confirmation pass and Plan this trip, over F-233's sandbox booking (its rules stand)
 
-## F-252 Planning v2 [todo]
+## F-252 Planning v2 [review]
 Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) with bookings placed, quick add, drag and resize, the help rail (weather nudges only from a real forecast), planning together (members, threads, hearts), save and share. Replaces the cockpit and the day pages.
 
 ## F-253 Creators v2 [todo]
