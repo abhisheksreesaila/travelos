@@ -23,22 +23,23 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
 from gitaway import catalog, familydb, firstrun, gridsource, importer, interests, liteapi, matrixwarm, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
-from gitaway.pages import plan_search, weather_ui
+from gitaway.pages import plan_search, v2rail, weather_ui
 from gitaway.pages.skystrip import WET, WORDS, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
-TILE, SQUARE, SAVE, WARM, BOOK, PEEK = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/peek"
+TILE, SQUARE, SAVE, WARM, BOOK, PEEK, RAIL = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/peek", PATH + "/rail"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
-        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/tripview.css"), Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
-        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/tripview.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
+        Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/v2rail.css"), Link(rel="stylesheet", href="/assets/css/v2drawer.css"),
+        Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
+        Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip already longer or shorter in the address widens the range to hold it
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead
@@ -247,13 +248,10 @@ def square_el(s: State, lane, w, sq, marks, style=None, wx=None, on=False):
 
 
 def panel(s: State, lane, w, sq, asked_sq=None, saved="", can_save=True):
-    """The opened square (F-242, D-570): the hotel, the flight, the sky for those nights and the total, with "Book this trip" the boldest thing on the screen
-    (gitaway/pages/tripview.py). One view for the laptop's side under the calendar, the phone's sheet and the square's own page; CSS lays it out by width."""
-    from gitaway.pages import tripview
-    return tripview.view(s, lane, w, sq, asked_sq, saved, can_save)
-
-
-bar = panel
+    """The opened square (F-251, D-620): the prototype's drawer, the hotel and the flight side by side, the rooms, the total and "Book my trip" (gitaway/pages/v2drawer.py).
+    One view for the drawer under the matrix, on a laptop and on a phone, and the square's own page; CSS lays it out by width."""
+    from gitaway.pages import v2drawer
+    return v2drawer.drawer(s, lane, w, sq, asked_sq, saved, can_save)
 
 # ---- the page --------------------------------------------------------------------------------------------------------
 # F-250 (D-610..): design language v2. The page is the prototype's results (docs/design/booking-v2/index.html): the sentence on top (its words open pickers,
@@ -364,7 +362,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "returns": {n: (s.depart + timedelta(days=n)).isoformat() for n in by}, "whens": {n: [tm.when(w) for w in ws] for n, ws in by.items()},
             "known": {k: {"c": sq.cents, "s": sq.status, "e": estimate_of(sq), "i": inner(sq), "l": label(*cell[k], sq)}
                       for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK), "rail": href(s, RAIL)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
@@ -389,10 +387,11 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     skies = skies_of(lanes, windows)
     sample = showcase.on()
     total = len(lanes) * len(windows)
-    side = Div(P("Open a square to see the whole trip: the flight, the stay, the drive.", cls="mx-p-note"), cls="mx-b")
     card = Div(Div(status_el(s, total), legend_el(s), about_el(s, skies, sample), P(sky_note(skies), cls="mx-ah-n"), P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"), cls="mx-top"),
                find_el(), lanes_el(s, lanes, windows, skies), credit_el(skies), cls="mx-card")
-    results = Div(Div(card, Aside(side, cls="mx-side v2-glass", id="mx-side", aria_label="The square you opened", aria_live="polite"), cls="mx-main"), cls="mx-results")
+    drawer = Div(id="mx-drawer", cls="dr-wrap", aria_label="The square you opened", aria_live="polite", hidden=True)      # the drawer grows into it (assets/js/tripmatrix.js, v2drawer.js)
+    rail = Aside(Div(*[Section(Header(Span(cls="ic")), P("Looking around…", cls="fine"), cls="wg v2-glass is-skel") for _ in range(3)], cls="rl-row"), id="mx-rail", cls="rl", aria_label="Around the place", aria_live="polite")
+    results = Div(Div(card, drawer, cls="mx-main"), rail, cls="mx-results")
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), results,
                Script(NotStr(page_data(s, lanes, windows, {})), type="application/json", id="mx-data"), fact_el(s), *machinery,
                cls="v2-stage mx", id="mx", data_v2="results", data_waiting="1")
@@ -424,7 +423,7 @@ def _square_of(s, lane_key, w_key, family="", peek=False):
 
 def square_page(s: State, lane, w, sq, asked_sq, saved="", can_save=True):
     body = Div(A(icon("chev-left", 18, 2.4), "Back to the matrix", href=href(s), cls="btn mx-back"),
-               H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="mx-side mx-alone"),
+               H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="dr-wrap dr-alone"),
                Div(P(SAMPLE_FINE if sq is not None and sq.sample else FINE, cls="mx-foot-n"), cls="mx-foot"), cls="mx mx-one")
     return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True)
 
@@ -487,7 +486,7 @@ def register(app):
         lane_, w_, sq, asked_sq = _square_of(s, lane, w, _family(session))
         if lane_ is None:
             return JSONResponse({"error": "No such square."}, status_code=404)
-        return JSONResponse({**square_json(lane_, w_, sq), "age": age_words(sq.fetched), "panel": to_xml(panel(s, lane_, w_, sq, asked_sq)), "bar": to_xml(bar(s, lane_, w_, sq, asked_sq))},
+        return JSONResponse({**square_json(lane_, w_, sq), "age": age_words(sq.fetched), "drawer": to_xml(panel(s, lane_, w_, sq, asked_sq))},
                             headers={"Cache-Control": "no-store"})
 
     @app.get(PEEK)
@@ -500,6 +499,21 @@ def register(app):
         known = peek_all(s, lanes, windows, _family(session))
         cell = {tm.key(x.key, w.key): (x, w) for x in lanes for w in windows}
         return JSONResponse({"known": {k: square_json(*cell[k], sq) for k, sq in known.items()}}, headers={"Cache-Control": "no-store"})
+
+    @app.get(RAIL)
+    def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
+        """The widget rail for one lane and start day (F-251): what is real about the place, drawn as the prototype's frosted cards. Squares are only read from what is already known
+        (a cheaper airport needs two answers): nothing is searched here. A plain `def`: a drive can wait on the router for a moment."""
+        s = state(to, home, d, r, a, k, x, nb, b)
+        lanes, windows = lanes_of(s), windows_of(s)
+        if s.problems or not windows:
+            return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
+        lane_ = next((x_ for x_ in lanes if x_.key == lane), None) or next(x_ for x_ in lanes if x_.asked)
+        w_ = next((x_ for x_ in windows if x_.key == w), None) or next((x_ for x_ in windows if x_.asked), windows[0])
+        family = _family(session)
+        known = lambda ln, win: gridsource.square(ln, win, s.adults, s.kid_ages, s.home, family, peek=True)      # noqa: E731
+        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session)), "lane": lane_.key},
+                            headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)
     def trip_matrix_warm(session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):

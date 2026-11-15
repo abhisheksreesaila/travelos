@@ -14,30 +14,31 @@ prices and the guest's name and email come out through FastHTML's escaping; the 
 
 from datetime import date
 
-from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, P, Section, Span, to_xml
+from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, P, Small, Span, to_xml
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import catalog, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, tripstart
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import plan_search, tripmatrix as mx, tripview
+from gitaway.pages import plan_search, tripmatrix as mx, v2drawer
 from gitaway.partners import registry
 
 CONFIRM = mx.BOOK + "/confirm"
 SIGNIN = "Sign in to book."
 STALE = "That room check has expired or is not for this square. Close this and press Book this trip on the square again."
+TICK = "Tick the box to say you have read the fare and hotel rules."
 SLOW_DOWN = "That is a lot of booking tries. Wait a minute, or try again tomorrow."
 MADE_UP = ("Test", "Traveler", "test.traveler@example.com")      # the sandbox form starts with a made-up guest (D-510)
-CARDS = (("guest", "Who’s the lead guest?"), ("pay", "How will you pay?"), ("review", "Look it over and book"))
+STEPS = (("Lead guest", "Who is the lead guest?"), ("Contact", "Where should we send it?"), ("Requests", "Anything the hotel should know?"), ("Review", "Check it, then book"))
 # What the progress says while a booking runs (D-573): the room was really held when this sheet opened; the payment is the sandbox's test card (staged, no money moves);
 # the booking and the trip are the real calls. The script plays them one after another and waits for the real answer before the last one is ticked.
 STAGES = {"sandbox": ("Holding your room", "Paying with the test card", "Booking your stay with LiteAPI", "Putting the trip together"),
           "sample": ("Holding your room", "Paying with the sample card", "Confirming your sample stay", "Putting the trip together")}
-CONFETTI = 28
+CONFETTI = 64
 
 
 def _head(s, lane, w, sample: bool, booked: bool = False):
-    return Div(mx._arts(lane, "mxb-art"), Div(H2(f"Book {lane.name}", cls="mxb-h"), P(f"{tm.when(w)} · {w.nights} nights · {mx.party_words(s)}", cls="mxb-sub"), cls="mxb-top"),
+    return Div(Div(Span("Booked" if booked else "Book my trip", cls="mxb-k0"), H2(f"Book {lane.name}", cls="mxb-h"), P(f"{tm.when(w)} · {w.nights} nights · {mx.party_words(s)}", cls="mxb-sub"), cls="mxb-top"),
                P(icon("shield", 16, 2.4), mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED, cls="mxb-sandbox" + (" is-booked" if booked else ""), role="status" if booked else "note"), cls="mxb-head")
 
 
@@ -55,7 +56,7 @@ def _stay_row(row: mb.Row):
 def _flight_row(sq):
     f = sq.flight
     return Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"),
-               Div(P(f.airline, cls="mx-r-h"), P(tripview.times(f.out), cls="mx-r-s"), P(tripview.times(f.back), cls="mx-r-s") if f.back else "",
+               Div(P(f.airline, cls="mx-r-h"), P(v2drawer.times(f.out), cls="mx-r-s"), P(v2drawer.times(f.back), cls="mx-r-s") if f.back else "",
                    P("You book this on the airline’s site, after this.", cls="mx-r-s")),
                Span(catalog.money(f.cents), cls="mx-r-n"), cls="mx-row mxb-row")
 
@@ -69,8 +70,8 @@ def _moved(prep: mb.Prep):
     return P(icon("bell", 16, 2.4), words, cls="mxb-note is-warn", role="status")
 
 
-def _field(name, label, value, error, **attrs):
-    return Div(Label(label, fr=f"mxb-{name}", cls="mxb-l"), Input(id=f"mxb-{name}", name=name, value=value, required=True, aria_invalid="true" if error else None,
+def _field(name, label, value, error, required=True, **attrs):
+    return Div(Label(label, fr=f"mxb-{name}", cls="mxb-l"), Input(id=f"mxb-{name}", name=name, value=value, required=required, aria_invalid="true" if error else None,
                                                                   aria_describedby=f"mxb-{name}-e" if error else None, **attrs),
                P(error, id=f"mxb-{name}-e", cls="mxb-err", role="alert") if error else "", cls="mxb-field" + (" has-err" if error else ""))
 
@@ -84,38 +85,64 @@ def _hidden(s, lane, w, pk=(0, (), ()), **more):
     return [Input(type="hidden", name=n, value=str(v)) for n, v in {**mx.params(s, lane=lane.key, w=w.key), **pick_fields(pk), **more}.items()]
 
 
-def _card(key, n, title, *inside, summary=""):
-    """One folding card: a numbered head (a tick once done, its answer in a line, an Edit) and the body that opens when it is the active one. The script sets `data-state`
-    (done, active, todo) and folds; without it every card is open."""
-    return Section(Div(Span(str(n), cls="mxb-n", data_n=str(n)), Div(H3(title, cls="mxb-q"), P(summary, cls="mxb-sumline", data_sum=key)),
-                       Button("Edit", type="button", cls="mxb-edit", data_edit=key, aria_label=f"Change: {title}"), cls="mxb-card-h"),
-                   Div(*inside, cls="mxb-card-b"), cls="mxb-card", data_card=key, data_state="active" if key == "guest" else "todo")
+def _chips(name, options, picked, attr):
+    return Div(*[Button(v, type="button", cls="v2-chip", aria_pressed="true" if v in picked else "false", **{attr: v}) for v in options], cls="v2-chips")
+
+
+def _rv(k, v, small="", edit=None, mark=None):
+    """One line of the review: what, its answer, and an Edit link that goes back to the question (`data-go`)."""
+    return Div(Span(k, cls="mxb-rk"), Span(Span(v, **({"data_rv": mark} if mark else {})), Small(small, **({"data_rv": mark + "-s"} if mark else {})) if (small or mark) else "", cls="mxb-rv-v"),
+               Button("Edit", type="button", cls="mxb-ed", data_go=str(edit), aria_label=f"Change: {k}") if edit is not None else "", cls="mxb-rvr")
 
 
 def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
-    """The checkout (folding cards, D-572): guest, payment, confirm, one form. With the script the cards fold one into the next; without it all three are open and the one
-    button books. The guest starts as a made-up one (sandbox); LiteAPI's test card pays, so no card number is asked or kept."""
+    """The checkout (the prototype's four questions, F-251): lead guest, contact, requests, then review with Edit links, a required tick and the sum; one form. With the script the
+    questions come one at a time with a progress bar, Continue and Back; without it all four are open and the one button books. The guest starts as a made-up one (sandbox);
+    LiteAPI's test card pays, so no card number is asked or kept. Only the lead guest's name and email go to LiteAPI; the phone, the requests and the arrival are shown on the review and the
+    pass and are never sent, stored or logged."""
     values, errors = values or dict(zip(("first", "last", "email"), MADE_UP)), errors or {}
     sample = prep.sample
-    guest = (P("A made-up guest is filled in: this is the sandbox, so there is no need to type a real name or email. LiteAPI’s test system gets it and GitAway keeps nothing of it.", cls="mxb-hint"),
+    kids = len(s.kid_ages)
+    who = f"{s.adults} adult{'' if s.adults == 1 else 's'}" + (f", {kids} kid{'' if kids == 1 else 's'} (ages {', '.join(map(str, s.kid_ages))})" if kids else "")
+    held = P(icon("lock", 16, 2.2), f"Your room is held for {mb.HOLD // 60} minutes while you answer.", cls="mxb-held")
+    guest = (P("The name on the hotel booking. It must match an ID at check-in. A made-up guest is filled in: this is the sandbox, so there is no need to type a real name.", cls="mxb-lede"),
              Div(_field("first", "First name", values.get("first", ""), errors.get("first"), autocomplete="given-name", maxlength=mb.NAME_MAX),
                  _field("last", "Last name", values.get("last", ""), errors.get("last"), autocomplete="family-name", maxlength=mb.NAME_MAX), cls="mxb-two"),
-             _field("email", "Email", values.get("email", ""), errors.get("email"), type="email", autocomplete="email", maxlength=mb.EMAIL_MAX, inputmode="email"),
-             Button(Span("Continue"), icon("arrow-right", 18, 2.4), type="button", cls="btn btn-ink mxb-next", data_next="pay"))
-    card_words = "Sample card · nothing is charged" if sample else "•••• 4242 · nothing is charged"
-    pay = (Div(Span(icon("lock", 18, 2.4), cls="mx-kt k-flight"), Div(P("Sample card" if sample else "LiteAPI test card", cls="mx-r-h"), P(card_words, cls="mx-r-s")), cls="mxb-test"),
-           P("This is a sample booking. No card is used and no money moves." if sample else "The sandbox pays with its own test card. Nothing to type, nothing kept, and no money moves.", cls="mxb-hint"),
-           Button(Span("Continue"), icon("arrow-right", 18, 2.4), type="button", cls="btn btn-ink mxb-next", data_next="review"))
-    stays = prep.total_cents
-    review = (Div(_flight_row(sq), *[_stay_row(r) for r in prep.rows], cls="mx-rows"), _moved(prep),
-              P(Span("Total for the trip", cls="mxb-tl"), Span(catalog.money(sq.flight.cents + stays), cls="mx-r-n mxb-total"), cls="mxb-sum"),
-              P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays)}. The flight is booked on its airline’s site.", cls="mxb-fine"),
-              Button(icon("check", 20, 2.8), Span(f"Book this trip · {catalog.money(stays)}"), type="submit", cls="mxb-go"),
-              P(mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED + ". LiteAPI’s test card pays; no email is sent.", cls="mxb-fine"))
-    cards = [_card("guest", 1, CARDS[0][1], *guest, summary=" ".join(x for x in (values.get("first", ""), values.get("last", "")) if x)),
-             _card("pay", 2, CARDS[1][1], *pay, summary="Sample card, nothing charged" if sample else "LiteAPI test card, nothing charged"),
-             _card("review", 3, CARDS[2][1], *review)]
-    return Form(*_hidden(s, lane, w, pk, token=prep.token), *cards, method="post", action=CONFIRM, cls="mxb-f", data_step="guest", data_stages="|".join(STAGES["sample" if sample else "sandbox"]))
+             Div(f"Travelling · {s.travelers}", cls="dr-sub"), P(who, cls="mxb-trav"), held)
+    contact = (P("The confirmation and any change from the hotel. LiteAPI’s sandbox is sent your name and email only; GitAway keeps neither.", cls="mxb-lede"),
+               _field("email", "Email", values.get("email", ""), errors.get("email"), type="email", autocomplete="email", maxlength=mb.EMAIL_MAX, inputmode="email"),
+               _field("phone", "Mobile, for texts on the day (optional)", values.get("phone", ""), errors.get("phone"), required=False, type="tel", autocomplete="tel", maxlength=mb.PHONE_MAX,
+                      inputmode="tel"),
+               P("The mobile number stays on this screen and your pass: it is not sent anywhere.", cls="mxb-hint"))
+    picked = {x for x in str(values.get("req", "")).split("|") if x}
+    requests = (P("Requests, not promises: the hotel does its best. In this sandbox they stay on your pass; the test hotel is not sent them.", cls="mxb-lede"),
+                _chips("req", mb.REQUESTS, picked, "data_req"), Div("Arriving at the hotel", cls="dr-sub"), _chips("arrive", mb.ARRIVALS, {values.get("arrive", "")}, "data_arr"),
+                Input(type="hidden", name="req", value="|".join(r for r in mb.REQUESTS if r in picked), data_field="req"), Input(type="hidden", name="arrive", value=values.get("arrive", ""), data_field="arrive"))
+    nights = (w.return_ - w.depart).days
+    name = " ".join(x for x in (values.get("first", ""), values.get("last", "")) if x)
+    f = sq.flight
+    stays = " + ".join(r.part.name for r in prep.rows)
+    rv = Div(_rv("Trip", lane.name, f"{tm.when(w)} · {nights} nights"),
+             _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {f.airline}", f"{v2drawer.times(f.out)} · {v2drawer.stops_words(f.stops).lower()}. You book this on the airline’s site, after this."),
+             _rv("Stay", stays, " · ".join(f"{r.prebook.room or r.part.room} · {'Refundable' if r.prebook.refundable else 'Non-refundable'}" + (f" · {catalog.money(r.prebook.due_at_stay_cents)} of it is paid at the hotel" if r.prebook.due_at_stay_cents else "") for r in prep.rows)),
+             _rv("Guest", f"{name} + {s.travelers - 1}", "", 0, "guest"), _rv("Contact", values.get("email", ""), values.get("phone", ""), 1, "contact"),
+             _rv("Requests", ", ".join(r for r in mb.REQUESTS if r in picked) or "None", f"Arriving in the {values['arrive'].lower()}" if values.get("arrive") else "", 2, "requests"), cls="mxb-rv")
+    stays_total = prep.total_cents
+    sums = Div(*[Div(Span(r.part.name + f" · {(r.prebook.checkout - r.prebook.checkin).days} night" + ("s" if (r.prebook.checkout - r.prebook.checkin).days != 1 else "")), Span(catalog.money(r.total_cents), cls="num"))
+                 for r in prep.rows], cls="mxb-sum-rows")
+    summary = Div(Div(Span(f"Flight · {s.travelers} seats, {f.airline}"), Span(catalog.money(f.cents), cls="num")), sums,
+                  Div(Span("Total for the trip", cls="mxb-tl"), Span(catalog.money(f.cents + stays_total), cls="num mxb-total"), cls="t"), cls="mxb-sum")
+    agree = Label(Input(type="checkbox", name="agree", required=True, checked=values.get("agree") == "on", cls="mxb-tick"), Span(icon("check", 16, 3), cls="mxb-cb", aria_hidden="true"),
+                  Span("I have read the fare and hotel rules, including whether each stay is refundable."), cls="mxb-agree" + (" has-err" if errors.get("agree") else ""))
+    review = (rv, _moved(prep), summary, P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. The flight is booked on its airline’s site.", cls="mxb-fine"),
+              agree, P(errors["agree"], id="mxb-agree-e", cls="mxb-err", role="alert") if errors.get("agree") else "", P(mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED + ". LiteAPI’s test card pays; no email is sent.", cls="mxb-fine"))
+    panes = [Div(H3(STEPS[i][1], cls="mxb-q"), *body, cls="mxb-pane", data_pane=str(i), data_small=STEPS[i][0]) for i, body in enumerate((guest, contact, requests, review))]
+    prog = Div(*[Span(cls="on" if i == 0 else "") for i in range(len(STEPS))], cls="mxb-prog", aria_hidden="true")
+    foot = Div(Button("Back", type="button", cls="mxb-b2", data_back="1"), Span("Step 1 of 4", cls="mxb-stepn"), Button(Span("Continue"), icon("arrow-right", 20, 2.4), type="button", cls="mxb-b1", data_cont="1"),
+               Button(icon("check", 20, 2.8), Span(f"Book for {catalog.money(stays_total)}"), type="submit", cls="mxb-b1 mxb-go sun"), cls="mxb-foot")
+    at = min((i for f, i in (("first", 0), ("last", 0), ("email", 1), ("phone", 1), ("agree", 3)) if f in errors), default=0)      # the question a mistake is in opens first
+    return Form(prog, Div(*panes, cls="mxb-panes"), foot, *_hidden(s, lane, w, pk, token=prep.token), method="post", action=CONFIRM, cls="mxb-f", data_step=str(at), data_stages="|".join(STAGES["sample" if sample else "sandbox"]),
+                data_travel=str(s.travelers - 1))
 
 
 def _flight_link(s, lane, w):
@@ -140,25 +167,29 @@ def _pass_stay(d: mb.Done, address: str):
                P(icon("pin", 14, 2.2), address, cls="mx-r-s mxb-addr") if address else "", cls="mxb-pass-row")
 
 
-def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str):
+def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extras=None):
     """The stamped boarding pass (D-574): where, the flight, each stay with what the answer gives (the booking id, the hotel's confirmation code and its address), the test
     card, and a bold Plan this trip. Only what LiteAPI (or the sample) gave: no phone number or record locator is made up."""
     flight = _flight_link(s, lane, w)
+    email, ex = extras if extras else ("", mb.Extras())
+    phone = ex.phone
     sample = any(d.sample for d in res.done)
     address = {r.part.name: r.part.address for r in prep.rows}
     end = lane.places[0]
     route = Div(Span(s.home or "Home", cls="mxb-iata"), Span(cls="mxb-dash"), Span(icon("plane", 22, 2.2), cls="mxb-plane"), Span(cls="mxb-dash"), Span(end.iata or end.name, cls="mxb-iata"), cls="mxb-route")
-    top = Div(mx._arts(lane, "mxb-pass-art"), route, Span("Sample" if sample else "Booked", cls="mxb-stamp"), P(f"{tm.when(w)} · {mx.party_words(s)}", cls="mxb-pass-when"), cls="mxb-pass-top")
-    mid = Div(Div(P("Flight", cls="mxb-k"), P(f"{sq.flight.airline} · {tripview.stops_words(sq.flight.stops).lower()}", cls="mxb-pass-h"), P(tripview.times(sq.flight.out), cls="mx-r-s"),
-                  P(tripview.times(sq.flight.back), cls="mx-r-s") if sq.flight.back else "", P("Booked on the airline’s site.", cls="mx-r-s"), cls="mxb-pass-row"),
+    top = Div(mx._arts(lane, "mxb-pass-art"), route, Span("Sample" if sample else "Booked", cls="mxb-stamp", data_d=_day(w.depart.isoformat()).upper()), P(f"{tm.when(w)} · {mx.party_words(s)}", cls="mxb-pass-when"), cls="mxb-pass-top")
+    mid = Div(Div(P("Flight", cls="mxb-k"), P(f"{sq.flight.airline} · {v2drawer.stops_words(sq.flight.stops).lower()}", cls="mxb-pass-h"), P(v2drawer.times(sq.flight.out), cls="mx-r-s"),
+                  P(v2drawer.times(sq.flight.back), cls="mx-r-s") if sq.flight.back else "", P("Booked on the airline’s site.", cls="mx-r-s"), cls="mxb-pass-row"),
               *[_pass_stay(d, address.get(d.hotel, "")) for d in res.done],
-              Div(P("Lead guest", cls="mxb-k"), P(who, cls="mxb-pass-h"), P(icon("lock", 14, 2.2), "Paid with the " + ("sample" if sample else "LiteAPI test") + " card · nothing was charged", cls="mx-r-s"), cls="mxb-pass-row"),
+              Div(P("Lead guest", cls="mxb-k"), P(who, cls="mxb-pass-h"), P(" · ".join(x for x in (email, phone) if x), cls="mx-r-s") if (email or phone) else "",
+                  P(icon("lock", 14, 2.2), "Paid with the " + ("sample" if sample else "LiteAPI test") + " card · nothing was charged", cls="mx-r-s"), cls="mxb-pass-row"),
+              Div(P("Requests", cls="mxb-k"), P(", ".join(ex.requests) or "None", cls="mxb-pass-h"), P(f"Arriving in the {ex.arrive.lower()}", cls="mx-r-s") if ex.arrive else "", P("Passed to no one: the sandbox hotel is not sent them.", cls="mx-r-s"),
+                  cls="mxb-pass-row") if ex.requests or ex.arrive else "",
               cls="mxb-pass-mid")
     stub = Div(*[Div(P("Booking id", cls="mxb-k"), P(Span(d.booking_id, cls="mxb-id", data_booking_id=d.booking_id), cls="mxb-code"),
                      *([P("Hotel confirmation", cls="mxb-k"), P(Span(d.confirmation, cls="mxb-id"), cls="mxb-code")] if d.confirmation else []), cls="mxb-stub-i") for d in res.done], cls="mxb-stub")
-    return Div(_confetti(), Div(top, mid, stub, cls="mxb-pass"),
-               H3("You’re going to " + lane.name + "!", cls="mxb-q mxb-going"),
-               P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"),
+    return Div(_confetti(), H3("You’re going to " + lane.name + "!", cls="mxb-q mxb-going"),
+               P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), Div(top, mid, stub, cls="mxb-pass"),
                A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/cockpit", cls="mxb-plan", data_trip="1"),
                A(f"Search flights on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener") if flight else "",
                cls="mxb-confirm", data_step="booked")
@@ -168,14 +199,14 @@ def _problem(words: str):
     return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
 
 
-def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who=""):
-    """The checkout's inside (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it): the head and one body, the folding cards or the pass."""
+def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who="", extras=None):
+    """The checkout's inside (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it): the head and one body, the four questions or the pass."""
     if problem:
         body, at = _problem(problem), "room"
     elif res is not None and res.ok:
-        body, at = _confirmation(s, lane, w, sq, prep, res, who), "booked"
+        body, at = _confirmation(s, lane, w, sq, prep, res, who, extras), "booked"
     else:
-        body, at = Div(P(icon("bell", 16, 2.4), note, cls="mxb-note", role="status") if note else "", _checkout(s, lane, w, sq, prep, pk, values, errors), cls="mxb-body", data_step="guest"), "guest"
+        body, at = Div(P(icon("bell", 16, 2.4), note, cls="mxb-note", role="status") if note else "", _checkout(s, lane, w, sq, prep, pk, values, errors), cls="mxb-body"), "guest"
     return Div(_head(s, lane, w, sample or (prep is not None and prep.sample) or (res is not None and any(d.sample for d in res.done)), booked=at == "booked"), body,
                cls="mxb", data_at=at, data_open=tm.key(lane.key, w.key))
 
@@ -266,7 +297,7 @@ def register(app):
         return _first_step(request, session, s, lane_, w_, sq, pk)
 
     @app.post(CONFIRM)
-    def book_confirm(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", rm: str = "", token: str = "", first: str = "", last: str = "", email: str = "", to: str = "",
+    def book_confirm(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", rm: str = "", token: str = "", first: str = "", last: str = "", email: str = "", phone: str = "", req: str = "", arrive: str = "", agree: str = "", to: str = "",
                      home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
@@ -287,9 +318,12 @@ def register(app):
         if prep is None:      # restarted, kept too long, another family's or another square's (or another choice's) token: nothing is asked of LiteAPI
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=sq.sample))
         guest, errors = mb.clean_guest(first, last, email)
+        extras, more = mb.clean_extras(phone, req, arrive)
+        errors = {**errors, **more, **({} if agree == "on" else {"agree": TICK})}      # the required tick is the server's rule too, not only the page's
+        typed = {"first": first[:mb.NAME_MAX], "last": last[:mb.NAME_MAX], "email": email[:mb.EMAIL_MAX], "phone": phone[:mb.PHONE_MAX], "req": "|".join(x for x in mb.REQUESTS if x in req),
+                 "arrive": arrive if arrive in mb.ARRIVALS else "", "agree": agree}
         if errors:
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values={"first": first[:mb.NAME_MAX], "last": last[:mb.NAME_MAX], "email": email[:mb.EMAIL_MAX]},
-                                                        errors=errors))
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values=typed, errors=errors))
         try:
             trip_id = mx.save(session, s, lane_, w_, sq)      # the square becomes the family's trip, as Save to trip does
         except importer.SaveError as e:
@@ -301,7 +335,7 @@ def register(app):
         if res.done:
             mb.add_to_trip(session, trip_id, res.done)
         if res.ok:
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, res=res, who=f"{guest.first} {guest.last}"))
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, res=res, who=f"{guest.first} {guest.last}", extras=(guest.email, extras)))
         said = mb.SAID.get(res.status, mb.SAID[liteapi.FAILED])
         left = f" {len(res.done)} of {len(prep.rows)} stays are booked; press Book again for the rest." if res.done else ""
-        return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values={"first": guest.first, "last": guest.last, "email": guest.email}, note=said + left))
+        return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values={**typed, "first": guest.first, "last": guest.last, "email": guest.email}, note=said + left))

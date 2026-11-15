@@ -7,7 +7,8 @@
 //      the cheapest start in a lane, over the budget, and the find, said in words with real totals only.
 //   3. While the first squares are searched, a small floating island says a fact about the place (F-230): it settles in on the spring and leaves calmly once the
 //      asked square has landed (or nothing in view is waiting); a search that takes a while says so in a word beside the count.
-//   4. Opening a square: its trip bar (laptop, the design's bar under the calendar, D-520) or sheet (phone) grows out of the square tapped and folds back into it.
+//   4. Opening a square (F-251, D-620): the prototype's drawer grows down out of the square's column under the matrix, on a laptop and on a phone (assets/js/v2drawer.js); the widget rail
+//      beside it follows the place of the square (or the lane) you look at (assets/js/v2rail.js, through the events mx:follow, mx:look, mx:close and mx:settled).
 //      The ringed band of each lane (its nights, labelled "4 nights · $2,080", the find's lane "Found · +$50 vs San Diego alone") sits on the find's start in the find's lane,
 //      else the lane's cheapest start, else the opened square, and moves with the same rules as pages/tripmatrix.py `band_window` and `band_words`. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
@@ -15,24 +16,23 @@
 //      "about $X" at once (`estimate`: the flight and the nightly stay rate already read for that square's start day, else the lane's cheapest; never a search, never a
 //      mark, never a price). Let go (after COMMIT_MS), the address keeps the nights, one GET of data.peek fills what is already known for them (the showcase's samples, LiteAPI's
 //      cache) and only then the squares in view are asked for, as tiles, through the same gate and budgets. Every nights has its own store (`stores`), so going back is
-//      instant. The opened square's bar, Save and Book are always the tile's real answer for those exact nights; while sliding they say so instead of a price.
+//      instant. The opened square's drawer, Save and Book are always the tile's real answer for those exact nights; while sliding they say so instead of a price.
 (function () {
   var root = document.getElementById('mx'), raw = document.getElementById('mx-data');
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
   var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', COMMIT_MS = 220, again = 0, committing = 0, looking = false, settling = false;
-  var N = data.nights, stores = {}, known, panels, bars, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
+  var N = data.nights, stores = {}, known, drawers, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
   var sliding = false, touched = false, commitTimer = 0, bandAt = {};
-  function store(n) { return stores[n] || (stores[n] = { known: {}, panels: {}, bars: {}, asked: {}, tries: {} }); }
-  function use(n) { var s = store(n); N = n; known = s.known; panels = s.panels; bars = s.bars; asked = s.asked; tries = s.tries; }
+  function store(n) { return stores[n] || (stores[n] = { known: {}, drawers: {}, asked: {}, tries: {} }); }
+  function use(n) { var s = store(n); N = n; known = s.known; drawers = s.drawers; asked = s.asked; tries = s.tries; }
   use(N);
   Object.keys(data.known).forEach(function (k) { known[k] = data.known[k]; });
-  var wide = window.matchMedia('(min-width: 1020px)');
   var M = function () { return window.GA && GA.motion; };
   var lanes = data.lanes, windows = data.windows;
-  var side = document.getElementById('mx-side'), isle = document.getElementById('mx-fact'), isleUp = false, looked = false;
-  var chosen = {}, opened = '', sheet = null, scrim = null;
+  var dbox = document.getElementById('mx-drawer'), isle = document.getElementById('mx-fact'), isleUp = false, looked = false;
+  var chosen = {}, opened = '', followed = '';
 
   function money(c) { return '$' + Math.floor((c + 50) / 100).toLocaleString('en-US'); }
   function key(l, w) { return l + '|' + w; }
@@ -207,9 +207,12 @@
     isle.addEventListener('transitionend', gone, { once: true });
     setTimeout(gone, (M() ? M().t('dur') : 240) + 100);
   }
+  var wasWaiting = true;
   function news_() {
     var still = waiting() > 0;
     root.dataset.waiting = still ? '1' : '0';
+    if (wasWaiting && !still) { wasWaiting = false; document.dispatchEvent(new CustomEvent('mx:settled')); }      // every square in view has its answer: the rail may know more (a cheaper airport needs two)
+    if (still) wasWaiting = true;
     if (firstIn()) isleOut();
     if (!still) root.removeAttribute('data-slow');
   }
@@ -251,8 +254,7 @@
       return;
     }
     st.known[k] = { c: j.c, s: j.s, e: j.e, i: j.inner, l: j.label };
-    st.panels[k] = j.panel;
-    st.bars[k] = j.bar;
+    st.drawers[k] = j.drawer;
     if (n !== N) return;      // asked for other nights and answered after the slider moved on: kept for when it comes back
     els(k).forEach(function (el) { io.unobserve(el); paint(el, k); settleIn(el); });
     var age = document.getElementById('mx-age');
@@ -260,7 +262,7 @@
     remark();
     news_();
     if (opened === k) show(k, null, true);
-    else followDefault(true);
+    else followDefault();
     estFlag();
   }
   function said(k, words, n) {
@@ -319,93 +321,77 @@
     if (!firstIn()) isleIn();
   }
 
-  // ---- the side before anything is opened: the find, else the asked square (pages/tripmatrix.py `default_open`) ----
-  function followDefault(animate) {
-    if (opened || !side) return;
-    var a = lanes.filter(function (x) { return x.a; })[0], w = windows.filter(function (x) { return x.a; })[0] || windows[0];
-    var first = curFind ? curFind.key : (a && known[key(a.k, w.k)] ? key(a.k, w.k) : '');
-    var now = side.querySelector('[data-open]'), fresh = side.dataset.n !== String(N);
-    if (!first) {
-      if (fresh) { side.innerHTML = '<div class="mx-tv is-quiet"><p class="mx-p-note">Open a square to see the whole trip: the flight, the stay, the drive.</p></div>'; side.dataset.n = String(N); side.dataset.ph = ''; }
-      return;
-    }
-    if (!fresh && now && now.dataset.open === first && (side.dataset.ph ? !bars[first] : true)) return;      // already showing it (a placeholder waits for its answer)
-    var inner = fill(side, first, bars);
-    if (bars[first] && animate && inner && M() && wide.matches) M().fade(inner);
-    if (!sliding && wide.matches) ensure(first);
+  // ---- the rail follows the place you look at (F-251, D-620): before anything is opened, the find's place, else the asked one; then the square or the lane you tap ----
+  function follow(laneKey, wKey, fresh) {      // assets/js/v2rail.js asks the server for that place's widgets and swaps them in
+    var l = laneKey || '', w = wKey || '';
+    if (!l) return;
+    if (!w) w = (windows.filter(function (x) { return x.a; })[0] || windows[0]).k;      // no square opened: the asked start day (the rail's sky begins there)
+    var id = l + '|' + w + '|' + N;
+    if (id === followed && !fresh) return;
+    followed = id;
+    document.dispatchEvent(new CustomEvent('mx:follow', { detail: { lane: l, w: w, n: N, fresh: !!fresh } }));
   }
+  function followDefault() {
+    if (opened || touchedLane) return;
+    if (curFind) return follow(curFind.lane, curFind.w);
+    var a = lanes.filter(function (x) { return x.a; })[0];
+    if (a) follow(a.k, '');
+  }
+  var touchedLane = false;
 
-  // ---- opening a square ----
-  function placeholder(k, cls) {      // an estimate is never the opened square's price: while sliding it says so, and Save and Book wait for the real answer
+  // ---- opening a square: the prototype's drawer grows down out of the square's column (assets/js/v2drawer.js) ----
+  function placeholder(k) {      // an estimate is never the opened square's price: while sliding it says so, and Save and Book wait for the real answer
     var words = sliding ? 'Let go for the exact price of ' + nightsWords(N) + '.' : 'Searching this square. It fills in as soon as its answer lands.';
-    return '<div class="' + cls + '" data-open="' + k + '"><p class="mx-p-note" role="status">' + words + '</p></div>';
+    return '<div class="dr is-quiet is-ph" data-open="' + k + '"><div class="dr-head"><div class="dr-ti"><h2 class="dr-h">' + laneOf(k).n + '</h2><p>' + windowOf(k).when + '</p></div>' +
+      '<button type="button" class="dr-x" data-act="close" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      '<div class="dr-quiet"><p class="dr-note" role="status">' + words + '</p></div></div>';
   }
-  function ensure(k) {      // the opened square's bar (or sheet) is the tile's real answer for these exact nights: ask for it if it is not here yet
-    if (!(wide.matches ? bars : panels)[k] && !asked[k]) { seen[k] = true; ask(k); }
+  function ensure(k) {      // the opened square's drawer is the tile's real answer for these exact nights: ask for it if it is not here yet
+    if (!drawers[k] && !asked[k]) { seen[k] = true; ask(k); }
   }
-  function fill(box, k, from) {      // `from`: the bars (the laptop) or the panels (the sheet)
-    var src = from || panels;
-    box.innerHTML = src[k] || placeholder(k, 'mx-tv is-quiet');
-    box.dataset.n = String(N);
-    box.dataset.ph = src[k] ? '' : '1';
-    var chip = box.querySelector('[data-vs]');
-    if (chip && !chip.textContent) { var v = vs(k); chip.textContent = v; chip.classList.toggle('is-empty', !v); }
-    bindSave(box);
-    return box.firstElementChild;
+  function fill(k) {
+    var cur = dbox.firstElementChild, fresh = dbox.dataset.n !== String(N);
+    if (!fresh && cur && cur.dataset.open === k && (dbox.dataset.ph ? !drawers[k] : true)) return null;      // already showing it (a placeholder waits for its answer): the family's choices stay
+    dbox.innerHTML = drawers[k] || placeholder(k);
+    dbox.dataset.n = String(N);
+    dbox.dataset.ph = drawers[k] ? '' : '1';
+    var chip = dbox.querySelector('[data-pickword]');
+    if (chip) chip.hidden = !(curFind && curFind.key === k);      // "Our pick:" only where the matrix itself says it is the find
+    var vsEl = dbox.querySelector('[data-vs]');
+    if (vsEl && !vsEl.textContent) { var v = vs(k); if (v) vsEl.textContent = (vsEl.dataset.sep ? ' \u00b7 ' : '') + v; }
+    bindSave(dbox);
+    document.dispatchEvent(new CustomEvent('mx:drawer', { detail: { key: k, box: dbox } }));
+    return dbox.firstElementChild;
   }
   function show(k, from, refill) {
+    var p = k.split('|'), was = opened;
     opened = k;
     root.querySelectorAll('.mx-sq.is-open').forEach(function (el) { el.classList.remove('is-open'); });
     els(k).forEach(function (el) { el.classList.add('is-open'); });
-    var p = k.split('|');
     chosen[p[0]] = p[1];
     band(p[0], p[1]);
     if (!sliding) ensure(k);
-    if (wide.matches && side) {
-      var inner = fill(side, k, bars);
-      if (!refill && M() && inner) (M().reduced() ? M().fade(inner) : M().open(inner, from || side));
-      if (!refill && from) side.scrollIntoView({ block: 'nearest', behavior: 'auto' });      // F-242: the opened trip is under the calendar, not a bar always in view: a tap brings it up
-      return;
-    }
-    if (sheet) { fill(sheet.querySelector('.mx-sheet-in'), k); return; }
-    scrim = document.createElement('div');
-    scrim.className = 'mx-scrim';
-    sheet = document.createElement('div');
-    sheet.className = 'mx-sheet';
-    sheet.setAttribute('role', 'dialog');
-    sheet.setAttribute('aria-modal', 'true');
-    sheet.setAttribute('aria-label', 'The square you opened');
-    sheet.innerHTML = '<div class="mx-sheet-bar"><span class="mx-grab" aria-hidden="true"></span><button type="button" class="mx-x" aria-label="Close">' +
-      '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="mx-sheet-in"></div>';
-    fill(sheet.querySelector('.mx-sheet-in'), k);
-    document.body.appendChild(scrim);
-    document.body.appendChild(sheet);
-    sheet.origin = from;
-    scrim.addEventListener('click', close);
-    sheet.querySelector('.mx-x').addEventListener('click', close);
-    drag(sheet);
-    if (M()) M().open(sheet, from, { scrim: scrim, content: sheet.querySelector('.mx-sheet-in'), radius: [14, 26] });
-    sheet.querySelector('.mx-x').focus({ preventScroll: true });
+    var wasHidden = dbox.hidden;
+    dbox.hidden = false;
+    var inner = fill(k);
+    document.body.classList.add('drawer-open');
+    if (inner && window.V2D) V2D.grow(dbox, from, { again: !wasHidden && was !== k, refill: !!refill });
+    if (!refill) { touchedLane = true; follow(p[0], p[1]); }
   }
   function close() {
-    if (!sheet) return;
-    var s = sheet, sc = scrim, from = s.origin && document.body.contains(s.origin) ? s.origin : null;
-    sheet = scrim = null;
-    opened = '';      // nothing is open now: a later answer or a new length of trip must not open the sheet again
-    var done = function () { s.remove(); sc.remove(); };
-    if (M()) M().close(s, from, { scrim: sc }).then(done); else done();
+    if (!opened) return;
+    opened = '';      // nothing is open now: a later answer or a new length of trip must not open the drawer again
+    root.querySelectorAll('.mx-sq.is-open').forEach(function (el) { el.classList.remove('is-open'); });
+    document.body.classList.remove('drawer-open');
+    var from = dbox.dataset.from && root.querySelector('.mx-sq[data-sq="' + dbox.dataset.from + '"]');
+    var done = function () { if (!opened) { dbox.hidden = true; dbox.innerHTML = ''; dbox.dataset.n = ''; } };
+    if (window.V2D) V2D.away(dbox, done); else done();
+    remark();
     if (from) from.focus({ preventScroll: true });
   }
-  function drag(s) {
-    var bar = s.querySelector('.mx-sheet-bar'), y0 = null, dy = 0;
-    bar.addEventListener('pointerdown', function (e) { if (e.target.closest('.mx-x')) return; y0 = e.clientY; dy = 0; bar.setPointerCapture(e.pointerId); });
-    bar.addEventListener('pointermove', function (e) { if (y0 == null) return; dy = Math.max(0, e.clientY - y0); s.style.transform = 'translateY(' + dy + 'px)'; });
-    bar.addEventListener('pointerup', function () {
-      if (y0 == null) return;
-      y0 = null;
-      if (dy > 80) { s.style.transform = ''; close(); } else if (M()) { M().spring(s, s.style.transform); s.style.transform = ''; } else s.style.transform = '';
-    });
-  }
+  document.addEventListener('mx:close', close);
+  document.addEventListener('mx:look', function (e) { touchedLane = true; follow(e.detail.lane, ''); });
+
   // ---- the sentence's words and ⓘ About these prices: popovers that grow from their word (F-238, D-542) ----
   var pops = root.querySelectorAll('details.mx-tk');
   function shutPops(except) { pops.forEach(function (d) { if (d !== except && d.open) d.open = false; }); }
@@ -428,6 +414,8 @@
     if (!open.length) close();
   });
   root.addEventListener('click', function (e) {
+    var lead = e.target.closest('.mx-lane .mx-lead');      // a place's name: the rail follows it (the prototype's "follows the place you look at")
+    if (lead) { touchedLane = true; follow(lead.parentNode.dataset.lane, ''); return; }
     var a = e.target.closest('.mx-sq[data-sq], .mx-find[data-open]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
     e.preventDefault();
@@ -459,7 +447,7 @@
     root.querySelectorAll('a[href^="/plan/matrix"]').forEach(function (a) { var h = a.getAttribute('href'); if (/[?&]r=/.test(h)) a.setAttribute('href', withNights(h, n)); });
     root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { paint(el, el.dataset.sq); });
     remark();
-    if (opened && (wide.matches || sheet)) show(opened, null, true); else followDefault(false);
+    if (opened) show(opened, null, true); else followDefault();
     estFlag();
   }
   function commit(n) {      // let go: the address keeps the nights, what is already known fills in at once, then the squares in view are asked for like any tile
@@ -484,7 +472,7 @@
           });
           remark();
           observeAll();
-          if (opened && (wide.matches || sheet)) show(opened, null, true); else followDefault(true);
+          if (opened) show(opened, null, true); else followDefault();
           estFlag();
           if (!firstIn()) isleIn();
           news_();
@@ -510,18 +498,6 @@
     commitTimer = setTimeout(function () { settling = false; commit(n); }, COMMIT_MS);      // a key pressed three times asks once, for where it stopped
   });
   root.querySelectorAll('.mx-lane .mx-sq.is-on').forEach(function (el) { var p = el.dataset.sq.split('|'); bandAt[p[0]] = p[1]; });
-  if (side) {
-    side.dataset.n = String(N);
-    var dock = function () { root.style.setProperty('--mx-bar-h', Math.max(0, innerHeight - side.getBoundingClientRect().top) + 'px'); }, queued = 0;      // the floating note sits above the bar's top, wherever the bar is
-    var later = function () { if (!queued) queued = requestAnimationFrame(function () { queued = 0; dock(); }); };
-    if (window.ResizeObserver) { var ro = new ResizeObserver(later); ro.observe(side); ro.observe(root); }      // the bar's top also moves when what is above it changes height (the count going, a find arriving)
-    if (window.MutationObserver) new MutationObserver(later).observe(root, { attributes: true, attributeFilter: ['data-waiting', 'data-busy', 'data-est', 'data-slow'] });      // what is above the bar changes with these (the count goes, a note comes)
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);      // the words' own font changes their height
-    addEventListener('scroll', later, { passive: true });
-    addEventListener('resize', later);
-    dock();
-  }
-
   // ---- Save to trip, without leaving the page ----
   function bindSave(box) {
     var form = box.querySelector('.mx-save-f');
@@ -553,8 +529,8 @@
         .catch(function () { btn.disabled = false; });
     });
   }
-  if (side) bindSave(side);
   remark();
   news_();
+  followDefault();
   root.classList.add('is-live');
 })();

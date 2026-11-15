@@ -126,6 +126,35 @@ def clean_guest(first, last, email):
     return (None, errors) if errors else (liteapi.Guest(f, l, e), {})
 
 
+# ---- what else the checkout asks (F-251) -------------------------------------------------------------------------------
+
+REQUESTS = ("Crib in the room", "Rooms close together", "High floor", "Quiet room", "Early check-in", "Accessible room", "Vegetarian breakfast")
+ARRIVALS = ("Morning", "Afternoon", "Evening", "Late night")
+PHONE_MAX = 20
+_PHONE = re.compile(r"^\+?[0-9][0-9 ().\-]{4,18}[0-9]$")
+
+
+@dataclass(frozen=True)
+class Extras:
+    """The checkout's contact and requests questions. LiteAPI's sandbox is sent the lead guest's name and email only: these are asked, shown on the review and the pass and then gone
+    (never sent, never stored, never logged: D-510 and D-620)."""
+    phone: str = ""
+    requests: tuple = ()
+    arrive: str = ""
+
+
+def clean_extras(phone, requests, arrive):
+    """(Extras, {}) or (None, {field: problem}). The phone is optional: digits, spaces, dots, brackets and hyphens (a leading +), at most PHONE_MAX. The requests and the arrival are the
+    fixed lists above (a word that is not on them is dropped: a form cannot add a request of its own); `requests` is one string, the picked requests joined by "|"."""
+    p = _tidy(phone)
+    errors = {}
+    if p and (len(p) > PHONE_MAX or not _PHONE.match(p)):
+        errors["phone"] = "That does not look like a phone number."
+    picked = {x.strip() for x in str(requests or "").split("|")}
+    arrive = _tidy(arrive)
+    return (None, errors) if errors else (Extras(p, tuple(r for r in REQUESTS if r in picked), arrive if arrive in ARRIVALS else ""), {})
+
+
 # ---- prebooking ------------------------------------------------------------------------------------------------------
 
 def _sample_prebook(part, a: date, b: date) -> liteapi.Prebook:

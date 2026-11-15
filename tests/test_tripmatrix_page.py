@@ -99,10 +99,10 @@ def test_a_retyped_sentence_lands_on_its_plain_address_or_says_what_is_missing(s
 
 def test_a_squares_own_page_is_the_panel_with_every_part_and_a_sample_booking(sample, client):
     html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
-    assert "Los Angeles + San Diego · Dec 12 to 16" in html and "2 nights each · a family of 4" in html
-    assert "Sample booking: nothing is booked or charged." in html and "Book this trip" in html and 'action="/plan/matrix/book"' in html and "Save to trip" in html and "Back to the matrix" in html
+    assert "Los Angeles + San Diego" in html and "Sat, Dec 12 → Wed, Dec 16 · 4 nights · 2 adults, 2 kids" in html
+    assert "Sample booking: nothing is booked or charged." in html and "Book my trip" in html and 'action="/plan/matrix/book"' in html and "Save to trip" in html and "Back to the matrix" in html
     assert 'action="/plan/matrix/save"' in html and "Sample prices" in html
-    assert "2 nights in Los Angeles" in html and "2 nights in San Diego" in html and "Airport drive" in html
+    assert "Los Angeles · 2 nights" in html and "San Diego · 2 nights" in html and "min from the airport" in html
     r = client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=nowhere&w=2026-12-12", follow_redirects=False)
     assert r.status_code == 303
 
@@ -114,7 +114,7 @@ def test_the_tile_answers_one_square_with_its_words_its_panel_and_its_estimate_i
     assert j["key"] == "sandiego|2026-12-13" and j["s"] == tm.OK and j["c"] == sq.cents
     assert re.sub(r"<[^>]+>", "", j["inner"]) == tm.dollars(sq.cents) and j["label"].endswith("for the whole trip")
     assert j["e"] == [sq.flight.cents, round(sq.stays[0].cents / 4)]
-    assert "Save to trip" in j["panel"]
+    assert "Save to trip" in j["drawer"]
     assert client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2027-01-01").status_code == 404
 
 
@@ -132,7 +132,7 @@ def test_off_the_showcase_the_page_draws_skeletons_and_never_a_number_until_answ
 def test_off_the_showcase_a_spent_budget_is_said_in_the_square(real, client, monkeypatch):
     monkeypatch.setattr(liteapi, "_spend", lambda family: False)
     j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=losangeles&w=2026-12-12").json()
-    assert j["s"] == tm.OVER and j["c"] is None and "Used up today" in j["inner"] and tm.SAID[tm.OVER] in unescape(j["panel"])
+    assert j["s"] == tm.OVER and j["c"] is None and "Used up today" in j["inner"] and tm.SAID[tm.OVER] in unescape(j["drawer"])
 
 
 def test_off_the_showcase_without_a_home_airport_it_asks_and_searches_nothing(real, client):

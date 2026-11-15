@@ -1,11 +1,11 @@
 /* The trip matrix (F-222; redrawn in design language v2, F-250, D-610..): the prototype's results, docs/design/booking-v2/index.html (Newsreader with Inter). The tokens and the shared
    pieces (the sky, the sentence, the pickers) are v2-tokens.css and v2.css; this is the results card: the status and legend, the pick bar, and the grid (a place a row, a start day a column,
    each square the whole trip with its start day's sky above its total). One grid at every width: on a phone it scrolls sideways under a sticky place column. The opened square's trip
-   view (tripview.css) sits under the card on a laptop (a frosted widget over the sky) and in a sheet on a phone. Motion is liquid at every width (D-439), only --v2-* and --motion-* tokens.
+   drawer (v2drawer.css) grows under the card, on a laptop and on a phone, and the widget rail (v2rail.css) stands beside it. Motion is liquid at every width (D-439), only --v2-* and --motion-* tokens.
    Reduced motion: fades only. */
 .mx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.mx-results { max-width: 90rem; margin: 0 auto; padding: 0 0 8.75rem; }
-.mx-main { max-width: 68.75rem; margin: 0 auto; min-width: 0; display: grid; gap: 1.125rem; }
+.mx-results { max-width: 90rem; margin: 0 auto; padding: 0 0 8.75rem; }      /* the grid beside the rail is v2rail.css */
+.mx-main { min-width: 0; display: grid; gap: 1.125rem; align-content: start; }
 
 /* the card */
 .mx-card { position: relative; border-radius: var(--r-xl); background: var(--card-t); box-shadow: var(--sh3), inset 0 0 0 1px color-mix(in srgb, var(--card-solid) 60%, transparent); padding: 1.125rem 0 0.375rem; overflow: hidden; }
@@ -30,7 +30,7 @@
 .mx-about-btn { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.5rem; border-radius: 0.625rem; list-style: none; cursor: pointer; color: var(--ink-2); font: 560 1rem/1 var(--f-ui); }
 .mx-about-btn::-webkit-details-marker { display: none; }
 .mx-about-btn:hover, .mx-about[open] > .mx-about-btn { color: var(--ink); }
-.mx-pop { position: absolute; z-index: 50; top: 100%; right: 0; display: grid; gap: 0.625rem; margin: 0.25rem 0 0; padding: 1.125rem; border-radius: 1.5rem; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line);
+.mx-pop { position: absolute; z-index: 50; top: 100%; left: 0; display: grid; gap: 0.625rem; margin: 0.25rem 0 0; padding: 1.125rem; border-radius: 1.5rem; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line);
   width: min(34rem, calc(100vw - 2rem)); font: 450 1rem/1.4 var(--f-ui); }
 .mx-legend-n, .mx-foot-n { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
 .mx-about-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.375rem; border-top: 1px solid var(--line); }
@@ -127,7 +127,8 @@
   box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--stay) 70%, transparent); }
 .mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.6875rem; padding: 0.3125rem 0.625rem; border-radius: 62.4375rem; background: var(--band-label); color: var(--on); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); white-space: nowrap; }
 .mx-lane.is-lit .mx-band { background: color-mix(in srgb, var(--pick) 12%, transparent); box-shadow: inset 0 0 0 0.1875rem var(--pick); }
-.mx-lane.is-lit .mx-band::after { background: var(--ride); color: var(--ride-on); }
+.mx-lane.is-lit .mx-band::after { background: var(--ride); color: var(--ride-on); top: auto; bottom: -0.6875rem; }      /* F-251: the find's lane wears "Our pick" on the square's top edge, so its band's label sits on the bottom edge: two labels never overlap */
+.mx-lane.is-lit { padding-bottom: 0.75rem; }
 
 /* the art: the place's own drawing (gitaway/placeart.py), or its plain tint */
 .mx-arts { display: flex; overflow: hidden; background: var(--card-2); }
@@ -149,23 +150,11 @@
 .mx-fact-k { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
 .mx-fact-t { margin: 0; font-size: 1rem; font-weight: 560; line-height: 1.35; text-wrap: pretty; }
 .mx-fact-src { justify-self: start; color: var(--ink-2); font-size: 1rem; }
-@media (min-width: 1020px) { .mx-isle { justify-self: start; bottom: calc(var(--mx-bar-h, 12rem) + 0.75rem); } }
 @media (max-width: 719px) { .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; } .mx-isle-ic, .mx-isle-b > p:first-child { display: none; } .mx-fact-t { font-weight: 450; } }
 
-/* the opened square: under the card on a laptop (a frosted widget over the sky, the one place glass is used here), a sheet on a phone, its own page */
-.mx-side { display: none; min-width: 0; padding-bottom: 0.375rem; overflow: hidden; }
-@media (min-width: 1020px) { .mx-side { display: block; } }
-.mx-p-top { display: grid; gap: 0.25rem; }
-.mx-p-h { margin: 0; font: var(--d-wt) 1.625rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
-.mx-p-sub { margin: 0; color: var(--ink-2); font-size: 1rem; }
-.mx-p-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; text-wrap: pretty; }
-.mx-b { padding: 1rem 1.25rem; }
-.mx-p-n { font: 780 2.5rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.035em; }
-.mx-vs { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.625rem; border-radius: 62.4375rem; background: var(--see-t); color: var(--see-i); font: 650 1rem/1 var(--f-ui); }
-.mx-vs.is-empty { display: none; }
-.mx-p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: -0.25rem; color: var(--ink-2); font-size: 1rem; }
-.mx-preview { display: inline-flex; align-items: center; gap: 0.375rem; }
-.mx-preview::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--see); }
+/* the rows the booking sheet's pass uses, and the square's own page (the drawer itself is v2drawer.css) */
+.mx-one { max-width: 64rem; margin: 0 auto; padding: 1rem; }
+.mx-back { justify-self: start; min-height: var(--target); }
 .mx-rows { display: grid; }
 .mx-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: start; padding: 0.625rem 0; border-top: 1px solid var(--line); }
 .mx-kt { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; color: var(--on); }
@@ -174,22 +163,11 @@
 .mx-r-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.35; }
 .mx-r-due { color: var(--tix-i); }
 .mx-r-n { font: 650 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
-.mx-soon { margin: 0; font-size: 1rem; line-height: 1.4; color: var(--ink-2); }
-.mx-soon-h { color: var(--ink); font-weight: 700; }
 .mx-save-f { margin: 0; }
-.mx-save { width: 100%; min-height: var(--target); }
 .mx-saved { margin: 0; font-weight: 650; color: var(--see-i); font-size: 1rem; }
-.mx-one { max-width: 34rem; margin: 0 auto; padding: 1rem; }
-.mx-back { justify-self: start; min-height: var(--target); }
-.mx-alone { border-radius: var(--r-lg); background: var(--card-solid); box-shadow: var(--sh2); overflow: hidden; }
 
-/* the phone's sheet */
-.mx-scrim { position: fixed; inset: 0; z-index: 60; background: var(--scrim); }
-.mx-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 88vh; overflow: auto; overscroll-behavior: contain; border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--card-solid); box-shadow: var(--sh3); padding-bottom: env(safe-area-inset-bottom); }
-.mx-sheet-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-solid); touch-action: none; }
 .mx-grab { width: 2.5rem; height: 0.3125rem; margin-left: calc(50% - 1.25rem); border-radius: 62.4375rem; background: var(--line-2); }
 .mx-x { display: grid; place-items: center; width: var(--target); height: var(--target); border: 0; border-radius: 50%; background: var(--card-2); color: var(--ink); cursor: pointer; }
-@keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* the phone: a narrower place column and smaller squares (the grid is the same and scrolls sideways) */
 @media (max-width: 719px) {

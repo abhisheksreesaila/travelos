@@ -72,72 +72,103 @@ def shot(page, name):
 
 
 def open_square(page, viewport):
-    if viewport is DESKTOP:
-        page.click(f".mx-lane[data-lane='sandiego'] .mx-sq >> nth=2")
-        return page.locator("#mx-side")
+    """Open the third start day of San Diego: the drawer grows under the matrix (F-251), on a laptop and on a phone."""
     page.locator(".mx-lane[data-lane='sandiego'] .mx-sq").nth(2).click()
-    return page.locator(".mx-sheet")
+    drawer = page.locator("#mx-drawer")
+    expect(drawer.locator(".dr-book")).to_be_visible()
+    return drawer
 
 
 def fill(page, first="Anne-Marie", last="O’Neil", email="anne@example.com"):
+    """The guest's name and email: with the script the name is the first question and the email the second (Continue between them); without it every field is open."""
+    folded = page.locator(".mxb-f.is-fold").count()
     page.fill("#mxb-first", first)
     page.fill("#mxb-last", last)
+    if folded:
+        page.click("[data-cont]")
     page.fill("#mxb-email", email)
 
 
 def to_review(page):
-    """Continue through the guest and payment cards to the last one (the checkout's three folding cards, D-572)."""
-    page.click("[data-card='guest'] .mxb-next")
-    expect(page.locator("[data-card='pay']")).to_have_attribute("data-state", "active")
-    page.click("[data-card='pay'] .mxb-next")
-    expect(page.locator("[data-card='review']")).to_have_attribute("data-state", "active")
+    """From the contact question on to the review (the four questions, F-251): requests, then the review."""
+    page.click("[data-cont]")
+    expect(page.locator(".mxb-f")).to_have_attribute("data-step", "2")
+    page.click("[data-cont]")
+    expect(page.locator(".mxb-f")).to_have_attribute("data-step", "3")
+
+
+def step_of(page):
+    return page.locator(".mxb-f").get_attribute("data-step")
 
 
 def states(box):
-    return [c.get_attribute("data-state") for c in box.locator(".mxb-card").all()]
+    """Which questions are shown: ["on", "", ...] by pane."""
+    return ["on" if "is-on" in (c.get_attribute("class") or "") else "" for c in box.locator(".mxb-pane").all()]
 
 
 @pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
-def test_the_square_grows_into_the_checkout_plays_the_booking_and_lands_the_pass(matrix, sandbox, viewport):  # noqa: F811
+def test_the_button_spins_the_sheet_grows_out_of_it_four_questions_book_and_the_pass_lands(matrix, sandbox, viewport):  # noqa: F811
     page = matrix(viewport, motion=True, signed_in=True)
     panel = open_square(page, viewport)
-    expect(panel.locator(".mx-book")).to_be_visible()
-    expect(panel.locator(".mx-book")).to_have_text("Book this trip")
-    expect(panel.locator(".mx-soon-h")).to_have_text("Sandbox booking: nothing is charged.")
+    expect(panel.locator(".dr-book")).to_contain_text("Book my trip")
+    expect(panel.locator(".dr-soon-h")).to_have_text("Sandbox booking: nothing is charged.")
     shot(page, f"{viewport['width']}-square")
-    panel.locator(".mx-book").click()
+    panel.locator(".dr-book").click()
+    expect(panel.locator(".dr-book")).to_have_class("dr-book is-busy")                          # it spins while the room is really held
     sheet = page.locator(".mxb-sheet")
     expect(sheet).to_be_visible()
+    expect(panel.locator(".dr-book")).not_to_have_class("dr-book is-busy")
     expect(sheet.locator(".mxb-h")).to_have_text("Book San Diego")
     expect(sheet.locator(".mxb-sandbox")).to_have_text("Sandbox booking: nothing is charged")
     opened = page.evaluate("() => GA.motion.log.filter(m => m.kind === 'open').slice(-1)[0]")
-    assert opened and not opened.get("calm") and opened["from"]                                 # liquid on the laptop too; it grew out of the square
-    assert states(sheet) == ["active", "todo", "todo"]                                          # the first of three folding cards is open
+    assert opened and not opened.get("calm") and opened["from"]                                 # liquid on the laptop too; it grew out of the button
+    assert states(sheet) == ["on", "", "", ""] and step_of(page) == "0"                          # the first of four questions is open
+    expect(sheet.locator(".mxb-prog span.on")).to_have_count(1)
+    expect(sheet.locator(".mxb-held")).to_contain_text("held for 15 minutes")
     page.wait_for_timeout(700)                                                                  # landed
     box = sheet.bounding_box()
     if viewport is PHONE:
         assert box["y"] + box["height"] >= viewport["height"] - 2 and box["width"] >= viewport["width"] - 2      # a bottom sheet
     else:
         assert 480 < box["width"] < 760 and box["x"] > 300                                      # a card in the middle
-    shot(page, f"{viewport['width']}-checkout")
+    shot(page, f"{viewport['width']}-guest")
     page.fill("#mxb-first", "Anne-Marie")
     page.fill("#mxb-last", "O’Neil")
+    page.click("[data-cont]")
     page.fill("#mxb-email", "")
-    page.click("[data-card='guest'] .mxb-next")
-    assert states(sheet) == ["active", "todo", "todo"]                                          # an empty email keeps the first card open (the browser says why)
+    page.click("[data-cont]")
+    assert step_of(page) == "1"                                                                 # an empty email keeps the question open (the browser says why)
     page.fill("#mxb-email", "anne@example")
-    to_review(page)
-    assert states(sheet) == ["done", "done", "active"]
-    expect(sheet.locator("[data-sum='guest']")).to_have_text("Anne-Marie O’Neil · anne@example")      # a folded card says its answer in a line
+    shot(page, f"{viewport['width']}-contact")
+    page.click("[data-cont]")
+    expect(page.locator("[data-pane='2'] .v2-chip").first).to_be_visible()
+    page.click("[data-req='Quiet room']")
+    page.click("[data-arr='Evening']")
+    shot(page, f"{viewport['width']}-requests")
+    page.click("[data-cont]")
+    assert step_of(page) == "3" and sheet.locator(".mxb-prog span.on").count() == 4
+    expect(sheet.locator("[data-rv='contact']")).to_have_text("anne@example")                  # the review says what was typed, with an Edit beside it
+    expect(sheet.locator("[data-rv='requests']")).to_have_text("Quiet room")
+    expect(sheet.locator("[data-rv='requests-s']")).to_have_text("Arriving in the evening")
+    expect(sheet.locator(".mxb-go")).to_be_disabled()                                           # the tick is required
     shot(page, f"{viewport['width']}-review")
+    page.click("[data-go='0']")
+    assert step_of(page) == "0" and page.input_value("#mxb-first") == "Anne-Marie"
+    page.click("[data-cont]")
+    page.click("[data-cont]")
+    page.click("[data-cont]")
+    page.click(".mxb-agree")
+    expect(sheet.locator(".mxb-go")).to_be_enabled()
     page.click(".mxb-go")
     expect(sheet.locator(".mxb-stages li")).to_have_text(["Holding your room", "Paying with the test card", "Booking your stay with LiteAPI", "Putting the trip together"])
     shot(page, f"{viewport['width']}-booking")
-    expect(sheet.locator("#mxb-email-e")).to_have_text("That does not look like an email address.")      # the server's word, the cards back with the typed words kept
-    expect(page.locator("#mxb-first")).to_have_value("Anne-Marie")
+    expect(sheet.locator("#mxb-email-e")).to_have_text("That does not look like an email address.")      # the server's word: the question it is in opens, the typed words kept
+    assert step_of(page) == "1" and page.input_value("#mxb-first") == "Anne-Marie"
     assert [r for u, _, r in sandbox.asked if u.endswith("/rates/book")] == []
     page.fill("#mxb-email", "anne@example.com")
-    to_review(page)
+    page.click("[data-cont]")
+    page.click("[data-cont]")
+    assert page.locator(".mxb-tick").is_checked()                                               # the tick was kept too
     page.click(".mxb-go")
     expect(sheet.locator(".mxb-stages li[data-state='active']")).to_have_count(1)             # a spinner while it books
     expect(sheet.locator(".mxb-id").first).to_have_text("_5hnX-MI7")
@@ -146,9 +177,10 @@ def test_the_square_grows_into_the_checkout_plays_the_booking_and_lands_the_pass
     expect(sheet.locator(".mxb-stamp")).to_have_text("Booked")
     expect(sheet).to_contain_text("Anne-Marie O’Neil, your booking is confirmed.")
     expect(sheet).to_contain_text("Hotel confirmation")
-    assert sheet.locator(".mxb-cf").count() == 28 and page.evaluate("() => getComputedStyle(document.querySelector('.mxb-confetti')).display") != "none"      # the confetti, thrown once
+    expect(sheet.locator(".mxb-pass")).to_contain_text("Quiet room")
+    assert sheet.locator(".mxb-cf").count() == 64 and page.evaluate("() => getComputedStyle(document.querySelector('.mxb-confetti')).display") != "none"      # the confetti, thrown once
     assert page.evaluate("() => GA.motion.log.filter(m => m.kind === 'settle').length") >= 1                # the pass settled on the spring
-    page.wait_for_timeout(900)
+    page.wait_for_timeout(1200)
     shot(page, f"{viewport['width']}-booked")
     assert page.errors == []
     expect(sheet.locator(".mxb-plan")).to_have_text("Plan this trip")
@@ -156,7 +188,6 @@ def test_the_square_grows_into_the_checkout_plays_the_booking_and_lands_the_pass
     page.wait_for_url("**/trip/cockpit")
     page.wait_for_timeout(400)
     expect(page.locator("body")).to_contain_text("Check in")                                   # the booked stay is on the trip's days
-    shot(page, f"{viewport['width']}-cockpit")
 
 
 def test_a_sample_square_books_a_sample_stay_and_says_so(matrix, monkeypatch, stand):  # noqa: F811
@@ -164,11 +195,12 @@ def test_a_sample_square_books_a_sample_stay_and_says_so(matrix, monkeypatch, st
     monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (_ for _ in ()).throw(AssertionError("LiteAPI was asked")))
     page = matrix(DESKTOP, signed_in=True)
     page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=2")
-    expect(page.locator("#mx-side .mx-soon-h")).to_have_text("Sample booking: nothing is booked or charged.")
-    page.click("#mx-side .mx-book")
+    expect(page.locator("#mx-drawer .dr-soon-h")).to_have_text("Sample booking: nothing is booked or charged.")
+    page.click("#mx-drawer .dr-book")
     expect(page.locator(".mxb-sandbox")).to_have_text("Sample booking: nothing is booked or charged")
     fill(page)
     to_review(page)
+    page.click(".mxb-agree")
     page.click(".mxb-go")
     expect(page.locator(".mxb-stages li").nth(1)).to_have_text("Paying with the sample card")
     expect(page.locator(".mxb-id").first).to_contain_text("SAMPLE-")
@@ -178,32 +210,32 @@ def test_a_sample_square_books_a_sample_stay_and_says_so(matrix, monkeypatch, st
     assert page.errors == []
 
 
-def test_escape_closes_the_sheet_and_the_square_stays_open(matrix, sandbox):  # noqa: F811
+def test_escape_closes_the_sheet_and_the_drawer_stays_open(matrix, sandbox):  # noqa: F811
     page = matrix(DESKTOP, motion=True, signed_in=True)
     open_square(page, DESKTOP)
-    page.click("#mx-side .mx-book")
+    page.click("#mx-drawer .dr-book")
     expect(page.locator(".mxb-sheet")).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.locator(".mxb-sheet")).to_have_count(0)
-    expect(page.locator("#mx-side .mx-book")).to_be_visible()
+    expect(page.locator("#mx-drawer .dr-book")).to_be_visible()
     assert page.errors == []
 
 
 def test_signed_out_it_goes_to_sign_in(matrix, sandbox):  # noqa: F811
     page = matrix(DESKTOP)
     open_square(page, DESKTOP)
-    page.click("#mx-side .mx-book")
+    page.click("#mx-drawer .dr-book")
     page.wait_for_url("**/signin**")
 
 
-def test_without_the_script_the_two_steps_are_pages_and_all_three_cards_are_open(matrix, sandbox):  # noqa: F811
+def test_without_the_script_the_two_steps_are_pages_and_all_four_questions_are_open(matrix, sandbox):  # noqa: F811
     gridsource.SQUARE.peek_all = True
     page = matrix(DESKTOP, js=False, signed_in=True, url=URL.replace("/plan/matrix?", "/plan/matrix/square?") + "&lane=sandiego&w=2026-12-12")
-    page.click(".mx-book")
+    page.click(".dr-book")
     expect(page.locator(".mxb-h")).to_have_text("Book San Diego")
-    assert states(page.locator("body")) == ["active", "todo", "todo"]
-    assert page.locator(".mxb-card-b").evaluate_all("els => els.every(e => getComputedStyle(e).display !== 'none')")      # no script: every card open, the one button books
+    assert step_of(page) == "0" and page.locator(".mxb-pane").evaluate_all("els => els.every(e => getComputedStyle(e).display !== 'none')")      # no script: every question open, the one button books
     fill(page)
+    page.click(".mxb-agree")      # the tick is a real checkbox behind its label: it works without the script
     page.click(".mxb-go")
     expect(page.locator(".mxb-id").first).to_have_text("_5hnX-MI7")
     expect(page.locator("[data-trip]")).to_be_visible()

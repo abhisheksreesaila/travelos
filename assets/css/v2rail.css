@@ -1,0 +1,92 @@
+/* The widget rail beside the matrix (F-251, D-620..; gitaway/pages/v2rail.py, assets/js/v2rail.js). The prototype's right-hand column (docs/design/booking-v2/index.html): restrained frosted cards over
+   the sky (`.v2-glass`, the one place blur is allowed), following the place you look at. Beside the matrix on a laptop (sticky, the whole height of the screen); a swipeable row of cards on a
+   phone. Motion: only --v2-* tokens; reduced motion: nothing moves. Every text is 1rem or more except the small all-caps labels (--label-min). */
+.mx-results { display: grid; grid-template-columns: minmax(0, 1fr) 21.5rem; gap: 1.375rem; align-items: start; }
+.mx-main { max-width: none; }
+.rl { position: sticky; top: 1rem; min-width: 0; max-height: calc(100svh - 2rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1.25rem; }
+.rl::-webkit-scrollbar { display: none; }
+.rl-in { display: grid; gap: 0.875rem; }
+.rl-row { display: grid; gap: 0.875rem; }
+.rl-head { display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.25rem 0.125rem; }
+.rl-art { position: relative; width: 2.75rem; height: 2.75rem; flex: none; border-radius: 0.875rem; overflow: hidden; box-shadow: var(--sh1); background: var(--card-2); }
+.rl-art > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rl-head > div { display: grid; min-width: 0; }
+.rl-h { font: var(--d-wt) 1.375rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.rl-s { color: var(--ink-2); font-size: 1rem; }
+.rl.is-swap .wg, .rl.is-swap .rl-head { animation: v2-wgin var(--v2-rail) var(--v2-ease) both; animation-delay: calc(var(--i, 0) * var(--v2-drawer-stagger)); }
+@keyframes v2-wgin { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
+
+.wg { position: relative; padding: 1rem 1.125rem 1.125rem; color: var(--ink); }
+.wg > header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.625rem; }
+.wg .wg-h { flex: 1; font: 650 max(var(--label-min), 0.9375rem)/1.1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.wg .ic { display: grid; place-items: center; width: 1.875rem; height: 1.875rem; flex: none; border-radius: 0.625rem; background: var(--k); color: var(--on); }
+.wg .ic svg { width: 1.0625rem; height: 1.0625rem; }
+.wg .smp { padding: 0.3125rem 0.5rem; border-radius: 62.4375rem; background: var(--ride-t); color: var(--ride-i); font: 600 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; }
+.wg p { margin: 0.25rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
+.wg .fine { margin-top: 0.5rem; color: var(--ink-2); font-size: 1rem; }
+.wg .credits { display: grid; gap: 0.125rem; margin-top: 0.5rem; }
+.wg .credits .fine, .wg .credits .fine-a { margin: 0; }
+.wg .fine-a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.1875rem; }
+.wg .em { color: var(--ink); font-weight: 650; }
+.wg .bigline { display: flex; align-items: baseline; gap: 0.625rem; }
+.wg .bigline .n { font: var(--d-wt) 2.875rem/1 var(--f-display); letter-spacing: var(--d-track); }
+.wg .bigline .n.num { font-family: var(--f-ui); font-weight: 760; letter-spacing: -0.03em; }
+.wg .bigline .bw { font-weight: 600; }
+
+.wg .days5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.25rem; margin-top: 0.75rem; text-align: center; }
+.wg .d5 { display: grid; gap: 0.25rem; justify-items: center; padding: 0.5rem 0; border-radius: 0.875rem; background: color-mix(in srgb, var(--card-solid) 55%, transparent); font: 560 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
+.wg .d5 > span:first-child { font: 650 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.wg .d5 svg { width: 1.375rem; height: 1.375rem; color: var(--sun-ink); }
+.wg .d5.is-wet svg { color: var(--wx); }
+.wg .d5.is-typ > .num { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }      /* dotted: typical weather, not a forecast (the note above says so) */
+
+.wg .map-w { position: relative; }
+.wg .map { width: 100%; height: 9.375rem; border-radius: 1rem; display: block; overflow: hidden; }
+:root[data-mode="dark"] .wg .map { filter: brightness(.78) saturate(.9); }
+.wg .map-cap { position: absolute; left: 0.5rem; bottom: 0.5rem; padding: 0.1875rem 0.5rem; border-radius: 62.4375rem; background: var(--card-solid); color: var(--ink-2); font: 600 max(var(--label-min), 0.75rem)/1.2 var(--f-ui); }
+.wg .dist { display: grid; gap: 0.125rem; margin-top: 0.625rem; }
+.wg .ro { display: flex; align-items: center; gap: 0.625rem; padding: 0.4375rem 0; font-size: 1rem; }
+.wg .ro + .ro { border-top: 1px solid var(--line); }
+.wg .dot { width: 0.75rem; height: 0.75rem; flex: none; border-radius: 50%; background: var(--k); }
+.wg .ro > span:nth-child(2) { flex: 1; color: var(--ink-2); }
+.wg .ro .num { font: 650 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); white-space: nowrap; }
+
+.wg .tiles2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.wg .tile { display: grid; gap: 0.25rem; align-content: start; padding: 0.75rem; border-radius: 1rem; background: color-mix(in srgb, var(--card-solid) 60%, transparent); font-size: 1rem; color: var(--ink-2); }
+.wg .tile .k { color: var(--ink-2); font: 600 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; }
+.wg .tile .b { color: var(--ink); font: 740 1.5rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.02em; margin-top: 0.25rem; }
+.wg .route { margin: 0 0 0.125rem; color: var(--ink); }
+.wg .bars { display: flex; align-items: end; gap: 0.375rem; height: 5.25rem; margin-top: 0.5rem; }
+.wg .bars > div { flex: 1; display: grid; gap: 0.3125rem; justify-items: center; align-content: end; height: 100%; }
+.wg .bars .bar { width: 100%; border-radius: 0.5rem; background: var(--k); }
+.wg .bars .num { font: 600 max(var(--label-min), 0.8125rem)/1 var(--f-ui); color: var(--ink-2); }
+
+.wg .mini-btn { margin-top: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); font: 620 1rem/1 var(--f-ui); cursor: pointer; transition: transform var(--v2-quick) var(--v2-ease); }
+.wg .mini-btn:active { transform: scale(.95); }
+.wg .list { list-style: none; margin: 0; padding: 0; display: grid; }
+.wg .list li { display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.5rem 0; font-size: 1rem; }
+.wg .list li[hidden] { display: none; }
+.wg .list li + li:not([hidden]) { border-top: 1px solid var(--line); }
+.wg .list .t { flex: 1; min-width: 0; display: grid; gap: 0.125rem; }
+.wg .list .t .b { color: var(--ink); font-weight: 620; }
+.wg .list .t > span:not(.b) { color: var(--ink-2); font-size: 1rem; }
+.wg .list .src { display: inline-flex; align-items: center; min-height: 3rem; color: var(--flight-i); font: 620 1rem/1.4 var(--f-ui); text-decoration: underline; text-underline-offset: 0.1875rem; }
+.wg .tagk { display: inline-flex; align-items: center; height: 1.5rem; padding: 0 0.5rem; margin-right: 0.375rem; border-radius: 62.4375rem; background: var(--food-t); color: var(--food-i); font: 620 max(var(--label-min), 0.8125rem)/1 var(--f-ui); }
+.wg .link-btn { border: 0; background: none; padding: 0.5rem 0 0; min-height: 3rem; color: var(--flight-i); font: 620 1rem/1 var(--f-ui); cursor: pointer; text-decoration: underline; text-underline-offset: 0.1875rem; }
+.wg.is-skel { min-height: 5.5rem; }
+.wg.is-skel .ic { background: var(--card-2); }
+
+@media (max-width: 1099px) {
+  .mx-results { grid-template-columns: minmax(0, 1fr); }
+  .rl { position: relative; top: 0; order: -1; max-height: none; overflow: visible; padding: 0; }
+  .rl-head { margin-bottom: 0.625rem; }
+  .rl-row { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -1.75rem; padding: 0.125rem 1.75rem 0.625rem; scroll-padding: 0 1.75rem; }
+  .rl-row::-webkit-scrollbar { display: none; }
+  .rl-row .wg { flex: 0 0 18.75rem; scroll-snap-align: start; }
+}
+@media (max-width: 719px) {
+  .rl { order: 0; margin-top: 0.875rem; }
+  .rl-row { margin: 0 -1rem; padding: 0.125rem 1rem 0.625rem; scroll-padding: 0 1rem; }
+  .rl-row .wg { flex-basis: 17.625rem; }
+}
+@media (prefers-reduced-motion: reduce) { .rl.is-swap .wg, .rl.is-swap .rl-head { animation: none; } }

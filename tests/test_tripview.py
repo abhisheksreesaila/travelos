@@ -19,30 +19,34 @@ def square():
     return sq
 
 
-def test_the_view_has_the_hotel_the_flight_the_sky_and_the_total_and_a_bold_book_button(sample, client):
+def test_the_drawer_has_the_hotel_the_flight_the_why_and_the_total_and_a_bold_book_button(sample, client):
     html = unescape(client.get(SQUARE).text)
     sq = square()
-    assert 'class="mx-book"' in html and "Book this trip" in html and html.index("Book this trip") > html.index("Total for the trip")
-    assert sq.stays[0].name in html and "Typical mid December" in html
-    assert tm.dollars(sq.cents) in html and html.count('data-slot="total"') == 1
-    assert 'name="fl" value="0"' in html and 'name="st" value="0"' in html
-    assert html.count('class="mx-tile ') == 2 and html.count("1 of 3") == 2                      # a hotel tile and a flight tile, each with three to choose from
+    assert 'class="dr-book"' in html and "Book my trip" in html and html.index("Book my trip") > html.index('data-slot="total"')
+    assert sq.stays[0].name in html and "typically sunny" in html
+    assert tm.dollars(sq.cents) in html and html.count('data-slot="total"') == 1 and html.count('data-mirror="total"') == 1
+    assert 'name="fl" value="0"' in html and 'name="st" value="0"' in html and 'name="rm" value="0"' in html
+    assert html.count("dr-pn dr-") == 2 and "Illustration, not the hotel’s photo" in html      # a stay panel and a flight panel; the gallery says what it is
 
 
-def test_every_option_the_source_gave_is_drawn_with_its_own_price_and_only_the_first_is_visible(sample, client):
+def test_every_hotel_room_and_flight_the_source_gave_is_drawn_with_its_own_price_and_only_the_first_is_shown(sample, client):
     html = unescape(client.get(SQUARE).text)
     sq = square()
-    options = re.findall(r'<div [^>]*class="mx-opt"[^>]*>', html)
-    assert len(options) == 6 and [" hidden" in o for o in options] == [False, True, True] * 2      # the shown one first in each tile, two waiting behind it
-    cents = [int(re.search(r'data-c="(\d+)"', o).group(1)) for o in options]
-    assert cents[:3] == [x.cents for x in sq.stay_alts[0]] and cents[3:] == [f.cents for f in sq.flights]      # the stay's tile is drawn first, then the flights'
+    hotels = re.findall(r'<div [^>]*class="dr-hotel"[^>]*>', html)
+    assert len(hotels) == 3 and [" hidden" in h for h in hotels] == [False, True, True]      # the shown hotel first, two waiting behind it
+    alts = [int(c) for c in re.findall(r'<button[^>]*data-c="(\d+)"[^>]*class="dr-alt"', html)]
+    assert alts == [x.cents for x in sq.stay_alts[0]]
+    flights = [int(c) for c in re.findall(r'<button[^>]*data-fl="\d+" data-c="(\d+)"[^>]*class="dr-opt"', html)]
+    assert flights == [f.cents for f in sq.flights]
+    rooms = [int(c) for c in re.findall(r'<button[^>]*data-room="\d+" data-c="(\d+)"[^>]*class="dr-opt"', html)]
+    assert rooms == [r.cents for st in sq.stay_alts[0] for r in st.rooms] and len(rooms) == 9      # three sample rooms at each of three hotels, the first the hotel's own price
     for alt in sq.stay_alts[0]:
-        assert alt.name in html and f'data-c="{alt.cents}"' in html
+        assert alt.name in html
 
 
-def test_a_square_with_no_choice_has_no_arrows(sample, client):
+def test_a_hotel_with_no_other_hotel_has_no_strip_of_them(sample, client):
     html = client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").text
-    assert "mx-flip" not in html and "Book this trip" in html
+    assert "Other stays in" not in html and "dr-alts" not in html and "Book my trip" in html and "Deluxe room, king bed" in html
 
 
 def test_a_still_searching_square_has_no_total_and_no_buttons(sample, client, monkeypatch):
@@ -93,10 +97,8 @@ def test_a_held_room_is_used_only_while_the_square_still_names_the_same_rooms():
     assert not _same_offers(N(stays=[b]), held(a)) and not _same_offers(N(stays=[N(offer_id="", name="Inn", cents=950)]), held(sample))
 
 
-def test_a_two_place_trip_shows_each_places_own_sky_for_its_own_nights(sample, client):
-    """Review of F-242: a strip headed with the first place used to cover the nights spent in the second; now each stay has its place's own strip."""
+def test_a_two_place_trip_has_a_tab_and_a_pane_of_rooms_for_each_stay(sample, client):
+    """Each place's stay is its own pane (a tab each), with its own hotels and rooms; the nights are each place's own."""
     html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
-    skies = re.search(r'<div class="mx-skies">(.*?)<div class="mx-tl', html, re.S) or re.search(r'<div class="mx-skies">(.*)', html, re.S)
-    assert skies, "no per-place skies"
-    body = skies.group(1)
-    assert "Los Angeles" in body and "San Diego" in body and body.index("Los Angeles") < body.index("San Diego")
+    assert 'data-tab="0"' in html and 'data-tab="1"' in html and "Los Angeles · 2 nights" in html and "San Diego · 2 nights" in html and html.count('class="dr-stay-grid dr-sp"') == 2
+    assert html.index("Los Angeles · 2 nights") < html.index("San Diego · 2 nights") and 'name="st" value="0,0"' in html and 'name="rm" value="0,0"' in html

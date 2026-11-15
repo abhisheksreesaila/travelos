@@ -1,133 +1,185 @@
-/* The booking sheet on the trip matrix (F-233, D-480 to D-489; F-242, D-570 to D-579). The square grows into it (assets/js/matrixbook.js, GA.motion.open); its cards fold and the pass settles on the springs.
-   A bottom sheet on a phone, a card in the middle on a laptop. Colour is for kinds only: stays are the stay colour, flights the flight colour, "booked" the car's green. */
+/* Book my trip (F-233, D-480 to D-489; the prototype's flow in F-251, D-620..: docs/design/booking-v2/index.html, `openSheet` and `drawSheet`). The Book button spins while the room is held, the
+   sheet grows out of it (assets/js/matrixbook.js, GA.motion.open), four questions come one after another under a progress bar (lead guest, contact, requests, review with Edit links and a
+   required tick), Submit plays the booking step by step beside the real call, and the stamped pass lands with confetti. A card in the middle on a laptop, a bottom sheet on a phone. Without the
+   script the four questions are all open and the one button books. Colour is the v2 tokens; motion only --v2-* and --motion-* tokens; reduced motion: no movement. */
 
 .mxb-scrim { position: fixed; inset: 0; z-index: 70; background: var(--scrim); }
-.mxb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; max-height: 92vh; overflow: auto; overscroll-behavior: contain; border-radius: var(--r-lg) var(--r-lg) 0 0;
-  background: var(--card-2); box-shadow: var(--sh3); padding-bottom: env(safe-area-inset-bottom); }
-.mxb-bar { position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--card-2); touch-action: none; }
+.mxb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; display: flex; flex-direction: column; max-height: 92svh; overflow: hidden; border-radius: 1.875rem 1.875rem 0 0; background: var(--card-solid); color: var(--ink);
+  box-shadow: var(--sh3), 0 0 0 1px var(--line); }
+.mxb-bar { position: absolute; z-index: 3; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; pointer-events: none; touch-action: none; }
+.mxb-bar > * { pointer-events: auto; }
 .mxb-bar .mx-grab { margin-left: calc(50% - 1.25rem); }
-@media (min-width: 721px) {
-  .mxb-sheet { inset: 0; margin: auto; width: min(44rem, calc(100% - 2rem)); height: fit-content; max-height: min(92vh, 52rem); border-radius: var(--r-lg); padding-bottom: 0; }
+.mxb-in { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.mxb { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+@media (min-width: 720px) {
+  .mxb-sheet { inset: 0; margin: auto; width: min(37.5rem, calc(100% - 2rem)); height: fit-content; max-height: min(51.25rem, calc(100svh - 3rem)); border-radius: 2rem; }
   .mxb-bar .mx-grab { display: none; }
   .mxb-bar { justify-content: flex-end; }
 }
-
-.mxb { display: grid; gap: 0.875rem; padding-bottom: 1.25rem; }
 .mxb-page { padding-bottom: 0.5rem; }
-.mxb-head { display: grid; gap: 0.625rem; }
-.mxb-art { height: 7rem; }
-.mxb-head > :not(.mxb-art) { margin-left: 1.125rem; margin-right: 1.125rem; }
-.mxb-top { display: grid; gap: 0.25rem; }
-.mxb-h { margin: 0; font-size: 1.5rem; font-weight: 740; letter-spacing: -0.03em; line-height: 1.12; }
+
+.mxb-head { display: grid; gap: 0.5rem; padding: 1.125rem 4rem 0.5rem 1.5rem; }
+.mxb-top { display: grid; gap: 0.375rem; }
+.mxb-k0 { color: var(--ink-3); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; }
+.mxb-h { margin: 0; font: var(--d-wt) 1.625rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
 .mxb-sub { margin: 0; color: var(--ink-2); font-size: 1rem; }
-.mxb-sandbox { display: inline-flex; align-items: center; gap: 0.5rem; justify-self: start; min-height: 2rem; padding: 0.25rem 0.75rem; border-radius: var(--r-pill);
-  background: var(--k-flight-t); color: var(--k-flight-i); font-size: max(var(--text-min), 0.875rem); font-weight: 700; margin: 0; }
-.mxb-sandbox.is-booked { background: var(--k-car-t); color: var(--k-car-i); }
-.mxb > :not(.mxb-head) { margin-left: 1.125rem; margin-right: 1.125rem; }
-
-.mxb-body, .mxb-confirm, .mxb-problem { display: grid; gap: 0.75rem; }
-.mxb-row { border-top: 1px solid var(--line); }
-.mxb-sum { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding-top: 0.25rem; }
-.mxb-tl { font-weight: 650; }
-.mxb-total { font-size: 1.5rem; font-weight: 700; }
-.mxb-note { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0; padding: 0.625rem 0.75rem; border-radius: var(--r-md); background: var(--paper-2); color: var(--ink); font-size: 1rem; line-height: 1.4; }
+.mxb-sandbox { display: inline-flex; align-items: center; gap: 0.5rem; justify-self: start; min-height: 2rem; padding: 0.25rem 0.75rem; border-radius: 62.4375rem; background: var(--flight-t); color: var(--flight-i); font-size: 1rem; font-weight: 650; margin: 0; }
+.mxb-sandbox.is-booked { background: var(--see-t); color: var(--see-i); }
+.mxb[data-at="booked"] .mxb-h, .mxb[data-at="booked"] .mxb-sub { display: none; }      /* the pass says where, the head only says Booked */
+.mxb-body, .mxb-confirm, .mxb-problem { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.mxb-confirm, .mxb-problem { gap: 0.75rem; padding: 0.5rem 1.5rem 1.25rem; overflow-y: auto; }
+.mxb-note { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0 1.5rem 0.5rem; padding: 0.625rem 0.75rem; border-radius: var(--r-md); background: var(--card-2); color: var(--ink); font-size: 1rem; line-height: 1.4; }
 .mxb-note > svg { flex: none; margin-top: 0.125rem; }
-.mxb-note.is-warn { background: var(--warn-tint); color: var(--warn-ink); }
+.mxb-note.is-warn { background: var(--food-t); color: var(--food-i); }
+.mxb-problem .mxb-note { margin: 0; }
 
-.mxb-f { display: grid; gap: 0.625rem; margin-left: 0; margin-right: 0; }
+/* the form: a progress bar, the questions, the foot */
+.mxb-f { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .mxb-f[hidden] { display: none; }
-.mxb-q { margin: 0; font-size: 1.25rem; font-weight: 720; letter-spacing: -0.02em; }
-.mxb-hint { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mxb-prog { display: flex; gap: 0.375rem; padding: 0.25rem 1.5rem 0.375rem; }
+.mxb-prog span { position: relative; flex: 1; height: 0.3125rem; border-radius: 62.4375rem; background: var(--card-2); overflow: hidden; }
+.mxb-prog span::after { content: ""; position: absolute; inset: 0; background: var(--sunset); transform: scaleX(0); transform-origin: left; transition: transform var(--v2-drawer-again) var(--spring-soft); }
+.mxb-prog span.on::after { transform: none; }
+.mxb-f:not(.is-fold) .mxb-prog { display: none; }
+.mxb-panes { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.875rem 1.5rem 1.125rem; }
+.mxb-pane { display: grid; gap: 0.75rem; align-content: start; }
+.mxb-pane + .mxb-pane { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.mxb-f.is-fold .mxb-pane { display: none; margin: 0; padding: 0; border: 0; }
+.mxb-f.is-fold .mxb-pane.is-on { display: grid; animation: mxb-in var(--v2-pane) var(--v2-ease) both; }
+.mxb-f.is-fold .mxb-pane.is-back { animation-name: mxb-back; }
+@keyframes mxb-in { from { opacity: 0; transform: translateX(1.125rem); } to { opacity: 1; transform: none; } }
+@keyframes mxb-back { from { opacity: 0; transform: translateX(-1.125rem); } to { opacity: 1; transform: none; } }
+.mxb-q { margin: 0; font: var(--d-wt) 1.5rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
+.mxb-lede, .mxb-hint { margin: 0; color: var(--ink-2); font-size: 1.0625rem; line-height: 1.45; }
+.mxb-hint { font-size: 1rem; }
+.mxb-held { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--see-i); font-weight: 600; }
+.mxb-trav { margin: 0; padding: 0.75rem 0.875rem; border-radius: 1rem; background: var(--card-2); font-weight: 560; }
 .mxb-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
-.mxb-field { display: grid; gap: 0.25rem; min-width: 0; }
-.mxb-l { font-size: max(var(--text-min), 0.875rem); font-weight: 650; color: var(--ink-2); }
-.mxb-field input { width: 100%; min-height: var(--target); padding: 0 0.875rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card-2); color: var(--ink);
-  font: inherit; font-size: max(var(--text-min), 1rem); }
-.mxb-field input:focus-visible { outline: 0.125rem solid var(--k-flight); outline-offset: 1px; }
-.mxb-field.has-err input { border-color: var(--warn-line); }
-.mxb-err { margin: 0; color: var(--warn-ink); font-size: max(var(--text-min), 0.875rem); font-weight: 600; }
-.mxb-go { display: flex; align-items: center; justify-content: center; gap: 0.625rem; width: 100%; min-height: 4rem; padding: 0 1.25rem; border: 0; border-radius: var(--r-pill); background: var(--k-ride); color: var(--k-ride-on);
-  font: inherit; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; cursor: pointer; box-shadow: var(--sh2); }
-.mxb-go:active { transform: scale(0.97); }
-.mxb-go:focus-visible, .mxb-plan:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.mxb-fine { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); text-align: center; }
-.mxb-two .mxb-field input { padding: 0 0.625rem; }
-@media (max-width: 380px) { .mxb-two { grid-template-columns: minmax(0, 1fr); } }
+.mxb-field { position: relative; display: block; min-width: 0; }
+.mxb-l { position: absolute; left: 1rem; top: 0.625rem; z-index: 1; font: 600 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); pointer-events: none; }
+.mxb-field input { width: 100%; height: 3.875rem; padding: 1.375rem 1rem 0.375rem; border: 0; border-radius: 1rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 520 1.125rem/1 var(--f-ui); box-sizing: border-box; }
+.mxb-field input:focus { outline: none; box-shadow: inset 0 0 0 0.15625rem var(--flight); }
+.mxb-field.has-err input { box-shadow: inset 0 0 0 0.15625rem var(--food); }
+.mxb-err { margin: 0.25rem 0 0; color: var(--food-i); font-size: 1rem; font-weight: 600; }
+.mxb-chips, .mxb-pane .v2-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-/* the three folding cards: guest, payment, confirm. With the script a done card folds to one line (its answer and an Edit) and the next opens; without it all three are open. */
-.mxb-card { border-radius: var(--r-md); background: var(--paper-2); overflow: hidden; }
-.mxb-card-h { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; }
-.mxb-n { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--ink); color: var(--on-ink); font-weight: 750; font-size: 1rem; }
-.mxb-sumline { margin: 0.125rem 0 0; color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); overflow-wrap: anywhere; }
-.mxb-sumline:empty, .mxb-f.is-fold .mxb-card:not([data-state="done"]) .mxb-sumline { display: none; }
-.mxb-edit { display: none; min-height: var(--target); padding: 0 0.875rem; border: 0; border-radius: var(--r-pill); background: var(--card); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
-.mxb-card-b { display: grid; gap: 0.75rem; padding: 0 1rem 1rem; }
-.mxb-f.is-fold .mxb-card[data-state="done"] .mxb-n { background: var(--ok); color: var(--k-ride-on); }
-.mxb-f.is-fold .mxb-card[data-state="done"] .mxb-card-b, .mxb-f.is-fold .mxb-card[data-state="todo"] .mxb-card-b { display: none; }
-.mxb-f.is-fold .mxb-card[data-state="done"] .mxb-edit { display: inline-flex; align-items: center; }
-.mxb-f.is-fold .mxb-card[data-state="todo"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.mxb-f.is-fold .mxb-card[data-state="todo"] .mxb-n { background: var(--paper-2); color: var(--ink-2); }
-.mxb-f.is-fold .mxb-card[data-state="todo"] .mxb-q { color: var(--ink-2); }
-.mxb-next { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; min-height: var(--target); }
-.mxb-test { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--r-sm); background: var(--card); }
+/* the review */
+.mxb-rv { border-radius: 1.25rem; background: var(--card-2); padding: 0.25rem 1rem; }
+.mxb-rvr { display: flex; gap: 0.875rem; align-items: flex-start; padding: 0.75rem 0; }
+.mxb-rvr + .mxb-rvr { border-top: 1px solid var(--line); }
+.mxb-rk { width: 5.75rem; flex: none; color: var(--ink-3); font: 650 max(var(--label-min), 0.8125rem)/1.6 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; }
+.mxb-rv-v { flex: 1; min-width: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.mxb-rv-v small { display: block; color: var(--ink-2); font-size: 1rem; }
+.mxb-rv-v small:empty { display: none; }
+.mxb-ed { border: 0; background: none; color: var(--flight-i); font: 620 1rem/1 var(--f-ui); cursor: pointer; text-decoration: underline; text-underline-offset: 0.1875rem; min-height: 2.75rem; padding: 0 0.25rem; }
+.mxb-f:not(.is-fold) .mxb-ed { display: none; }
+.mxb-sum { display: grid; gap: 0.375rem; padding: 0.875rem 1rem; border-radius: 1.25rem; background: var(--card-2); }
+.mxb-sum > div, .mxb-sum-rows > div { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 1rem; }
+.mxb-sum-rows { display: grid; gap: 0.375rem; }
+.mxb-sum span:first-child { color: var(--ink-2); }
+.mxb-sum .t { padding-top: 0.5rem; margin-top: 0.25rem; border-top: 1px solid var(--line); }
+.mxb-sum .t .mxb-tl { color: var(--ink); font: 650 1.0625rem/1.5 var(--f-ui); }
+.mxb-total { font: 760 1.625rem/1 var(--f-ui); font-feature-settings: var(--num-feat); color: var(--ink); }
+.mxb-agree { display: flex; gap: 0.75rem; align-items: center; min-height: 3rem; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
+.mxb-agree .mxb-tick { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.mxb-cb { display: grid; place-items: center; width: 1.625rem; height: 1.625rem; flex: none; border-radius: 0.5rem; box-shadow: inset 0 0 0 0.125rem var(--line-2); transition: transform var(--v2-quick) var(--spring), background-color var(--v2-quick); }
+.mxb-cb svg { width: 1rem; height: 1rem; color: var(--on); opacity: 0; transition: opacity var(--v2-quick); }
+.mxb-agree:active .mxb-cb { transform: scale(.85); }
+.mxb-tick:checked + .mxb-cb { background: var(--flight); box-shadow: none; }
+.mxb-tick:checked + .mxb-cb svg { opacity: 1; }
+.mxb-tick:focus-visible + .mxb-cb { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.mxb-agree.has-err { color: var(--food-i); }
+.mxb-fine { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mxb-fine:last-child { text-align: center; }
 
-/* the booking plays out: a spinner and four steps, each ticked in turn */
-.mxb-run { display: grid; gap: 1rem; padding: 1.25rem 1rem; border-radius: var(--r-md); background: var(--paper-2); }
+.mxb-foot { display: flex; align-items: center; gap: 0.625rem; padding: 0.875rem 1.125rem 1.125rem; border-top: 1px solid var(--line); }
+.mxb-stepn { flex: 1; color: var(--ink-2); font-size: 1rem; }
+.mxb-b2 { height: 3.5rem; padding: 0 1.375rem; border: 0; border-radius: 62.4375rem; background: var(--card-2); cursor: pointer; font: 620 1.0625rem/1 var(--f-ui); color: var(--ink); }
+.mxb-b1 { display: inline-flex; align-items: center; justify-content: center; gap: 0.625rem; height: 3.5rem; padding: 0 1.75rem; border: 0; border-radius: 62.4375rem; background: var(--pill-on); color: var(--pill-fg); cursor: pointer;
+  font: 680 1.125rem/1 var(--f-ui); }
+.mxb-b1 svg { width: 1.25rem; height: 1.25rem; }
+.mxb-b1.sun { background: var(--sunset); color: var(--on); }
+.mxb-b1:disabled { opacity: .45; cursor: default; }
+.mxb-b2:active, .mxb-b1:active { transform: scale(.96); }
+.mxb-f:not(.is-fold) .mxb-b2, .mxb-f:not(.is-fold) .mxb-stepn, .mxb-f:not(.is-fold) [data-cont] { display: none; }
+.mxb-f:not(.is-fold) .mxb-go { width: 100%; }
+.mxb-f.is-fold:not([data-step="3"]) .mxb-go, .mxb-f.is-fold[data-step="3"] [data-cont], .mxb-f.is-fold[data-step="0"] .mxb-b2 { display: none; }
+.mxb-f.is-fold[data-step="0"] .mxb-stepn { text-align: left; }
+.mxb-f.is-fold[data-step="3"] .mxb-stepn { visibility: hidden; }
+
+/* the booking plays out: four steps beside the real call, each a spinner and then a tick */
+.mxb-run { display: grid; gap: 1rem; padding: 1rem 1.5rem 1.5rem; }
 .mxb-run-top { display: flex; align-items: center; gap: 0.875rem; }
-.mxb-spin { flex: none; width: 2rem; height: 2rem; border-radius: 50%; border: 0.3125rem solid var(--paper-2); border-top-color: var(--k-flight); box-shadow: 0 0 0 0.125rem var(--card); animation: mxb-spin calc(var(--motion-screen-dur) * 3) linear infinite; }
-@keyframes mxb-spin { to { transform: rotate(360deg); } }
-.mxb-stages { display: grid; gap: 0.75rem; list-style: none; margin: 0; padding: 0; }
-.mxb-stages li { display: flex; align-items: center; gap: 0.75rem; font-size: 1.0625rem; font-weight: 650; color: var(--ink-2); }
-.mxb-st-i { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: var(--card); color: transparent; box-shadow: inset 0 0 0 0.125rem var(--line);
-  transition: background var(--motion-quick) var(--ease-out), color var(--motion-quick) var(--ease-out); }
+.mxb-spin { flex: none; width: 2rem; height: 2rem; border-radius: 50%; border: 0.3125rem solid var(--card-2); border-top-color: var(--flight); animation: v2-spin var(--v2-spin-t) linear infinite; }
+.mxb-stages { display: grid; gap: 0.625rem; list-style: none; margin: 0; padding: 0; }
+.mxb-stages li { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; border-radius: 1.125rem; background: var(--card-2); font-size: 1.0625rem; color: var(--ink-2); transition: background-color var(--v2-swap); }
+.mxb-st-i { display: grid; place-items: center; flex: none; width: 1.875rem; height: 1.875rem; border-radius: 50%; color: transparent; box-shadow: inset 0 0 0 0.125rem var(--line-2); }
+.mxb-st-i svg { width: 1rem; height: 1rem; }
 .mxb-stages li[data-state="active"] { color: var(--ink); }
-.mxb-stages li[data-state="active"] .mxb-st-i { box-shadow: inset 0 0 0 0.1875rem var(--k-flight); animation: mxb-pulse calc(var(--motion-screen-dur) * 3) ease-in-out infinite; }
-.mxb-stages li[data-state="done"] { color: var(--ink); }
-.mxb-stages li[data-state="done"] .mxb-st-i { background: var(--ok); color: var(--k-ride-on); box-shadow: none; }
-@keyframes mxb-pulse { 50% { box-shadow: inset 0 0 0 0.375rem var(--k-flight); } }
+.mxb-stages li[data-state="active"] .mxb-st-i { box-shadow: none; position: relative; }
+.mxb-stages li[data-state="active"] .mxb-st-i::before { content: ""; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 0.1875rem solid color-mix(in srgb, var(--flight) 25%, transparent); border-top-color: var(--flight); animation: v2-spin var(--v2-spin-t) linear infinite; }
+.mxb-stages li[data-state="active"] .mxb-st-i svg { display: none; }
+.mxb-stages li[data-state="done"] { color: var(--ink); background: color-mix(in srgb, var(--see-t) 70%, var(--card-2)); }
+.mxb-stages li[data-state="done"] .mxb-st-i { background: var(--k-see); color: var(--on); box-shadow: none; animation: mxb-pop var(--v2-pane) var(--spring); }
+@keyframes mxb-pop { from { transform: scale(.4); } to { transform: none; } }
 
-/* the pass: a boarding pass with the booked stamp, a torn edge and a stub; confetti thrown once when it lands */
-.mxb-confirm { position: relative; display: grid; gap: 0.75rem; justify-items: stretch; }
-.mxb-pass { position: relative; border-radius: var(--r-md); background: var(--card); box-shadow: var(--sh2); overflow: hidden; }
-.mxb-pass-top { position: relative; display: grid; gap: 0.5rem; padding: 0 1rem 0.875rem; }
-.mxb-pass-art { height: 6rem; margin: 0 -1rem; }
-.mxb-route { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
-.mxb-iata { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
-.mxb-dash { flex: 1; border-top: 0.125rem dashed var(--ink-2); }
-.mxb-plane { display: grid; place-items: center; color: var(--k-flight); }
-.mxb-pass-when { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
-.mxb-stamp { position: absolute; right: 1rem; top: 1rem; padding: 0.25rem 0.875rem; border: 0.25rem solid var(--k-car); border-radius: 0.5rem; background: var(--card); color: var(--k-car-i); font-size: 1.5rem; font-weight: 850;
-  letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-6deg); animation: mxb-stamp var(--motion-spring-dur) var(--motion-spring) both; animation-delay: var(--motion-screen-dur); }
-@keyframes mxb-stamp { from { opacity: 0; transform: rotate(-6deg) scale(2); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
-.mxb-pass-mid { display: grid; gap: 0.75rem; padding: 0.875rem 1rem; border-top: 0.125rem dashed var(--line); }
-.mxb-pass-row { display: grid; gap: 0.125rem; }
-.mxb-k { margin: 0; color: var(--ink-2); font-size: max(var(--label-min), 0.8125rem); font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
-.mxb-pass-h { margin: 0; font-size: 1.1875rem; font-weight: 740; letter-spacing: -0.02em; }
-.mxb-addr { display: flex; align-items: center; gap: 0.375rem; }
-.mxb-stub { display: grid; gap: 0.625rem; padding: 0.875rem 1rem; border-top: 0.125rem dashed var(--line); background: var(--paper-2); }
-.mxb-stub-i { display: grid; gap: 0.125rem; }
-.mxb-code { margin: 0 0 0.25rem; font-size: 1.375rem; }
-.mxb-id { font-family: var(--font-mono); font-weight: 750; color: var(--ink); overflow-wrap: anywhere; }
-.mxb-going { text-align: center; font-size: 1.625rem; }
+/* the pass: the sunset, a stamp, a perforation and a stub; confetti thrown once when it lands */
+.mxb-confirm { position: relative; justify-items: stretch; }
+.mxb-going { text-align: center; font-size: 2.125rem; line-height: 1.05; }
 .mxb-confirm > .mxb-hint { text-align: center; }
-.mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4.5rem; padding: 0 1.5rem; border-radius: var(--r-pill); background: var(--k-ride); color: var(--k-ride-on);
-  font-size: 1.5rem; font-weight: 820; letter-spacing: -0.02em; text-decoration: none; box-shadow: var(--sh2); position: sticky; bottom: 0.75rem; z-index: 4; }      /* always in reach at the foot of the sheet */
+.mxb-pass { position: relative; border-radius: 1.625rem; overflow: hidden; background: var(--sunset); color: var(--on); box-shadow: var(--sh2); }
+.mxb-pass-top { position: relative; display: grid; gap: 0.5rem; padding: 0 1.25rem 0.875rem; }
+.mxb-pass-art { height: 8.5rem; margin: 0 -1.25rem; }
+.mxb-pass-art .mx-art-i > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mxb-route { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; margin-right: 7.75rem; }      /* room for the stamp on the right */
+.mxb-iata { font: 780 2.25rem/1 var(--f-ui); letter-spacing: -0.04em; }
+.mxb-dash { flex: 1; border-top: 0.125rem dashed color-mix(in srgb, var(--on) 50%, transparent); }
+.mxb-plane { display: grid; place-items: center; color: var(--on); }
+.mxb-pass-when { margin: 0; color: color-mix(in srgb, var(--on) 88%, transparent); font-size: 1rem; }
+.mxb-stamp { position: absolute; right: 1.125rem; top: 5.25rem; display: grid; place-items: center; width: 7.375rem; height: 7.375rem; border-radius: 50%; rotate: -14deg; border: 0.25rem solid var(--ride); color: var(--ride);
+  box-shadow: inset 0 0 0 0.4375rem var(--ride); background: rgb(43 20 90 / .55); font: 800 1.125rem/1 var(--f-display); letter-spacing: .02em; text-transform: uppercase; text-align: center; animation: mxb-thump var(--v2-pick) cubic-bezier(.2, 1.4, .4, 1) both var(--v2-quick); }
+.mxb-stamp::after { content: attr(data-d); display: block; margin-top: 0.25rem; font: 700 max(var(--label-min), 0.6875rem)/1.3 var(--f-ui); letter-spacing: .12em; }
+@keyframes mxb-thump { from { opacity: 0; transform: scale(2.4); } 70% { opacity: 1; } to { opacity: 1; transform: none; } }
+.mxb-pass-mid { display: grid; gap: 0.75rem; padding: 0.875rem 1.25rem; border-top: 0.125rem dashed color-mix(in srgb, var(--on) 40%, transparent); }
+.mxb-pass-row { display: grid; gap: 0.125rem; }
+.mxb-pass .mx-r-s { margin: 0.125rem 0 0; color: color-mix(in srgb, var(--on) 88%, transparent); font-size: 1rem; line-height: 1.35; }
+.mxb-k { margin: 0; color: color-mix(in srgb, var(--on) 82%, transparent); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; }
+.mxb-pass-h { margin: 0; font: var(--d-wt) 1.375rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
+.mxb-addr { display: flex; align-items: center; gap: 0.375rem; }
+.mxb-stub { display: grid; gap: 0.625rem; padding: 0.875rem 1.25rem 1.125rem; border-top: 0.125rem dashed color-mix(in srgb, var(--on) 40%, transparent); }
+.mxb-stub-i { display: grid; gap: 0.25rem; }
+.mxb-code { margin: 0 0 0.25rem; }
+.mxb-id { font: 780 1.625rem/1.1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: .04em; overflow-wrap: anywhere; }
+.mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4rem; padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--sunset); color: var(--on);
+  font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: 0 0.75rem 1.875rem -0.625rem rgb(139 47 201 / .6); position: sticky; bottom: 0.25rem; z-index: 4; }
+.mxb-plan:hover { color: var(--on); }
 .mxb-plan:active { transform: scale(0.97); }
-.mxb-flight { min-height: var(--target); justify-self: center; }
+.mxb-plan:focus-visible, .mxb-go:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.mxb-flight { justify-self: center; min-height: var(--target); }
 .mxb-back { justify-self: start; min-height: var(--target); }
 
-/* confetti: CSS only, each piece falls once from above the pass, spinning; the kinds' colours; none under reduced motion */
-.mxb-confetti { position: fixed; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; z-index: 80; }      /* fixed: thrown over the whole screen, not clipped by the sheet */
-.mxb-cf { position: absolute; top: 0; left: calc(var(--x) * 1%); width: 0.625rem; height: 1.125rem; border-radius: 0.125rem; opacity: 0; transform: rotate(calc(var(--r) * 1deg));
-  animation: mxb-fall calc(var(--motion-screen-dur) * 7) var(--ease-out) both; animation-delay: calc(var(--d) * var(--motion-quick) * 0.5); }
-.mxb-cf { width: 0.75rem; height: 1.25rem; }
-.mxb-cf.c0 { background: var(--k-flight); } .mxb-cf.c1 { background: var(--k-stay); } .mxb-cf.c2 { background: var(--k-car); }
-.mxb-cf.c3 { background: var(--k-ride); } .mxb-cf.c4 { background: var(--k-tix); } .mxb-cf.c5 { background: var(--k-food); }
-@keyframes mxb-fall { 0% { opacity: 1; transform: translateY(0) rotate(calc(var(--r) * 1deg)); } 100% { opacity: 0; transform: translateY(105vh) translateX(calc((var(--d) - 5) * 1.5rem)) rotate(calc(var(--r) * 1deg + 540deg)); } }
+/* confetti: CSS only, each piece falls once over the whole screen, spinning; the kinds' colours; none under reduced motion */
+.mxb-confetti { position: fixed; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; z-index: 80; }
+.mxb-cf { position: absolute; top: 0; left: calc(var(--x) * 1%); width: 0.625rem; height: 0.875rem; border-radius: 0.1875rem; opacity: 0; transform: rotate(calc(var(--r) * 1deg));
+  animation: mxb-fall var(--v2-confetti) var(--v2-ease) both; animation-delay: calc(var(--d) * var(--v2-drawer-stagger)); }
+.mxb-cf:nth-child(3n) { border-radius: 50%; }
+.mxb-cf.c0 { background: var(--k-flight); } .mxb-cf.c1 { background: var(--k-stay); } .mxb-cf.c2 { background: var(--k-food); }
+.mxb-cf.c3 { background: var(--ride); } .mxb-cf.c4 { background: var(--k-see); } .mxb-cf.c5 { background: var(--k-tix); }
+@keyframes mxb-fall { 0% { opacity: 1; transform: translateY(0) rotate(calc(var(--r) * 1deg)); } 60% { opacity: 1; } 100% { opacity: 0; transform: translateY(105vh) translateX(calc((var(--d) - 5) * 1.5rem)) rotate(calc(var(--r) * 1deg + 540deg)); } }
 
+@media (max-width: 719px) {
+  .mxb-route { margin-right: 6.5rem; }
+  .mxb-iata { font-size: 1.875rem; }
+  .mxb-two { grid-template-columns: minmax(0, 1fr); gap: 0.625rem; }
+  .mxb-foot { padding-bottom: max(1.125rem, env(safe-area-inset-bottom)); }
+  .mxb-going { font-size: 1.75rem; }
+  .mxb-stamp { width: 6rem; height: 6rem; font-size: 1rem; top: 5.25rem; }
+  .mxb-id { font-size: 1.375rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .mxb-confetti { display: none; }
   .mxb-stamp { animation: none; }
-  .mxb-spin, .mxb-stages li[data-state="active"] .mxb-st-i { animation: none; }
-  .mxb-st-i { transition: none; }
+  .mxb-spin, .mxb-stages li[data-state="active"] .mxb-st-i::before { animation: none; }
+  .mxb-f.is-fold .mxb-pane.is-on { animation: none; }
+  .mxb-prog span::after { transition: none; }
 }

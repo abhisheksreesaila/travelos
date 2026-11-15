@@ -55,6 +55,20 @@
   --v2-flash: 700ms;       /* the flash on a word that just changed */
   --v2-spin-t: 800ms;      /* one turn of the spinner */
   --v2-drift: 60s;         /* a cloud drifting */
+  --v2-drawer: 820ms;      /* the drawer growing down out of its square's column (F-251) */
+  --v2-drawer-again: 520ms;      /* the drawer, already open, taking another square */
+  --v2-drawer-in: 460ms;   /* what is in the drawer arriving, one part after another */
+  --v2-drawer-stagger: 70ms;
+  --v2-drawer-out: 220ms;  /* the drawer going away */
+  --v2-focus: 600ms;       /* the hotel or the flight taking the room, the other shrinking to a summary */
+  --v2-count: 520ms;       /* the total counting to its new value */
+  --v2-swap: 350ms;        /* what a choice changes fading in */
+  --v2-rail: 450ms;        /* a widget arriving */
+  --v2-book-spin: 1000ms;  /* the Book button spinning while the room is held */
+  --v2-sheet-in: 640ms;    /* the booking sheet growing out of the button */
+  --v2-pane: 380ms;        /* the next question sliding in */
+  --v2-step: 850ms;        /* one booking step spinning */
+  --v2-confetti: 2600ms;   /* the confetti falling */
 
   --r-xl: 2rem; --r-lg: 1.5rem; --r-md: 1.125rem; --r-sm: 0.75rem;
   --lead: 14.125rem; --cw: 6.25rem; --ch: 4.375rem;

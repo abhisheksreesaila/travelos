@@ -108,3 +108,37 @@ def drive(iata, town) -> Drive | None:
     if found or b == geo.MISSING or isinstance(minutes, int):      # keep only what a service answered; a busy gate or a spent deadline is asked again next time
         _keep(key, found)
     return found
+
+
+def _town_key(a, b):
+    return ("town: " + " ".join(str(a or "").split()).lower(), " ".join(str(b or "").split()).lower())
+
+
+def kept_between(town_a, town_b) -> Drive | None:
+    """The drive between two towns already known, without asking anyone."""
+    found = _KEPT.get(_town_key(town_a, town_b))
+    return found[0] if found and _clock() - found[1] < KEEP else None
+
+
+def between(town_a, town_b) -> Drive | None:
+    """F-251: the drive by car from one town to another ("Newport Beach, California" to "San Diego, California"), asked like `drive` (the same gates, budget and deadline), or None.
+    A typical drive, as the router counts it: no live traffic. Can wait on the network: call it from a plain `def` handler or run_in_threadpool."""
+    a, b = " ".join(str(town_a or "").split()), " ".join(str(town_b or "").split())
+    if not a or not b or a.lower() == b.lower():
+        return None
+    key = _town_key(a, b)
+    kept = _KEPT.get(key)
+    if kept and _clock() - kept[1] < (KEEP if kept[0] else FAIL_WAIT):
+        return kept[0]
+    if not _spend():
+        return None
+    deadline = _clock() + DEADLINE
+    try:
+        pa, pb = geo.find(a, None, deadline=deadline)[0], geo.find(b, None, deadline=deadline)[0]
+        minutes = geo.drive_minutes(pa, pb, None, deadline=deadline) if isinstance(pa, tuple) and isinstance(pb, tuple) else None
+    except Exception:      # a drive is never worth failing the page
+        pa, minutes = None, None
+    found = Drive(a, b, int(minutes)) if isinstance(minutes, int) and 0 < minutes <= MAX_MINUTES else None
+    if found or isinstance(minutes, int):
+        _keep(key, found)
+    return found
