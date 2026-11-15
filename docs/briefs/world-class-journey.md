@@ -17,3 +17,13 @@ Colourful (each part its own colour, never a monochrome screen), micro-interacti
 
 ## Not tonight
 Real money: LiteAPI's sandbox only; nothing deploys to gitaway.me until the founder looks.
+
+## The journey, step by step (founder, 2026-11-14 evening: "let's go one by one")
+Built and polished in this order; each step is finished before the next starts.
+1. **Cover**: done.
+2. **Sign-in**: the two halves must contrast (F-240).
+3. **"What are you after?"** (F-241): after signing in you don't land on the matrix cold. A search-engine-simple page asks what you want: where, when, who, and what you're into (vegetarian, seafood, beaches, museums...). Submit → a skeleton of the matrix → the matrix fills in. What you said you like is kept for planning.
+4. **Matrix**: minimal but dense: the totals plus a few recommendations and facts (no widgets yet). Change nights, open squares.
+5. **Opened square → book** (F-242): the hotel, the chosen flight and the weather in one view; switch the hotel or flight in place. **"Book this trip"** is bold and impossible to miss. Booking plays out what really owning it would look like (it spins through the steps), then a confirmation with confetti, then **"Plan this trip"**.
+6. **Plan** (F-243, after booking is polished): a simple, themed calendar (think a joyful Microsoft Teams calendar), day and week views, starting empty apart from the flight and hotel it already knows. Add events with a click (later a finger), and family can contribute. It helps: links matched to what you said you like (vegetarian restaurants, seafood places), the top places other GitAway travellers went, existing plans, and weather nudges ("rain Thursday: take an umbrella"). Pictures arranged nicely. Save.
+7. **Share** (F-244): the finished plan shares as a scrapbook or book you can flip through, and a creator's pasted blog becomes the same book. 3D book themes come later.

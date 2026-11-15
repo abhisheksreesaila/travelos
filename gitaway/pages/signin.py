@@ -4,7 +4,7 @@ Everything is browsable signed out; save, pay, invite and fork land here, then c
 the traveler lands on /, which opens their trip or the trip matrix (F-231).
 Google sign-in is /login and /auth/callback (fh-saas); the local dev sign-in is a POST here (see gitaway.auth).
 The page (docs/design/reskin, a-signin): the intent as the title, what signing in is for as a trip card with B's ticket stub (what the card says comes from `next`,
-gitaway.signin_context), two big buttons (Google, a passkey); on a laptop the left half carries the line ("Take a trip. Leave a trail.") over the trip's widgets.
+gitaway.signin_context), two big buttons (Google, a passkey); on a laptop the left half is a sunset (D-550: the founder found two grey halves without contrast) carrying the cover's line over the trip's widgets as postcards.
 """
 
 from urllib.parse import quote
@@ -30,8 +30,8 @@ TITLES = {
     "join": "Sign in to join your family",
 }
 
-LINE = ("Take a trip.", "Leave a trail.")   # the brief's line (docs/briefs/free-and-polished.md "The line")
-SUBHEAD = "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
+LINE = ("Compare the whole trip.", "Choose it together.")   # the cover's line (gitaway/pages/cover.py LINE): one voice from the cover to the sign-in
+SUBHEAD = "Flights and stays side by side, one total a square. Book it, plan it with your family, share it in one card."
 NEW_HERE = "New here? The same buttons make your account. No password to remember."
 # the two small widgets: an icon and a kind (its colour) per pass; the words are the pass's own (s1, s2)
 WIDGETS = {"cold": (("food", "k-food"), ("sun", "k-see")), "search": (("bed", "k-stay"), ("users", "k-see")), "fork": (("calendar", "k-stay"), ("calendar", "k-see"))}
@@ -45,7 +45,10 @@ def sky(ctx):
                 P(Span(ctx.origin, cls="si-code"), icon("arrow-right", 22, 2.6), Span(ctx.dest, cls="si-code"), cls="si-w-big"),
                 P(ctx.v2, cls="si-w-sub"), cls="si-w si-w-route k-flight")
     small = [Div(icon(ico, 22, 2.2), Span(text, cls=f"si-stick si-stick{n}"), cls=f"si-w si-w-small {kind}") for n, (ico, kind, text) in enumerate(((i1, k1, ctx.s1), (i2, k2, ctx.s2)), 1)]
+    clouds = [NotStr(f'<svg class="si-cloud c{n}" viewBox="0 0 150 64" focusable="false"><circle cx="46" cy="38" r="20"/><circle cx="76" cy="28" r="26"/>'
+                     '<circle cx="108" cy="38" r="20"/><rect x="36" y="38" width="82" height="20" rx="10"/></svg>') for n in (1, 2)]
     return Div(
+        Span(cls="si-sun"), *clouds,
         P(Span(LINE[0]), " ", Span(LINE[1], cls="si-line-two"), cls="si-line"),
         P(SUBHEAD, cls="si-line-sub"),
         Div(route, *small, cls="si-widgets"),

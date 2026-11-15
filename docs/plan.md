@@ -1535,3 +1535,29 @@ Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on t
 - [ ] 2 or 3 options, phone and laptop, of the opened square: the hotel (photos, room, rating, address), the flight (times, airline, stops; switch to another flight or room right there), the weather for those nights, the total; fun, in the matrix's language
 - [ ] the checkout: modern, short, in one flow (guest, payment as LiteAPI's best case, confirm), with the confirmation showing the hotel's contact and the flight's record locator
 - [ ] a compare page with a pick per option and device; the founder picks before F-240 builds it
+
+## F-240 Sign-in: the two halves contrast [review]
+Founder, 2026-11-14: "The login page can be slightly improved with some contrast. There's no contrast to the two sides of the page."
+- [x] on a laptop the left half is a sunset in the story's colours (flight indigo → stay violet → food raspberry, a sun, two drifting clouds) with the cover's line in white and yellow; the trip's widgets are white postcards tilted on it; the right half keeps the card on the light canvas (D-550)
+- [x] one voice: the line is the cover's ("Compare the whole trip. Choose it together."), no longer "Take a trip. Leave a trail."
+- [x] fits 1280x800 and 1440x900; tests_browser/test_signin_pass.py and the contrast sweep (test_direction_a_pages.py) pass
+
+## F-241 "What are you after?": a search before the matrix [todo]
+Founder, 2026-11-14: "You don't go to the matrix directly ... some sort of a Google search: what do you want, what are you interested in ... press submit ... a skeleton-like page, then the matrix." Needs: F-240
+- [ ] a signed-in person with no trip lands on one big, joyful ask: a sentence box (where, when, how many nights, who) plus tap-to-pick interests (vegetarian, seafood, beaches, museums, hikes, nightlife, kids...); Submit
+- [ ] the sentence is read by tripsentence's plain rules (nothing guessed); the interests are kept for the family (for planning's recommendations, F-243)
+- [ ] Submit shows a skeleton of the matrix at once, then the matrix fills in square by square
+- [ ] phone and laptop, light and dark, 4.5:1, 48px targets; Plan a trip in the nav opens it
+
+## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [todo]
+Founder, 2026-11-14: "I click on a square, I open up the details ... this hotel, this flight ... I say book this trip. Book this trip should be bold and very easy to find ... it spins and spins, then a confirmation with confetti ... then plan this trip." Builds F-239's recommended picks (A2 on laptop, A3 on phone, B1 ending in B2's stamp) unless the founder picks others. Needs: F-241
+- [ ] the opened square shows the hotel (photo, room, rating, address), the flight (times, airline, stops) and the weather for those nights in one view; another hotel or flight can be chosen right there and the total updates
+- [ ] "Book this trip" is the boldest thing on the screen
+- [ ] booking plays out step by step (holding the room, confirming the flight, paying: LiteAPI's sandbox best case), then a confirmation with confetti, the hotel's contact and a confirmation number, and "Plan this trip"
+- [ ] says "Sandbox booking: nothing is charged"; no guest data kept (D-480..D-489 still hold)
+
+## F-243 Plan: a joyful calendar that helps [todo]
+See docs/briefs/world-class-journey.md step 6. Needs: F-242
+
+## F-244 Share as a scrapbook; a creator's blog becomes the same book [todo]
+See docs/briefs/world-class-journey.md step 7. Needs: F-243

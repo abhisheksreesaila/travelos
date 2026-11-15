@@ -1,5 +1,5 @@
 """F-052, F-200: sign-in in a real browser. Direction A (the founder found the old boarding pass too small): a 34px title on a phone, 17px words, 56px buttons,
-every target at least 48px, the trip card with its stub; on a laptop the left half carries the line "Take a trip. Leave a trail." and the trip's widgets, and the
+every target at least 48px, the trip card with its stub; on a laptop the left half carries the line "Compare the whole trip. Choose it together." and the trip's widgets, and the
 whole page fits 1440x900. Same in light and dark (tests_browser/test_direction_a_pages.py measures contrast)."""
 import pytest
 
@@ -51,8 +51,8 @@ def test_the_phone_is_one_column_big_and_easy_to_tap(open_signin, name):
 def test_the_laptop_has_the_line_and_the_trips_widgets_beside_the_card_and_fits(open_signin, name):
     page = open_signin(CONTEXTS[name], DESKTOP)
     assert page.evaluate("document.documentElement.scrollWidth === document.documentElement.clientWidth")
-    assert page.locator(".si-line").inner_text().replace("\n", " ") == "Take a trip. Leave a trail."
-    assert page.locator(".si-line-sub").inner_text() == "Share the whole trip, not just the photos, so the next family can follow it, make it theirs, and say thanks."
+    assert page.locator(".si-line").inner_text().replace("\n", " ") == "Compare the whole trip. Choose it together."
+    assert page.locator(".si-line-sub").inner_text() == "Flights and stays side by side, one total a square. Book it, plan it with your family, share it in one card."
     box = lambda sel: page.evaluate("s => [...document.querySelectorAll(s)].map(e => { const r = e.getBoundingClientRect(); return [e.className, r.left, r.top, r.right, r.bottom]; })", sel)
     (card,), (sky,), widgets = box(".si-card"), box(".si-sky"), box(".si-w")
     boxes = [card, sky, *widgets]
