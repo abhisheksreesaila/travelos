@@ -114,7 +114,7 @@ def add(session, guide, keys, day=None, after=0) -> dict:
         got = planedit.add(session, day=d, start=start, end=start + minutes, title=title, kind=KIND[stop.kind])
         a = got["act"]
         try:
-            cal.add_note(session, f"From {guide.poss} guide", act=a.id)
+            cal.add_note(session, f"From {guide.poss} guide", act=a.id, guide=True)
         except cal.CalendarError:
             pass      # the plan is in; only its tag is missing
         cursor = a.end

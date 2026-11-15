@@ -214,3 +214,55 @@ def test_the_planning_rail_card_and_sheet_are_48px_targets_and_read_4_5_to_1(pla
     page.wait_for_timeout(400)
     assert small(page, ".gsheet") == [], "the sheet's controls"
     news(behind, audit(page))
+
+
+# ---- review fixes ------------------------------------------------------------------------------------------------------------------------
+
+def test_an_undo_the_server_refuses_says_so_and_leaves_what_was_not_undone_marked(plan, base_url):  # noqa: F811
+    page = plan(DESKTOP)
+    page.locator("#pl-rail .gd-row").click()
+    sheet = page.locator(".gsheet")
+    stop = sheet.locator(".g-card[data-k='d2s1']")
+    stop.locator(".g-cover").click()
+    stop.locator(".g-inplace .go").click()
+    expect(stop.locator(".g-plus")).to_have_class(re.compile(r"done"))
+    mine = page.locator(".ev[data-title^='Picnic under the oak']")
+    expect(mine).to_have_count(1)
+    act = mine.get_attribute("data-id")
+    page.context.request.post(f"{base_url}/trip/plan/write", form={"op": "edit", "act": act, "title": "Picnic, moved by someone"})      # someone changed it between the add and the Undo
+    toast_undo(page)
+    expect(page.locator(".ga-toast")).to_contain_text("Someone changed it since. Nothing was undone.")
+    expect(page.locator(".ga-toast")).not_to_contain_text("Taken out of your plan")
+    expect(stop.locator(".g-plus")).to_have_class(re.compile(r"done"))      # still in the plan, still marked
+    page.reload()
+    page.wait_for_selector(".g-inner")
+    expect(page.locator(".ev[data-title^='Picnic, moved by someone']")).to_have_count(1)
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_the_guide_sheet_takes_the_calm_fade_on_a_laptop_and_the_spring_on_a_phone(matrix, stand, viewport):  # noqa: F811
+    page = matrix(viewport, signed_in=True, motion=True)
+    page.locator(".mx-lane[data-lane='losangeles'] .mx-lead").click()
+    row = page.locator("#mx-rail .gd-row")
+    expect(row).to_have_count(1)
+    page.evaluate("GA.motion.log.length = 0")
+    row.click()
+    sheet = page.locator(".gsheet")
+    expect(sheet).to_be_visible()
+    page.wait_for_timeout(500)
+    opens = page.evaluate("GA.motion.log.filter(l => l.kind === 'open').map(l => ({ calm: !!l.calm, dur: l.dur }))")
+    if viewport["width"] >= 1020:      # the calm rule: no spring, no zoom (the matrix's own liquid exception, D-439, is not this sheet's)
+        expect(sheet).to_have_class(re.compile(r"is-calm"))
+        assert opens == []
+    else:      # a phone: out of the row, on the v2 spring
+        expect(sheet).not_to_have_class(re.compile(r"is-calm"))
+        assert opens == [{"calm": False, "dur": page.evaluate("GA.motion.t('spring')")}]
+
+
+def test_the_guide_will_not_open_beside_the_planning_drawer(plan, base_url):  # noqa: F811
+    page = plan(DESKTOP)
+    page.locator("#pl-together").first.click()      # the drawer sits beside the rail on a laptop: its guides row is still there to press
+    expect(page.locator("#pl-side")).to_be_visible()
+    page.locator("#pl-rail .gd-row").dispatch_event("click")
+    expect(page.locator(".ga-toast")).to_contain_text("Close this first")
+    expect(page.locator(".gsheet")).to_have_count(0)

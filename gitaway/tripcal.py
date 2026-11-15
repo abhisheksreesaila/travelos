@@ -91,6 +91,7 @@ class Note:
     act: str | None = None
     by: str = ""      # the pretend friend who wrote it ("" for a real member)
     by_id: str = ""   # the user id of the member who saved it (F-046)
+    guide: bool = False   # written by a guide's "Add to my plan" (F-263): the one note the plan's tag may be drawn from; a person's words never set it
 
 
 # ---- trip and formatting -------------------------------------------------------------------------------------------
@@ -413,8 +414,12 @@ def _act(r):
     return Activity(r["act_id"], r["day"], r["start_min"], r["end_min"], r["title"], r["kind"], r["author"] or "", r["added_by"] or "")
 
 
+GUIDE_AUTHOR = "\x00guide"      # the notes.author of a guide's tag: no form writes an author, and a control character is not a name
+
+
 def _note(r):
-    return Note(r["note_id"], r["body"], r["act_id"], r["author"] or "", r["added_by"] or "")
+    guide = r["author"] == GUIDE_AUTHOR
+    return Note(r["note_id"], r["body"], r["act_id"], "" if guide else r["author"] or "", r["added_by"] or "", guide)
 
 
 def _begin(db, trip_id, scope, who=""):
@@ -735,7 +740,7 @@ def undo_delete(session, id_, demo=""):
 
 # ---- notes ---------------------------------------------------------------------------------------------------------
 
-def add_note(session, text, act=None, demo="", id=None):
+def add_note(session, text, act=None, demo="", id=None, guide=False):
     """Add a note to the trip, or to one activity. An existing `id` is a refresh and adds nothing."""
     _valid_id(id)
     with ses.family(session) as fam:
@@ -760,9 +765,9 @@ def add_note(session, text, act=None, demo="", id=None):
             if familydb.row(db, "SELECT COUNT(*) AS n FROM notes WHERE trip_id = :t AND scope = :s AND gone = 0", t=fam.trip_id, s=scope)["n"] >= MAX_NOTES:
                 raise CalendarError(FULL)
             id = id or f"n{st['q'] + 1}"
-            _insert_note(db, fam, scope, id, _number(id), text, act or None)
+            _insert_note(db, fam, scope, id, _number(id), text, act or None, GUIDE_AUTHOR if guide else "")
             _bump(db, fam.trip_id, scope, _number(id))
-            return Note(id, text, act or None, "", fam.traveler.id)
+            return Note(id, text, act or None, "", fam.traveler.id, guide)
 
 
 def edit_note(session, id, text, demo=""):

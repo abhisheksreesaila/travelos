@@ -132,6 +132,16 @@ def test_a_free_stretch_is_dropped_in_one_stop_after_another_tagged_with_the_gui
     assert "From Maya" not in client.get("/trip/plan/cal").text      # and the tag went with them
 
 
+def test_only_a_plan_a_guide_added_wears_the_guides_tag_never_a_note_someone_typed(client, monkeypatch):
+    free, n, keys = afternoon(client, monkeypatch)
+    j = client.post("/guides/add", data={"slug": TACOS, "k": keys, "to": str(free.day), "after": str(free.start)}).json()
+    slow = next(a for a in cal.activities(person("ari")) if a.title == "Slow day")
+    cal.add_note(person("ari"), "From Maya's guide", act=slow.id)      # a person typed exactly the words the tag has
+    page = unescape(client.get("/trip/plan/cal").text)
+    assert page.count('class="gtag"') == len(j["added"]) == len(keys)      # the tags are the plans the guide dropped in, not the typed note's plan
+    assert any(n.text == "From Maya's guide" and n.act == slow.id for n in cal.notes(person("ari")))      # the typed note itself is still a note
+
+
 def test_a_free_stretch_skips_what_is_already_in_the_plan_and_says_how_many(client, monkeypatch):
     free, n, keys = afternoon(client, monkeypatch)
     g = gd.from_trip(itineraries.get(TACOS))

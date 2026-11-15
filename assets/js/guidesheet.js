@@ -45,6 +45,9 @@
   // ---- opening and closing ----
   function open(from) {
     if (cur || from.getAttribute('aria-busy') === 'true') return;
+    // The row can be reached under another dialog by keyboard (a modal sheet or popover only has a scrim) and beside the planning drawer on a laptop: never a sheet on a sheet.
+    var other = $$('[role=dialog]').some(function (d) { if (d.classList.contains('gsheet')) return false; var st = getComputedStyle(d); return !d.hidden && st.display !== 'none' && st.visibility !== 'hidden'; });
+    if (other) return toast('Close this first, then open the guide.', { error: true });
     from.setAttribute('aria-busy', 'true');
     fetch(from.dataset.sheet, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That guide did not open.'); return j; }); })
@@ -142,11 +145,16 @@
   }
   function undo(added) {
     return function () {
-      var c = cur;
-      added.slice().reverse().reduce(function (p, a) { return p.then(function () { return post('/trip/plan/write', { op: 'undo', undo: JSON.stringify(a.undo) }); }); }, Promise.resolve()).then(function () {
-        document.dispatchEvent(new CustomEvent('pl:changed'));
-        if (c && c === cur) { mark(added.map(function (a) { return a.key; }), false); $$('[data-add-day]', cur.el).forEach(function (b) { ran(b, false); }); }
-        toast('Taken out of your plan');
+      var c = cur, gone = [], failed = null;      // the server judges each undo (someone may have changed the plan since): stop at the first refusal and say its words
+      added.slice().reverse().reduce(function (p, a) {
+        return p.then(function () {
+          if (failed) return;
+          return post('/trip/plan/write', { op: 'undo', undo: JSON.stringify(a.undo) }).then(function (j) { if (j.error || j.status >= 400) failed = j.error || 'That did not work.'; else gone.push(a); });
+        });
+      }, Promise.resolve()).then(function () {
+        if (gone.length) document.dispatchEvent(new CustomEvent('pl:changed'));
+        if (gone.length && c && c === cur) { mark(gone.map(function (a) { return a.key; }), false); if (!failed) $$('[data-add-day]', cur.el).forEach(function (b) { ran(b, false); }); }
+        if (failed) toast(failed, { error: true }); else toast('Taken out of your plan');
       });
     };
   }

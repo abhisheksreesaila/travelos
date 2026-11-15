@@ -10,7 +10,6 @@ the showcase's own sample trip wears sample weather (dayweather.is_sample); a ra
 made-up samples (v2rail.SAMPLE), which off the showcase are simply not offered. Plans are written by gitaway/planedit.py (the calendar's rules, the family's thread cards).
 """
 
-import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -145,9 +144,6 @@ def sky(t) -> tuple:
     return out[:n], weather.notes(tw)
 
 
-GUIDE_TAG = re.compile(r"From .{1,40} guide")
-
-
 def _ev(a, people, tags) -> Ev:
     who = people.get(a.by_id)
     return Ev(a.id, a.day, a.start, a.end, a.title, a.kind, by=(who.name.split() or [""])[0] if who else (a.by or ""), tag=tags.get(a.id, ""))
@@ -196,7 +192,7 @@ def view(session, curl) -> View:
     days_sky, notes = sky(t)
     gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     booked = [Ev(x.id, x.day, x.start, x.end, x.title, BOOKED_KIND.get(x.icon, "tix"), True, x.icon, x.at, href=curl(day=x.day, booked=x.id)) for x in blocks]
-    tags = {n.act: n.text for n in cal.notes(session) if n.act and GUIDE_TAG.fullmatch(n.text)}
+    tags = {n.act: n.text for n in cal.notes(session) if n.act and n.guide}
     plans = [_ev(a, who, tags) for a in acts]
     gs = min([gs, *(e.start // 60 * 60 for e in plans)])
     ge = max([ge, *(-(-e.end // 60) * 60 for e in plans)])
