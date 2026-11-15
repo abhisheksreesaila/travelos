@@ -76,7 +76,7 @@ def refusal(request, session, role):
     message = EDITOR_MESSAGE if role != "viewer" else VIEWER_MESSAGE
     from fasthtml.common import A, Div, H1, P, Section, to_xml
     body = page("Not allowed", Section(Div(H1("Only editors can change that"), P(message, id="refusal"),
-                                            A("Back to the trip", href="/trip", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"))
+                                            A("Back to the trip", href="/trip/plan", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"))
     return Response(to_xml(body), status_code=403, media_type="text/html")
 
 

@@ -138,22 +138,28 @@ def test_with_taps_alone_the_editor_moves_and_resizes_a_plan(plan):
 
 def test_a_finger_holds_then_drags_a_plan_and_a_plain_swipe_still_scrolls(plan):
     page = plan(PHONE)
-    ev = add(page, 1, 12, "Finger plan")
+    add(page, 1, 12, "Finger plan")
     cdp = page.context.new_cdp_session(page)
 
     def touch(kind, x=0, y=0):
         cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y}]})
-    box = ev.bounding_box()
-    x, y = box["x"] + box["width"] / 2, box["y"] + 14
-    scroll0 = page.evaluate("() => document.querySelector('.g-body').scrollTop")
+
+    def centre():
+        """F-255: the dock and the sections pill stack at the foot of the phone, so bring the plan to the middle of the day's own scroll, then to 560px down the screen (below the
+        toolbar, clear of both bars), wait for any fling to stop, and return where a finger lands on it (checked: that point is the plan, not a bar)."""
+        page.evaluate("""() => { const e = document.querySelector(".ev[data-title='Finger plan']"); e.scrollIntoView({block: 'center'}); window.scrollBy(0, e.getBoundingClientRect().top - 560); }""")
+        page.wait_for_function("() => new Promise(r => { const a = [scrollY, document.querySelector('.g-body').scrollTop].join(); setTimeout(() => r(a === [scrollY, document.querySelector('.g-body').scrollTop].join()), 250); })")
+        box = page.locator(".ev[data-title='Finger plan']").bounding_box()
+        x, y = box["x"] + box["width"] / 2, box["y"] + 14
+        assert page.evaluate("""([x, y]) => !!document.elementFromPoint(x, y).closest(".ev[data-title='Finger plan']")""", [x, y]), (x, y)
+        return x, y
+    x, y = centre()
     touch("touchStart", x, y)                                                           # no hold: a swipe moves the day, not the plan
     for i in range(1, 8):
         touch("touchMove", x, y - i * 25)
     touch("touchEnd")
     assert times(page.locator(".ev[data-title='Finger plan']")) == (720, 780)
-    page.wait_for_timeout(200)
-    box = page.locator(".ev[data-title='Finger plan']").bounding_box()
-    x, y = box["x"] + box["width"] / 2, box["y"] + 14
+    x, y = centre()
     touch("touchStart", x, y)
     page.wait_for_timeout(650)                                                          # the half-second hold arms it
     for i in range(1, 9):
@@ -161,7 +167,6 @@ def test_a_finger_holds_then_drags_a_plan_and_a_plain_swipe_still_scrolls(plan):
     touch("touchEnd")
     page.wait_for_function("() => document.querySelector(\".ev[data-title='Finger plan']\").dataset.start === '840'")
     assert times(page.locator(".ev[data-title='Finger plan']")) == (840, 900)
-    assert scroll0 is not None
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
