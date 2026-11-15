@@ -415,6 +415,15 @@
 
   // ---- coming back to the tab: read the trip again (no live channel: a change someone else made shows on return) ----
   function again() { if (document.hidden || drag || !pop.hidden) return; refresh().catch(function () { /* offline: what is drawn stays */ }); if (!side.hidden) loadThread(key); }
+  document.addEventListener('pl:changed', function (e) {      // a guide's sheet (guidesheet.js) added or took out plans (F-263): redraw them, let the new ones settle in and, on a phone, bring the calendar into view
+    var plans = (e.detail && e.detail.plans) || [];
+    refresh().then(function () {
+      if (!plans.length) return;
+      land(plans[0]);
+      plans.forEach(function (p) { var n = $('.ev[data-id="' + p.act + '"]', cal); if (n) n.classList.add('land'); });
+      if (phone()) cal.scrollIntoView({ block: 'start', behavior: RM.matches ? 'auto' : 'smooth' });
+    }).catch(function () { /* the next return reads it again */ });
+  });
   document.addEventListener('visibilitychange', again);
   window.addEventListener('focus', again);
   if (wantCols() !== state.cols) go({ cols: wantCols(), view: state.view });

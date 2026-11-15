@@ -51,27 +51,35 @@ def details(g: gd.Guide, s: gd.GStop) -> Div:
         cls="g-more")
 
 
-def stop_li(g: gd.Guide, s: gd.GStop, last: bool, owner: bool, add: str) -> Li:
+def inplace_details(g: gd.Guide, s: gd.GStop, ident: str, add: str) -> Div:
+    """A stop's details opening in place, inside the card (F-263: in a sheet there is no second sheet): the same details, in a box that folds open under the stop, with Add to my plan when the
+    person can (the sheet over planning). Folded, it is out of the reading order and the tab order (`inert`) until the card opens."""
+    adder = Button(icon("plus", 20, 2.4), "Add to my plan", type="button", cls="go", data_add=s.key) if add == "yes" else ""
+    return Div(Div(details(g, s), adder, cls="g-fold"), cls="g-inplace", id=ident, inert=True)
+
+
+def stop_li(g: gd.Guide, s: gd.GStop, last: bool, owner: bool, add: str, inplace: bool = False) -> Li:
     badges = [Span(s.cost, cls="bdg cost") if s.cost else "", Span(icon("spark", 14, 2.2), "Tip", cls="bdg tip") if s.tip else "",
               A(bookview.ico("link"), f"{g.Poss} link", href=s.link, target="_blank", rel="sponsored noopener", cls="bdg lnk", aria_label=f"{g.Poss} link for {s.name}, opens their site") if s.link else ""]
     name = Span(s.name, cls="ed", data_k=f"d{s.day - 1}.s{s.n - 1}", title="Tap to fix the name") if owner else Span(s.name, cls="g-nm")
-    cover = "" if owner else Button(Span(f"Open {s.name}", cls="v2-sr"), type="button", cls="g-open g-cover", aria_expanded="false", aria_controls="g-panel", data_k=s.key)      # the whole card is the press
+    more = f"gm-{s.key}"
+    cover = "" if owner else Button(Span(f"Open {s.name}", cls="v2-sr"), type="button", cls="g-open g-cover", aria_expanded="false", aria_controls=more if inplace else "g-panel", data_k=s.key)      # the whole card is the press
     sub = " · ".join(x for x in (s.label, f"stop {s.n} of {s.of}") if x)
     side = [Button(icon("plus", 20, 2.4), type="button", cls="g-plus", data_add=s.key, aria_label=f"Add {s.name} to my plan") if add == "yes" else "",
             Button(icon("chev-right", 20, 2.2), type="button", cls="g-open g-chev", aria_expanded="false", aria_controls="g-panel", data_k=s.key, aria_label=f"Open {s.name}") if owner else Span(icon("chev-right", 20, 2.2), cls="g-chev", aria_hidden="true")]
     return Li(
         Div(Span(s.time or str(s.n), cls="g-tmv"), cls="g-tm"), Div(I(), cls="g-ln"),
-        Div(cover, kt(s.kind), Div(name, Span(sub, cls="sub"), P(s.why, cls="g-why") if s.why else "", Div(*[b for b in badges if b], cls="g-badges") if any(badges) else "", details(g, s), cls="g-t"),
+        Div(cover, kt(s.kind), Div(name, Span(sub, cls="sub"), P(s.why, cls="g-why") if s.why else "", Div(*[b for b in badges if b], cls="g-badges") if any(badges) else "", inplace_details(g, s, more, add) if inplace else details(g, s), cls="g-t"),
             Div(*[x for x in side if x], cls="g-side"),
             cls="g-card", data_k=s.key, data_name=s.name, data_kind=s.kind, data_label=s.label, data_day=str(s.day), data_n=str(s.n), data_of=str(s.of)),
         cls="g-stop" + (" last" if last else ""), style=f"--k:var(--bk-{s.kind})", id=f"g-{s.key}")
 
 
-def day_section(g: gd.Guide, d: gd.GDay, owner: bool, add: str) -> Section:
+def day_section(g: gd.Guide, d: gd.GDay, owner: bool, add: str, inplace: bool = False) -> Section:
     n = len(d.stops)
     head = Span(d.title, cls="ed", data_k=f"d{d.n - 1}.head") if owner else d.title
     return Section(Div(Span(f"Day {d.n}", cls="g-eyebrow"), H2(head), P(f"{n} stop{'s' if n != 1 else ''}" + (f" · {d.note}" if d.note else ""), cls="g-dsub"), cls="g-dh"),
-                   Ol(*[stop_li(g, s, i == n - 1, owner, add) for i, s in enumerate(d.stops)], cls="g-rail"), cls="g-day", id=f"g-day{d.n}", data_day=str(d.n), aria_label=f"Day {d.n}: {d.title}")
+                   Ol(*[stop_li(g, s, i == n - 1, owner, add, inplace) for i, s in enumerate(d.stops)], cls="g-rail"), cls="g-day", id=f"g-day{d.n}", data_day=str(d.n), aria_label=f"Day {d.n}: {d.title}")
 
 
 def strip(g: gd.Guide) -> Div:
@@ -81,10 +89,11 @@ def strip(g: gd.Guide) -> Div:
                cls="g-strip v2-glass", role="group", aria_label="Days", style=f"--nd:{len(g.days)}")
 
 
-def art(g: gd.Guide) -> Div:
+def art(g: gd.Guide, short: bool = False) -> Div:
+    """The guide's picture: the creator's own photo or a drawing, each said so. `short` (the sheet's small picture) says it in one word."""
     if g.photo:
-        return Div(Img(src=g.photo[0], alt=g.photo[1], referrerpolicy="no-referrer"), Span("Photo from the post", cls="g-cap"), cls="g-art")
-    return Div(bookview.drawing(g.scene, f"A drawing of {g.place}, not a photograph"), Span("Illustration", cls="g-cap"), cls="g-art")
+        return Div(Img(src=g.photo[0], alt=g.photo[1], referrerpolicy="no-referrer"), Span("Photo" if short else "Photo from the post", cls="g-cap"), cls="g-art")
+    return Div(bookview.drawing(g.scene, f"A drawing of {g.place}, not a photograph"), Span("Drawing" if short else "Illustration", cls="g-cap"), cls="g-art")
 
 
 def panel() -> Aside:
@@ -149,15 +158,22 @@ def trust(g: gd.Guide, st: dict) -> Div:
                A(icon("flag", 18, 2.2), "Report this guide", href=f"/report?trip={g.slug}", cls="tonal", id="report-this") if st.get("report") else "", cls="g-trust")
 
 
+def kicker(g: gd.Guide) -> Div:
+    sample = Span("Sample guide", Span(": made up so you can see the guides", cls="long2"), cls="smp") if g.sample else ""
+    return Div(Span(f"{g.place} · Guide", cls="g-kick"), sample, cls="g-kr")
+
+
+def byline(g: gd.Guide) -> Div:
+    return Div(Span((g.author or g.by)[:1].upper() or "?", cls="g-av", aria_hidden="true"), (A(f"By {g.author or g.by}", href=f"/creators/{g.handle}", cls="by g-by") if g.handle else Span(f"By {g.author or g.by}", cls="g-by")),
+               Span(f"Published {g.stamped}", cls="g-host2") if g.stamped else "", cls="g-byline")
+
+
 def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     """The page's content. mode "reader" (Plan this trip, Add to my plan, Save) or "owner" (their draft or live guide: fix a word in place, Edit details, Publish)."""
     st = state or {}
     owner = mode == "owner"
     add = st.get("add", "no") if not owner else "no"
-    sample = Span("Sample guide", Span(": made up so you can see the guides", cls="long2"), cls="smp") if g.sample else ""
-    kick = Div(Span(f"{g.place} · Guide", cls="g-kick"), sample, cls="g-kr")
-    by = Div(Span((g.author or g.by)[:1].upper() or "?", cls="g-av", aria_hidden="true"), (A(f"By {g.author or g.by}", href=f"/creators/{g.handle}", cls="by g-by") if g.handle else Span(f"By {g.author or g.by}", cls="g-by")), Span(f"Published {g.stamped}", cls="g-host2") if g.stamped else "", cls="g-byline")
-    head = Div(art(g), Div(kick, H1(Span(g.title, cls="ed", data_k="title") if owner else g.title), by, cls="g-hmain"), _actions(g, mode, {**st, "add": add}), cls="g-head")
+    head = Div(art(g), Div(kicker(g), H1(Span(g.title, cls="ed", data_k="title") if owner else g.title), byline(g), cls="g-hmain"), _actions(g, mode, {**st, "add": add}), cls="g-head")
     back = A(icon("chev-left", 18, 2.4), "Guides", href="/guides", cls="g-back")
     privates = (Div(icon("lock", 18, 2.2), Div(Small("Kept private, never published"), Span(" · ".join(f"{p[1]}" for p in g.private[:6]))), cls="g-private", role="note") if owner and g.private else "")
     days = [day_section(g, d, owner, add) for d in g.days]

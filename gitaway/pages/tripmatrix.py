@@ -27,7 +27,7 @@ from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, firstrun, gridsource, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
+from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, v2rail, weather_ui
@@ -39,6 +39,7 @@ TILE, SQUARE, SAVE, WARM, BOOK, PEEK, RAIL = PATH + "/tile", PATH + "/square", P
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/v2rail.css"), Link(rel="stylesheet", href="/assets/css/v2drawer.css"),
         Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
+        Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True),
         Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip already longer or shorter in the address widens the range to hold it
@@ -409,6 +410,12 @@ def warm(s: State, family="") -> int:
     return matrixwarm.warm(todo, s.adults, s.kid_ages, s.home, family)
 
 
+def pick(lanes, windows, lane, w):
+    """The lane and start day the rail (and a guide's sheet) follows: the ones named, else the asked place and its asked start day."""
+    return (next((x for x in lanes if x.key == lane), None) or next(x for x in lanes if x.asked),
+            next((x for x in windows if x.key == w), None) or next((x for x in windows if x.asked), windows[0]))
+
+
 def _square_of(s, lane_key, w_key, family="", peek=False):
     lane = tm.lane(s.place, lane_key, s.nearby)
     w = tm.window(s.depart, s.return_, s.flex, catalog.today(), w_key)
@@ -509,11 +516,11 @@ def register(app):
         lanes, windows = lanes_of(s), windows_of(s)
         if s.problems or not windows:
             return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
-        lane_ = next((x_ for x_ in lanes if x_.key == lane), None) or next(x_ for x_ in lanes if x_.asked)
-        w_ = next((x_ for x_ in windows if x_.key == w), None) or next((x_ for x_ in windows if x_.asked), windows[0])
+        lane_, w_ = pick(lanes, windows, lane, w)
         family = _family(session)
         known = lambda ln, win: gridsource.square(ln, win, s.adults, s.kid_ages, s.home, family, peek=True)      # noqa: E731
-        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session))), "lane": lane_.key},
+        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session)),
+                                                 guides=gd.for_place(session, lane_.places[0].name)), "lane": lane_.key},
                             headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)

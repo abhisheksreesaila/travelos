@@ -10,6 +10,7 @@ the showcase's own sample trip wears sample weather (dayweather.is_sample); a ra
 made-up samples (v2rail.SAMPLE), which off the showcase are simply not offered. Plans are written by gitaway/planedit.py (the calendar's rules, the family's thread cards).
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -56,6 +57,7 @@ class Ev:
     at: int = 0          # the minute to say (a block drawn earlier keeps its true start)
     by: str = ""         # the first name of who added it
     href: str = ""       # a booked block opens its booking here
+    tag: str = ""        # "From Maya's guide": a plan dropped in from a guide (F-263) carries the guide's name as its note
 
     @property
     def when(self) -> str:
@@ -143,9 +145,12 @@ def sky(t) -> tuple:
     return out[:n], weather.notes(tw)
 
 
-def _ev(a, people) -> Ev:
+GUIDE_TAG = re.compile(r"From .{1,40} guide")
+
+
+def _ev(a, people, tags) -> Ev:
     who = people.get(a.by_id)
-    return Ev(a.id, a.day, a.start, a.end, a.title, a.kind, by=(who.name.split() or [""])[0] if who else (a.by or ""))
+    return Ev(a.id, a.day, a.start, a.end, a.title, a.kind, by=(who.name.split() or [""])[0] if who else (a.by or ""), tag=tags.get(a.id, ""))
 
 
 def _ago(iso) -> str:
@@ -191,7 +196,8 @@ def view(session, curl) -> View:
     days_sky, notes = sky(t)
     gs, ge = cal.grid_start(blocks), cal.grid_end(blocks)
     booked = [Ev(x.id, x.day, x.start, x.end, x.title, BOOKED_KIND.get(x.icon, "tix"), True, x.icon, x.at, href=curl(day=x.day, booked=x.id)) for x in blocks]
-    plans = [_ev(a, who) for a in acts]
+    tags = {n.act: n.text for n in cal.notes(session) if n.act and GUIDE_TAG.fullmatch(n.text)}
+    plans = [_ev(a, who, tags) for a in acts]
     gs = min([gs, *(e.start // 60 * 60 for e in plans)])
     ge = max([ge, *(-(-e.end // 60) * 60 for e in plans)])
     start, end = dates[0], dates[-1]
@@ -265,6 +271,17 @@ def pick_slot(v, kind, minutes, indoor=False) -> tuple | None:
             for s in (*prefer, *range(lo // STEP * STEP, hi, 30)):
                 if lo <= s and s + minutes <= hi and s % STEP == 0 and not any(s < e2 and b < s + minutes for b, e2 in busy):
                     return i, s
+    return None
+
+
+def slot_in(v, day, minutes, after=0) -> int | None:
+    """The first start on `day` at or after minute `after` where `minutes` fit in the day's window, on the grid's step and over nothing (F-263: a guide's morning dropped in one stop after the
+    other). None when the day has no room."""
+    lo, hi = v.windows[day]
+    busy = _busy(v, day)
+    for s in range(max(lo, after) // STEP * STEP + (STEP if max(lo, after) % STEP else 0), hi, STEP):
+        if s + minutes <= hi and not any(s < e2 and b < s + minutes for b, e2 in busy):
+            return s
     return None
 
 

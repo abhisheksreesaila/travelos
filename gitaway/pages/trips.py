@@ -7,7 +7,7 @@ from fasthtml.common import A, Div, H1, P, Section, cookie
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, community, forks as forks_model, seo, session as ses, showcase, stats
+from gitaway import affiliate, community, forks as forks_model, guide as gd, seo, session as ses, showcase, stats
 from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
 from gitaway.layout import page
@@ -44,7 +44,7 @@ def register(app):
         if found.real:
             stats.count_view(request, session, slug)   # F-192: one reader once a day, no cookie, nothing personal kept (a plain def, so the write is off the event loop)
         from gitaway.pages import guidepage      # here: guidepage draws with layout, which imports the pages
-        if guidepage.is_guide(found):      # F-262: a creator's trip is a guide (the run sheet); a family's own published trip keeps this page
+        if gd.is_guide(found):      # F-262: a creator's trip is a guide (the run sheet); a family's own published trip keeps this page
             return guidepage.reader_page(session, slug, found)
         waiting = found.real and community.review_state(slug) == "pending"      # F-194: reachable by its link, in no list, and not for search engines
         forked = slug in ses.forks(session)
