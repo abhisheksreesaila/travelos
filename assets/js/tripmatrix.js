@@ -371,6 +371,7 @@
     if (wide.matches && side) {
       var inner = fill(side, k, bars);
       if (!refill && M() && inner) (M().reduced() ? M().fade(inner) : M().open(inner, from || side));
+      if (!refill && from) side.scrollIntoView({ block: 'nearest', behavior: 'auto' });      // F-242: the opened trip is under the calendar, not a bar always in view: a tap brings it up
       return;
     }
     if (sheet) { fill(sheet.querySelector('.mx-sheet-in'), k); return; }
