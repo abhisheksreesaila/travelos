@@ -20,7 +20,7 @@ def not_found():
             Div(
                 H1("This trip wandered off"),
                 P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
-                A("Find another trip", href="/community", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"),
+                A("Find another guide", href="/guides", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"),
             ),
             cls="ga-soon ga-wrap",
         ),
@@ -43,6 +43,9 @@ def register(app):
             return not_found()
         if found.real:
             stats.count_view(request, session, slug)   # F-192: one reader once a day, no cookie, nothing personal kept (a plain def, so the write is off the event loop)
+        from gitaway.pages import guidepage      # here: guidepage draws with layout, which imports the pages
+        if guidepage.is_guide(found):      # F-262: a creator's trip is a guide (the run sheet); a family's own published trip keeps this page
+            return guidepage.reader_page(session, slug, found)
         waiting = found.real and community.review_state(slug) == "pending"      # F-194: reachable by its link, in no list, and not for search engines
         forked = slug in ses.forks(session)
         body = itinerary_page(found, theme=theme, loading=(state == "loading"), saved=slug in ses.saved(session), forked=forked,

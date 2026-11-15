@@ -50,10 +50,9 @@ def bg(mood: str = "", quiet: bool = False) -> Div:
 
 
 def section_of(current: str) -> str:
-    """Which of the pill's sections a page's `current` names: "trip" is Plan, the planning ask and matrix are Book, "family" is Family, anything else none."""
+    """Which of the pill's sections a page's `current` names: "trip" is Plan, the planning ask and matrix are Book, the guides (and the old community and creator addresses) are Guides, anything else none."""
     c = (current or "").rstrip("/")
-    return ("plan" if c in ("trip", "/trip/plan") else "book" if c == "book" or c.startswith("/plan") else "family" if c in ("family", "/family")
-            else "community" if c.startswith("/community") else "creators" if c.startswith(("/for-creators", "/creators")) else "")
+    return ("plan" if c in ("trip", "/trip/plan") else "book" if c == "book" or c.startswith("/plan") else "guides" if c.startswith(("/guides", "/community", "/creators", "/for-creators")) else "")
 
 
 def _state(traveler):
@@ -72,23 +71,22 @@ def _state(traveler):
 
 
 def items(signed_in: bool, has_trip: bool) -> list:
-    """The section pill's items as (key, label, href): Plan (only with a trip), Book and Family for a signed-in person; Plan a trip (the one door, layout.plan_href), Community
-    trips and For creators for a visitor."""
+    """The section pill's items as (key, label, href): Book, Plan (only with a trip) and Guides for a signed-in person; Plan a trip (the one door, layout.plan_href) and Guides for a visitor, whose
+    Sign in is the account button beside the pill (F-262: Family left the bar; the family lives in Planning's Together drawer and the avatar menu)."""
     if not signed_in:
         from gitaway.layout import plan_href      # here: layout imports this module
-        return [("start", "Plan a trip", plan_href()), ("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
-    return ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("book", "Book", showcase.planning_path()), ("family", "Family", "/family")]
+        return [("start", "Plan a trip", plan_href()), ("guides", "Guides", "/guides")]
+    return [("book", "Book", showcase.planning_path())] + ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("guides", "Guides", "/guides")]
 
 
 def menu_items(captain: bool, new: int = 0) -> list:
-    """The avatar menu's links as (key, label, href): Family, Admin (the captain only), Community trips and For creators; Sign out is its own form."""
-    return [("family", "Family", "/family")] + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else []) + [
-        ("community", "Community trips", "/community"), ("creators", "For creators", "/for-creators")]
+    """The avatar menu's links as (key, label, href): the family's members page (it left the bar, so it stays reachable here) and Admin (the captain only); Sign out is its own form."""
+    return [("family", "Family members", "/family")] + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else [])
 
 
 def top(current: str = "", sample: str = "Sample prices") -> Div:
-    """The brand, a label saying the prices are samples (on the showcase), the sections pill (Plan, Book, Family; on a phone it floats at the bottom), the light/dark button and
-    the account: the avatar and its menu for a signed-in person, Sign in for a visitor (whose pill holds Community trips and For creators)."""
+    """The brand, a label saying the prices are samples (on the showcase), the sections pill (Book, Plan, Guides; on a phone it floats at the bottom), the light/dark button and
+    the account: the avatar and its menu for a signed-in person, Sign in for a visitor."""
     traveler = session_.request_traveler()
     has_trip, captain, new = _state(traveler)
     here = section_of(current)

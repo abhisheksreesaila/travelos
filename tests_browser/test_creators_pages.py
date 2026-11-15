@@ -65,8 +65,8 @@ def tap(page, viewport, locator):
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
 def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor, base_url, viewport):
     page = visitor(viewport).new_page()
-    page.goto(f"{base_url}/for-creators")
-    expect(page.locator("h1")).to_contain_text("Paste your post. It becomes a trip families can book.")
+    page.goto(f"{base_url}/guides/make")
+    expect(page.locator("h1")).to_contain_text("Paste your post. It becomes a guide families can plan from.")
     box = page.locator("#fc-text").bounding_box()
     assert box["y"] + box["height"] <= viewport["height"], "the paste box is on the first screen"
     assert overflow(page) <= 1
@@ -87,7 +87,7 @@ def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor,
 def test_the_page_shows_a_real_trip_as_its_example_and_the_questions_open(visitor, base_url, viewport):
     live_trip(photo=True)
     page = visitor(viewport).new_page()
-    page.goto(f"{base_url}/for-creators")
+    page.goto(f"{base_url}/guides/make")
     expect(page.locator("#fc-example")).to_have_attribute("data-kind", "real")
     expect(page.locator("#fc-example")).to_contain_text("Three easy days in Santa Monica")
     first = page.locator(".fc-q").first
@@ -104,7 +104,7 @@ def test_the_page_shows_a_real_trip_as_its_example_and_the_questions_open(visito
 def test_text_pasted_before_signing_in_is_still_there_after(visitor, base_url, viewport):
     ctx = visitor(viewport)
     page = ctx.new_page()
-    page.goto(f"{base_url}/for-creators")
+    page.goto(f"{base_url}/guides/make")
     page.fill("#fc-text", "Day 1 we rode the wheel at the pier at 10:00 AM. Day 2 the Venice canals.")
     tap(page, viewport, page.locator("#fc-draft"))
     page.wait_for_url("**/signin**")

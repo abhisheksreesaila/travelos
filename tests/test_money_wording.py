@@ -20,14 +20,14 @@ def words(html):
     return " ".join(unescape(re.sub(r"<[^>]+>", " ", html)).split())
 
 
-def test_the_for_creators_page_says_it(client):
-    text = words(client.get("/for-creators").text)
+def test_the_make_a_guide_page_says_it(client):
+    text = words(client.get("/guides/make").text)
     assert NO_MARKER in text and "Flights from your trips pay you" in text
     assert not [o for o in OLD if o in text]
 
 
-def test_the_for_creators_terms_say_it_too(client):
-    terms = words(re.search(r'id="terms".*?</section>', client.get("/for-creators").text, re.S).group(0))
+def test_the_make_a_guide_terms_say_it_too(client):
+    terms = words(re.search(r'id="terms".*?</section>', client.get("/guides/make").text, re.S).group(0))
     assert "Paste your own Travelpayouts marker once. " + NO_MARKER in terms
 
 

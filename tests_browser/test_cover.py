@@ -352,7 +352,7 @@ def test_a_phone_shows_the_early_preview_label_beside_the_logo_and_sign_in(cover
     tops = {b[0]: b[2] for b in boxes}
     assert abs(tops["cv-btn"] - tops["ga-brand"]) < 16, boxes                          # Sign in stays beside the logo (D-458)
     links = page.evaluate("[...document.querySelectorAll('.cv-nav a')].map(a => a.getBoundingClientRect().top)")
-    assert max(links) - min(links) < 1, links                                          # the nav is one row: Creators · Community · Plan a trip
+    assert max(links) - min(links) < 1, links                                          # the nav is one row: Guides · Plan a trip
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -365,15 +365,15 @@ def test_the_doors_open_their_pages(cover, base_url, size):
     assert h2 < SIZES[size]["height"]
     if size == "390":
         assert h2 >= frame - 1, (h2, frame)      # the part's words land below the pinned frame, not under it (D-429's line is there)
-    page.locator(".cv-ch3 a", has_text="For creators").click()
-    page.wait_for_url("**/for-creators")
+    page.locator(".cv-ch3 a", has_text="Guides").click()
+    page.wait_for_url("**/guides")
     page.goto(f"{base_url}/")
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/signin")                                   # D-462: sign in, then / decides (the matrix or the trip)
     page.goto(f"{base_url}/")
-    page.locator(".cv-nav a", has_text="Community trips").click()
-    page.wait_for_url("**/community")
+    page.locator(".cv-nav a", has_text="Guides").click()
+    page.wait_for_url("**/guides")
 
 
 @pytest.mark.parametrize("size", [(390, 700), (390, 844), (800, 800), (900, 1000), (1100, 700), (1280, 800), (1440, 900)],

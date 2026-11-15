@@ -113,7 +113,7 @@ def test_help_opens_offline_for_the_person_who_opened_it_and_not_for_somebody_el
     ari.set_offline(False)
     sam = phone_page("sam.lee@example.com", workers="allow")
     page2 = sam.new_page()
-    page2.goto(base_url + "/community")
+    page2.goto(base_url + "/guides")
     page2.evaluate("navigator.serviceWorker.ready.then(() => true)")
     page2.reload()
     page2.wait_for_function("navigator.serviceWorker.controller !== null")

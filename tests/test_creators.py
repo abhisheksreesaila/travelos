@@ -211,13 +211,12 @@ def test_publish_puts_the_trip_in_the_hub_with_its_own_page(client):
     assert [c.source for c in hub.cards({}) if c.slug == slug] == ["YouTube"]
     assert "cr" not in session_data(client)  # the draft is gone, the trip is published
     done = client.get("/creators/done").text
-    assert f'href="/trips/{slug}"' in done and 'href="/community"' in done and "live" in done.lower()
-    hubhtml = client.get("/community").text
-    assert "Sun, tacos &amp; tides" in hubhtml and f'href="/trips/{slug}/book"' in hubhtml and "Your trip" in hubhtml
-    assert "Sun, tacos &amp; tides" in client.get("/community?src=creators").text
+    assert f'href="/trips/{slug}"' in done and 'href="/guides"' in done and "live" in done.lower()
+    hubhtml = client.get("/guides").text
+    assert "Sun, tacos &amp; tides" in hubhtml and f'href="/trips/{slug}"' in hubhtml and "Yours" in hubhtml
     page = client.get(f"/trips/{slug}")
     assert page.status_code == 200 and "Sun, tacos &amp; tides" in page.text and "From the vlog" in page.text
-    assert 'id="day-1"' in page.text and "The whole trip on one board" in page.text
+    assert 'id="g-day1"' in page.text      # F-262: the guide's day (the trip page's board of every day is not drawn)
 
 
 def test_the_trip_page_reflects_the_answers_and_edits(client):
@@ -226,8 +225,9 @@ def test_the_trip_page_reflects_the_answers_and_edits(client):
     save(client, days=["1", "2"], who=["pet"], season="fall", hl1="Mine one")
     submit(client, form="1", days=["1", "2"], who=["pet"], season="fall", hl1="Mine one")
     html = client.get(f"/trips/{slug_of(client)}").text
-    assert 'id="day-2"' in html and 'id="day-3"' not in html
-    assert "Pet friendly" in html and "Best in fall" in html and "Mine one" in html
+    assert 'id="g-day2"' in html and 'id="g-day3"' not in html
+    assert "With a pet" in html or "Travelling with a pet" in html
+    assert "Best season" in html and ">Fall<" in html and "Mine one" in html      # the creator's own answers, as tiles
     row = community.rows(owner=tid("ari"))[0]
     assert row["tags"] == ["pet"] and [c.days for c in hub.cards({}) if c.slug == row["slug"]] == [2]
 

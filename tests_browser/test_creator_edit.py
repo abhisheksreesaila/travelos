@@ -1,4 +1,4 @@
-"""F-259: a creator opens a draft's book, taps "Edit details", changes the details in the book's own look (the v2 editor, not the old form), moves and removes a stop, and sees it all saved in the
+"""F-259: a creator opens a draft's guide, taps "Edit details", changes the details in the guide's own look (the v2 editor, not the old form), moves and removes a stop, and sees it all saved in the
 book. The post is the recorded "48 Hours in Lisbon" (tests/fixtures/creator_import), the model's answer recorded too. Phone (390) and laptop (1440), light and dark; every control is 48px or more.
 Set F259_SHOTS=1 to save docs/report/f259-*.png."""
 import json
@@ -59,13 +59,13 @@ def stop_names(page, day=0):
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
-def test_the_books_edit_details_opens_the_v2_editor_and_what_is_changed_is_saved_in_the_book(lisbon, browser, base_url, viewport):
+def test_the_guides_edit_details_opens_the_v2_editor_and_what_is_changed_is_saved_in_the_guide(lisbon, browser, base_url, viewport):
     ctx, page, did = drafted(browser, base_url, viewport, lisbon)
-    page.goto(f"{base_url}/creators/import/{did}/book")
+    page.goto(f"{base_url}/creators/import/{did}/guide")
     page.click("#detailsBtn")
     page.wait_for_url(f"**/creators/import/{did}")
     expect(page.locator("main .ed")).to_be_visible()
-    expect(page.locator("h1")).to_have_text("The details of your book")
+    expect(page.locator("h1")).to_have_text("The details of your guide")
     assert page.locator("link[href*='scrapbook.css']").count() == 0 and page.locator("link[href*='cvedit.css']").count() == 1      # the old form's look is not on this page
     assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Newsreader")
     assert overflow(page) <= 1
@@ -85,10 +85,10 @@ def test_the_books_edit_details_opens_the_v2_editor_and_what_is_changed_is_saved
     page.wait_for_url(f"**/creators/import/{did}")
     assert third not in stop_names(page)
     page.click("#ed-save-book")
-    page.wait_for_url(f"**/creators/import/{did}/book")
-    expect(page.locator("#bookv .cover .h1").first).to_have_text("Lisbon in two days")
-    expect(page.locator("#bookv")).to_contain_text("Belém, slowly")
-    shot(page, f"book-{viewport['width']}")
+    page.wait_for_url(f"**/creators/import/{did}/guide")
+    expect(page.locator("h1 .ed")).to_have_text("Lisbon in two days")
+    expect(page.locator("#g-day1")).to_contain_text("Belém, slowly")
+    shot(page, f"guide-{viewport['width']}")
     # the details were really kept: back in the editor they are still there
     page.click("#detailsBtn")
     expect(page.locator("input[name='d0s1_note']")).to_have_value("Go before the queues")      # the stop that moved down took its time and note with it
@@ -121,7 +121,7 @@ def test_the_editor_in_dark_mode_keeps_its_contrast_and_fits(lisbon, browser, ba
 
 def test_a_refused_publish_links_to_the_details(lisbon, browser, base_url):
     ctx, page, did = drafted(browser, base_url, PHONE, lisbon)
-    page.goto(f"{base_url}/creators/import/{did}/book")
+    page.goto(f"{base_url}/creators/import/{did}/guide")
     page.click("#pubBtn")
     page.click("#mine")
     page.evaluate("document.getElementById('mine').setAttribute('aria-checked', 'true'); document.getElementById('pubGo').disabled = false")
@@ -131,5 +131,5 @@ def test_a_refused_publish_links_to_the_details(lisbon, browser, base_url):
     expect(page.locator("#pubError")).to_contain_text("Nothing yet.")
     page.click("#pubError a")
     page.wait_for_url(f"**/creators/import/{did}")
-    expect(page.locator("h1")).to_have_text("The details of your book")
+    expect(page.locator("h1")).to_have_text("The details of your guide")
     ctx.close()

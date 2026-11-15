@@ -120,8 +120,8 @@ def test_publish_from_the_phone_then_a_stranger_reads_it_and_it_comes_down(famil
     expect(p.locator("h1")).to_have_text("Ari")
     assert overflow(p) <= 1
     shot(p, "profile-phone")
-    p.goto(f"{base_url}/community")
-    expect(p.locator(".hub-card")).to_have_count(1)
+    p.goto(f"{base_url}/guides")
+    expect(p.locator(".gcard")).to_have_count(1)
     assert overflow(p) <= 1
     shot(p, "community-phone")
 
@@ -162,7 +162,7 @@ def test_the_laptop_editor_preview_and_public_page_are_calm_and_fit(family, brow
     p.goto(f"{base_url}/creators/ari")
     assert overflow(p) <= 1
     shot(p, "profile-laptop")
-    p.goto(f"{base_url}/community")
+    p.goto(f"{base_url}/guides")
     assert overflow(p) <= 1
     stranger.close()
 
@@ -176,7 +176,7 @@ def test_the_public_and_publish_pages_wear_the_coast_look_with_no_blur(family, b
         page.goto(base_url + path)
         look = page.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and not look["blur"], path
-    for path in (href, "/creators/ari", "/creators"):      # F-253: /community wears design language v2 (its frosted glass is the one the lint allows)
+    for path in (href, "/creators/ari", "/creators"):      # F-253, F-262: /guides wears design language v2 (its frosted glass is the one the lint allows)
         p.goto(base_url + path)
         look = p.evaluate("() => ({fam: document.documentElement.classList.contains('oq-family-travel'), accent: getComputedStyle(document.documentElement).getPropertyValue('--oq-accent').trim(), blur: [...document.querySelectorAll('*')].some(e => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== 'none') || (s.filter || '').includes('blur'); })})")
         assert look["fam"] and look["accent"].upper() == "#0B0B0D" and not look["blur"], path      # F-200: Coast on Direction A, the ink accent (it was the orange #c0401c, D-60)

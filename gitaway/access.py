@@ -27,6 +27,7 @@ OPEN_POSTS = (
     "/trips/switch",                       # which trip I am looking at (my own `members.trip_id`)
     "/family/phone",                       # my own phone number on the Help tab (F-069): every member, viewers too
     "/family/switch", "/family/stay",      # which of my families I am working in; dismissing the "you joined" notice
+    "/guides/make/trip",                   # F-262: a draft of my planned trip is the person's own (reading the plan changes nothing)
     "/creators", "/creators/draft", "/creators/finish", "/creators/import",   # a creator draft (the old paste-a-link one, and F-183 import drafts under /creators/import/) is a person's own, published to the community, not a family's
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # my own phone's morning plan reminder (F-066): every member, viewers too
     "/trip/photos", "/trip/photos/remove",   # adding a photo (a viewer too: it changes no plan) and removing one (the route checks author-or-admin) (F-071)

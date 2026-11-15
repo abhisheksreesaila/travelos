@@ -1638,12 +1638,13 @@ Founder: "when you switch to dark the sun has to become the moon … make them c
 - [ ] reading pages (a guide, the guide editor, a creator's import) get a quiet sky: no sun, clouds or mood object, a soft gradient that frames the content column; booking and planning keep theirs
 - [ ] 4.5:1 everywhere, light and dark
 
-## F-262 Book · Plan · Guides, and the guide page [todo]
-- [ ] the v2 top bar is Book · Plan · Guides (Family leaves the bar; the avatar menu keeps account items; the family lives in Planning's Together drawer)
-- [ ] /guides (was /community) is the hub: search, filters, popular guides, "Make a guide" (from your planned trip, or paste your blog); old /community and /for-creators addresses redirect
-- [ ] a guide is the prototype's run sheet: at-a-glance tiles, a sticky day strip, a time rail of stop cards, master-detail (side panel on a laptop, sheet on a phone) with the creator's words, details, tip and their own link labelled as theirs; replaces the book view
-- [ ] Make a guide from a pasted blog (the magic import, restyled to land in the run sheet) and from a planned trip (calendar → draft, flights and hotel private); inline edit; publish; the Instagram card
-- [ ] honesty rules stand: the creator's own words and links only, nothing invented
+## F-262 Book · Plan · Guides, and the guide page [review]
+- [x] the v2 top bar is Book · Plan · Guides (Family leaves the bar; the avatar menu keeps account items; the family lives in Planning's Together drawer)
+- [x] /guides (was /community) is the hub: search, filters, popular guides, "Make a guide" (from your planned trip, or paste your blog); old /community and /for-creators addresses redirect
+- [x] a guide is the prototype's run sheet: at-a-glance tiles, a sticky day strip, a time rail of stop cards, master-detail (side panel on a laptop, sheet on a phone) with the creator's words, details, tip and their own link labelled as theirs; replaces the book view
+- [x] Make a guide from a pasted blog (the magic import, restyled to land in the run sheet) and from a planned trip (calendar → draft, flights and hotel private); inline edit; publish; the Instagram card
+- [x] honesty rules stand: the creator's own words and links only, nothing invented
+Built in D-710..D-721 (docs/decisions.md): `/guides`, `/guides/make`, the guide at `/trips/<slug>` and `/creators/import/<id>/guide`, Add to my plan, a draft from the planned trip, the share dialog with the Instagram card. Prototype-vs-build screenshots: docs/report/f262-*.png. Where it differs from the prototype: D-721.
 
 ## F-263 Guides in context [todo]
 Needs: F-262

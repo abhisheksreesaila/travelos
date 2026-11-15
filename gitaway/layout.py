@@ -99,9 +99,9 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
-# The site's way in, the same everywhere (founder, 2026-11-13, D-458): Plan a trip is drawn as `plan_href()`. Community trips is always there: off the
-# showcase, before anyone has shared a trip, its page says so.
-NAV = [("For creators", "/for-creators"), ("Community trips", "/community"), ("Plan a trip", "/plan/matrix")]
+# The site's way in, the same everywhere (founder, 2026-11-13, D-458; F-262): Plan a trip is drawn as `plan_href()`. Guides is always there: off the
+# showcase, before anyone has shared a guide, its page says so.
+NAV = [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]
 
 
 MARK = ('<svg class="ga-mark" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false">'
@@ -234,7 +234,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
         return (
             Title(f"GitAway · {title}" if title else "GitAway"),
             *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-            Div(v2_.bg(mood, quiet), v2_.top(current, *(("Sample books",) if "cv" in str(v2) else ())), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
+            Div(v2_.bg(mood, quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
         )
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),

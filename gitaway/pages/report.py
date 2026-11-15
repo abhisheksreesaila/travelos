@@ -51,7 +51,7 @@ def form_page(kind, target, name, *, reason="", note="", email="", error=""):
 
 def thanks_page():
     return page("Report sent", Section(Div(Span(icon("check", 28, 2.4), cls="rp-badge", aria_hidden="true"), H1("Report sent"), P(THANKS, id="rp-thanks", cls="rp-lede"),
-                                           A("Back to GitAway", href="/community", cls="btn btn-primary"), cls="rp-top"), cls="rp ga-wrap"), head=HEAD)
+                                           A("Back to GitAway", href="/guides", cls="btn btn-primary"), cls="rp-top"), cls="rp ga-wrap"), head=HEAD)
 
 
 def register(app):

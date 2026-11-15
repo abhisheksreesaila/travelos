@@ -37,7 +37,7 @@ def no_sideways_scroll(page):
 
 @SIZES
 def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, viewport):
-    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part; Community trips is in its header (D-458), whose
+    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part; Guides is in its header (D-458, F-262), whose
     page says nobody has shared yet; its door signs in, then opens the start page."""
     page = visit("/", viewport)
     assert no_sideways_scroll(page)
@@ -46,8 +46,8 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/signin")
-    page.goto(page.url.split("/signin")[0] + "/community")
-    assert page.get_by_text("No one has shared a trip yet").is_visible()
+    page.goto(page.url.split("/signin")[0] + "/guides")
+    assert page.get_by_text("No guides yet").first.is_visible()
 
 
 @SIZES

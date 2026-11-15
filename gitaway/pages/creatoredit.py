@@ -77,22 +77,22 @@ def editor_page(d, error="", just=False, captain=False):
     place = Select(*[Option(label, value=k, selected=k == d["place"] or None) for k, label in [*cd.PLACES.items(), ("other", "Somewhere else")]], name="place", id="ci-place", cls="ed-in")
     unsure = sum(1 for day in d["days"] for s in day["stops"] if s["name"] == cd.UNNAMED)
     status = Span(ico("check"), "Published", cls="tag live") if d["live"] else Span("Draft: nobody can see this yet", cls="tag")
-    top = Div(Div(status, A(ico("l"), "Back to the book", href=f"{base}/book", cls="tonal", id="ed-book") if not captain else "", cls="ed-top-row"),
-              H1("Check this pre-draft" if captain else "The details of your book", cls="disp"),
-              P("Nothing is public. Fix what the model got wrong, then send the claim link." if captain else "Everything the book says, in one place. Nothing is public until you publish it from the book; "
-                "fix a word right in the book any time too.", cls="ed-lede"),
+    top = Div(Div(status, A(ico("l"), "Back to the guide", href=f"{base}/guide", cls="tonal", id="ed-book") if not captain else "", cls="ed-top-row"),
+              H1("Check this pre-draft" if captain else "The details of your guide", cls="disp"),
+              P("Nothing is public. Fix what the model got wrong, then send the claim link." if captain else "Everything the guide says, in one place. Nothing is public until you publish it from the guide; "
+                "fix a word right in the guide any time too.", cls="ed-lede"),
               *[P(n, role="note", cls="ed-note", id=f"ci-notice-{i}") for i, n in enumerate(d["notices"])],
               P(f"{unsure} stop{'s' if unsure != 1 else ''} GitAway was not sure of {'are' if unsure != 1 else 'is'} marked \"{cd.UNNAMED}\". Name {'them' if unsure != 1 else 'it'} or take {'them' if unsure != 1 else 'it'} out.",
                 role="note", cls="ed-note ci-unsure-note", id="ci-unsure") if unsure else "", cls="ed-top")
     waiting = d["live"] and community.review_state(d["slug"]) == "pending"      # F-194: published, but in no list until the captain says yes
     done = Div(Span(ico("check"), "It's live", cls="tag live"),
                P("It is published but unlisted: only people with its link can see it until the captain approves it. Publish again to update it." if waiting else "Anyone can read it and fork it now. Publish again to update it."),
-               Div(A(ico("share"), "View your trip page", href=f"/trips/{d['slug']}", cls="go", id="pb-view"), *([] if waiting else [A("See it in Community trips", href="/community", cls="tonal")]), cls="ed-row"),
+               Div(A(ico("share"), "View your trip page", href=f"/trips/{d['slug']}", cls="go", id="pb-view"), *([] if waiting else [A("See it in Guides", href="/guides", cls="tonal")]), cls="ed-row"),
                cls="ed-card ed-live pb-live", role="status") if d["live"] and just else ""
     paste = Details(Summary("Your pasted text"), P(d["text"], cls="ed-pasted ci-pasted"), cls="ed-card ci-details", id="ci-pasted") if d.get("text") else ""
     tips = (d["tips"] + [""] * 3)[:max(3, min(len(d["tips"]) + 1, cd.MAX_TIPS))]
-    pics = Section(H2("The cover", cls="ed-h"), P(f"Optional. Tap up to {cd.MAX_PICKS} of your post's pictures to put in the book, and the star for the cover. They are copied from your own post and stripped of where they were taken; "
-                                                   "without one the book has a drawing, labelled as one.", cls="ed-hint"),
+    pics = Section(H2("The cover", cls="ed-h"), P(f"Optional. Tap up to {cd.MAX_PICKS} of your post's pictures to put in the guide, and the star for the cover. They are copied from your own post and stripped of where they were taken; "
+                                                   "without one the guide has a drawing, labelled as one.", cls="ed-hint"),
                    Div(*[_tile(d, n, u) for n, u in enumerate(d["images"])], cls="ed-grid"), cls="ed-card ci-pics", id="ci-pics") if d["images"] else ""
     form = Form(
         Button("Save", type="submit", name="do", value="save", cls="v2-sr", tabindex="-1", aria_hidden="true"),     # Enter in a field saves; it never removes a stop
@@ -109,7 +109,7 @@ def editor_page(d, error="", just=False, captain=False):
                                               for i, t in enumerate(tips)], cls="ed-card pb-tips"),
         Div(P(error, role="alert", cls="v2-error", id="pb-error") if error else "",
             *([Button("Save draft", type="submit", name="do", value="save", cls="go", id="pb-save"), A("Back to the admin page", href="/admin#cc-section", cls="tonal", id="pb-back-admin")] if captain else
-              [Button("Save and open the book", type="submit", name="do", value="book", cls="go", id="ed-save-book"), Button("Save draft", type="submit", name="do", value="save", cls="tonal", id="pb-save"),
+              [Button("Save and open the guide", type="submit", name="do", value="book", cls="go", id="ed-save-book"), Button("Save draft", type="submit", name="do", value="save", cls="tonal", id="pb-save"),
                Button("Preview the public page", type="submit", name="do", value="preview", cls="tonal", id="pb-preview")]), cls="ed-bar v2-glass"),
         action=base, method="post", id="ci-edit", cls="ed-form")
 
@@ -119,4 +119,4 @@ def editor_page(d, error="", just=False, captain=False):
     unpub = confirm("Unpublish", "pb-unpublish", "This takes the page off GitAway for everyone. Your draft stays here, so you can publish again; its pictures are deleted and picked again then.", "unpublish", "Yes, take it down", "pb-unpublish-yes") if d["live"] else ""
     delete = confirm("Delete this draft", "ci-delete", "This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone.", "delete", "Yes, delete it", "ci-delete-yes")
     body = Div(top, done, _source(d), paste, form, *([] if captain else [unpub, delete]), cls="ed ci-edit")
-    return page("Check this pre-draft" if captain else "The details of your book", body, current="/for-creators", head=HEAD, v2="cv is-results", quiet=True, noindex=True)
+    return page("Check this pre-draft" if captain else "The details of your guide", body, current="/guides", head=HEAD, v2="cv is-results", quiet=True, noindex=True)

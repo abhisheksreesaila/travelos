@@ -21,13 +21,14 @@ def shot(page, name):
         page.screenshot(path=str(SHOTS / f"f255-{name}.png"))
 
 
-def test_the_pill_marks_plan_and_leads_to_book_and_family(plan):  # noqa: F811
+def test_the_pill_marks_plan_and_leads_to_book_and_guides(plan):  # noqa: F811
     page = plan(DESKTOP)
     pill = page.locator(".v2-sections")
-    expect(pill.locator("a")).to_have_text(["Plan", "Book", "Family"])
+    expect(pill.locator("a")).to_have_text(["Book", "Plan", "Guides"])      # F-262: Family left the bar
     expect(pill.locator("a[aria-current='page']")).to_have_text(["Plan"])
-    pill.get_by_text("Family").click()
-    page.wait_for_url("**/family")
+    pill.get_by_text("Guides").click()
+    page.wait_for_url("**/guides")
+    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text(["Guides"])
 
 
 def test_the_avatar_opens_the_menu_and_escape_closes_it_with_focus_back_on_the_avatar(plan):  # noqa: F811
@@ -37,7 +38,7 @@ def test_the_avatar_opens_the_menu_and_escape_closes_it_with_focus_back_on_the_a
     page.click(ME)
     expect(page.locator(MENU)).to_be_visible()
     expect(page.locator(ME)).to_have_attribute("aria-expanded", "true")
-    expect(page.locator(f"{MENU} [role=menuitem]")).to_have_text(["Family", "Community trips", "For creators", "Sign out"])
+    expect(page.locator(f"{MENU} [role=menuitem]")).to_have_text(["Family members", "Sign out"])      # F-262: the family stays one tap away in the menu
     expect(page.locator(f"{MENU} a").first).to_be_focused()
     page.keyboard.press("Escape")
     expect(page.locator(MENU)).to_be_hidden()
@@ -62,8 +63,10 @@ def test_the_keyboard_opens_walks_and_leaves_the_menu(plan):  # noqa: F811
     page.focus(ME)
     page.keyboard.press("Enter")
     expect(page.locator(f"{MENU} a").first).to_be_focused()
-    page.keyboard.press("ArrowDown")
-    expect(page.locator(f"{MENU} a").nth(1)).to_be_focused()
+    page.keyboard.press("ArrowDown")      # F-262: the menu is one link (Family members) and Sign out
+    expect(page.locator(f"{MENU} button")).to_be_focused()
+    page.keyboard.press("Home")
+    expect(page.locator(f"{MENU} a").first).to_be_focused()
     page.keyboard.press("End")
     expect(page.locator(f"{MENU} button")).to_be_focused()
     page.keyboard.press("ArrowDown")      # wraps to the first
@@ -100,16 +103,16 @@ def test_targets_are_48px_and_every_word_reads_over_the_glass_with_the_menu_open
     small = page.evaluate("[...document.querySelectorAll('#v2-menu [role=menuitem]')].map(e => e.getBoundingClientRect().height)")
     assert min(small) >= 47.5, small
     m = audit(page)
-    ours = lambda rows: [r for r in rows if any(w in r for w in ("Plan", "Book", "Family", "Community", "creators", "Sign out"))]      # noqa: E731
+    ours = lambda rows: [r for r in rows if any(w in r for w in ("Plan", "Book", "Guides", "Family", "Sign out"))]      # noqa: E731
     assert ours(m["low"]) == [] and m["glass"] == [] and m["wide"] <= 1, m
-    assert [s for s in m["small"] if "Plan" in s or "Book" in s or "Family" in s or "Sign out" in s or "creators" in s or "Community" in s] == [], m["small"]
+    assert [s for s in m["small"] if "Plan" in s or "Book" in s or "Guides" in s or "Family" in s or "Sign out" in s] == [], m["small"]
 
 
 def test_on_a_phone_the_pill_floats_at_the_bottom_above_the_safe_area_and_the_avatar_stays_top_right(plan):  # noqa: F811
     page = plan(PHONE)
     box = page.locator(".v2-sections").bounding_box()
     assert box["y"] + box["height"] > 844 - 24 and box["y"] + box["height"] <= 844 - 8
-    for label in ("Plan", "Book", "Family"):      # nothing covers it: the calendar's own dock rides above the pill, and a tap on each word lands on that link
+    for label in ("Book", "Plan", "Guides"):      # nothing covers it: the calendar's own dock rides above the pill, and a tap on each word lands on that link
         assert page.evaluate("t => { const a = [...document.querySelectorAll('.v2-sections a')].find(a => a.textContent === t), r = a.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === a; }", label), label
     dock = page.locator(".dock").bounding_box()
     assert dock["y"] + dock["height"] <= box["y"], (dock, box)

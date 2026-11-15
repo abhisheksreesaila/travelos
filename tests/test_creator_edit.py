@@ -26,12 +26,12 @@ def names(d, day=0):
     return [s["name"] for s in creatordraft.get(tid(), d["id"])["days"][day]["stops"]]
 
 
-def test_the_editor_is_a_page_in_the_books_language_not_the_old_form(made):
+def test_the_editor_is_a_page_in_the_guides_language_not_the_old_form(made):
     client, d = made
     html = editor(client, d)
     assert 'class="ga-page v2 cv' in html and "/assets/css/cvedit.css" in html and "/assets/css/cv2.css" in html
     assert "scrapbook.css" not in html and "creatorimport.css" not in html          # the old form's stylesheets are gone from this page
-    assert f'href="/creators/import/{d["id"]}/book"' in html and "Back to the book" in words(html)
+    assert f'href="/creators/import/{d["id"]}/guide"' in html and "Back to the guide" in words(html)
     fields = dict(form_of(html, f"/creators/import/{d['id']}", "ci-edit"))
     assert fields["title"] == creatordraft.get(tid(), d["id"])["title"] == "48 hours in Lisbon"
     assert fields["d0s0_name"] == "Belem Tower" and fields["d0s3_name"] == "Pastéis de Belém"      # each stop, in the post's order
@@ -67,10 +67,10 @@ def test_deleting_a_stop_and_editing_the_details_are_saved(made):
     assert (day["stops"][0]["time"], day["stops"][0]["note"]) == ("9:00 AM", "Go early")
 
 
-def test_the_save_and_open_the_book_button_saves_then_shows_the_book(made):
+def test_the_save_and_open_the_guide_button_saves_then_shows_the_guide(made):
     client, d = made
     r = posted(client, d, "book", title="A new title")
-    assert r.status_code == 303 and r.headers["location"] == f"/creators/import/{d['id']}/book"
+    assert r.status_code == 303 and r.headers["location"] == f"/creators/import/{d['id']}/guide"
     assert "A new title" in words(client.get(r.headers["location"]).text)
 
 
@@ -88,10 +88,10 @@ def test_the_book_links_to_the_details_editor(made):
     assert re.search(rf'<a[^>]+href="/creators/import/{d["id"]}"[^>]*>', html) and "Edit details" in words(html)
 
 
-def test_my_drafts_opens_the_book_and_offers_the_details(made):
+def test_my_drafts_opens_the_guide_and_offers_the_details(made):
     client, d = made
     html = client.get("/creators/drafts").text
-    assert f'href="/creators/import/{d["id"]}/book"' in html and f'href="/creators/import/{d["id"]}"' in html and "Details" in words(html)
+    assert f'href="/creators/import/{d["id"]}/guide"' in html and f'href="/creators/import/{d["id"]}"' in html and "Details" in words(html)
 
 
 def test_a_publish_that_is_refused_says_what_to_fix_and_links_the_editor(made):

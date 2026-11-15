@@ -75,10 +75,11 @@ def test_a_hub_trip_can_be_forked_like_a_sample_itinerary(client):
 
 
 def test_the_trip_page_says_when_it_is_already_in_your_forks(client):
+    classic = "la-for-two-slow-mornings"      # F-262: a creator's trip is a guide (Add to my plan); a trip that is not one keeps its trip page and the Fork button
     sign_in(client)
-    assert "Fork this trip" in client.get(f"/trips/{TRIP}").text
-    fork(client)
-    html = client.get(f"/trips/{TRIP}").text
+    assert "Fork this trip" in client.get(f"/trips/{classic}").text
+    fork(client, classic)
+    html = client.get(f"/trips/{classic}").text
     assert "In your forks" in html and 'href="/forks"' in html
 
 
@@ -86,7 +87,7 @@ def test_the_trip_page_says_when_it_is_already_in_your_forks(client):
 
 def test_signed_out_save_goes_through_sign_in_with_intent_save_and_lands_saved(client):
     page = client.get(f"/trips/{TRIP}").text
-    assert 'action="/save"' in page and 'aria-pressed="false"' in page
+    assert 'id="heartBtn"' in page and 'aria-pressed="false"' in page      # F-262: the guide's heart is the same Save
     r = client.post("/save", data={"next": f"/trips/{TRIP}"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/signin?next=/trips/{TRIP}&intent=save"
     assert "save this trip" in client.get(r.headers["location"]).text
@@ -94,7 +95,7 @@ def test_signed_out_save_goes_through_sign_in_with_intent_save_and_lands_saved(c
     assert r.headers["location"] == f"/trips/{TRIP}"
     assert ses.saved(session_data(client)) == [TRIP]
     html = client.get(f"/trips/{TRIP}").text
-    assert 'action="/unsave"' in html and 'aria-pressed="true"' in html
+    assert 'id="heartBtn"' in html and 'aria-pressed="true"' in html
 
 
 def test_a_plain_sign_in_on_a_trip_page_does_not_save_it(client):
@@ -110,8 +111,8 @@ def test_signed_in_save_and_unsave_are_idempotent_and_local_only(client):
         r = client.post("/save", data={"next": f"/trips/{TRIP}"}, follow_redirects=False)
         assert r.headers["location"] == f"/trips/{TRIP}"
     assert ses.saved(session_data(client)) == [TRIP]
-    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/community"
-    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/community"
+    assert client.post("/save", data={"next": "//evil.example"}, follow_redirects=False).headers["location"] == "/guides"
+    assert client.post("/save", data={"next": "/plan"}, follow_redirects=False).headers["location"] == "/guides"
     for _ in range(2):
         assert client.post("/unsave", data={"next": f"/trips/{TRIP}"}, follow_redirects=False).status_code == 303
     assert ses.saved(session_data(client)) == []

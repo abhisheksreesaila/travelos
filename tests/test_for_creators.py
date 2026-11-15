@@ -1,4 +1,4 @@
-"""F-186: the For creators page at /for-creators, in both showcase modes. The page must exist in production before anyone has published (D-107), sell the idea with the paste box
+"""F-186, F-262: the page that makes a guide from a post, at /guides/make (it was For creators), in both showcase modes. The page must exist in production before anyone has published (D-107), sell the idea with the paste box
 first, show a real example when there is one and a labelled drawn one when there is not, and carry the terms and the questions."""
 
 import re
@@ -31,31 +31,32 @@ def stranger(client):
 
 def test_the_page_is_open_to_everyone_before_anyone_has_published(client, mode):
     assert not community.has_real()
-    r = client.get("/for-creators")
-    assert r.status_code == 200 and "Paste your post. It becomes a trip families can book." in words(r.text)
+    r = client.get("/guides/make")
+    assert r.status_code == 200 and "Paste your post. It becomes a guide families can plan from." in words(r.text)
     sign_in(client)
-    assert client.get("/for-creators").status_code == 200
+    assert client.get("/guides/make").status_code == 200
 
 
 def test_the_roster_at_creators_still_answers_404_in_production_until_the_first_publish(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert client.get("/creators").status_code == 404 and client.get("/for-creators").status_code == 200
+    assert client.get("/creators").status_code == 404 and client.get("/guides/make").status_code == 200
     live_trip()
     assert client.get("/creators").status_code == 200
 
 
-def test_it_is_linked_from_the_header_the_landing_footer_and_the_signed_in_menu(client, mode):
-    top = re.search(r'<div class="v2-top">.*?</nav>', client.get("/community").text, re.S).group(0)         # F-253: the shelf's top bar carries the three links
-    assert 'href="/for-creators"' in top and 'href="/community"' in top
+def test_it_is_linked_from_the_hub_the_header_and_the_landing_footer(client, mode):
+    top = re.search(r'<div class="v2-top">.*?</nav>', client.get("/guides").text, re.S).group(0)         # F-253, F-262: the hub's top bar carries Guides; its Make a guide panel leads here
+    assert 'href="/guides"' in top
+    assert 'href="/guides/make"' in client.get("/guides").text
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert 'href="/for-creators"' in footer and "For creators" in footer
+    assert 'href="/guides"' in footer
     sign_in(client)
-    assert 'href="/for-creators"' in client.get("/family").text
+    assert 'href="/guides/make"' in client.get("/guides").text
 
 
 def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     hidden = re.findall(r'href="(/discover|/creators(?!/import|/settings)|/forks|/share|/rides|/sandbox)[^"]*"', without_bar(html))
     assert hidden == []
     for sample in ("Our LA family week", "312 families", "Forked by", *[t.title for t in itineraries.ITINERARIES.values()]):
@@ -65,21 +66,21 @@ def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, 
 # ---- what it says --------------------------------------------------------------------------------------------------
 
 def test_the_box_comes_first_then_the_example_the_promises_the_terms_and_the_questions(client, mode):
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     order = [html.index(x) for x in ('id="fc-paste"', 'id="fc-example"', 'class="fc-promises', 'id="terms"', 'id="faq"')]      # F-253: the landing's box first, then what it always had
     assert order == sorted(order)
 
 
 def test_the_paste_box_posts_to_the_import(client, mode):
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     form = re.search(r'<form[^>]*id="fc-paste"[^>]*>', html).group(0)
     assert 'action="/creators/import"' in form and 'method="post"' in form
-    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>Make my book(?:<svg.*?</svg>)?<', html)
+    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>Make my guide(?:<svg.*?</svg>)?<', html)
     assert re.search(r'<button[^>]*value="manual"[^>]*>Or write it yourself<', html)
 
 
 def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, mode):
-    text = words(client.get("/for-creators").text)
+    text = words(client.get("/guides/make").text)
     for promise in ("Under a minute", "Flights from your trips pay you", "It links back to your post"):
         assert promise in text
     assert "Free. Terms shown on day one." in text
@@ -89,21 +90,21 @@ def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, 
 
 
 def test_the_questions_say_what_to_paste_for_instagram_and_youtube(client, mode):
-    text = words(client.get("/for-creators").text)
+    text = words(client.get("/guides/make").text)
     assert "paste the caption. We keep your link as the source" in text
     assert "For a better draft, paste the transcript into the box" in text
     assert text.count("?") >= 6
 
 
 def test_every_question_opens_and_closes_with_a_tap_and_no_script(client, mode):
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     assert len(re.findall(r"<details[^>]*class=\"fc-q\"", html)) == 8 and html.count("<summary>") == 8
 
 
 # ---- the live example ----------------------------------------------------------------------------------------------
 
 def test_with_nothing_published_the_example_is_drawn_and_says_so(client, mode):
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     assert 'data-kind="drawn"' in html and "Example" in html and "An example to show the shape. Your trip is drafted from your own post." in words(html)
     assert "Open the trip" not in html
 
@@ -111,12 +112,12 @@ def test_with_nothing_published_the_example_is_drawn_and_says_so(client, mode):
 def test_the_example_is_the_most_forked_real_trip(client, mode):
     one = live_trip("maya@example.com", "Maya Chen", "Three easy days in Santa Monica")[0]
     two = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]
-    assert two["slug"] in client.get("/for-creators").text            # nothing forked yet: the newest
+    assert two["slug"] in client.get("/guides/make").text            # nothing forked yet: the newest
     for who in ("ari", "sam"):
         c = stranger(client)
         sign_in(c, who)
         assert c.post("/fork", data={"next": f"/trips/{one['slug']}"}, follow_redirects=False).status_code in (200, 303)
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     assert 'data-kind="real"' in html and f'href="/trips/{one["slug"]}"' in html and two["slug"] not in html
     text = words(html)
     assert "A trip made this way" in text and "2 forks" in text and "Three easy days in Santa Monica" in text and "by Maya Chen" in text
@@ -140,15 +141,15 @@ def test_a_taken_down_trip_is_never_the_example(client, mode):
     one = live_trip("maya@example.com", "Maya Chen", "Three easy days in Santa Monica")[0]
     two = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]
     community.take_down(two["slug"])
-    html = client.get("/for-creators").text
+    html = client.get("/guides/make").text
     assert one["slug"] in html and two["slug"] not in html
     community.take_down(one["slug"])
-    assert 'data-kind="drawn"' in client.get("/for-creators").text
+    assert 'data-kind="drawn"' in client.get("/guides/make").text
 
 
 def test_the_example_shows_the_trips_photo(client, mode):
     live_trip(photo=True)
-    assert 'src="/assets/photos/venice-beach-los-angeles-hero.jpg"' in client.get("/for-creators").text
+    assert 'src="/assets/photos/venice-beach-los-angeles-hero.jpg"' in client.get("/guides/make").text
 
 
 # ---- the box posts to the import -----------------------------------------------------------------------------------

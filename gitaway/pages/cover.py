@@ -10,7 +10,7 @@ The story of the brief (docs/briefs/unified-booking.md "The cover tells this sto
                     3 Leave a trail            the trip as a card ready to post; a creator's trip opens into its own matrix
     the close     the headline again and Start a trip, then the footer.
 
-The header is the site's way in (founder, 2026-11-13): For creators, Community trips and Plan a trip (`layout.NAV`), then Sign in. Start a trip and
+The header is the site's way in (founder, 2026-11-13): Guides and Plan a trip (`layout.NAV`), then Sign in. Start a trip and
 Plan a trip are one door, `layout.plan_href()`: sign in, then `/` decides: the family's trip, or the trip matrix (D-461).
 
 No jitter by construction (D-427): the frame is CSS sticky; assets/js/cover.js only sets data-part on the stage from an IntersectionObserver and adds
@@ -41,7 +41,7 @@ LEDE = "Flights, stays and the drive, added up for every place and date you migh
 OG_IMAGE = "/assets/cover/og.jpg"
 # the phone layout: cover.css uses this same query
 PHONE_Q = "(max-width: 720px)"
-SHORT = {"For creators": "Creators", "Community trips": "Community"}      # the phone's header row (D-458)
+SHORT = {}      # the phone's header row (D-458): every label fits as it is since F-262
 DISCLOSURE = "Every family, price and trip on this page is made up, to show how it works. The places and their weather are real."
 
 # the three parts: (number, its name, its headline, what it says, an id to link to). A headline is its ink words and its soft words, each a run of
@@ -292,7 +292,7 @@ def _part(n, name, two, text, anchor):
     if n == "1":
         extra = (P(DISCLOSURE, cls="cv-note ga-fine"),)
     if n == "3":
-        extra = (A("For creators", icon("arrow-right", stroke=2), href="/for-creators", cls="cv-btn tonal cv-small"),)
+        extra = (A("Guides", icon("arrow-right", stroke=2), href="/guides", cls="cv-btn tonal cv-small"),)
     return Div(Div(P(f"0{n} · {name}", cls="cv-n"), H2(*_phrases(ink), *((Em(*_phrases(soft)),) if soft else ())),
                    *((Span(TRAIL_SUB, cls="cv-subpill"),) if n == "3" else ()), P(text, cls="cv-say"), *extra, cls="cv-card"),
                cls=f"cv-ch cv-ch{n}", data_n=n, id=anchor)

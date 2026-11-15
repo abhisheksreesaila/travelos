@@ -255,11 +255,12 @@ def test_the_public_page_draws_the_link_sponsored_and_says_it_is_the_creators(dr
     save(client, did, name="Maya Chen")
     slug = named_publish(client, did)
     html = without_bar(client.__class__(client.app).get(f"/trips/{slug}").text)
-    tags = re.findall(r'<a [^>]*class="stop-link"[^>]*>', html)
+    tags = re.findall(r'<a [^>]*class="g-linkrow"[^>]*>', html)      # F-262: the guide's details carry the creator's link (the badge on the card is the same link)
     assert len(tags) == 2
     one = unescape(tags[0])
     assert f'href="{HOTEL}"' in one and 'rel="sponsored noopener"' in one and 'target="_blank"' in one and "noreferrer" not in one
-    assert re.search(r'<a [^>]*class="stop-link"[^>]*>.*?<span>booking\.com</span>', html, re.S) and "<span>viator.com</span>" in html
+    assert re.search(r'<a [^>]*class="g-linkrow"[^>]*>.*?<span class="g-host">booking\.com</span>', html, re.S) and '<span class="g-host">viator.com</span>' in html
+    assert html.count("GitAway adds nothing to the price.") == 2
     assert re.search(r'id="own-links"[^>]*>Links on a stop are Maya Chen&#x27;s own. They may earn them a commission\.<', html) or "Links on a stop are Maya Chen's own. They may earn them a commission." in unescape(html)
     (row,) = community.rows(kind="scrapbook")
     assert [s.link for d in community.trip_of(row).days for s in d.stops] == [HOTEL, TOUR, ""]

@@ -12,7 +12,7 @@ from gitaway.icons import icon
 
 IMPORT = "/trips/import"
 BUILD = "/trips/build"
-COMMUNITY = "/community"
+COMMUNITY = "/guides"
 
 
 def is_new(session) -> bool:

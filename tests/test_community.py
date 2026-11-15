@@ -47,7 +47,7 @@ def test_the_shared_page_works_signed_out_on_another_device_and_for_another_fami
     for other in (device(client), _signed_in(client, "sam")):
         r = other.get(f"/trips/{slug}")
         assert r.status_code == 200 and "Venice Canals stroll" in r.text and "Flight to LAX" in r.text
-    assert slug in device(client).get("/community").text
+    assert slug in device(client).get("/guides").text
 
 
 def _signed_in(client, who):

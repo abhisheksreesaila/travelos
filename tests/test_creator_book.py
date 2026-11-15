@@ -1,4 +1,4 @@
-"""F-253: a creator's trip as the scrapbook book (docs/design/creators-v2). The post is The Planet D's "48 Hours in Lisbon" recorded through the app's own fetcher (tests/fixtures/creator_import);
+"""F-253, F-262: what a creator's guide is made of (it was the scrapbook book, docs/design/creators-v2; the guide is docs/design/guides-v2, tests/test_guides.py). The post is The Planet D's "48 Hours in Lisbon" recorded through the app's own fetcher (tests/fixtures/creator_import);
 nothing here reaches the network or a model. What the book may say: a quote is a sentence of the post exactly as written, a time only where the draft has one, a picture only the creator's own pick,
 every drawing labelled as one. The routes: the owner's book (draft or live), the reader's book, the word fixed in place, the lead picture, Publish, and the shelf."""
 import json
@@ -65,7 +65,7 @@ def test_the_stream_says_which_sentence_names_each_stop_and_what_colour_it_is(ma
                                                       ("LX Factory", "food"), ("Fado show", "show")]
     assert day1[0]["said"] == BELEM and day1[1]["said"].startswith("Just a short walk from Belém Tower is Jerónimos Monastery") and day1[2]["said"] == ""
     assert [s["kind"] for s in d["days"][1]["stops"]] == ["walk", "tix", "see", "ride", "food", "see", "see"]      # Alfama, the castle, a viewpoint, the tuk-tuk, the market, a street, a district: only what a name says is coloured
-    assert d["book"] == f"/creators/import/{d['id']}/book"
+    assert d["guide"] == f"/creators/import/{d['id']}/guide"      # the stream says where the guide is (F-262: it was the book)
 
 
 def test_a_day_quotes_the_first_sentence_that_names_one_of_its_stops_and_never_the_same_twice():
@@ -88,28 +88,30 @@ def test_a_place_gets_a_drawn_scene_that_names_it_else_gitaways_place_art_else_a
     assert cb.scene_of("San Diego") == ("placeart", "San Diego") and cb.scene_of("Nowhere Special") == ("generic", "")
 
 
-# ---- the owner's book ----------------------------------------------------------------------------------------------------------
+# ---- the owner's guide ----------------------------------------------------------------------------------------------------------
 
-def test_the_owners_book_is_the_draft_as_pages_with_the_posts_words_and_no_invented_ones(made):
+def guide_of(d):
+    return f"/creators/import/{d['id']}/guide"
+
+
+def test_the_owners_guide_is_the_draft_as_a_run_sheet_with_the_posts_words_and_no_invented_ones(made):
     client, d = made
-    html = client.get(d["book"]).text
+    html = client.get(guide_of(d)).text
     text = words(html)
-    assert "Draft · only you can see it" in text and "Before you go" in text and "The trip at a glance" in text
-    assert "3 days in Lisbon" in text and "17 stops" in text.replace("17 stop", "17 stops") and "Day 1 · 7 stops" in text and "Day 2 · 7 stops" in text and "Day 3 · 3 stops" in text
-    assert re.search(r'<blockquote class="quote">\s*Lisbon is Portugal’s coastal capital city[^<]*<cite>[^<]*, in the post</cite>', html)      # the intro: the post's first sentence
-    assert BELEM in text and ALFAMA in text and "You’ll also visit Pena Palace, Regaleira, and Cascais." in text      # a quote on each day, each the post's
-    assert text.count("Illustration") >= 4 and "Photo from the post" not in text       # no picture picked yet: every plate is a drawing, and says so
+    assert "Draft · only you can see it" in text and re.findall(r'<p class="g-dsub">(\d+ stops)', html) == ["7 stops", "7 stops", "3 stops"]
+    assert "3 days 17 stops" in text and "4 tips" in text      # the tiles: only what the draft knows
+    assert BELEM in text and ALFAMA in text and "You’ll also visit Pena Palace, Regaleira, and Cascais." in text      # a line on a stop, each the post's own sentence
+    assert "Illustration" in text and "Photo from the post" not in text       # no picture picked yet: the picture is a drawing, and says so
     assert "Go before the crowds." in text and '“Go before the crowds.”' not in text    # a note is shown as the draft's, never in quotation marks as if it were the post's
-    assert "Each one drawn from the post and checked by its creator." in text and "word for word" not in text
     assert 'data-k="title"' in html and 'data-k="d0.head"' in html and 'data-k="d0.s0"' in html      # a word to fix in place
 
 
-def test_only_its_owner_can_open_the_draft_book(made):
+def test_only_its_owner_can_open_the_draft_guide(made):
     client, d = made
-    assert stranger(client).get(d["book"], follow_redirects=False).status_code == 303
+    assert stranger(client).get(guide_of(d), follow_redirects=False).status_code == 303
     other = stranger(client)
     sign_in(other, "sam")
-    assert other.get(d["book"]).status_code == 404 and other.get(f"/creators/import/{'0' * 16}/book").status_code == 404
+    assert other.get(guide_of(d)).status_code == 404 and other.get(f"/creators/import/{'0' * 16}/guide").status_code == 404
 
 
 def test_fixing_a_word_changes_the_draft_through_the_same_checks_as_the_editor(made):
@@ -121,7 +123,7 @@ def test_fixing_a_word_changes_the_draft_through_the_same_checks_as_the_editor(m
     r = post(client, d, do="word", key="d2.head", value="Sintra, early")
     stored = creatordraft.get(tid(), d["id"])
     assert (stored["title"], stored["days"][0]["stops"][0]["name"], stored["days"][2]["title"]) == ("Two days and a bonus in Lisbon", "Belém Tower", "Sintra, early")
-    assert "Sintra, early" in client.get(d["book"]).text
+    assert "Sintra, early" in client.get(guide_of(d)).text
 
 
 @pytest.mark.parametrize("key,value,error", [("title", "write to me at maya@example.com", "email"), ("title", "   ", "It cannot be empty. Press Escape to keep what it said."),
@@ -143,16 +145,15 @@ def test_nobody_else_can_fix_a_word_in_a_draft(made):
 
 def test_the_posts_lead_picture_is_used_only_when_the_creator_asks_and_is_labelled(made):
     client, d = made
-    assert "Use the post&#x27;s picture" in client.get(d["book"]).text or "Use the post's picture" in unescape(client.get(d["book"]).text)
     assert post(client, d, do="lead").json() == {"ok": True}
     stored = creatordraft.get(tid(), d["id"])
     assert stored["picks"] == [0] and stored["cover"] == "0"
-    html = client.get(d["book"]).text
+    html = client.get(guide_of(d)).text
     src = re.search(r'<img src="(/creators/import/[0-9a-f]{16}/photo/[0-9a-f]{16}-display\.jpg)"', html).group(1)
-    assert client.get(src).status_code == 200 and "Photo from the post" in words(html) and "Use the post" not in unescape(html)
+    assert client.get(src).status_code == 200 and "Photo from the post" in words(html)
 
 
-# ---- publishing and the reader's book ---------------------------------------------------------------------------------------------
+# ---- publishing and the reader's guide ---------------------------------------------------------------------------------------------
 
 def test_publish_needs_the_tick_then_gives_the_link_the_badge_and_the_stamp(made):
     client, d = made
@@ -160,35 +161,35 @@ def test_publish_needs_the_tick_then_gives_the_link_the_badge_and_the_stamp(made
     assert r.status_code == 422 and "Tick" in r.json()["error"]
     r = post(client, d, do="publish", own="1")
     j = r.json()
-    assert j["ok"] and j["slug"] == d["slug"] and j["link"].endswith(f"/trips/{d['slug']}/book") and j["listed"] is True
+    assert j["ok"] and j["slug"] == d["slug"] and j["link"].endswith(f"/trips/{d['slug']}") and j["listed"] is True
     assert j["code"].startswith("<a href=") and "/badge/plan-this-trip.svg" in j["code"] and re.fullmatch(r"[A-Z][a-z]{2} \d{1,2}, \d{4}", j["stamp"])
-    assert community.get(d["slug"]) and "Published" in words(client.get(d["book"]).text) and "Share" in words(client.get(d["book"]).text)
+    assert community.get(d["slug"]) and "Published" in words(client.get(guide_of(d)).text) and "Share" in words(client.get(guide_of(d)).text)
 
 
-def test_the_published_book_is_for_anyone_with_the_creators_name_held_back_until_the_site_is_theirs(made):
+def test_the_published_guide_is_for_anyone_with_the_creators_name_held_back_until_the_site_is_theirs(made):
     client, d = made
     post(client, d, do="publish", own="1")
-    html = stranger(client).get(f"/trips/{d['slug']}/book").text
+    html = stranger(client).get(f"/trips/{d['slug']}").text
     text = words(html)
-    assert "From theplanetd.com" in text and "by theplanetd.com" in text.lower().replace("by theplanetd.com", "by theplanetd.com")      # unverified: the byline names the site, not the person (D-189)
-    assert BELEM in text and "Plan this trip" in text and "Publish" not in text.replace("Published", "") and 'data-k=' not in html and "data-mode=\"reader\"" in html
+    assert '<span class="src-by">theplanetd.com · Blog</span>' in html      # unverified: the byline names the site, not the person (D-189)
+    assert BELEM in text and "Plan this trip" in text and "Publish" not in text.replace("Published", "") and 'class="ed"' not in html and 'data-mode="reader"' in html
     assert re.search(r'href="/plan/ask(\?to=[^"]*)?"', html)      # Plan this trip opens booking's sentence
-    assert 'href="/theplanetd' not in html and "Read the whole post at" in text
+    assert 'href="/theplanetd' not in html
 
 
-def test_a_published_book_is_on_the_shelf_and_an_unpublished_one_is_not(made):
+def test_a_published_guide_is_on_the_hub_and_an_unpublished_one_is_not(made):
     client, d = made
-    shelf = stranger(client).get("/community").text
-    assert d["slug"] not in shelf and "No one has shared a trip yet" in words(shelf)
+    hub = stranger(client).get("/guides").text
+    assert d["slug"] not in hub and "No guides yet" in words(hub)
     post(client, d, do="publish", own="1")
-    shelf = stranger(client).get("/community").text
-    assert f'href="/trips/{d["slug"]}/book"' in shelf and "48 hours in Lisbon" in words(shelf) and "Sample book" not in words(shelf)      # off the showcase: only real books
+    hub = stranger(client).get("/guides").text
+    assert f'href="/trips/{d["slug"]}"' in hub and "48 hours in Lisbon" in words(hub) and ">Sample<" not in hub      # off the showcase: only real guides
 
 
 def test_the_heart_is_the_existing_save(made):
     client, d = made
     post(client, d, do="publish", own="1")
-    path = f"/trips/{d['slug']}/book"
+    path = f"/trips/{d['slug']}"
     assert 'aria-pressed="false"' in re.search(r'<button[^>]*id="heartBtn"[^>]*>', client.get(path).text).group(0)
     r = client.post("/save", data={"next": path}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == path
@@ -197,22 +198,22 @@ def test_the_heart_is_the_existing_save(made):
     assert 'aria-pressed="false"' in re.search(r'<button[^>]*id="heartBtn"[^>]*>', client.get(path).text).group(0)
 
 
-def test_a_book_that_waits_for_the_captain_is_unlisted_and_not_for_search(made, monkeypatch):
+def test_a_guide_that_waits_for_the_captain_is_unlisted_and_not_for_search(made, monkeypatch):
     client, d = made
     post(client, d, do="publish", own="1")
     community.set_review(d["slug"], "pending", "theplanetd.com")
-    r = stranger(client).get(f"/trips/{d['slug']}/book")
+    r = stranger(client).get(f"/trips/{d['slug']}")
     assert r.status_code == 200 and "noindex" in r.headers["x-robots-tag"]
-    assert d["slug"] not in stranger(client).get("/community").text
+    assert d["slug"] not in stranger(client).get("/guides").text
 
 
-# ---- the showcase's sample books ----------------------------------------------------------------------------------------------------
+# ---- the showcase's sample guides ----------------------------------------------------------------------------------------------------
 
-def test_on_the_showcase_a_sample_opens_as_a_labelled_sample_book_and_off_it_there_are_none(client, monkeypatch):
+def test_on_the_showcase_a_sample_opens_as_a_labelled_sample_guide_and_off_it_there_are_none(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    text = words(client.get("/trips/dog-friendly-big-sur-drive/book").text)
-    assert "Sample book" in text and "A sample book, made up so you can see the shelf." in text and "Illustration" in text
-    shelf = words(client.get("/community").text)
-    assert "Sample books: made up so you can see the shelf" in shelf and shelf.count("Sample book") >= 5
+    text = words(client.get("/trips/dog-friendly-big-sur-drive").text)
+    assert "Sample guide" in text and "A sample guide: the people and prices in it are made up so you can see how it reads." in text and "Illustration" in text
+    hub = words(client.get("/guides").text)
+    assert "Sample guides: made up so you can see how they read" in hub and hub.count("Sample ") >= 2
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert client.get("/trips/dog-friendly-big-sur-drive/book").status_code == 404
+    assert client.get("/trips/dog-friendly-big-sur-drive").status_code == 404

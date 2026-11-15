@@ -20,34 +20,34 @@ def parts(html):
     return pills, links, bool(menu and 'action="/signout"' in menu.group(0) and ">Sign out<" in menu.group(0))
 
 
-def test_a_visitor_sees_plan_a_trip_community_trips_and_for_creators_and_sign_in_and_no_menu(client):
+def test_a_visitor_sees_plan_a_trip_and_guides_and_sign_in_and_no_menu(client):
     html = client.get(MATRIX).text
     pills, menu, out = parts(html)
-    assert [p[0] for p in pills] == ["Plan a trip", "Community trips", "For creators"]      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar
-    assert pills[1:] == [("Community trips", "/community", False), ("For creators", "/for-creators", False)] and pills[0][1].startswith("/signin")
+    assert [p[0] for p in pills] == ["Plan a trip", "Guides"]      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar; F-262: Guides replaced Community trips and For creators
+    assert pills[1:] == [("Guides", "/guides", False)] and pills[0][1].startswith("/signin")
     assert menu == [] and not out
     assert ">Sign in<" in html
 
 
-def test_signed_in_without_a_trip_has_book_and_family_but_no_plan(client):
+def test_signed_in_without_a_trip_has_book_and_guides_but_no_plan_or_family(client):
     sign_in(client)
     pills, menu, out = parts(client.get(ASK).text)
-    assert pills == [("Book", ASK, True), ("Family", "/family", False)]
-    assert menu == [("Family", "/family"), ("Community trips", "/community"), ("For creators", "/for-creators")]
+    assert pills == [("Book", ASK, True), ("Guides", "/guides", False)]
+    assert menu == [("Family members", "/family")]      # F-262: Family left the bar and stays one tap away in the avatar's menu
     assert out
 
 
-def test_with_a_trip_the_pill_has_plan_first_and_marks_the_page_it_is_on(client):
+def test_with_a_trip_the_pill_is_book_plan_guides_and_marks_the_page_it_is_on(client):
     book(client)
-    assert parts(client.get(PLAN).text)[0] == [("Plan", PLAN, True), ("Book", ASK, False), ("Family", "/family", False)]
-    assert parts(client.get(ASK).text)[0] == [("Plan", PLAN, False), ("Book", ASK, True), ("Family", "/family", False)]
+    assert parts(client.get(PLAN).text)[0] == [("Book", ASK, False), ("Plan", PLAN, True), ("Guides", "/guides", False)]
+    assert parts(client.get(ASK).text)[0] == [("Book", ASK, True), ("Plan", PLAN, False), ("Guides", "/guides", False)]
 
 
 def test_the_captain_alone_has_admin_in_the_menu(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "cap@example.com")
     sign_in(client, "cap@example.com")
     _, menu, _ = parts(client.get(ASK).text)
-    assert menu == [("Family", "/family"), ("Admin", "/admin"), ("Community trips", "/community"), ("For creators", "/for-creators")]
+    assert menu == [("Family members", "/family"), ("Admin", "/admin")]
     sign_in(client, "ari")
     _, menu, _ = parts(client.get(ASK).text)
     assert ("Admin", "/admin") not in menu

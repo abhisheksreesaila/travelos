@@ -4,9 +4,9 @@ A new screen appends its module to SCREENS. Placeholders are registered last, as
 so a real screen on the same path always wins (Starlette serves the first matching route).
 """
 
-from gitaway.pages import admin, devart, blogbutton, cockpit, calendar, communitytrips, crawlers, creatorclaim, creatordrafts, creatorimport, sharetarget, creatorsettings, creatorstats, creators, forcreators, report, daycard, family, familydock, forks, home, legal, morning, passes, passkeys, partners, pay, phone_tabs, placeholders, plan, planforme, plantalk, publish, pwa, rides, share, signin, tab_help, tripadd, tripbuild, tripbook, tripcanvas, tripgrid, tripimport, matrixbook, tripask, tripmatrix, tripnew, tripshare, trips, trip, planv2, creatorbook
+from gitaway.pages import admin, devart, blogbutton, cockpit, calendar, guides, guidepage, crawlers, creatorclaim, creatordrafts, creatorimport, sharetarget, creatorsettings, creatorstats, creators, forcreators, report, daycard, family, familydock, forks, home, legal, morning, passes, passkeys, partners, pay, phone_tabs, placeholders, plan, planforme, plantalk, publish, pwa, rides, share, signin, tab_help, tripadd, tripbuild, tripbook, tripcanvas, tripgrid, tripimport, matrixbook, tripask, tripmatrix, tripnew, tripshare, trips, trip, planv2
 
-SCREENS = [home, crawlers, blogbutton, tripimport, tripbuild, trips, tripgrid, tripask, tripmatrix, matrixbook, plan, tripbook, pay, rides, signin, calendar, communitytrips, share, creatorclaim, creatorimport, sharetarget, creatorsettings, creatorstats, creatordrafts, creators, forcreators, report, admin, forks, pwa, family, trip, morning, passes, passkeys, planforme, partners, phone_tabs, tab_help, tripadd, tripcanvas, daycard, familydock, plantalk, publish, legal, cockpit, tripnew, tripshare, planv2, devart, creatorbook]
+SCREENS = [home, crawlers, blogbutton, tripimport, tripbuild, trips, tripgrid, tripask, tripmatrix, matrixbook, plan, tripbook, pay, rides, signin, calendar, guides, guidepage, share, creatorclaim, creatorimport, sharetarget, creatorsettings, creatorstats, creatordrafts, creators, forcreators, report, admin, forks, pwa, family, trip, morning, passes, passkeys, planforme, partners, phone_tabs, tab_help, tripadd, tripcanvas, daycard, familydock, plantalk, publish, legal, cockpit, tripnew, tripshare, planv2, devart]
 
 
 def register_all(app, extra=()):

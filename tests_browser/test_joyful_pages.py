@@ -10,7 +10,7 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.look import audit
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "report"
-PAGES = (("for-creators", "/for-creators"), ("community", "/community"))
+PAGES = (("make-a-guide", "/guides/make"), ("guides", "/guides"))      # F-262: For creators is Make a guide, Community trips is Guides
 
 
 def open_page(browser, viewport, mode, path, base_url, reduced=True):

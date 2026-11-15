@@ -1,12 +1,12 @@
-"""F-253: the creator pages (landing, import, book, shelf) wear design language v2 (docs/design/creators-v2). Their stylesheet is assets/css/cv2.css over v2-tokens.css. Read from the real files:
-the book keeps its paper in both modes, so every text pair on it is 4.5:1 or better in light and dark (the browser audit cannot measure a gradient), every cover cloth carries its foil text, and
-the stylesheet writes no time, no blur and no ellipsis of its own. (This replaced F-235's tests of for_creators.css and hub.css, the two stylesheets this design retires.)"""
+"""F-253: the creator pages (landing, import, guides) wear design language v2 (docs/design/creators-v2, guides-v2). Their stylesheets are assets/css/cv2.css and guides.css over v2-tokens.css. Read from the real files:
+the book keeps its paper in both modes, so every text pair on it is 4.5:1 or better in light and dark (the browser audit cannot measure a gradient), and
+the stylesheets writes no time, no blur and no ellipsis of its own. (This replaced F-235's tests of for_creators.css and hub.css, the two stylesheets this design retires.)"""
 import re
 from pathlib import Path
 
 import pytest
 
-from gitaway import creatorbook, layout
+from gitaway import layout
 
 CSS = Path(__file__).resolve().parent.parent / "assets" / "css"
 
@@ -41,18 +41,13 @@ def test_every_text_pair_on_the_paper_is_4_5_to_1_or_better(which):
     assert not low, low
 
 
-def test_the_foil_of_a_cover_reads_on_every_cloth():
-    foil = LIGHT()["--bk-foil"]
-    low = {c: round(ratio(foil, c), 2) for c in creatorbook.CLOTHS if ratio(foil, c) < 4.5}
-    assert not low, low
+def test_the_header_nav_is_guides_and_plan_a_trip():
+    assert layout.NAV == [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]      # D-462: drawn as plan_href(); F-262: Guides replaced For creators and Community trips
 
 
-def test_the_header_nav_is_still_the_sites_three_links():
-    assert layout.NAV == [("For creators", "/for-creators"), ("Community trips", "/community"), ("Plan a trip", "/plan/matrix")]      # D-462: drawn as plan_href()
-
-
-def test_the_stylesheet_uses_only_the_motion_tokens_and_no_blur_or_ellipsis():
-    css = re.sub(r"/\*.*?\*/", "", (CSS / "cv2.css").read_text(encoding="utf-8"), flags=re.S)
+@pytest.mark.parametrize("sheet", ["cv2.css", "guides.css"])
+def test_the_stylesheet_uses_only_the_motion_tokens_and_no_blur_or_ellipsis(sheet):
+    css = re.sub(r"/\*.*?\*/", "", (CSS / sheet).read_text(encoding="utf-8"), flags=re.S)
     assert not [t for t in re.findall(r"(?<![\w-])(\d*\.?\d+)m?s\b(?!\))", re.sub(r"var\(--[\w-]+\)", "", css)) if t not in ("0", "0.0")]
     assert "blur(" not in css and "backdrop-filter" not in css and "text-overflow" not in css and "line-clamp" not in css
 

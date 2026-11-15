@@ -61,7 +61,7 @@ def test_production_alone_turns_the_showcase_off_and_keeps_the_dev_sign_in_locke
 
 # ---- production: hidden routes ----
 
-HIDDEN_GET = ["/discover", "/discover?tag=beach", "/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
+HIDDEN_GET = ["/creators", "/creators/draft", "/creators/finish", "/creators/done", "/forks", "/share", "/share/done",
               "/trip/canvas?demo=long"] + [f"/trips/{s}" for s in SLUGS] + ["/trips/anything-shared"]
 HIDDEN_POST = ["/fork", "/save", "/unsave", "/share", "/share/unpublish", "/forks/apply", "/forks/undo", "/creators", "/creators/draft", "/creators/finish"]
 
@@ -98,19 +98,25 @@ def test_the_real_production_environment_hides_them_too(prod, client):
 
 
 @pytest.mark.parametrize("env", ["real", "prod"])
-def test_community_trips_says_so_before_anyone_has_shared(env, request, client):
-    """D-458 (founder, 2026-11-13: "the navigation should still say: if you want to look at the community trips, go at it"): Community trips is
-    in every header, so off the showcase, before anyone has shared a trip, its page exists and says so plainly, with no sample trip on it."""
+def test_guides_says_so_before_anyone_has_shared(env, request, client):
+    """D-458 (founder, 2026-11-13: "the navigation should still say: if you want to look at the community trips, go at it"; F-262: the page is Guides): Guides is
+    in every header, so off the showcase, before anyone has shared a guide, its page exists and says so plainly, with no sample guide on it."""
     request.getfixturevalue(env)
-    r = client.get("/community")
+    r = client.get("/guides")
     assert r.status_code == 200
-    assert "No one has shared a trip yet" in r.text and 'href="/for-creators"' in r.text
-    assert_real(r.text, "/community")
+    assert "No guides yet" in r.text and 'href="/guides/make"' in r.text
+    assert_real(r.text, "/guides")
+
+
+@pytest.mark.parametrize("old,new", [("/community", "/guides"), ("/discover", "/guides"), ("/discover?tag=beach", "/guides"), ("/for-creators", "/guides")])
+def test_the_old_community_and_creator_addresses_always_go_to_guides(real, client, old, new):
+    r = client.get(old, follow_redirects=False)      # a redirect, never a 404, whatever is published (F-262)
+    assert r.status_code == 301 and r.headers["location"] == new
 
 
 # ---- production: nothing links to them, nothing sample shows ----
 
-PAGES_SIGNED_OUT = ["/", "/start", "/signin", "/offline", "/plan", "/plan?f=f1&h=h1&c=c1", "/plan?f=f1&h=h1&c=none", "/trips/import", "/trips/build", "/community"]
+PAGES_SIGNED_OUT = ["/", "/start", "/signin", "/offline", "/plan", "/plan?f=f1&h=h1&c=c1", "/plan?f=f1&h=h1&c=none", "/trips/import", "/trips/build", "/guides"]
 
 
 @pytest.mark.parametrize("path", PAGES_SIGNED_OUT)
@@ -121,7 +127,7 @@ def test_signed_out_pages_have_no_sample_data_or_links_to_hidden_pages(real, cli
 
 def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
-    assert re.findall(r'href="([^"]*)"', footer) == ["/for-creators", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
+    assert re.findall(r'href="([^"]*)"', footer) == ["/guides", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S).group(0)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
     assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]      # the legal pages (F-076)
@@ -176,9 +182,9 @@ def test_the_service_worker_version_changes_with_the_mode(client, monkeypatch):
 def test_the_local_copy_still_shows_all_sample_data(client):
     assert showcase.on()
     cover = client.get("/").text                                                    # F-206: a stranger's landing is the cover
-    assert "Community trips" in cover and 'href="/community"' in cover and "For creators" in cover
+    assert "Guides" in cover and 'href="/guides"' in cover
     sign_in(client)
-    for path in ["/community", "/creators", "/forks", f"/trips/{SLUGS[0]}", "/discover"]:
+    for path in ["/guides", "/creators", "/forks", f"/trips/{SLUGS[0]}", "/discover"]:
         assert client.get(path).status_code == 200, path
     assert client.get("/plan").text.count('data-pane="community"') == 1
     assert "Preview: sample prices" not in client.get("/plan").text
