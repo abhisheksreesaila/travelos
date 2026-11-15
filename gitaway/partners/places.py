@@ -124,6 +124,27 @@ def known() -> tuple:
     return tuple(place for _, place in _TABLE)
 
 
+def matching(text) -> tuple:
+    """The known places a typed start could be (F-257's autocomplete): those whose name or an alias begins with the text, or has a word that does. A name that begins with it
+    comes first, then one with a word that does, then an alias, each in the table's order. Nothing is invented: a start nothing in the table matches gives ()."""
+    low = " ".join(str(text or "").lower().split())
+    if not low:
+        return ()
+    hit = lambda name: name.startswith(low) or any(w.startswith(low) for w in name.split())      # noqa: E731
+    rank = lambda place: 0 if place.name.lower().startswith(low) else (1 if hit(place.name.lower()) else 2)      # noqa: E731
+    return tuple(sorted((place for aliases, place in _TABLE if hit(place.name.lower()) or any(hit(a) for a in aliases)), key=rank))
+
+
+def lead(text) -> tuple | None:
+    """(the known place the text begins with, what follows it) or None: the longest alias at a word boundary, so "las vegas in dec" is Las Vegas, never "la"."""
+    t = " ".join(str(text or "").split())
+    low = t.lower()
+    for alias in sorted(_ALIASES, key=len, reverse=True):
+        if low == alias or (low.startswith(alias) and low[len(alias)] in " ,·"):
+            return resolve(_ALIASES[alias].name), t[len(alias):].strip(" ,·")
+    return None
+
+
 def clean_iata(text) -> str:
     code = (text or "").strip().upper()
     return code if _IATA.fullmatch(code) else ""
