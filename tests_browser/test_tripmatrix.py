@@ -291,6 +291,20 @@ def test_the_laptop_lane_days_wear_their_sky_and_the_totals_are_big_and_ringed_i
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
 
 
+def test_one_square_is_lit_at_a_time(matrix):
+    """F-245 (D-591), review: on load the find is the only solid indigo square; open another and that one is lit while the find steps back to the tint and ring."""
+    page = matrix(DESKTOP)
+    lit = "() => [...document.querySelectorAll('.mx-lane .mx-sq')].filter(e => getComputedStyle(e).backgroundColor === 'rgb(67, 56, 202)').map(e => e.dataset.sq)"
+    find = page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => e.dataset.sq")
+    assert page.evaluate(lit) == [find]
+    other = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq:not(.is-find)").first
+    key = other.get_attribute("data-sq")
+    other.click()
+    page.wait_for_function("k => document.querySelector(`.mx-sq[data-sq='${k}']`).classList.contains('is-open')", arg=key)
+    page.wait_for_timeout(400)      # the background's own transition
+    assert page.evaluate(lit) == [key]
+    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(228, 227, 251)"
+
 def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_the_bar(matrix):
     page = matrix(DESKTOP)
     page.click(".mx-lane[data-lane='losangeles'] .mx-sq >> nth=3")

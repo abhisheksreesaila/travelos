@@ -1571,7 +1571,7 @@ Founder, 2026-11-14: "I click on a square, I open up the details behind it. I li
 - [x] the confirmation is a stamped pass with the booking id, the hotel's confirmation code and address (only what the answer gives) and confetti (CSS, tokens, none under reduced motion); "Plan this trip" goes to the trip's cockpit
 - [x] every F-233 rule kept (no guest data kept, validate/escape/never log, budgets, viewers refused, "Sandbox booking: nothing is charged" / "Sample booking: ..."); light and dark at 4.5:1, 48px targets (audited at 390 and 1440)
 - [x] screenshots at 390 and 1440 (opened square, checkout, mid-booking, confirmation) in docs/report/f242-*.png; decisions D-570 to D-578
-## F-245 The matrix is the cover's card [review]
+## F-245 The matrix is the cover's card [done]
 Founder, 2026-11-14: "The cover page is very nicely done, especially the first matrix. That's how the matrix has to be designed: like a card, very simply put, with some translucency; minimalistic yet denser information. Click, check the hotels out, get the information, boom, done."
 - [x] the whole matrix sits in one card like the cover's frame: sentence, lanes with art and names, start-day columns, big totals, one lit square (the find or the opened one), the days' sky quiet
 - [x] translucency allowed for this card (D-590), every word 4.5:1 in light and dark (pixel test)

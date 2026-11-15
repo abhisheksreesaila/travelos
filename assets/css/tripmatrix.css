@@ -283,7 +283,6 @@
   .mx-lane .mx-sq.is-on { background: var(--k-flight-t); box-shadow: inset 0 0 0 0.125rem var(--k-flight); }      /* the start whose nights the band shows */
   .mx-lane .mx-sq.is-over { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
   .mx-lane .mx-sq.is-over.is-on { box-shadow: inset 0 0 0 0.125rem var(--k-flight); }
-  .mx-p-art { height: 9rem; }
 
 }
 
