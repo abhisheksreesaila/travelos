@@ -90,13 +90,13 @@
 .mxb-confirm { position: relative; display: grid; gap: 0.75rem; justify-items: stretch; }
 .mxb-pass { position: relative; border-radius: var(--r-md); background: var(--card); box-shadow: var(--sh2); overflow: hidden; }
 .mxb-pass-top { position: relative; display: grid; gap: 0.5rem; padding: 0 1rem 0.875rem; }
-.mxb-pass-art { height: 7.5rem; margin: 0 -1rem; }
+.mxb-pass-art { height: 6rem; margin: 0 -1rem; }
 .mxb-route { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
 .mxb-iata { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
 .mxb-dash { flex: 1; border-top: 0.125rem dashed var(--ink-2); }
 .mxb-plane { display: grid; place-items: center; color: var(--k-flight); }
 .mxb-pass-when { margin: 0; color: var(--ink-2); font-size: max(var(--text-min), 1rem); }
-.mxb-stamp { position: absolute; right: 1rem; top: 5.25rem; padding: 0.25rem 0.875rem; border: 0.25rem solid var(--k-car); border-radius: 0.5rem; background: var(--card); color: var(--k-car-i); font-size: 1.5rem; font-weight: 850;
+.mxb-stamp { position: absolute; right: 1rem; top: 1rem; padding: 0.25rem 0.875rem; border: 0.25rem solid var(--k-car); border-radius: 0.5rem; background: var(--card); color: var(--k-car-i); font-size: 1.5rem; font-weight: 850;
   letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-6deg); animation: mxb-stamp var(--motion-spring-dur) var(--motion-spring) both; animation-delay: var(--motion-screen-dur); }
 @keyframes mxb-stamp { from { opacity: 0; transform: rotate(-6deg) scale(2); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
 .mxb-pass-mid { display: grid; gap: 0.75rem; padding: 0.875rem 1rem; border-top: 0.125rem dashed var(--line); }
@@ -111,18 +111,19 @@
 .mxb-going { text-align: center; font-size: 1.625rem; }
 .mxb-confirm > .mxb-hint { text-align: center; }
 .mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4.5rem; padding: 0 1.5rem; border-radius: var(--r-pill); background: var(--k-ride); color: var(--k-ride-on);
-  font-size: 1.5rem; font-weight: 820; letter-spacing: -0.02em; text-decoration: none; box-shadow: var(--sh2); }
+  font-size: 1.5rem; font-weight: 820; letter-spacing: -0.02em; text-decoration: none; box-shadow: var(--sh2); position: sticky; bottom: 0.75rem; z-index: 4; }      /* always in reach at the foot of the sheet */
 .mxb-plan:active { transform: scale(0.97); }
 .mxb-flight { min-height: var(--target); justify-self: center; }
 .mxb-back { justify-self: start; min-height: var(--target); }
 
 /* confetti: CSS only, each piece falls once from above the pass, spinning; the kinds' colours; none under reduced motion */
-.mxb-confetti { position: absolute; inset: -1rem 0 auto; height: 0; pointer-events: none; z-index: 5; }
+.mxb-confetti { position: fixed; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; z-index: 80; }      /* fixed: thrown over the whole screen, not clipped by the sheet */
 .mxb-cf { position: absolute; top: 0; left: calc(var(--x) * 1%); width: 0.625rem; height: 1.125rem; border-radius: 0.125rem; opacity: 0; transform: rotate(calc(var(--r) * 1deg));
-  animation: mxb-fall calc(var(--motion-screen-dur) * 5) var(--ease-out) both; animation-delay: calc(var(--d) * var(--motion-quick) * 0.5); }
+  animation: mxb-fall calc(var(--motion-screen-dur) * 7) var(--ease-out) both; animation-delay: calc(var(--d) * var(--motion-quick) * 0.5); }
+.mxb-cf { width: 0.75rem; height: 1.25rem; }
 .mxb-cf.c0 { background: var(--k-flight); } .mxb-cf.c1 { background: var(--k-stay); } .mxb-cf.c2 { background: var(--k-car); }
 .mxb-cf.c3 { background: var(--k-ride); } .mxb-cf.c4 { background: var(--k-tix); } .mxb-cf.c5 { background: var(--k-food); }
-@keyframes mxb-fall { 0% { opacity: 1; transform: translateY(0) rotate(calc(var(--r) * 1deg)); } 100% { opacity: 0; transform: translateY(32rem) translateX(calc((var(--d) - 5) * 1rem)) rotate(calc(var(--r) * 1deg + 540deg)); } }
+@keyframes mxb-fall { 0% { opacity: 1; transform: translateY(0) rotate(calc(var(--r) * 1deg)); } 100% { opacity: 0; transform: translateY(105vh) translateX(calc((var(--d) - 5) * 1.5rem)) rotate(calc(var(--r) * 1deg + 540deg)); } }
 
 @media (prefers-reduced-motion: reduce) {
   .mxb-confetti { display: none; }

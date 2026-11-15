@@ -1535,3 +1535,13 @@ Founder, 2026-11-14: "once I click on a square I look at the hotel, I click on t
 - [ ] 2 or 3 options, phone and laptop, of the opened square: the hotel (photos, room, rating, address), the flight (times, airline, stops; switch to another flight or room right there), the weather for those nights, the total; fun, in the matrix's language
 - [ ] the checkout: modern, short, in one flow (guest, payment as LiteAPI's best case, confirm), with the confirmation showing the hotel's contact and the flight's record locator
 - [ ] a compare page with a pick per option and device; the founder picks before F-240 builds it
+
+## F-242 Book this trip: the opened square, a bold button, a booking you can watch, confetti [review]
+Founder, 2026-11-14: "I click on a square, I open up the details behind it. I like this hotel, I like this flight, this is a perfect combination. I say book this trip. Book this trip should be bold and very easy to find. Then it simulates what would have happened ... It spins and spins. Then finally a confirmation with confetti. Then I'd say plan this trip, leading me to plan." Builds F-239's picks: A2 Trip line (laptop), A3 Bento (phone), checkout B1 Folding cards ending in B2's stamped pass.
+- [x] the opened square shows the hotel (the source's photo, else the place's drawing), room, rating, address; the flight (times, airline, stops); the sky for those nights (typical days say so); the total
+- [x] the hotel and the flight switch in place where the source gave alternatives, the total moves by exactly the difference, and Book and Save use the choice (priced again on the server)
+- [x] "Book this trip" is the boldest thing on screen: yellow, 64px, sticky on the phone
+- [x] the checkout is three folding cards (guest, payment, confirm); the booking plays out in four steps with a spinner while the real prebook and book calls run (staged for the payment and for the sample); a mistake folds the cards back
+- [x] the confirmation is a stamped pass with the booking id, the hotel's confirmation code and address (only what the answer gives) and confetti (CSS, tokens, none under reduced motion); "Plan this trip" goes to the trip's cockpit
+- [x] every F-233 rule kept (no guest data kept, validate/escape/never log, budgets, viewers refused, "Sandbox booking: nothing is charged" / "Sample booking: ..."); light and dark at 4.5:1, 48px targets (audited at 390 and 1440)
+- [x] screenshots at 390 and 1440 (opened square, checkout, mid-booking, confirmation) in docs/report/f242-*.png; decisions D-570 to D-578
