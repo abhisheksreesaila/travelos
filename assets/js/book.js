@@ -178,7 +178,7 @@
     $('#pubGo').addEventListener('click', function () {
       var go = $('#pubGo'); go.disabled = true;
       post({ do: 'publish', own: '1' }).then(function (j) {
-        if (!j.ok) { var p = $('#pubError'); p.textContent = j.error; p.hidden = false; go.disabled = false; return; }
+        if (!j.ok) { var p = $('#pubError'); p.innerHTML = esc(j.error) + (j.editor ? ' <a href="' + esc(j.editor) + '">Fix it in the details</a>' : ''); p.hidden = false; go.disabled = false; return; }
         published(j);
       }).catch(function () { var p = $('#pubError'); p.textContent = 'Could not reach the server. Check your connection and try again.'; p.hidden = false; go.disabled = false; });
     });

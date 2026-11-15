@@ -440,7 +440,7 @@ def test_the_first_button_in_the_form_saves_so_enter_in_a_field_never_removes_a_
     html = editor(client, did)
     form = html.split(f'action="/creators/import/{did}"')[1]
     first = re.search(r"<button[^>]*>", form).group(0)
-    assert 'value="save"' in first and "sr-only" in first
+    assert 'value="save"' in first and "v2-sr" in first
 
 
 def test_an_email_address_in_the_draft_is_refused_and_nothing_is_kept(drafted):

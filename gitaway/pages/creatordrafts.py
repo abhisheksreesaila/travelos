@@ -94,14 +94,15 @@ def scan_page(session, site="", posts=None, error="", status=200):
 
 def _row(r):
     chip = Span(icon(ICON[r["status"]], 16, 2.6), LABEL[r["status"]] if r["status"] != "drafting" else ("Drafting now" if r["now"] else "Waiting"), cls=f"cdr-chip cdr-{r['status']}")
-    title = A(r["title"], href=f"{IMPORT}/{r['id']}", cls="cdr-name") if r["kind"] == "draft" else Span(r["title"], cls="cdr-name")
+    title = A(r["title"], href=f"{IMPORT}/{r['id']}/book", cls="cdr-name") if r["kind"] == "draft" else Span(r["title"], cls="cdr-name")
     detail = P(r["error"], cls="cdr-err", role="note") if r["error"] else P(urlsplit(r["url"]).netloc, cls="cdr-host") if r["url"] else ""
     if r["status"] == "drafting":
         acts = ""
     elif r["status"] == "failed":
         acts = Form(Input(type="hidden", name="do", value="delete"), Button(icon("x", 18, 2.4), "Remove", type="submit", cls="btn", aria_label=f"Remove {r['title']} from the list"), action=f"{PATH}/{r['id']}", method="post", cls="cdr-rm")
     else:
-        acts = Div(A("Open", href=f"{IMPORT}/{r['id']}", cls="btn btn-sm", aria_label=f"Open {r['title']} in the editor"),
+        acts = Div(A("Open", href=f"{IMPORT}/{r['id']}/book", cls="btn btn-sm", aria_label=f"Open the book of {r['title']}"),
+                   A("Details", href=f"{IMPORT}/{r['id']}", cls="btn btn-sm", aria_label=f"Edit the details of {r['title']}"),
                    A("View page", href=f"/trips/{r['slug']}", cls="btn btn-sm") if r["status"] == "published" else "",
                    Details(Summary(icon("x", 18, 2.4), Span("Delete"), cls="pb-unpub", aria_label=f"Delete {r['title']}"),
                            Form(P("This deletes the draft, its pictures and, if it is live, the public page. It cannot be undone."), Input(type="hidden", name="do", value="delete"),

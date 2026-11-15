@@ -1,0 +1,85 @@
+/* The creator's details editor (F-259, D-680..): the book's language (cv2.css, v2-tokens.css) for the form behind "Edit details". Everything is under `.cv`; the buttons are cv2's own `.go` and
+   `.tonal`; every target is 3rem or more; the sticky bar is the one frosted piece (`.v2-glass`, as on the phone's book bar). */
+.cv .ed { max-width: 56rem; margin: 0 auto; padding: 0.5rem 1.25rem 5rem; display: grid; gap: 1rem; }
+.cv .ed-top { display: grid; gap: 0.75rem; padding-top: 0.5rem; }
+.cv .ed-top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.cv .ed-top h1 { margin: 0; font-size: clamp(2rem, 4.4vw, 3.25rem); line-height: 1.04; }
+.cv .ed-lede { margin: 0; max-width: 40rem; color: var(--ink-2); font-size: 1.125rem; line-height: 1.5; }
+.cv .ed-note { margin: 0; padding: 0.75rem 1rem; border-radius: 1.125rem; background: var(--ride-t); color: var(--ride-i); font-size: 1rem; line-height: 1.45; }
+.cv .tag { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0 0.875rem; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); font: 600 1rem/1 var(--f-ui); color: var(--ink); }
+.cv .tag svg { width: 1rem; height: 1rem; }
+.cv .tag.live { background: var(--see-t); color: var(--see-i); }
+.cv .ed-card { display: grid; gap: 0.875rem; padding: 1.25rem; border-radius: 2rem; background: var(--card-solid); box-shadow: var(--sh2); }
+.cv .ed-form { display: grid; gap: 1rem; }
+.cv .ed-h { margin: 0; font: 560 1.625rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.cv .ed-hint { margin: 0; color: var(--ink-3); font-size: 1rem; line-height: 1.45; }
+.cv .ed-f { display: grid; gap: 0.375rem; align-content: start; min-width: 0; }
+.cv .ed-lab { font: 650 max(var(--label-min), 0.8125rem)/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.cv .ed-in { box-sizing: border-box; width: 100%; min-height: 3rem; padding: 0.5rem 0.875rem; border: 0; border-radius: 1rem; background: var(--card-2); color: var(--ink); font: 500 1.0625rem/1.3 var(--f-ui); box-shadow: inset 0 0 0 1px var(--line); }
+.cv .ed-in::placeholder { color: var(--ink-3); }
+.cv .ed-in:focus-visible { outline: 0.1875rem solid var(--flight); outline-offset: 0.125rem; }
+.cv .ed-in[aria-invalid="true"] { box-shadow: inset 0 0 0 0.125rem var(--food); background: var(--food-t); color: var(--food-i); }
+.cv .ed-area { min-height: 4.5rem; resize: vertical; font-family: var(--f-ui); }
+.cv .ed-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.875rem; }
+.cv .ed-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cv .ed-chip-l { display: inline-flex; }
+.cv .ed-chip { display: inline-flex; align-items: center; min-height: 3rem; padding: 0 1.125rem; border-radius: 62.4375rem; background: var(--card-2); color: var(--ink); font: 600 1rem/1 var(--f-ui); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line);
+  transition: transform var(--cv-d200) var(--v2-ease), background var(--cv-d200); }
+.cv .ed-chip:active { transform: scale(.95); }
+.cv .ed-chip-l input:checked + .ed-chip { background: var(--pill-on); color: var(--pill-fg); box-shadow: none; }
+.cv .ed-chip-l input:focus-visible + .ed-chip { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.cv .ed-day-h { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 0.75rem; }
+.cv .ed-day-n { display: inline-grid; place-items: center; min-height: 3rem; padding: 0 1rem; border-radius: 62.4375rem; background: var(--flight-t); color: var(--flight-i); font: 700 1rem/1 var(--f-ui); }
+.cv .ed-stop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 0.75rem; padding-top: 0.875rem; border-top: 1px solid var(--line); }
+.cv .ed-stop .kt { margin-top: 1.5rem; }
+.cv .ed-stop-fields { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 0.625rem; }
+.cv .ed-where, .cv .ed-snote, .cv .ed-slink { grid-column: 2; }
+.cv .ed-time { grid-column: 1; grid-row: 1; }
+.cv .ed-where { grid-row: 1; }
+.cv .ed-ops { display: grid; gap: 0.375rem; margin-top: 1.5rem; }
+.cv .ed-op { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border: 0; border-radius: 50%; background: var(--card-2); color: var(--ink); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line);
+  transition: transform var(--cv-d200) var(--v2-ease), background var(--cv-d200); }
+.cv .ed-op:hover { background: color-mix(in srgb, var(--card-2) 80%, var(--ink) 8%); }
+.cv .ed-op:active { transform: scale(.92); }
+.cv .ed-op svg { width: 1.125rem; height: 1.125rem; }
+.cv .ed-op[value^="up_stop"] svg { transform: rotate(90deg); }
+.cv .ed-op[value^="down_stop"] svg { transform: rotate(90deg); }
+.cv .ed-op[value^="del_stop"] { color: var(--food-i); background: var(--food-t); }
+.cv .ed-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cv .ed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.75rem; }
+.cv .ed-tile { position: relative; display: grid; gap: 0.375rem; }
+.cv .ed-photo { position: relative; display: block; border-radius: 1.25rem; overflow: hidden; aspect-ratio: 4 / 3; background: var(--card-2); cursor: pointer; }
+.cv .ed-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cv .ed-tick { position: absolute; top: 0.5rem; right: 0.5rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--card-solid); color: var(--ink); opacity: 0; box-shadow: var(--sh1); }
+.cv .ed-tick svg { width: 1rem; height: 1rem; }
+.cv .ed-photo input:checked ~ .ed-tick { opacity: 1; background: var(--pill-on); color: var(--pill-fg); }
+.cv .ed-photo input:focus-visible ~ img { outline: 0.1875rem solid var(--flight); outline-offset: -0.1875rem; }
+.cv .ed-cover { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; width: 100%; min-height: 3rem; border-radius: 62.4375rem; background: var(--card-2); color: var(--ink); font: 600 1rem/1 var(--f-ui); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
+.cv .ed-cover svg { width: 1rem; height: 1rem; }
+.cv .pb-tile input:checked + .ed-cover { background: var(--ride-t); color: var(--ride-i); }
+.cv .pb-tile input:focus-visible + .ed-cover { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.cv .ed-bar { position: sticky; bottom: 0.75rem; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.5rem; padding: 0.625rem; border-radius: 1.75rem; }
+.cv .ed-bar .v2-error { flex: 1 1 100%; max-width: none; }
+.cv .ed-source { gap: 0.25rem; }
+.cv .ed-src { color: var(--flight-i); font-weight: 620; overflow-wrap: anywhere; min-height: 3rem; display: inline-flex; align-items: center; }
+.cv .ed-pasted { margin: 0.5rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); }
+.cv .ed-card summary { min-height: 3rem; display: flex; align-items: center; cursor: pointer; font-weight: 620; }
+.cv .ed-confirm { padding: 0 0.5rem; }
+.cv .ed-sum { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 3rem; color: var(--food-i); cursor: pointer; font-weight: 620; }
+.cv .ed-sum svg { width: 1rem; height: 1rem; }
+.cv .ed-confirm-form { display: grid; gap: 0.5rem; justify-items: start; padding: 0.5rem 0 0.75rem; color: var(--ink-2); }
+.cv .ed-confirm-form p { margin: 0; }
+.cv .v2-error a { color: inherit; font-weight: 650; text-decoration: underline; display: inline-flex; align-items: center; min-height: 3rem; }
+.cv .tag.live svg { color: inherit; }
+@media (max-width: 719px) {
+  .cv .ed { padding: 0.25rem 0.875rem 7rem; }
+  .cv .ed-card { padding: 1rem; border-radius: 1.5rem; }
+  .cv .ed-grid2 { grid-template-columns: minmax(0, 1fr); }
+  .cv .ed-stop { grid-template-columns: minmax(0, 1fr) auto; }
+  .cv .ed-stop .kt { display: none; }
+  .cv .ed-stop-fields { grid-template-columns: minmax(0, 1fr); }
+  .cv .ed-time, .cv .ed-where, .cv .ed-snote, .cv .ed-slink { grid-column: 1; grid-row: auto; }
+  .cv .ed-ops { margin-top: 1.5rem; }
+  .cv .ed-bar { position: static; }
+  .cv .ed-bar .go, .cv .ed-bar .tonal { flex: 1 1 auto; }
+}
