@@ -537,7 +537,7 @@ def register(app):
             lane_, w_, sq, asked_sq = await run_in_threadpool(_square_of, s, lane_key, w_key, _family(session))
         if not sq.ok:
             return square_page(s, lane_, w_, sq, asked_sq)
-        sq = tm.pick(sq, *tm.picks(form.get("fl", ""), form.get("st", "")))      # the flight and stays chosen on the square (F-242), read again here, never a price from the form
+        sq = tm.pick(sq, *tm.picks(form.get("fl", ""), form.get("st", ""), form.get("rm", "")))      # the flight, stays and rooms chosen on the square (F-242, F-251), read again here, never a price from the form
         try:
             await run_in_threadpool(save, session, s, lane_, w_, sq)      # database writes: off the event loop
         except importer.SaveError as e:

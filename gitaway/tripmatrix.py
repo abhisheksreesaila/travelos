@@ -66,6 +66,17 @@ class FlightPart:
 
 
 @dataclass(frozen=True)
+class RoomPart:
+    """One room of a hotel (F-251): what the opened square lets the family choose between. The numbers are a StayPart's own, for that room."""
+    room: str
+    board: str
+    refundable: bool
+    due_at_stay_cents: int
+    cents: int            # all its nights, the whole party, fees paid at the hotel included
+    offer_id: str = ""
+
+
+@dataclass(frozen=True)
 class StayPart:
     place: str
     nights: int
@@ -79,6 +90,7 @@ class StayPart:
     cents: int            # all its nights, the whole party, fees paid at the hotel included
     offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
     address: str = ""     # the hotel's street address from the source, or "" (F-242: the opened square and the pass show it)
+    rooms: tuple = ()     # F-251: the hotel's rooms the source gave (the shown room first, at most liteapi.MAX_ROOMS), each a RoomPart; one or none means there is no choice
 
 
 @dataclass(frozen=True)
@@ -123,28 +135,49 @@ class Find:
 MAX_ALTS = 3
 
 
+def _hotels(sq: Square, stays: tuple) -> list:
+    """The StayPart each stay index names, one per stay of the square."""
+    alts = sq.stay_alts or tuple((s,) for s in sq.stays)
+    return [a[i] for a, i in zip(alts, stays)]
+
+
 def clamp(sq: Square, pk: tuple) -> tuple:
-    """`pk` (the flight index and one index per stay, as `picks` read them) made to fit `sq`: an index the square does not have (a stale or forged form) is the shown part."""
+    """`pk` (the flight index, one index per stay and one room index per stay, as `picks` read them) made to fit `sq`: an index the square does not have (a stale or forged
+    form) is the shown part. A room index is read against the hotel chosen, never the shown one."""
     flight = pk[0] if 0 <= pk[0] < len(sq.flights) else 0
     alts = sq.stay_alts or ((),) * len(sq.stays)
-    return flight, tuple(i if i is not None and 0 <= i < len(a) else 0 for i, a in zip(tuple(pk[1]) + (None,) * len(sq.stays), alts))
+    stays = tuple(i if i is not None and 0 <= i < len(a) else 0 for i, a in zip(tuple(pk[1]) + (None,) * len(sq.stays), alts))
+    asked = tuple(pk[2]) if len(pk) > 2 else ()
+    hotels = _hotels(sq, stays)
+    rooms = tuple(i if i is not None and 0 <= i < len(h.rooms) else 0 for i, h in zip(asked + (None,) * len(hotels), hotels))
+    return flight, stays, rooms
 
 
-def pick(sq: Square, flight: int = 0, stays: tuple = ()) -> Square:
-    """The square with another flight and/or other stays chosen (F-242: "switch in place"): `flight` is an index into `sq.flights`, `stays` one index per stay into its
-    `stay_alts`. An index the square does not have keeps the shown part, never raises. The total moves with the choice."""
-    fl, st = clamp(sq, (flight, stays))
-    if not sq.flights:
-        return sq if not any(st) else replace(sq, stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)))
-    return replace(sq, flight=sq.flights[fl], stays=tuple(a[i] for a, i in zip(sq.stay_alts, st)) if sq.stay_alts else sq.stays)
+def with_room(st: StayPart, i: int) -> StayPart:
+    """The stay in its `i`th room (the shown room's numbers become that room's), or as it is when it has no such room."""
+    if not 0 <= i < len(st.rooms):
+        return st
+    r = st.rooms[i]
+    return replace(st, room=r.room, board=r.board, refundable=r.refundable, due_at_stay_cents=r.due_at_stay_cents, cents=r.cents, offer_id=r.offer_id)
 
 
-def picks(flight="", stays="") -> tuple:
-    """What a form said was chosen (F-242): ("1", "0,2") is (1, (0, 2)). Anything else (a letter, a long number, nothing) is the shown part, never an error."""
+def pick(sq: Square, flight: int = 0, stays: tuple = (), rooms: tuple = ()) -> Square:
+    """The square with another flight, other stays and/or other rooms chosen (F-242: "switch in place"; F-251: rooms): `flight` is an index into `sq.flights`, `stays` one index per
+    stay into its `stay_alts`, `rooms` one per stay into the chosen hotel's `rooms`. An index the square does not have keeps the shown part, never raises. The total moves with
+    the choice."""
+    fl, st, rm = clamp(sq, (flight, stays, rooms))
+    picked = _hotels(sq, st) if sq.stay_alts else list(sq.stays)
+    picked = tuple(with_room(h, i) for h, i in zip(picked, rm + (0,) * len(picked)))
+    out = replace(sq, stays=picked) if (any(st) or any(rm)) else sq
+    return replace(out, flight=sq.flights[fl]) if sq.flights else out
+
+
+def picks(flight="", stays="", rooms="") -> tuple:
+    """What a form said was chosen (F-242, F-251): ("1", "0,2", "1,0") is (1, (0, 2), (1, 0)). Anything else (a letter, a long number, nothing) is the shown part, never an error."""
     def n(v):
         v = str(v).strip()
         return int(v) if v.isascii() and v.isdecimal() and len(v) <= 2 else None      # isdigit() also passes "²", which int() refuses
-    return (n(flight) or 0, tuple(n(x) for x in str(stays).split(",")[:2]))
+    return (n(flight) or 0, tuple(n(x) for x in str(stays).split(",")[:2]), tuple(n(x) for x in str(rooms).split(",")[:2]))
 
 
 def key(lane_key, window_key) -> str:

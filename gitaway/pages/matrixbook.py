@@ -76,11 +76,11 @@ def _field(name, label, value, error, **attrs):
 
 
 def pick_fields(pk: tuple) -> dict:
-    """The choice a form carries to the next route: {"fl": "1", "st": "0,2"}, the shown part being index 0."""
-    return {"fl": str(pk[0]), "st": ",".join(str(i or 0) for i in pk[1])}
+    """The choice a form carries to the next route: {"fl": "1", "st": "0,2", "rm": "1,0"} (flight, hotel and room indexes), the shown part being index 0."""
+    return {"fl": str(pk[0]), "st": ",".join(str(i or 0) for i in pk[1]), "rm": ",".join(str(i or 0) for i in (pk[2] if len(pk) > 2 else ()))}
 
 
-def _hidden(s, lane, w, pk=(0, ()), **more):
+def _hidden(s, lane, w, pk=(0, (), ()), **more):
     return [Input(type="hidden", name=n, value=str(v)) for n, v in {**mx.params(s, lane=lane.key, w=w.key), **pick_fields(pk), **more}.items()]
 
 
@@ -168,7 +168,7 @@ def _problem(words: str):
     return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
 
 
-def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, ()), values=None, errors=None, note="", res=None, problem="", sample=False, who=""):
+def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who=""):
     """The checkout's inside (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it): the head and one body, the folding cards or the pass."""
     if problem:
         body, at = _problem(problem), "room"
@@ -249,7 +249,7 @@ def _signed_out(s, lane_key, w_key):
 
 def register(app):
     @app.post(mx.BOOK)
-    def book_room(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "",
+    def book_room(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", rm: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "",
                   x: str = "", nb: str = "", b: str = ""):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
@@ -259,14 +259,14 @@ def register(app):
             return _signed_out(s, lane, w)
         if not mb.allow(me.id):      # before anything is read: a refused press starts no search
             return _slowed(request, s, lane, w)
-        pk = tm.picks(fl, st)
+        pk = tm.picks(fl, st, rm)
         lane_, w_, sq, pk = _read(s, lane, w, _family(session), pk)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)
         return _first_step(request, session, s, lane_, w_, sq, pk)
 
     @app.post(CONFIRM)
-    def book_confirm(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", token: str = "", first: str = "", last: str = "", email: str = "", to: str = "",
+    def book_confirm(request, session, lane: str = "", w: str = "", fl: str = "", st: str = "", rm: str = "", token: str = "", first: str = "", last: str = "", email: str = "", to: str = "",
                      home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
@@ -277,7 +277,7 @@ def register(app):
         if not mb.allow(me.id):
             return _slowed(request, s, lane, w)
         family = _family(session)
-        pk = tm.picks(fl, st)
+        pk = tm.picks(fl, st, rm)
         lane_, w_, sq, pk = _read(s, lane, w, family, pk)
         if lane_ is None:
             return RedirectResponse(mx.href(s), status_code=303)

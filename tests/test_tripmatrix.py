@@ -149,4 +149,33 @@ def test_a_square_with_no_alternatives_is_unchanged_by_a_pick():
 
 @pytest.mark.parametrize("flight, stays, want", [("1", "0,2", (1, (0, 2))), ("", "", (0, (None,))), ("x", "-1,y", (0, (None, None))), ("123", "999", (0, (None,))), ("2", "1,1,1", (2, (1, 1))), ("²", "0,³", (0, (0, None)))])
 def test_the_form_words_for_a_choice_are_read_without_trusting_them(flight, stays, want):
-    assert tm.picks(flight, stays) == want
+    assert tm.picks(flight, stays)[:2] == want
+
+
+@pytest.mark.parametrize("rooms, want", [("1,0", (1, 0)), ("", (None,)), ("x,-1", (None, None)), ("123", (None,)), ("2,1,1", (2, 1)), ("²", (None,))])
+def test_the_form_words_for_a_room_are_read_without_trusting_them(rooms, want):      # F-251
+    assert tm.picks("0", "0", rooms)[2] == want
+
+
+# ---- F-251: the rooms of the hotel chosen ----------------------------------------------------------------------------------------------------------------
+
+def _room_square():
+    rooms = lambda base: tuple(tm.RoomPart(n, "room only", True, due, base + extra, f"of-{n}") for n, extra, due in (("Standard", 0, 0), ("Deluxe", 9_000, 5_000), ("Suite", 21_000, 0)))      # noqa: E731
+    stays = [tm.StayPart("San Diego", 4, n, "Standard", "room only", True, 0, "", "", base, f"of-{n}", "", rooms(base)) for n, base in (("Harbor", 86_400), ("Bay", 112_800))]
+    f = tm.FlightPart("Alaska", "out", "back", 0, 61_200)
+    return tm.Square("sandiego", "2026-12-12", tm.OK, f, (stays[0],), 12, None, True, (f,), (tuple(stays),))
+
+
+def test_picking_a_room_changes_the_stay_to_that_room_and_the_total_by_exactly_its_price_difference():
+    sq = _room_square()
+    deluxe = tm.pick(sq, 0, (0,), (1,))
+    assert (deluxe.stays[0].name, deluxe.stays[0].room, deluxe.stays[0].cents, deluxe.stays[0].due_at_stay_cents, deluxe.stays[0].offer_id) == ("Harbor", "Deluxe", 95_400, 5_000, "of-Deluxe")
+    assert deluxe.cents == sq.cents + 9_000
+    both = tm.pick(sq, 0, (1,), (2,))      # another hotel and its third room: the room index is read against the hotel chosen
+    assert (both.stays[0].name, both.stays[0].room, both.cents) == ("Bay", "Suite", 61_200 + 112_800 + 21_000)
+
+
+@pytest.mark.parametrize("rooms", [(9,), (-1,), (None,), ()])
+def test_a_room_the_hotel_does_not_have_is_its_shown_room(rooms):
+    sq = _room_square()
+    assert tm.pick(sq, 0, (0,), rooms) == sq and tm.clamp(sq, (0, (0,), rooms)) == (0, (0,), (0,))

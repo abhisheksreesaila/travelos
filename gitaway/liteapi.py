@@ -97,6 +97,20 @@ class Stay:
     due_at_stay_cents: int   # fees the total leaves out, paid at the hotel
     offer_id: str            # verbatim, never shown
     fetched: datetime
+    rooms: tuple = ()        # F-251: every room the answer gave for this hotel, cheapest first (at most MAX_ROOMS), each a Room; the cheapest is this stay's own
+
+
+@dataclass(frozen=True)
+class Room:
+    name: str                # "Deluxe King Corner"
+    board: str               # as Stay.board
+    refundable: bool
+    cents: int               # the whole stay in this room, the whole party, taxes included, fees paid at the hotel not
+    due_at_stay_cents: int
+    offer_id: str            # verbatim, never shown
+
+
+MAX_ROOMS = 4
 
 
 @dataclass(frozen=True)
@@ -249,29 +263,31 @@ def _board(rate) -> str:
     return "room only" if kind == "RO" else ("breakfast" if kind == "BI" else str(rate.get("boardName") or kind).lower())
 
 
+def _room_of(rt, rate) -> Room:
+    fees = (rate.get("retailRate") or {}).get("taxesAndFees") or ()
+    due = sum(_cents(f.get("amount")) or 0 for f in fees if isinstance(f, dict) and f.get("included") is False and f.get("currency") == "USD")
+    return Room(str(rate.get("name") or ""), _board(rate), (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", _usd(rt.get("offerRetailRate")), due, rt["offerId"])
+
+
 def read_stays(answer, fetched: datetime) -> tuple:
-    """Each hotel's cheapest room from a /hotels/rates answer, cheapest first."""
+    """Each hotel's cheapest room from a /hotels/rates answer, cheapest first, with the hotel's other rooms (F-251: at most MAX_ROOMS, the cheapest first)."""
     data = _data(answer)
     hotels = {h.get("id"): h for h in answer.get("hotels") or () if isinstance(h, dict)}
     found = []
     for h in data:
         hotel = hotels.get(h.get("hotelId") if isinstance(h, dict) else None)
-        best = None
+        rooms = []
         for rt in (h.get("roomTypes") or ()) if hotel else ():
             rates = rt.get("rates") or ()
-            cents = _usd(rt.get("offerRetailRate"))
-            if not rates or cents is None or not rt.get("offerId") or (best and best[0] <= cents):
-                continue
-            best = (cents, rt, rates[0])
-        if not best:
+            if rates and _usd(rt.get("offerRetailRate")) is not None and rt.get("offerId"):
+                rooms.append(_room_of(rt, rates[0]))
+        if not rooms:
             continue
-        cents, rt, rate = best
-        fees = (rate.get("retailRate") or {}).get("taxesAndFees") or ()
-        due = sum(_cents(f.get("amount")) or 0 for f in fees if isinstance(f, dict) and f.get("included") is False and f.get("currency") == "USD")
+        rooms = tuple(sorted(rooms, key=lambda r: r.cents)[:MAX_ROOMS])      # a stable sort: of two rooms at one price the first the answer gave is the cheapest
+        best = rooms[0]
         found.append(Stay(hotel["id"], str(hotel.get("name") or ""), str(hotel.get("main_photo") or ""), str(hotel.get("thumbnail") or ""), _num(hotel.get("latitude")),
                           _num(hotel.get("longitude")), _num(hotel.get("stars")), _num(hotel.get("rating")), int(_num(hotel.get("review_count")) or 0),
-                          str(hotel.get("address") or ""), str(rate.get("name") or ""), _board(rate),
-                          (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", cents, due, rt["offerId"], fetched))
+                          str(hotel.get("address") or ""), best.name, best.board, best.refundable, best.cents, best.due_at_stay_cents, best.offer_id, fetched, rooms))
     return tuple(sorted(found, key=lambda s: (s.cents, s.id)))
 
 

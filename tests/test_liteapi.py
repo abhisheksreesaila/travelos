@@ -75,6 +75,18 @@ def test_stays_are_each_hotels_cheapest_room_in_cents_taxes_included():
     assert first.fetched == at
 
 
+def test_a_hotel_keeps_every_room_the_answer_gave_cheapest_first_and_the_shown_room_is_the_cheapest():
+    """F-251: the opened square lets the family choose a room; the rooms are the recorded answer's own, each with its offer and its price."""
+    got = liteapi.read_stays(answer("hotel_rates.json"), datetime(2026, 11, 12, 19, 50, tzinfo=timezone.utc))
+    doc = answer("hotel_rates.json")
+    for stay in got:
+        offers = next(d for d in doc["data"] if d["hotelId"] == stay.id)["roomTypes"]
+        assert [r.offer_id for r in stay.rooms] == [rt["offerId"] for rt in sorted(offers, key=lambda rt: rt["offerRetailRate"]["amount"])[:liteapi.MAX_ROOMS]]
+        assert (stay.rooms[0].name, stay.rooms[0].cents, stay.rooms[0].offer_id) == (stay.room, stay.cents, stay.offer_id)
+        assert [r.cents for r in stay.rooms] == sorted(r.cents for r in stay.rooms)
+    assert [(r.name, r.cents) for r in got[0].rooms] == [("Standard Room, 2 Queen Beds", 59694), ("Deluxe King Corner", 61947)]
+
+
 def only(test) -> dict:
     """The recorded answer with only the rooms that pass `test`, so the cheapest left is one of them."""
     a = answer("hotel_rates.json")

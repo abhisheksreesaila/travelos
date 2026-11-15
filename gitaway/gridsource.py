@@ -168,6 +168,15 @@ def _sample_flight(sp: SamplePlace, w, adults, kid_ages, home, back_iata):
     return tm.FlightPart(sp.airline, out, back, 0, cents)
 
 
+SAMPLE_ROOMS = (("Deluxe room, king bed", 12), ("Family suite, two rooms", 26))      # made-up, like the catalog's own: the sample hotel's other rooms, in percent dearer
+
+
+def _sample_stay(place, nights, name, room, rating, cents) -> tm.StayPart:
+    """A sample hotel with its own room and two made-up dearer ones to choose between (F-251); the square says Sample prices, so these are sample rooms too."""
+    rooms = (tm.RoomPart(room, "room only", True, 0, cents),) + tuple(tm.RoomPart(n, "room only", True, 0, int(round(cents * (100 + pct) / 10_000)) * 100) for n, pct in SAMPLE_ROOMS)
+    return tm.StayPart(place, nights, name, room, "room only", True, 0, "", rating, cents, rooms=rooms)
+
+
 def _catalog_square(lane, w, adults, kid_ages, home):
     if not all(has_sample(p) for p in lane.places):
         return tm.Square(lane.key, w.key, tm.NO_SAMPLE, sample=True)
@@ -200,11 +209,11 @@ def _catalog_square(lane, w, adults, kid_ages, home):
     for place, trip, (_, a, b) in zip(lane.places, trips, split):
         if trip is not None:
             offers_ = sorted(catalog.offers("stay", trip), key=lambda o: (o.price_cents, o.id))[:tm.MAX_ALTS]
-            alts.append(tuple(tm.StayPart(place.name, (b - a).days, st.name, st.detail, "room only", True, 0, "", st.rating, sample_day(st.price_cents, a)) for st in offers_))
+            alts.append(tuple(_sample_stay(place.name, (b - a).days, st.name, st.detail, st.rating, sample_day(st.price_cents, a)) for st in offers_))
         else:
             sp = SAMPLE_PLACES[place.name]
             rooms = -(-(adults + len(kid_ages)) // 4)
-            alts.append((tm.StayPart(place.name, (b - a).days, sp.stay, sp.room, "room only", True, 0, "", sp.rating, sample_day(sp.night_cents * rooms * (b - a).days, a)),))
+            alts.append((_sample_stay(place.name, (b - a).days, sp.stay, sp.room, sp.rating, sample_day(sp.night_cents * rooms * (b - a).days, a)),))
     stays = tuple(x[0] for x in alts)
     return tm.Square(lane.key, w.key, tm.OK, flight, stays, drive, None, True, flights, tuple(alts))
 
@@ -212,7 +221,8 @@ def _catalog_square(lane, w, adults, kid_ages, home):
 def _stay_part(place, a, b, s: liteapi.Stay) -> tm.StayPart:
     board = "breakfast" if s.board == "breakfast" else s.board
     rating = " · ".join(x for x in (f"{s.rating:g} of 10" if s.rating else "", f"{s.reviews:,} reviews" if s.reviews else "") if x)
-    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents, s.offer_id, s.address)
+    rooms = tuple(tm.RoomPart(r.name, r.board, r.refundable, r.due_at_stay_cents, r.cents + r.due_at_stay_cents, r.offer_id) for r in s.rooms) if len(s.rooms) > 1 else ()
+    return tm.StayPart(place.name, (b - a).days, s.name, s.room, board, s.refundable, s.due_at_stay_cents, s.photo, rating, s.cents + s.due_at_stay_cents, s.offer_id, s.address, rooms)
 
 
 def _leg_words(leg) -> str:
