@@ -21,7 +21,7 @@ def page_html(client, url=MATRIX):
 
 def test_the_sentence_says_to_tap_a_word_and_every_word_is_a_picker_button(client):
     html = page_html(client)
-    assert "Tap any word to change it" in html
+    assert '<span class="v2-hint"' in html and "Change any word" in html and "Tap any word to change it" not in html
     words = re.findall(r'<span role="button" tabindex="0" data-k="(\w+)" aria-haspopup="dialog" aria-expanded="false" aria-label="([^"]+)" class="v2-w">', html)
     assert [k for k, _ in words] == list(v2sentence.WORD_KEYS)
     assert dict(words)["nights"] == "How many nights: 4 nights"
@@ -31,6 +31,16 @@ def test_the_sentence_sits_on_its_own_opaque_card_with_the_suggestions_in_it(cli
     html = page_html(client)
     card = html.split('class="v2-qcard"', 1)[1].split('class="mx-results"', 1)[0]
     assert 'class="v2-sent"' in card and 'class="v2-sug"' in card and "Try" in card
+
+
+def test_the_sentence_is_a_search_card_of_its_own_with_a_title_a_field_and_a_footer_band(client):
+    """F-279: a distinct section named by its own heading, the words in a field, the Try chips in the card's footer band, the instruction an instruction."""
+    html = page_html(client)
+    card = re.search(r'<section aria-labelledby="v2-qtitle" class="v2-qcard">(.*?)</section>', html, re.S).group(1)
+    assert re.search(r'<h2 id="v2-qtitle" class="v2-qtitle">Your search</h2>', card) and 'class="v2-qic"' in card
+    assert card.index('class="v2-qfield"') < card.index('class="v2-sent"') < card.index('class="v2-sugs"')      # the field holds the sentence; the band comes last
+    assert re.search(r'<span class="v2-hint">(?:<svg.*?</svg>)?Change any word</span>', card, re.S)
+    assert html.count('class="v2-qcard"') == 1 and "Your trip" not in card
 
 
 # ---- the suggestion chips -----------------------------------------------------------------------------------------------------------------------------------

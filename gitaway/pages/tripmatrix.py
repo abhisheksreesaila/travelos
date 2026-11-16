@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, B, Br, Details, Div, H1, H2, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
@@ -46,7 +46,8 @@ NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip a
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
-HINT = "Tap any word to change it"
+HINT = "Change any word"      # an instruction under the title, not a tag (F-279)
+SEARCH = "Your search"
 CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 ESTIMATES = "“About” prices are estimates from what is known. Exact prices when you let go."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
@@ -389,9 +390,9 @@ def hero_el(spec, problems=()):
     """The sentence on top of the results: its form (hidden fields, posted by the script when a word changes), the sentence, and what is wrong in words when a search cannot run."""
     err = P(" ".join(problems), cls="v2-error", id="v2-error", role="alert") if problems else ""
     sug = v2sentence.suggestions(spec)
-    head = Div(Span("Your trip", cls="v2-ql"), Span(icon("spark", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
+    head = Div(Span(icon("search", 20, 2.4), cls="v2-qic", aria_hidden="true"), H2(SEARCH, cls="v2-qtitle", id="v2-qtitle"), Span(icon("pencil", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
     tries = Nav(Span("Try", cls="v2-ql"), *[A(icon("plus", 16, 2.4), label, href=to, cls="v2-sug") for label, to in sug], cls="v2-sugs", aria_label="Suggested changes") if sug else ""
-    return Div(Div(head, v2sentence.form_el(spec, v2sentence.sentence(spec), err), tries, cls="v2-qcard"), import_el(), cls="v2-hero")
+    return Div(Section(head, Div(v2sentence.form_el(spec, v2sentence.sentence(spec), err), cls="v2-qfield"), tries, cls="v2-qcard", aria_labelledby="v2-qtitle"), import_el(), cls="v2-hero")
 
 
 def matrix_page(s: State, family="", typed="", problems=(), picked=()):

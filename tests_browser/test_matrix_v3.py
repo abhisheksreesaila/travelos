@@ -44,7 +44,7 @@ def shot(page, name):
 
 def test_a_suggestion_chip_runs_the_sentence_with_one_word_changed(matrix):  # noqa: F811
     page = matrix(DESKTOP)
-    expect(page.locator(".v2-hint")).to_have_text("Tap any word to change it")
+    expect(page.locator(".v2-hint")).to_have_text("Change any word")
     chip = page.locator(".v2-sug", has_text="A week later")
     expect(chip).to_be_visible()
     assert chip.bounding_box()["height"] >= 47.5
