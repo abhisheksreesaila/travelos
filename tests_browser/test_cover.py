@@ -177,9 +177,15 @@ def test_the_wish_is_a_real_form_nothing_takes_the_keyboard_and_it_opens_the_mat
     page.goto(f"{base_url}/")
     page.wait_for_function("!!window.GA_COVER")
     page.locator(".cv-wish textarea").fill("San Diego")
-    page.locator(".cv-wish .go").click(force=True)      # the pill sends it too; a place with no time stays on the ask, in its words, the box filled
+    page.locator(".cv-wish .go").click(force=True)      # the pill sends it too; a place with no time opens the matrix on the default window (F-268, D-772)
+    page.wait_for_url("**/plan/matrix?**")
+    assert "to=San+Diego" in page.url and "d=" in page.url
+    page.goto(f"{base_url}/")
+    page.wait_for_function("!!window.GA_COVER")
+    page.locator(".cv-wish textarea").fill("Narnia")
+    page.locator(".cv-wish .go").click(force=True)      # a wish with no place we know stays on the ask, in its words, the box filled
     page.wait_for_url("**/plan/ask")
-    assert "Say when" in page.locator("#v2-error").inner_text() and page.locator("#v2-q").input_value() == "San Diego"
+    assert "don't know that place" in page.locator("#v2-error").inner_text() and page.locator("#v2-q").input_value() == "Narnia"
 
 
 def test_the_pager_and_the_doors_of_the_shown_words(cover):
