@@ -1,24 +1,24 @@
-"""Sign-in (F-017, F-039, F-052; Direction A since F-200): /signin?next=<local path>&intent=<save|pay|invite|fork>.
+"""Sign-in (F-017, F-039, F-052; v2 since F-272): /signin?next=<local path>&intent=<save|pay|invite|fork>.
 
 Everything is browsable signed out; save, pay, invite and fork land here, then continue to `next`. Without a `next`
 the traveler lands on /, which opens their trip or the trip matrix (F-231).
 Google sign-in is /login and /auth/callback (fh-saas); the local dev sign-in is a POST here (see gitaway.auth).
-The page (docs/design/reskin, a-signin): the intent as the title, what signing in is for as a trip card with B's ticket stub (what the card says comes from `next`,
-gitaway.signin_context), two big buttons (Google, a passkey); on a laptop the left half is a sunset (D-550: the founder found two grey halves without contrast) carrying the cover's line over the trip's widgets as postcards.
+The page (F-272, D-790..D-793): the cover's sky (v2's sun and moon, Newsreader and Inter) with a near-opaque paper card: the intent as the title, what signing in is for as a trip card with its
+ticket stub (what the card says comes from `next`, gitaway.signin_context), one clear Continue with Google, a passkey; on a laptop the cover's line and one small postcard of the trip sit beside it.
 """
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Header, Input, Label, Link, Main, NotStr, P, Script, Span, Summary, Title, to_xml
+from fasthtml.common import A, Button, Details, Div, Form, H1, H2, Input, Label, Link, Main, NotStr, P, Script, Span, Summary, Title, to_xml
 from fh_saas.utils_auth import handle_login_request, handle_logout
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import auth, hostdb, passkeys, session as ses
+from gitaway import auth, hostdb, passkeys, session as ses, v2 as v2_
 from gitaway.icons import icon
-from gitaway.layout import brand, clear_site_data, mark, preview, styles
+from gitaway.layout import clear_site_data, preview, styles
 from gitaway.signin_context import context
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/signin.css"), Link(rel="stylesheet", href="/assets/css/passkeys.css"), Script(src="/assets/js/signin.js", defer=True), Script(src="/assets/js/passkeys.js", defer=True))
+HEAD = (*v2_.HEAD, Link(rel="stylesheet", href="/assets/css/signin.css"), Script(src="/assets/js/signin.js", defer=True), Script(src="/assets/js/passkeys.js", defer=True))
 
 TITLES = {
     "pay": "Sign in to book this trip",
@@ -33,32 +33,25 @@ TITLES = {
 LINE = ("Compare the whole trip.", "Choose it together.")   # the cover's line (gitaway/pages/cover.py LINE): one voice from the cover to the sign-in
 SUBHEAD = "Flights and stays side by side, one total a square. Book it, plan it with your family, share it in one card."
 NEW_HERE = "New here? The same buttons make your account. No password to remember."
-# the two small widgets: an icon and a kind (its colour) per pass; the words are the pass's own (s1, s2)
+# the postcard's two small stickers: an icon and a kind per pass (the kind picks the paper-drawing colour, signin.css); the words are the pass's own (s1, s2)
 WIDGETS = {"cold": (("food", "k-food"), ("sun", "k-see")), "search": (("bed", "k-stay"), ("users", "k-see")), "fork": (("calendar", "k-stay"), ("calendar", "k-see"))}
 
 
 def sky(ctx):
-    """The decorative half beside the card on a laptop (hidden on a phone): the line, its subhead, and the trip as Direction A widgets: the route on the flight's
-    colour (its two codes), and the pass's two small facts (a search's nights and party, a fork's first two days, or the generic pass's)."""
+    """The laptop's side beside the card (hidden on a phone): the cover's line, its subhead and one small paper postcard of the trip: the route (its two codes) and the pass's
+    two small facts (a search's nights and party, a fork's first two days, or the generic pass's)."""
     (i1, k1), (i2, k2) = WIDGETS.get(ctx.kind, WIDGETS["cold"])
-    route = Div(Span(ctx.k2 if ctx.kind != "cold" else "ROUTE", cls="si-w-k"), icon("plane", 22, 2.2),
-                P(Span(ctx.origin, cls="si-code"), icon("arrow-right", 22, 2.6), Span(ctx.dest, cls="si-code"), cls="si-w-big"),
-                P(ctx.v2, cls="si-w-sub"), cls="si-w si-w-route k-flight")
-    small = [Div(icon(ico, 22, 2.2), Span(text, cls=f"si-stick si-stick{n}"), cls=f"si-w si-w-small {kind}") for n, (ico, kind, text) in enumerate(((i1, k1, ctx.s1), (i2, k2, ctx.s2)), 1)]
-    clouds = [NotStr(f'<svg class="si-cloud c{n}" viewBox="0 0 150 64" focusable="false"><circle cx="46" cy="38" r="20"/><circle cx="76" cy="28" r="26"/>'
-                     '<circle cx="108" cy="38" r="20"/><rect x="36" y="38" width="82" height="20" rx="10"/></svg>') for n in (1, 2)]
-    return Div(
-        Span(cls="si-sun"), *clouds,
-        P(Span(LINE[0]), " ", Span(LINE[1], cls="si-line-two"), cls="si-line"),
-        P(SUBHEAD, cls="si-line-sub"),
-        Div(route, *small, cls="si-widgets"),
-        aria_hidden="true", cls="si-sky")
+    chips = [Span(icon(ico, 20, 2.2), Span(text, cls=f"si-stick si-stick{n}"), cls=f"si-chip {kind}") for n, (ico, kind, text) in enumerate(((i1, k1, ctx.s1), (i2, k2, ctx.s2)), 1)]
+    card = Div(Span(ctx.k2 if ctx.kind != "cold" else "ROUTE", cls="si-pc-k"), Span(cls="si-stamp"),
+               P(Span(ctx.origin, cls="si-code"), icon("arrow-right", 22, 2.6), Span(ctx.dest, cls="si-code"), cls="si-pc-route"),
+               P(ctx.v2, cls="si-pc-sub"), Div(*chips, cls="si-chips"), cls="si-pc")
+    return Div(P(Span(LINE[0]), " ", Span(LINE[1], cls="si-line-two"), cls="si-line"), P(SUBHEAD, cls="si-line-sub"), card, aria_hidden="true", cls="si-sky")
 
 
 def welcome():
     """Storyboard frame 2 (F-074): the full-screen moment after a Face ID sign-in. Hidden; passkeys.js fills the name and shows it for a beat before opening Today."""
     return Div(
-        Div(mark("si-logo"), Span("GitAway", cls="si-brand"), cls="sw-brand"),
+        Div(NotStr(v2_.MARK), Span("GitAway", cls="si-brand"), cls="sw-brand"),
         Span(icon("face-id", 64, 1.8), cls="sw-glyph", aria_hidden="true"),
         H2("Welcome back, ", Span("", id="si-welcome-name"), cls="sw-title"),
         P("Signed in with Face ID. No password, no code by text.", cls="sw-line"),
@@ -99,14 +92,14 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error="", fac
     ctx = context(next_path, intent)
     hidden = (Input(type="hidden", name="next", value=next_path), Input(type="hidden", name="intent", value=asked))
     google_btn = A(Span(GOOGLE_G, cls="si-g", aria_hidden="true"), "Continue with Google", href=f"/login?next={quote(next_path, safe='')}&intent={asked}",
-                   cls="btn si-google", id="si-google") if google else ""
-    faceid_btn = Div(Button(icon("face-id", 22, 2.2), "Sign in with Face ID", type="button", id="si-faceid", cls="btn btn-ink si-faceid", hidden=True, data_next=next_path, data_intent=asked),
+                   cls="si-btn si-google", id="si-google") if google else ""
+    faceid_btn = Div(Button(icon("face-id", 22, 2.2), "Sign in with Face ID", type="button", id="si-faceid", cls="si-btn soft si-faceid", hidden=True, data_next=next_path, data_intent=asked),
                      P("", id="si-faceid-status", role="status", cls="si-note si-faceid-status", hidden=True), cls="si-faceid-box") if faceid else ""
     dev_form = Form(
         Label(Span("Email", cls="si-label"), Input(type="email", name="email", id="si-email", placeholder="you@example.com", required=True, autocomplete="email",
                                                    **({"aria_invalid": "true", "aria_describedby": "si-error"} if error else {})), cls="si-field"),
         P(error, id="si-error", role="alert", cls="si-error") if error else "",
-        Button("Dev sign-in (local only)", type="submit", cls="btn btn-ink si-dev"),
+        Button("Dev sign-in (local only)", type="submit", cls="si-btn soft si-dev"),
         P("Local development only. It never appears on a real site.", cls="si-note"),
         *hidden, action="/signin", method="post", id="si-dev-form", cls="si-dev-form",
     ) if dev else ""
@@ -114,7 +107,7 @@ def dialog(next_path, intent, asked=None, dev=False, google=False, error="", fac
     nothing = P("Sign-in isn't set up on this server yet. See docs/setup.md.", cls="si-note", id="si-off") if not (google or dev) else ""
     stub = Div(*[Span(Span(k, cls="si-k"), Span(v, cls="si-v"), cls="si-cell") for k, v in (("ROUTE", ctx.route), (ctx.k2, ctx.v2), ("STAY SIGNED IN", "30 days"))], cls="si-stub")
     trip = Div(
-        Div(Span(icon("plane" if ctx.kind != "fork" else "fork", 20, 2.2), cls="si-trip-tile k-flight", aria_hidden="true"),
+        Div(Span(icon("plane" if ctx.kind != "fork" else "fork", 20, 2.2), cls="si-trip-tile", aria_hidden="true"),
             Div(P(ctx.head, cls="si-dest", id="si-dest"), P(f"{ctx.route} · {ctx.v2}", cls="si-trip-sub"), cls="si-trip-text"), cls="si-trip-top"),
         Div(cls="si-perf", aria_hidden="true"),
         stub, cls="si-trip")
@@ -140,12 +133,15 @@ def _continue(session, intent, next_path):
 
 
 def _page(request, next_path, intent, asked, error="", status=200):
-    """The whole document: a full-screen page (no site nav or footer, D-200-sign-in): the brand and Cancel on top, the card, and on a laptop the half beside it."""
+    """The whole document: the v2 sky and a slim bar (the brand, "Early preview", light/dark, Cancel; no sections, this is a dialog), the card, and on a laptop the side beside it."""
     card, sky_ = dialog(next_path, intent, asked, dev=auth.dev_login_allowed(request), google=auth.google_enabled(), error=error, faceid=passkeys.available(request))
-    top = Header(A("Skip to content", href="#main", cls="ga-skip"), Div(brand(), preview(), cls="ga-brand-row"),
-                 A(icon("x", 20, 2.6), Span("Cancel", cls="sr-only"), href=cancel_href(next_path), id="si-cancel", cls="si-x"), cls="ga-header si-head")
+    top = Div(A(NotStr(v2_.MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway home"), preview(), Span(cls="sp"),
+              Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",
+                     aria_pressed="false", aria_label="Dark mode", title="Dark mode"),
+              A(icon("x", 20, 2.6), Span("Cancel", cls="sr-only"), href=cancel_href(next_path), id="si-cancel", cls="v2-round si-x"), cls="v2-top")
     out = (Title("GitAway · Sign in"), *styles(*HEAD),
-           Div(top, Main(Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), id="main"), welcome() if passkeys.available(request) else "", data_theme="sunset", cls="ga-page si-page"))
+           Div(v2_.bg(), A("Skip to content", href="#main", cls="ga-skip"), top, Main(Div(sky_, Div(card, cls="si-pass"), cls="si-wrap"), id="main"),
+               welcome() if passkeys.available(request) else "", data_theme="sunset", cls="ga-page v2 si-page"))
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
 
 

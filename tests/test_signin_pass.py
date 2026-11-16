@@ -105,3 +105,16 @@ def test_the_stub_says_stay_signed_in(client):
 
 def test_the_dev_summary_has_a_chevron(client):
     assert re.search(r'<summary class="si-sum">.*?<svg', get(client, "/"), re.S)
+
+
+def test_the_page_is_the_v2_shell_with_the_cover_s_sky_and_the_things_it_kept(client):
+    """F-272: the sign-in wears the cover's language: the v2 stylesheets and wrapper, the sky (sun, moon, clouds), the bar with Early preview, light/dark and Cancel; no sections pill."""
+    html = get(client, "/", "save")
+    assert '/assets/css/v2-tokens.css' in html and '/assets/css/v2.css' in html and 'class="ga-page v2 si-page"' in html and 'class="v2-bg"' in html
+    assert "Early preview" in html and 'id="ga-mode-v2"' in html and 'class="v2-sections' not in html
+    assert re.search(r'<a [^>]*href="/"[^>]*id="si-cancel"|<a [^>]*id="si-cancel"[^>]*href="/"', html) and 'href="/terms"' in html and 'href="/privacy"' in html
+    assert "passkeys.css" not in html and "Direction A" not in html
+
+
+def test_cancel_goes_back_to_where_the_person_was(client):
+    assert 'id="si-cancel"' in get(client, FORK, "fork") and f'href="{FORK}"' in re.search(r'<a [^>]*id="si-cancel"[^>]*>|<a [^>]*href="[^"]*"[^>]*id="si-cancel"', get(client, FORK, "fork")).group(0)

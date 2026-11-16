@@ -26,7 +26,7 @@ def test_signed_out_pages_keep_their_own_header(client):
     for path in ("/", "/signin", "/privacy"):
         html = client.get(path).text
         assert "ga-topbar" not in html, path
-        assert ('class="cv-top"' if path == "/" else "ga-header") in html, path      # the signed-out landing is the cover, with its own header (F-206)
+        assert ('class="cv-top"' if path == "/" else 'class="v2-top"' if path == "/signin" else "ga-header") in html, path      # the signed-out landing is the cover, with its own header (F-206); the sign-in wears v2's bar, slimmed (F-272)
 
 
 def test_the_front_door_opens_a_signed_in_visitors_trip_and_its_bar(client):      # F-231: no signed-in landing keeps a header of its own any more
