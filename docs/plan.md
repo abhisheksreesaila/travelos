@@ -1608,8 +1608,8 @@ Found reviewing F-250/F-252: the v2 pages' top bar (gitaway/v2.py) has the brand
 - [x] tests_browser/test_topbar.py retired with the old bar (F-254); tests_browser/test_v2_topbar.py is the bar test
 - [x] the matrix's "Look at <place>" link is 44px at 390 (tests_browser/test_direction_a_pages.py): now var(--target)
 - [ ] the community shelf's captions under the books sit at uneven heights (maker and days misaligned): one baseline
-- [ ] tests_browser/test_tripmatrix.py `test_letting_go_searches_only_the_squares_in_view…` fails at 390 on master (seen during F-258)
-- [ ] tests_browser/test_showcase_js.py front-door tests and test_publish.py's phone publish test (failing before tonight): fix or retire
+- [x] tests_browser/test_tripmatrix.py `test_letting_go_searches_only_the_squares_in_view…` failed at 390: the test's far column sits inside the page's 120px read-ahead margin there (D-782)
+- [x] tests_browser/test_showcase_js.py front-door tests follow D-761 and the postcard; test_publish.py was already gone; test_direction_a_pages.py sweeps the Direction A pages left (D-781); `--collect-only tests_browser` works
 
 ## Founder's walk of the v2 build (2026-11-15): "planning is spot on"; these follow
 ## F-257 The landing invites: a soft search box with autocomplete [done]
@@ -1674,5 +1674,5 @@ Checks: with a live key the square shows the public price (fixture), the Book bu
 From the F-266 handover: typing just "San Diego" on the cover (or the ask) stops at "Say when". When a wish names a known place but no dates, the ask picks a sensible window and says so in the sentence, where every word is still a picker: start on the Friday at least 28 days from today, 3 nights, give or take 2 days (D-77x). Never a guessed place and never a guessed home airport: off the showcase "from <airport>" is still asked when missing. Checks: POST /plan/ask with q="San Diego" on the showcase lands on /plan/matrix with d = that Friday, r = d + 3, x = 2; the sentence shows the chosen dates as tappable words; a wish with dates keeps them; an unknown place is still refused; tests for both showcase modes.
 ## F-269 "Plan this trip" after Save, when booking opens soon [done]
 From D-771: with Book disabled ("Booking opens soon"), the saved state's link says "Open the trip"; it should say "Plan this trip" and go to /trip/plan, the next step of the loop. Checks: in SOON and STAND_IN modes a saved square shows "Plan this trip" to /trip/plan; sandbox unchanged; browser test if page JS changes.
-## F-270 The hand font is GitAway's own copy [todo]
+## F-270 The hand font is GitAway's own copy [review]
 `layout.FONTS` loads Caveat from fonts.googleapis.com on every page; the site serves its other fonts itself. Self-host Caveat (OFL, licence beside it in assets/fonts), drop the Google preconnect and stylesheet, keep `--font-hand`. Checks: no page's HTML references fonts.googleapis.com or fonts.gstatic.com (a test sweeps the GET routes); the cover still draws its hand words.

@@ -517,12 +517,15 @@ def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matri
 
 
 def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
-    page = matrix(PHONE)
+    page = matrix({"width": 320, "height": 640})      # (at 390 the last column starts 90px past the edge, inside the 120px margin the page reads ahead by on purpose (MARGIN in tripmatrix.js), so it IS "in view"; at 320 it is not)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     page.wait_for_function(WAIT_IDLE)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 0")
     page.wait_for_function(WAIT_IDLE)
+    assert page.evaluate("() => document.querySelector(\".mx-sq[data-sq='sandiego|2026-12-14']\").getBoundingClientRect().left > innerWidth + 120")      # the far column is beyond the margin
     before = len(stand.asked)
+    page.focus("#v2-sent .v2-w[data-k='nights']")      # by keyboard: at 320 the next word wraps over it for a mouse
+    page.keyboard.press("Enter")
     slide(page, 6)
     page.wait_for_function(WAIT_IDLE)
     asked = stand.asked[before:]

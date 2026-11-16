@@ -5,6 +5,7 @@
    are kept and point at Direction A's values, so every page takes the new look without renaming anything. */
 @font-face { font-family: "Geist"; src: url("/assets/fonts/geist-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url("/assets/fonts/geist-mono-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Caveat"; src: url("/assets/fonts/caveat-variable.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }   /* F-270: the hand, self-hosted (OFL, LICENSE-caveat.txt; latin subset from fontsource) */
 
 :root {
   /* THE SCALE. Every size in the CSS is rem, so this one number sizes the whole site.

@@ -73,3 +73,18 @@ def test_a_real_screen_replaces_its_placeholder(client, monkeypatch):
     plain = FastHTML()
     register_all(plain)
     assert "Not built yet" in TestClient(plain).get("/not-built-yet").text
+
+
+def test_no_google_fonts_f270(client):
+    """F-270: the hand (Caveat) is served from /assets/fonts; no page names Google's font hosts."""
+    from main import app
+    paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}
+    paths -= {"/auth/callback", "/healthz"}
+    paths.add("/trips/sun-tacos-and-tide-pools")
+    for path in sorted(paths):
+        html = client.get(path).text
+        assert "fonts.googleapis.com" not in html and "fonts.gstatic.com" not in html, path
+    css = client.get("/assets/css/tokens.css").text
+    assert 'font-family: "Caveat"; src: url("/assets/fonts/caveat-variable.woff2")' in css
+    assert client.get("/assets/fonts/caveat-variable.woff2").content[:4] == b"wOF2"
+    assert "SIL OPEN FONT LICENSE" in client.get("/assets/fonts/LICENSE-caveat.txt").text.upper()

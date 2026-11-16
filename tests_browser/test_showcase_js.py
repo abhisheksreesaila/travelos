@@ -36,26 +36,28 @@ def no_sideways_scroll(page):
 
 
 @SIZES
-def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, viewport):
-    """A stranger's landing is the cover (F-206): off the showcase it has no sample community part; Guides is in its header (D-458, F-262), whose
-    page says nobody has shared yet; its door signs in, then opens the start page."""
+def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, viewport, monkeypatch):
+    """A stranger's landing is the cover (F-266): off the showcase it has no sample community part; Guides is in its header (D-458, F-262), whose page says nobody has shared yet.
+    Its door needs no sign-in (D-761): with no LiteAPI key there is no matrix, so Start a trip goes to the import of a trip already booked, which signs you in first."""
+    monkeypatch.delenv("LITEAPI_KEY", raising=False)
     page = visit("/", viewport)
     assert no_sideways_scroll(page)
     assert page.locator("#community-trips, .forkline, .creators, .trip-row").count() == 0
     assert page.get_by_text("Been somewhere wonderful?").count() == 0
     page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
-    page.wait_for_url("**/signin")
+    page.wait_for_url("**/signin?next=/trips/import*")      # the import keeps a trip, so it asks who you are first
     page.goto(page.url.split("/signin")[0] + "/guides")
     assert page.get_by_text("No guides yet").first.is_visible()
 
 
 @SIZES
-def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewport, base_url, monkeypatch):
-    """F-231: a signed-in person has no landing. With a LiteAPI key / opens the trip matrix; off the showcase without one there is no matrix, so it opens the import of a trip already booked."""
+def test_the_front_door_opens_the_way_in_signed_in_or_not(visit, viewport, base_url, monkeypatch):
+    """D-761: Start a trip is the same door for everyone. With a LiteAPI key it opens the ask (/plan/ask); off the showcase without one there is no matrix, so it opens the import of a trip already booked.
+    A signed-in family with no trip has no landing (F-231): "/" sends it to the same place."""
     page = visit("/", viewport)
     page.context.request.post(f"{base_url}/signin", form={"email": "front.door@example.com", "next": "/", "intent": "save"}, max_redirects=0)      # a family with no trip
-    for key, want in ((None, "**/trips/import"), ("a-key", "**/plan/matrix")):
+    for key, want in ((None, "**/trips/import"), ("a-key", "**/plan/ask")):      # signed in here, so the import opens at once
         if key:
             monkeypatch.setenv("LITEAPI_KEY", key)
         else:
@@ -67,19 +69,18 @@ def test_the_signed_in_front_door_opens_the_way_in_with_no_landing(visit, viewpo
 
 
 @SIZES
-def test_production_plan_asks_where_and_shows_no_invented_offers(visit, viewport):
-    """F-198 (6): off the showcase /plan never draws the sample workspace; it asks where you are going, and a place gets the honest lanes."""
+def test_production_ask_shows_no_invented_offers(visit, viewport, monkeypatch):
+    """F-198 (6), F-257: off the showcase the old /plan (retired, F-254) lands on the ask, which draws no sample prices or offers."""
+    monkeypatch.setenv("LITEAPI_KEY", "a-key")
     page = visit("/plan", viewport)
-    assert page.get_by_role("heading", name="Where are you going?").is_visible()
-    assert page.locator(".ws-preview").count() == 0 and page.locator("#ws-total").count() == 0
+    page.wait_for_url("**/plan/ask")
+    assert page.get_by_role("combobox").or_(page.get_by_role("textbox")).first.is_visible()
+    assert page.get_by_text("Preview: sample prices").count() == 0 and page.locator(".ws-preview").count() == 0
     assert no_sideways_scroll(page)
-    page = visit("/plan?place=San+Diego&d=2027-03-05&r=2027-03-09&a=2", viewport)
-    assert page.locator("h2.ps-name").first.inner_text() == "Search flights to San Diego"
-    assert page.locator(".ws-preview").count() == 0 and no_sideways_scroll(page)
 
 
 @SIZES
 def test_a_hidden_page_is_a_plain_404(visit, viewport):
-    page = visit("/forks", viewport)
-    assert page.get_by_text("Nothing here").is_visible()
+    page = visit("/sandbox", viewport)
+    assert page.get_by_text("404 Not Found").is_visible()
     assert no_sideways_scroll(page)
