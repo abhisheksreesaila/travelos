@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, B, Br, Details, Div, H1, H2, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, B, Br, Button, Details, Div, H1, H2, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
@@ -49,7 +49,7 @@ SAMPLE = "Sample prices"
 HINT = "Change any word"      # an instruction under the title, not a tag (F-279)
 SEARCH = "Your search"
 CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
-ESTIMATES = "“About” prices are estimates from what is known. Exact prices when you let go."
+ESTIMATES = "“About” prices are estimates from what is known. Exact prices when you press Update."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
 FINE = "Prices are a preview from LiteAPI and change until booked. A stay booked here is a sandbox booking: nothing is charged."
 SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. A stay booked here is a sample booking: nothing is booked or charged."
@@ -392,7 +392,9 @@ def hero_el(spec, problems=()):
     sug = v2sentence.suggestions(spec)
     head = Div(Span(icon("search", 20, 2.4), cls="v2-qic", aria_hidden="true"), H2(SEARCH, cls="v2-qtitle", id="v2-qtitle"), Span(icon("pencil", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
     tries = Nav(Span("Try", cls="v2-ql"), *[A(icon("plus", 16, 2.4), label, href=to, cls="v2-sug") for label, to in sug], cls="v2-sugs", aria_label="Suggested changes") if sug else ""
-    return Div(Section(head, Div(v2sentence.form_el(spec, v2sentence.sentence(spec), err), cls="v2-qfield"), tries, cls="v2-qcard", aria_labelledby="v2-qtitle"), import_el(), cls="v2-hero")
+    upd = Div(P("Your changes aren't searched yet.", cls="v2-staged-note", role="status"), Button("Reset", type="button", cls="v2-reset"), Button("Update", type="submit", cls="v2-update"), id="v2-upd", cls="v2-upd", data_n="0")
+    nojs = NotStr("<noscript><style>.v2-upd { display: flex; } .v2-reset { display: none; }</style></noscript>")      # without script the form is a plain one: its button searches
+    return Div(Section(head, Div(v2sentence.form_el(spec, v2sentence.sentence(spec), err, upd, nojs), cls="v2-qfield"), tries, cls="v2-qcard", aria_labelledby="v2-qtitle"), import_el(), cls="v2-hero")
 
 
 def matrix_page(s: State, family="", typed="", problems=(), picked=()):

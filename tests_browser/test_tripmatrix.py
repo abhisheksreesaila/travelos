@@ -436,6 +436,16 @@ def slide(page, n, release=True):
         r.dispatchEvent(new Event('input', {bubbles: true})); if (release) r.dispatchEvent(new Event('change', {bubbles: true})); }""", [n, release])
 
 
+def search(page):
+    """F-280: nothing is searched until "Update": close the picker and press it, then wait for the new page's matrix to be idle."""
+    if page.locator("#v2-pop").is_visible():
+        page.click("#v2-pop .v2-done")
+    with page.expect_navigation():
+        page.click(".v2-update")
+    page.wait_for_selector("#mx.is-live")
+    page.wait_for_function(WAIT_IDLE)
+
+
 def let_go(page):
     page.evaluate("() => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.dispatchEvent(new Event('change', {bubbles: true})); }")
 
@@ -468,15 +478,15 @@ def test_sliding_shows_every_square_as_an_estimate_at_once_marks_none_and_search
     expect(band).to_have_attribute("style", re.compile(r"grid-column: 5 / span 2"))
     expect(band).to_have_attribute("data-l", "6 nights · about $2,820")
     note = page.locator("#mx-drawer .dr-note")
-    expect(note).to_have_text("Let go for the exact price of 6 nights.")               # the opened square never shows a guess as its price
+    expect(note).to_have_text("Press Update for the exact price of 6 nights.")               # the opened square never shows a guess as its price
     assert page.locator("#mx-drawer .dr-save, #mx-drawer .dr-book, #mx-drawer [data-slot='total']").count() == 0
     assert page.errors == []
 
 
-def test_letting_go_makes_every_square_its_real_answer_marked_by_the_same_rules_as_the_server(matrix, stand):
+def test_update_makes_every_square_its_real_answer_marked_by_the_same_rules_as_the_server(matrix, stand):
     page = matrix(DESKTOP)
     slide(page, 6)
-    page.wait_for_function(WAIT_IDLE)
+    search(page)
     live = drawn(page)
     assert len(live) == 25
     want = marks_at(6)                                                                # gitaway/tripmatrix.py's marks
@@ -490,9 +500,9 @@ def test_letting_go_makes_every_square_its_real_answer_marked_by_the_same_rules_
 def test_the_address_keeps_the_nights_so_a_reload_or_a_shared_link_does(matrix, stand):
     page = matrix(DESKTOP)
     slide(page, 6)
-    page.wait_for_function(WAIT_IDLE)
+    search(page)
     assert "r=2026-12-18" in page.url and "d=2026-12-12" in page.url
-    hrefs = page.eval_on_selector_all("a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
+    hrefs = page.eval_on_selector_all(".mx-card a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
     assert hrefs and all("r=2026-12-18" in h for h in hrefs if "d=2026" in h), hrefs      # the squares' and the find's links carry them too
     page.reload()
     page.wait_for_selector("#mx.is-live")
@@ -501,11 +511,10 @@ def test_the_address_keeps_the_nights_so_a_reload_or_a_shared_link_does(matrix, 
     assert drawn(page)["sandiego|2026-12-12"][1] == "$2,950"
 
 
-def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matrix, stand):
+def test_setting_the_nights_back_to_the_searched_ones_is_instant_and_asks_for_nothing(matrix, stand):
     page = matrix(DESKTOP)
-    slide(page, 6)
-    page.wait_for_function(WAIT_IDLE)
     stand.asked.clear()
+    slide(page, 6, release=False)
     words = page.evaluate("""() => { const r = [...document.querySelectorAll('input[data-nights]')].find(e => e.offsetParent); r.value = 4;
         r.dispatchEvent(new Event('input', {bubbles: true}));      // in the same breath: no wait, no fetch
         return [...document.querySelectorAll('.mx-lane .mx-sq')].map(e => [e.dataset.sq, e.querySelector('.mx-in').textContent.trim()]); }""")
@@ -514,6 +523,7 @@ def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matri
     let_go(page)
     page.wait_for_function(WAIT_IDLE)
     assert stand.asked == [] and "r=2026-12-16" in page.url
+    expect(page.locator("#v2-upd")).to_be_hidden()      # nothing is staged any more
 
 
 def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
@@ -527,7 +537,7 @@ def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the
     page.focus("#v2-sent .v2-w[data-k='nights']")      # by keyboard: at 320 the next word wraps over it for a mouse
     page.keyboard.press("Enter")
     slide(page, 6)
-    page.wait_for_function(WAIT_IDLE)
+    search(page)
     asked = stand.asked[before:]
     assert asked and len(asked) == len(set(asked)) and set(stand.asked_nights[before:]) == {6}      # each once, all for six nights
     assert not any(k.endswith("2026-12-14") for k in asked)                                      # the far column is not in view: not asked for
@@ -537,13 +547,14 @@ def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the
     assert any(k.endswith("2026-12-14") for k in stand.asked[before:]) and set(stand.asked_nights[before:]) == {6}
 
 
-def test_on_the_showcase_it_is_instant_the_peek_knows_every_square_and_nothing_is_searched(matrix, stand):
+def test_on_the_showcase_nothing_is_searched_until_update_and_then_every_square_is_the_real_answer(matrix, stand):
     page = matrix(DESKTOP)
     stand.peek_all = True                                                             # the sample catalog: every square is known without a search
     stand.asked.clear()
     slide(page, 7)
-    page.wait_for_function(WAIT_IDLE)
-    assert len(stand.asked) <= 1      # nothing is searched; at most the opened square's own bar is asked for (the sample catalog's own answer)
+    page.wait_for_timeout(500)
+    assert stand.asked == []      # F-280: sliding and letting go search nothing, not even the sample catalog
+    search(page)
     live = drawn(page)
     assert {k: v[0] for k, v in live.items()} == {k: marks_at(7).get(k, ()) for k in live} and live["sandiego|2026-12-13"][1] == tm.dollars(totals(7)["sandiego|2026-12-13"])
 
@@ -555,6 +566,8 @@ def test_the_opened_squares_bar_save_and_book_are_for_the_exact_nights_never_an_
     slide(page, 6, release=False)
     assert page.locator("#mx-drawer .dr-save, #mx-drawer .dr-book").count() == 0
     let_go(page)
+    search(page)
+    page.click(".mx-lane[data-lane='sandiego'] .mx-sq >> nth=3")
     expect(page.locator("#mx-drawer [data-slot='total']")).to_have_text(tm.dollars(totals(6)["sandiego|2026-12-13"]))
     assert page.eval_on_selector_all("#mx-drawer form input[name='r']", "els => els.map(e => e.value)") == ["2026-12-18", "2026-12-18"]      # Book and Save, for six nights
     expect(page.locator("#mx-drawer .dr-ti > p")).to_contain_text("Sun, Dec 13 → Sat, Dec 19")
@@ -629,15 +642,16 @@ def test_about_these_prices_holds_the_legend_the_credit_the_fine_print_privacy_a
         assert page.evaluate("document.documentElement.dataset.mode") == "dark"
 
 
-def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand):
+def test_a_key_pressed_three_times_asks_nothing_and_update_asks_once_for_where_it_stopped(matrix, stand):
     page = matrix(DESKTOP)
     before = len(stand.asked)
     open_nights(page)
     page.locator("#v2-pop input[data-nights]").focus()
     for _ in range(3):
         page.keyboard.press("ArrowRight")
-    page.wait_for_function(WAIT_IDLE)
     page.wait_for_timeout(400)
+    assert stand.asked_nights[before:] == [] and "r=2026-12-16" in page.url      # F-280: three key presses search nothing
+    search(page)
     assert set(stand.asked_nights[before:]) == {7} and "r=2026-12-19" in page.url
 
 

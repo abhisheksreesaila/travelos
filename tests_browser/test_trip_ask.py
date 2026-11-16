@@ -246,12 +246,14 @@ def test_the_scripts_words_say_what_the_servers_say(ask):
     assert script == server
 
 
-def test_changing_a_word_on_the_results_searches_again_on_the_same_page(ask):
+def test_changing_a_word_on_the_results_waits_for_update_and_then_searches_again(ask):      # F-280: the change is staged; Update is the search
     page = ask(url="/plan/matrix?to=San+Diego&home=SFO&d=2026-12-12&r=2026-12-16&a=2&k=7,10&x=2", idle=False)
     page.wait_for_selector("#mx.is-live")
     word(page, "flex").click()
     page.locator('#v2-pop [data-flex="0"]').click()
     page.locator("#v2-pop .v2-done").click()
+    assert "x=0" not in page.url      # staged, not searched
+    page.locator(".v2-update").click()
     page.wait_for_url("**x=0**")
     page.wait_for_selector("#mx.is-live")
     expect(word(page, "flex")).to_have_text("on the dot")

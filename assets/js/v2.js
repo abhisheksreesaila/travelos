@@ -26,6 +26,50 @@
   function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+  // ---- F-280 (D-880): on the results a change is only staged; "Update" (or Enter) runs the one search ----
+  var results = !!form && stage.dataset.v2 === 'results';
+  var KEYS = { who: ['adults', 'kids'], from: ['home'], where: ['to', 'nearby'], start: ['depart'], flex: ['flex'], nights: ['nights'], budget: ['budget'] };
+  var BASE = JSON.parse(JSON.stringify(S));
+  function staged() {      // the sentence's words that differ from what the matrix on the page was searched for
+    if (!results) return [];
+    return Object.keys(KEYS).filter(function (k) { return KEYS[k].some(function (f) { return JSON.stringify(S[f]) !== JSON.stringify(BASE[f]); }); });
+  }
+  function fieldsOf(o) { return { to: o.to, home: o.home, d: o.depart, n: o.nights, a: o.adults, k: o.kids.join(','), x: o.flex, nb: o.nearby ? '' : '0', b: o.budget || '' }; }
+  function nightsMoved() { document.dispatchEvent(new CustomEvent('v2:nights', { detail: { n: S.nights, base: BASE.nights } })); }
+  function drawBar() {
+    var bar = document.getElementById('v2-upd'); if (!bar || !results) return;
+    var n = staged().length;
+    stage.dataset.staged = n ? '1' : '0';
+    bar.dataset.n = n;
+    var u = bar.querySelector('.v2-update'); if (u) u.textContent = n ? 'Update · ' + n + (n === 1 ? ' change' : ' changes') : 'Update';
+  }
+  function reset() {
+    Object.keys(BASE).forEach(function (f) { S[f] = JSON.parse(JSON.stringify(BASE[f])); });
+    if (!pop.hidden) closePop(true);
+    drawSentence(); nightsMoved();
+    var w = sent.querySelector('.v2-w'); if (w) w.focus({ preventScroll: true });
+  }
+  function update() {      // the one search: the existing post, then the address it answers
+    if (!staged().length || stage.dataset.busyUpdate) return;
+    stage.dataset.busyUpdate = '1';
+    post().then(function (j) { if (j.to) go(j.to); else delete stage.dataset.busyUpdate; }).catch(function () { delete stage.dataset.busyUpdate; });
+  }
+  function stageChip(a) {      // a Try chip is a change to the base search: only the fields it changes are applied, so chips and words combine; tapped again, it is taken back
+    var q = new URLSearchParams(a.search), base = fieldsOf(BASE), cur = fieldsOf(S), diff = {}, on = true;
+    var want = { to: q.get('to'), home: q.get('home'), d: q.get('d'), a: q.get('a'), k: q.get('k') || '', x: q.get('x'), nb: q.get('nb') || '', b: q.get('b') || '' };
+    var d0 = parse(want.d || BASE.depart), r = q.get('r');
+    want.n = r ? Math.round((parse(r) - d0) / 864e5) : BASE.nights;
+    Object.keys(want).forEach(function (f) { if (String(want[f]) !== String(base[f])) { diff[f] = want[f]; if (String(cur[f]) !== String(want[f])) on = false; } });
+    var take = function (f, v) {
+      if (f === 'to') S.to = v; else if (f === 'home') S.home = v; else if (f === 'd') S.depart = v; else if (f === 'n') S.nights = +v; else if (f === 'a') S.adults = +v;
+      else if (f === 'k') S.kids = v ? v.split(',').map(Number) : []; else if (f === 'x') S.flex = +v; else if (f === 'nb') S.nearby = v !== '0'; else if (f === 'b') S.budget = +v || 0;
+    };
+    Object.keys(diff).forEach(function (f) { take(f, on ? base[f] : diff[f]); });
+    if (diff.to !== undefined) { var p = S.places.filter(function (x) { return x.n === S.to; })[0]; if (!p || !p.near) S.nearby = false; }
+    a.setAttribute('aria-pressed', String(!on));
+    drawSentence(); nightsMoved();
+  }
+
   // ---- the words (gitaway/v2sentence.py `words`) ----
   function whoText() {
     var n = S.adults + S.kids.length;
@@ -53,13 +97,14 @@
     return '';
   }
   function word(k) {
-    return '<span role="button" tabindex="0" class="v2-w" data-k="' + k + '" aria-haspopup="dialog" aria-expanded="false" aria-label="' + esc(S.labels[k] + ': ' + text(k)) + '">' + esc(text(k)) + '</span>';
+    var on = staged().indexOf(k) >= 0;      // F-280: a word changed and not yet searched is marked, and said so
+    return '<span role="button" tabindex="0" class="v2-w' + (on ? ' is-staged' : '') + '" data-k="' + k + '" aria-haspopup="dialog" aria-expanded="false" aria-label="' + esc(S.labels[k] + ': ' + text(k) + (on ? ' (changed, not searched yet)' : '')) + '">' + esc(text(k)) + '</span>';
   }
   function drawSentence() {
     var fill = function (t) { return '<span class="fill">' + t + '</span>'; };
     sent.innerHTML = word('who') + ' ' + fill('from') + ' ' + word('from') + ' ' + fill('to') + ' ' + word('where') + fill(', around') + ' ' + word('start') + fill(',') + ' ' + word('flex') +
       fill(', for') + ' ' + word('nights') + fill(S.budget ? ', under' : ', with') + ' ' + word('budget') + fill(', into') + ' ' + word('into') + fill('.');
-    syncForm();
+    syncForm(); drawBar();
   }
   function syncForm() {      // the hidden fields the plain form posts: what the words say, in the matrix's own parameters (gitaway/v2sentence.py `address`)
     if (!form) return;
@@ -217,6 +262,18 @@
     if (r.dataset.rng === 'nights') { r.setAttribute('aria-valuetext', text('nights')); r.style.setProperty('--fill', Math.round((S.nights - S.limits.nights[0]) * 100 / (S.limits.nights[1] - S.limits.nights[0])) + '%'); }
     drawSentence(); var w = sent.querySelector('.v2-w[data-k="' + open + '"]'); if (w) w.setAttribute('aria-expanded', 'true');
   });
+  if (results) {
+    var bar = document.getElementById('v2-upd');
+    form.addEventListener('submit', function (e) { e.preventDefault(); update(); });
+    if (bar) bar.querySelector('.v2-reset').addEventListener('click', reset);
+    document.querySelectorAll('.v2-sug').forEach(function (a) { a.setAttribute('role', 'button'); a.setAttribute('aria-pressed', 'false'); a.addEventListener('click', function (e) { e.preventDefault(); stageChip(a); }); });
+    document.addEventListener('keydown', function (e) {      // Enter searches the staged changes, from anywhere that is not itself something Enter presses
+      if (e.key !== 'Enter' || !staged().length) return;
+      var t = e.target;
+      if (t.closest && t.closest('.v2-w, button, a, summary, select, textarea, input:not([type="range"])')) return;
+      e.preventDefault(); if (!pop.hidden) closePop(true); update();
+    });
+  }
   sent.addEventListener('click', function (e) { var b = e.target.closest('.v2-w'); if (b) { e.stopPropagation(); openPop(b); } });
   sent.addEventListener('keydown', function (e) { var b = e.target.closest('.v2-w'); if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPop(b); } });
   scrim.addEventListener('click', function () { closePop(); });
@@ -228,16 +285,13 @@
     syncForm();
     return fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'X-V2': '1', Accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) { return r.json(); });
   }
-  function changed(k) {
-    if (!form || stage.dataset.v2 !== 'results') return;
-    if (k === 'nights') return;      // the matrix's own slider handles the nights in place (assets/js/tripmatrix.js)
-    var was = JSON.parse(snapshot);
-    var onlyInto = JSON.stringify(was.slice(0, 9)) === JSON.stringify([S.adults, S.kids, S.home, S.to, S.nearby, S.depart, S.flex, S.nights, S.budget]);
-    post().then(function (j) { if (!onlyInto && j.to) { go(j.to); } });
+  function changed(k) {      // a picker closed: the words are already staged; only the interests (they search nothing) are kept at once
+    if (!results || k !== 'into') return;
+    post();
   }
   function go(to) { document.documentElement.classList.add('v2-leaving'); location.assign(to); }
 
   window.addEventListener('pageshow', function (e) { if (e.persisted) document.documentElement.classList.remove('v2-leaving'); });      // back from the matrix
   window.V2 = { spec: S, text: text, drawSentence: drawSentence };
-  syncForm();
+  syncForm(); drawBar();
 })();

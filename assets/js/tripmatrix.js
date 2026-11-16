@@ -14,18 +14,17 @@
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
 //   5. The nights slider (F-237, D-530 to D-535; F-238, D-542): one range input, in the popover of the sentence's "4 nights" word (the same word on a phone and a laptop). While it moves every square shows
 //      "about $X" at once (`estimate`: the flight and the nightly stay rate already read for that square's start day, else the lane's cheapest; never a search, never a
-//      mark, never a price). Let go (after COMMIT_MS), the address keeps the nights, one GET of data.peek fills what is already known for them (the showcase's samples, LiteAPI's
-//      cache) and only then the squares in view are asked for, as tiles, through the same gate and budgets. Every nights has its own store (`stores`), so going back is
-//      instant. The opened square's drawer, Save and Book are always the tile's real answer for those exact nights; while sliding they say so instead of a price.
+//      mark, never a price). Letting go searches nothing (F-280, D-880): the nights are staged in the sentence and its "Update" is the one search, so the page's own nights are the only ones it asks for. Every nights it
+//      has read has its own store (`stores`), so going back to them is instant. The opened square's drawer, Save and Book are always the tile's real answer for those exact nights; while staged they say so instead of a price.
 (function () {
   var root = document.getElementById('mx'), raw = document.getElementById('mx-data');
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
   MAX_AT_ONCE = data.at_once || MAX_AT_ONCE;      // F-273 review: the server's gate size for the key the site runs with (32 live, 3 sandbox), so a sandbox page doesn't flood its gate into BUSY retries
-  var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', COMMIT_MS = 220, again = 0, committing = 0, looking = false, settling = false;
+  var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', again = 0, looking = false;
   var N = data.nights, stores = {}, known, drawers, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
-  var sliding = false, touched = false, commitTimer = 0, bandAt = {};
+  var sliding = false, touched = false, bandAt = {};
   function store(n) { return stores[n] || (stores[n] = { known: {}, drawers: {}, asked: {}, tries: {} }); }
   function use(n) { var s = store(n); N = n; known = s.known; drawers = s.drawers; asked = s.asked; tries = s.tries; }
   use(N);
@@ -286,7 +285,7 @@
       if (!k) break;
       ask(k);
     }
-    root.dataset.busy = active > 0 || again > 0 || committing > 0 || looking || settling ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
+    root.dataset.busy = active > 0 || again > 0 || looking ? '1' : '0';      // 0: every square in view has its answer (the tests wait on it)
   }
   function ask(k) {
     asked[k] = 1;
@@ -341,7 +340,7 @@
 
   // ---- opening a square: the prototype's drawer grows down out of the square's column (assets/js/v2drawer.js) ----
   function placeholder(k) {      // an estimate is never the opened square's price: while sliding it says so, and Save and Book wait for the real answer
-    var words = sliding ? 'Let go for the exact price of ' + nightsWords(N) + '.' : 'Searching this square. It fills in as soon as its answer lands.';
+    var words = sliding ? 'Press Update for the exact price of ' + nightsWords(N) + '.' : 'Searching this square. It fills in as soon as its answer lands.';
     return '<div class="dr is-quiet is-ph" data-open="' + k + '"><div class="dr-head"><div class="dr-ti"><h2 class="dr-h">' + laneOf(k).n + '</h2><p>' + windowOf(k).when + '</p></div>' +
       '<button type="button" class="dr-x" data-act="close" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="dr-quiet"><p class="dr-note" role="status">' + words + '</p></div></div>';
@@ -450,53 +449,16 @@
     if (opened) show(opened, null, true); else followDefault();
     estFlag();
   }
-  function commit(n) {      // let go: the address keeps the nights, what is already known fills in at once, then the squares in view are asked for like any tile
-    sliding = false;
-    try { history.replaceState(null, '', withNights(location.pathname + location.search, n)); } catch (e) { /* a preview without history: the page still works */ }
-    committing++;
-    root.dataset.busy = '1';
-    var st = store(n);
-    fetch(withNights(data.peek, n), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (j) {
-        Object.keys(j.known).forEach(function (k) { var v = j.known[k]; if (!st.known[k]) st.known[k] = { c: v.c, s: v.s, e: v.e, i: v.inner, l: v.label }; });
-      })
-      .catch(function () { /* nothing known: the tiles ask */ })
-      .then(function () {
-        committing--;
-        if (n === N) {
-          root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) {
-            var k = el.dataset.sq, was = el.classList.contains('is-est') || el.classList.contains('is-wait');
-            paint(el, k);
-            if (was && known[k]) settleIn(el);
-          });
-          remark();
-          observeAll();
-          if (opened) show(opened, null, true); else followDefault();
-          estFlag();
-          if (!firstIn()) isleIn();
-          news_();
-        }
-        pump();
-      });
-  }
-  root.addEventListener('input', function (e) {
-    var t = e.target;
-    if (!t.matches || !t.matches('input[data-nights]')) return;
-    clearTimeout(commitTimer);
-    settling = false;
-    sliding = true;
-    if (+t.value !== N) setNights(+t.value);
-  });
-  root.addEventListener('change', function (e) {
-    var t = e.target, n = +(t && t.value);
-    if (!t.matches || !t.matches('input[data-nights]')) return;
-    clearTimeout(commitTimer);
+  // Letting go searches nothing (F-280, D-880): the sentence stages the nights and "Update" (assets/js/v2.js) is the one search, a new page. The slider only shows labelled estimates.
+  var N0 = data.nights;
+  function moved(n) {
+    sliding = n !== N0;      // back at the nights the page was searched for: the real answers again
     if (n !== N) setNights(n);
-    settling = true;
-    root.dataset.busy = '1';      // not idle while the release waits out its short settle
-    commitTimer = setTimeout(function () { settling = false; commit(n); }, COMMIT_MS);      // a key pressed three times asks once, for where it stopped
-  });
+    if (!sliding) { if (opened) show(opened, null, true); estFlag(); }
+    else root.dataset.busy = '0';
+  }
+  root.addEventListener('input', function (e) { var t = e.target; if (t.matches && t.matches('input[data-nights]')) moved(+t.value); });
+  document.addEventListener('v2:nights', function (e) { moved(e.detail.n); });
   root.querySelectorAll('.mx-lane .mx-sq.is-on').forEach(function (el) { var p = el.dataset.sq.split('|'); bandAt[p[0]] = p[1]; });
   // ---- Save to trip, without leaving the page ----
   function bindSave(box) {
