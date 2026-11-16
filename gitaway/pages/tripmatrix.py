@@ -580,5 +580,5 @@ def register(app):
         except importer.SaveError as e:
             return square_page(s, lane_, w_, sq, asked_sq, str(e), can_save=False)
         if request.headers.get("x-matrix") == "1":
-            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/plan"})
+            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/plan", "next": "Open the trip" if mb.mode() == mb.SANDBOX and not sq.sample else "Plan this trip"})      # F-269: with nothing to book yet, planning is the next step
         return RedirectResponse(back + "&saved=1", status_code=303)

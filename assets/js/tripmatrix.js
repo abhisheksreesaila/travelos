@@ -521,7 +521,7 @@
           if (j.refused) { btn.disabled = false; form.parentNode.insertBefore(p, form.nextSibling); return; }
           var link = document.createElement('a');
           link.href = j.trip;
-          link.textContent = 'Open the trip';
+          link.textContent = j.next || 'Open the trip';
           p.appendChild(link);
           form.replaceWith(p);
           if (M()) (M().reduced() ? M().fade(p) : M().settle(p, { y: 4 }));
