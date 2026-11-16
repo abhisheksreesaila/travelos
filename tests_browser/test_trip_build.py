@@ -124,14 +124,17 @@ def test_walk_the_whole_builder_at_390_and_see_the_trip_on_its_days(phone, base_
     expect(page.locator("#ti-travelers")).to_contain_text("age 7")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
-    expect(page.locator("#ck-week")).to_be_visible()
+    page.wait_for_url("**/trip/plan*")      # the trip's home: the v2 calendar (F-252; M5 triage: the cockpit is retired)
+    expect(page.locator(".cal-top")).to_be_visible()
+    expect(page.locator(".v2 h1")).to_contain_text("LA with the kids")
     assert not page.errors
 
 
-def test_the_first_run_welcome_offers_the_builder_and_the_template(phone, base_url):
-    phone.goto(f"{base_url}/forks")
-    welcome = phone.locator(".fr-path-multi")
-    expect(welcome.get_by_role("link", name="Answer a few questions")).to_have_attribute("href", "/trips/build")
-    expect(welcome.get_by_role("link", name="Paste the template")).to_have_attribute("href", "/trips/import")
+def test_the_ways_in_offer_the_builder_and_the_template(phone, base_url):
+    """M5 triage: the /forks welcome is retired (D-761); the ask offers the import, and the import page offers the template and the questions."""
+    phone.goto(f"{base_url}/plan/ask")
+    expect(phone.locator("#ak-import")).to_have_attribute("href", "/trips/import")
+    phone.goto(f"{base_url}/trips/import")
+    expect(phone.locator("#ti-build")).to_have_attribute("href", "/trips/build")
+    expect(phone.locator("textarea")).to_be_visible()      # the template is pasted here
     no_sideways_scroll(phone)
