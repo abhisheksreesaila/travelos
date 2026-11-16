@@ -10,14 +10,14 @@ from fasthtml.common import A, Button, Div, Form, H1, Input, Label, Link, P, Sec
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, community, session as ses
+from gitaway import affiliate, community, session as ses, v2pages
 from gitaway.community import HubError
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import blogbutton
 
 PATH = "/creators/settings"
-HEAD = (Link(rel="stylesheet", href="/assets/css/report.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/report.css"), *v2pages.HEAD)
 
 
 def settings_page(owner, *, value=None, error="", saved=False):
@@ -35,7 +35,7 @@ def settings_page(owner, *, value=None, error="", saved=False):
     paying = affiliate.pays_you(bool(marker))
     return page("Your marker", Section(Div(H1("Your affiliate marker"), P(paying, cls="rp-lede", id="st-says"), cls="rp-top"), form, *blogs,
                                        P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Your stats", href="/creators/stats"), " · ", A("Turn a post into a trip", href="/creators/import"), cls="rp-more") if creator
-                                       else P(A("Turn a post into a trip", href="/creators/import"), cls="rp-more"), cls="rp ga-wrap"), head=HEAD)
+                                       else P(A("Turn a post into a trip", href="/creators/import"), cls="rp-more"), cls="rp ga-wrap"), head=HEAD, v2=True, quiet=True)
 
 
 def register(app):

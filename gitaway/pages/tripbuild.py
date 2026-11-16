@@ -13,12 +13,12 @@ from fasthtml.common import A, Button, Datalist, Div, Fieldset, Form, H1, H2, In
 from fasthtml.core import FtResponse
 from starlette.responses import RedirectResponse
 
-from gitaway import catalog, importer, pickers, session as ses, tripbuild as tb, tripimport as ti
+from gitaway import catalog, importer, pickers, session as ses, tripbuild as tb, tripimport as ti, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import tripimport as tip
 
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/tripimport.css"), Link(rel="stylesheet", href="/assets/css/tripbuild.css"),
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/tripimport.css"), Link(rel="stylesheet", href="/assets/css/tripbuild.css"), *v2pages.HEAD,
         Script(src="/assets/js/tripbuild.js", defer=True))
 PATH = "/trips/build"
 LABELS = ("Where", "Dates", "Who", "Flights", "Hotel", "Car", "Notes")
@@ -205,7 +205,7 @@ def step_page(step, draft, errors=None, status=200, notice="", edit=""):
         action=PATH, method="post", cls="tb-form", id="tb-form", novalidate=True, data_step=str(step), aria_label=TITLES[step - 1])
     out = page(f"{LABELS[step - 1]}: {'edit a trip' if edit else 'build a trip'}", Div(
         Div(Span("EDIT TRIP" if edit else "BUILD A TRIP", cls="eyebrow"), H1(TITLES[step - 1], cls="ti-title", id="tb-heading"), P(LEDES[step - 1], cls="ti-lede"), cls="ti-head"),
-        indicator(step), Div(form, cls="ti-card tb-main"), cls="ti-wrap tb-wrap"), head=HEAD)
+        indicator(step), Div(form, cls="ti-card tb-main"), cls="ti-wrap tb-wrap"), head=HEAD, v2=True, quiet=True)
     return FtResponse(out, status_code=status) if status != 200 else out
 
 

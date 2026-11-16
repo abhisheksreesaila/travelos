@@ -27,7 +27,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
-from gitaway import access, auth, catalog, community, partners, pickers, planexamples as px, planfacts, planforme as pfm, publish, reports, session as ses, showcase, tripbuild
+from gitaway import access, auth, catalog, community, partners, pickers, planexamples as px, planfacts, planforme as pfm, publish, reports, session as ses, showcase, tripbuild, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import legal, planview
@@ -36,7 +36,7 @@ from gitaway.partners import travelpayouts
 log = logging.getLogger("gitaway.planforme")
 PATH = "/plan-for-me"
 START = PATH + "/start"
-HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), Script(src="/assets/js/planforme.js", defer=True))
+HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), *v2pages.HEAD, Script(src="/assets/js/planforme.js", defer=True))
 LANES = {"flight": ("plane", "Flights", "aviasales"), "stay": ("bed", "Stays", "klook"), "todo": ("star", "Things to do", "klook")}
 MAX_KIDS = tripbuild.MAX_KIDS
 
@@ -149,7 +149,7 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
             P("Only a family editor or admin can order, because the trip goes into the family's calendar.", role="status", cls="pf-note", id="pf-viewer") if viewer else "",
             P(note, role="alert", cls="pf-error", id="pf-note") if note else "", cls="pf-top"),
         form, cls="pf ga-wrap", id="pf")
-    return FtResponse(page("Plan it for me", body, head=HEAD), status_code=status)
+    return FtResponse(page("Plan it for me", body, head=HEAD, v2=True, quiet=True), status_code=status)
 
 
 # ---- the offer (F-197) ------------------------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ def offer_page(slug=""):
                                  else "We just did Disneyland with our kids, and built this so the next family's planning takes minutes, not weekends."),
                               P("The founder of GitAway", cls="pfo-by")), cls="pfo-card pfo-note", id="pf-founder")
     body = Section(head, aside, Div(gets, examples, note, _faq(), cls="pfo-main"), cls="pf pfo ga-wrap", id="pf")
-    return page("Plan it for me", body, head=HEAD)
+    return page("Plan it for me", body, head=HEAD, v2=True, quiet=True)
 
 
 def example_page(e):
@@ -230,7 +230,7 @@ def example_page(e):
         Div(A("Plan ours", icon("arrow-right", 20, 2.4), href=f"{START}?{urlencode({'where': e.where})}", cls="btn btn-primary pf-go", id="pf-cta"),
             P(f"{catalog.money(pfm.price_cents())} once. {pfm.PROMISE}" if pfm.paid() else pfm.FREE_NOTE, cls="pf-hint"), cls="pf-act"),
         Div(*[A(x.label, href=f"{PATH}/example/{x.slug}", cls="pf-back") for x in others], A("Back to Plan it for me", href=PATH, cls="pf-back"), cls="pfo-more"),
-        cls="pf ga-wrap", id="pf"), head=HEAD)
+        cls="pf ga-wrap", id="pf"), head=HEAD, v2=True, quiet=True)
 
 
 # ---- the order --------------------------------------------------------------------------------------------------------
@@ -300,7 +300,7 @@ def order_page(order, paid_back=False, trouble=""):
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
     body.append(P(*(promise() if not free else (pfm.FREE_NOTE,)), cls="pf-promise", id="pf-promise"))
     return page("Plan it for me", Section(*body, cls="pf ga-wrap", id="pf", data_pf_poll=f"{PATH}/{order['id']}/status" if status in ("paid", "building", "review") or (status == "awaiting_payment" and paid_back) else None,
-                                          data_status=status), head=HEAD)
+                                          data_status=status), head=HEAD, v2=True, quiet=True)
 
 
 # ---- the stand-in checkout (local only) -------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ def standin_page(order):
             P(f"This page mimics Stripe Checkout so you can click the whole loop on this machine. Nothing is charged.", cls="pf-lede"), cls="pf-top"),
         Form(Button(icon("lock", 18, 2.4), f"Pay {catalog.money(order['amount_cents'])} (simulated)", type="submit", cls="btn btn-primary pf-go", id="pf-standin-pay"),
              A("Back", href=f"{PATH}/{order['id']}", cls="pf-back"), action=f"/sandbox/plan-for-me/{order['id']}", method="post", cls="pf-act"),
-        cls="pf ga-wrap", id="pf"), head=HEAD)
+        cls="pf ga-wrap", id="pf"), head=HEAD, v2=True, quiet=True)
 
 
 def register(app):

@@ -11,13 +11,17 @@ from fasthtml.common import Link
 
 ROOT = "oq-root oq-light oq-family-travel"
 # (path prefix, the stylesheets that go after omxqua.css). F-254: the Coast sheets of /plan and /creators retired with their pages.
-SKINS = (("/plan", ()), ("/creators", ()), ("/guides", ()), ("/report", ()), ("/admin", ()), ("/sandbox", ()), ("/plan-for-me", ()))   # F-181: Community trips (real creator trips live there)
+SKINS = (("/plan", ()), ("/creators", ()), ("/guides", ()), ("/report", ()), ("/admin", ()))   # F-181: Community trips (real creator trips live there)
+# F-272 (D-810): pages that moved to design language v2 never wear Coast (it would fight v2's buttons and tokens): Plan it for me and the sandbox checkout left SKINS, these sit under /creators
+_V2 = ("/creators/drafts", "/creators/settings", "/creators/stats")
 _TRIP_PAGE = re.compile(r"/trips/([^/]+)/?")
 _NOT_A_TRIP = ("build", "import", "switch")
 
 
 def skin_for(path: str):
     """The Coast stylesheets for a path, or None when the page keeps its own look. A prefix matches whole path parts (/plans is not /plan)."""
+    if any(path == p or path.startswith(p + "/") for p in _V2):
+        return None
     for prefix, sheets in SKINS:
         if path == prefix or path.startswith(prefix + "/"):
             return sheets
