@@ -125,13 +125,13 @@ button { font: inherit; color: inherit; }
 .gal-spin { position: absolute; transform-style: preserve-3d; animation: spin 140s linear infinite; }
 @keyframes spin { to { rotate: z 360deg; } }
 .gal i { position: absolute; left: -75px; top: -50px; width: 150px; height: 100px; border-radius: 8px; background: var(--g); border: 5px solid var(--paper); box-shadow: 0 10px 24px -12px rgb(20 20 60 / .4);
-  transition: transform 1500ms var(--spring-soft), opacity 900ms var(--ease); }
+  transition: transform 1400ms var(--ease), opacity 900ms var(--ease); }
 :root[data-mode="dark"] .gal i { filter: brightness(.78); }
 .gal i b { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; background: rgb(251 247 239 / .92); color: var(--pink); font: italic 560 12px/1.2 var(--f-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* the ring of words: it turns one word per beat, the way the story goes round */
 .ring { position: absolute; left: var(--cx); top: var(--cy); width: var(--rd); height: var(--rd); translate: -50% -50%; --rd: min(94svh, 60vw); pointer-events: none; }
-.ring svg { width: 100%; height: 100%; overflow: visible; rotate: var(--rot, -22.5deg); transition: rotate 1300ms var(--spring-soft); }
+.ring svg { width: 100%; height: 100%; overflow: visible; rotate: var(--rot, -22.5deg); transition: rotate 1100ms var(--ease); }
 .ring text { font: 600 58px/1 var(--f-display); letter-spacing: -0.01em; fill: var(--ring-dim); transition: fill 600ms var(--ease); }
 .ring text.now { fill: var(--ink); }
 .ring circle.dot { fill: var(--ring-dim); }
@@ -142,8 +142,8 @@ button { font: inherit; color: inherit; }
 .bob { position: absolute; transform-style: preserve-3d; }
 .stage[data-beat="0"] .bob { animation: bob 6s ease-in-out infinite alternate; }
 @keyframes bob { from { transform: translateY(-6px) rotateX(3deg) rotateZ(-1.2deg); } to { transform: translateY(6px) rotateX(-2deg) rotateZ(1deg); } }
-.pc { position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); translate: -50% -50%; transform: rotateY(var(--turn, 0deg)); transform-style: preserve-3d;
-  transition: transform 1100ms var(--spring-soft), width 950ms var(--spring-soft), height 950ms var(--spring-soft); --w: 520; --h: 340; }
+.pc { position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); translate: -50% -50%; border-radius: calc(16 * var(--u)); overflow: hidden; background: var(--paper); box-shadow: var(--sh3);
+  transition: width 900ms var(--spring-soft), height 900ms var(--spring-soft), border-radius 900ms var(--ease); --w: 520; --h: 340; }
 .stage[data-beat="1"] .pc { --w: 640; --h: 400; }
 .stage[data-beat="2"] .pc { --w: 380; --h: 410; }
 .stage[data-beat="3"] .pc { --w: 660; --h: 430; }
@@ -151,8 +151,9 @@ button { font: inherit; color: inherit; }
 .stage[data-beat="5"] .pc { --w: 400; --h: 540; }
 .stage[data-beat="6"] .pc { --w: 400; --h: 500; }
 .stage[data-beat="7"] .pc { --w: 520; --h: 340; }
-.side { position: absolute; inset: 0; border-radius: calc(16 * var(--u)); overflow: hidden; background: var(--paper); box-shadow: var(--sh3); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.side.b { transform: rotateY(180deg); }
+/* one face gives way to the next: a short crossfade while the card reshapes, no turning */
+.side { position: absolute; inset: 0; opacity: 0; scale: .985; transition: opacity 260ms var(--ease), scale 260ms var(--ease); }
+.side.on { opacity: 1; scale: 1; z-index: 1; transition: opacity 420ms var(--ease) 160ms, scale 700ms var(--spring-soft) 160ms; }
 
 /* ============ the faces (all drawn on paper; the type has floors so a phone can read it) ============ */
 .f { position: absolute; inset: 0; color: var(--pink); font: 500 max(11px, calc(14 * var(--u)))/1.3 var(--f-ui); }
@@ -652,7 +653,7 @@ button { font: inherit; color: inherit; }
     if (beat >= 0) { flips += k > beat ? 1 : -1; advance(k - beat); }
     beat = k;
     sides[((flips % 2) + 2) % 2].innerHTML = FACES[k]();
-    pc.style.setProperty('--turn', flips * 180 + 'deg');
+    sides.forEach(function (sd, i) { sd.classList.toggle('on', i === ((flips % 2) + 2) % 2); });
     stage.setAttribute('data-beat', k);
     ring.style.setProperty('--rot', (-22.5 - k * 45) + 'deg');
     ringWords.forEach(function (t, i) { t.classList.toggle('now', i === k); });
