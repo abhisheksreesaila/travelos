@@ -1,0 +1,10 @@
+{
+ "status": 400,
+ "body": {
+  "error": {
+   "code": 4002,
+   "description": "The voucher code you entered is not valid: NOSUCHCODE",
+   "message": "required request field is missing or wrong input"
+  }
+ }
+}

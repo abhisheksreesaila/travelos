@@ -1,0 +1,13 @@
+{
+ "status": 200,
+ "body": {
+  "data": {
+   "bookingId": "uuJxfM0--",
+   "cancellation_fee": 340.1,
+   "currency": "USD",
+   "refund_amount": 0,
+   "status": "CANCELLED_WITH_CHARGES"
+  },
+  "sandbox": true
+ }
+}

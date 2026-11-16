@@ -1,0 +1,10 @@
+{
+ "status": 400,
+ "body": {
+  "error": {
+   "code": 2014,
+   "description": "payment not completed",
+   "message": "booking incomplete"
+  }
+ }
+}
