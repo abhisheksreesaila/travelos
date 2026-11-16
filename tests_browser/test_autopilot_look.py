@@ -55,11 +55,11 @@ def test_m5_phone_touch_targets_and_no_sideways_scroll(browser, base_url):
     ctx.close()
 
 
-def test_m5_sandbox_and_partners_in_omxqua(browser, base_url):
+def test_m5_sandbox_and_partners_in_v2(browser, base_url):
     ctx = browser.new_context(viewport=PHONE, has_touch=True, is_mobile=True)
     page = ctx.new_page()
     page.goto(f"{base_url}/go/hif1?to=hi&{TRIP}")      # an offer's link (the lanes that listed them are retired); with no partner connected it lands in the stand-in checkout
     assert re.search(r"/sandbox/", page.url)
-    look = _omxqua(page)
-    assert look["fam"] and look["tok"] and not look["blur"]
+    assert page.evaluate("() => !!document.querySelector('.ga-page.v2 .v2-bg.is-quiet')")      # F-272 (D-810): the stand-in checkout is a v2 page now, not Coast
+    assert not _omxqua(page)["fam"]
     ctx.close()

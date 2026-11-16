@@ -19,12 +19,12 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, confirmations, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti
+from gitaway import access, confirmations, expedia, importer, session as ses, showcase, tripcal as cal, tripimport as ti, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page, plan_href, trip_field
 from gitaway.pages import bookedwhere
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"), Script(src="/assets/js/tripimport.js", defer=True))
+HEAD = (Link(rel="stylesheet", href="/assets/css/tripimport.css"), *v2pages.HEAD, Script(src="/assets/js/tripimport.js", defer=True))
 TEMPLATE = Path(__file__).resolve().parent.parent.parent / "docs" / "trip-template.md"
 PATH = "/trips/import"
 CANNOT = "Only editors and admins of your family can import a trip. Ask the family owner for editor access."
@@ -75,7 +75,7 @@ def paste_page(text="", errors=(), warnings=(), status=200):
     )
     out = page("Import a trip", Div(
         Div(H1("Import a trip", cls="ti-title"), Span("Paste what you booked.", cls="ga-h-two"), P("Booked on Expedia or anywhere else? Paste your details and plan the days here.", cls="ti-lede"), cls="ti-head"),
-        Div(Div(box, cls="ti-card ti-main"), how, cls="ti-cols"), cls="ti-wrap"), head=HEAD)
+        Div(Div(box, cls="ti-card ti-main"), how, cls="ti-cols"), cls="ti-wrap"), head=HEAD, v2=True, quiet=True)
     return FtResponse(out, status_code=status) if status != 200 else out
 
 
@@ -182,7 +182,7 @@ def preview_page(text, parsed, match=None, moves=0, *, fields=None, save_action=
                 Form(*edit_fields, Button(icon("arrow-right", 16, 2.6), edit_label, type="submit", cls="btn btn-sm", id="ti-edit"), action=edit_to, method="post", cls="ti-edit"),
                 Form(*text_field, Button("Edit as template text", type="submit", cls="ti-link ti-linkbtn", id="ti-edit-text"), action=f"{PATH}/edit", method="post", cls="ti-edit") if edit is None else "",
                 cls="ti-card ti-aside"), cls="ti-cols"),
-        cls="ti-wrap"), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/tripbuild.css")) if builder_css else HEAD)
+        cls="ti-wrap"), head=(*HEAD, Link(rel="stylesheet", href="/assets/css/tripbuild.css")) if builder_css else HEAD, v2=True, quiet=True)
     return out
 
 
@@ -196,11 +196,11 @@ def details_page(plan, trip_id="", admin=False, editor=False):
                 A(icon("pencil", 16, 2.4), "Edit trip", href=f"/trips/build/edit?trip={trip_id}", cls="btn btn-sm", id="ti-edit-trip") if editor and trip_id else "",
                 A("Correct it", href=PATH, cls="ti-link", id="ti-correct"),
                 A("Delete this trip", href=f"/trip/delete?trip={trip_id}", cls="ti-link ti-danger", id="ti-delete") if admin and trip_id else "", cls="ti-actions"), cls="ti-head"),
-        Div(*plan_sections(plan, manage=True), cls="ti-stack ti-wide", id="ti-details"), cls="ti-wrap ti-detail-page"), head=HEAD)
+        Div(*plan_sections(plan, manage=True), cls="ti-stack ti-wide", id="ti-details"), cls="ti-wrap ti-detail-page"), head=HEAD, v2=True, quiet=True)
 
 
 def _sorry(title, message, *links, status=200):
-    out = page(title, Div(Div(H1(title, cls="ti-title"), P(message, cls="ti-lede"), Div(*links, cls="ti-actions"), cls="ti-head"), cls="ti-wrap ti-narrow"), head=HEAD)
+    out = page(title, Div(Div(H1(title, cls="ti-title"), P(message, cls="ti-lede"), Div(*links, cls="ti-actions"), cls="ti-head"), cls="ti-wrap ti-narrow"), head=HEAD, v2=True, quiet=True)
     return FtResponse(out, status_code=status) if status != 200 else out
 
 

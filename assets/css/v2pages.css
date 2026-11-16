@@ -1,0 +1,28 @@
+/* The v2 look for the form and reading pages that were Direction A's (F-272, D-810): Plan it for me, import and build a trip, the creator claim, drafts, settings and stats, the sandbox checkout.
+   Each keeps its own stylesheet and class names; this file (gitaway/v2pages.py) points Direction A's old token names at v2's values inside `.v2`, so those stylesheets draw in v2's near-opaque
+   cards, ink and indigo, and gives the shared old pieces (.btn, .card, form fields, headings) the v2 look: Newsreader for a heading, Inter for the rest, 48px targets, light and dark
+   from v2-tokens.css. The only times are the --v2-* tokens (v2.css owns the press). */
+.v2 {
+  --accent: var(--cta-bg); --on-accent: var(--cta-fg); --accent-tint: var(--flight-t); --coral: var(--cta-bg); --coral-deep: var(--cta-bg);
+  --hairline: var(--line); --hairline-2: var(--line-2);
+  --shadow-sm: var(--sh1); --shadow-md: var(--sh2); --shadow-lg: var(--sh3); --r-pill: 62.4375rem;
+  --sun-tint: var(--ride-t); --sun-ink: var(--ride-i); --k-ride-i: var(--ride-i);
+  --mint-tint: var(--see-t); --mint-ink: var(--see-i); --sky-tint: var(--wx-t); --sky-ink: var(--wx-i);
+  --bubble-tint: var(--food-t); --bubble-ink: var(--food-i); --grape-tint: var(--stay-t); --grape-ink: var(--stay-i);
+  --danger-tint: var(--food-t); --danger-ink: var(--food-i);
+  /* Direction A's type scale was written for a 12px laptop root; a v2 page's root is 16px, so the same names at 16px sizes */
+  --t-body: 1.0625rem; --t-2: 1rem; --t-fine: 0.875rem; --t-label: 0.8125rem; --t-h1: 2.5rem; --t-h2: 1.75rem; --t-h3: 1.25rem; --t-big: 2.75rem;
+}
+.v2 :is(h1, h2, h3) { font-family: var(--f-display); font-weight: var(--d-wt); letter-spacing: var(--d-track); line-height: var(--d-lh); color: var(--ink); }
+/* v2.css resets a button's colour and font with `.v2 :where(button)`, which ties .btn and comes later: say them again */
+.v2 .btn { color: var(--btn-fg); font-family: var(--f-ui); box-shadow: var(--sh1); }
+.v2 button.btn { font: 650 var(--t-body)/1 var(--f-ui); }
+.v2 button.btn-sm { font-size: var(--t-2); }
+.v2 .btn:hover { box-shadow: var(--sh2); }
+.v2 .btn-primary, .v2 .btn-ink { box-shadow: var(--cta-sh); }
+.v2 .card { background: var(--card-solid); border-radius: var(--r-lg); box-shadow: var(--sh2); }
+.v2 :is(input[type="text"], input[type="email"], input[type="url"], input[type="date"], input[type="time"], input[type="tel"], input[type="search"], select, textarea) {
+  font: 450 1.0625rem/1.4 var(--f-ui); color: var(--ink); background-color: var(--card-2); border-color: var(--line-2); }
+.v2 :is(input, select, textarea)::placeholder { color: var(--ink-3); }
+.v2 :is(input, select, textarea):focus-visible { outline: 0.1875rem solid var(--word); outline-offset: 0.0625rem; border-radius: 0.875rem; }
+.v2 #main a:not([class]) { color: var(--word); text-underline-offset: 0.2em; }

@@ -10,12 +10,12 @@ from urllib.parse import quote
 from fasthtml.common import A, Div, H1, H2, Li, Link, NotStr, P, Section, Span, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import community, session as ses, stats
+from gitaway import community, session as ses, stats, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page
 
 PATH = "/creators/stats"
-HEAD = (Link(rel="stylesheet", href="/assets/css/stats.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/stats.css"), *v2pages.HEAD)
 LABELS = {"7": "7 days", "30": "30 days", "all": "All time"}
 SAYS = {"7": "the last 7 days", "30": "the last 30 days", "all": "all time"}
 
@@ -51,7 +51,7 @@ def stats_page(owner, w="30"):
     if not creator or not r["trips"]:
         return page("Your stats", Section(Div(H1("Your stats"), P("Stats start with your first published trip. Turn a post into a trip, publish it, and the readers, forks and taps show up here.", cls="cs-lede"),
                                               A(icon("note", 20, 2.2), "Turn a post into a trip", href="/creators/import", cls="btn btn-primary"), cls="cs-top"),
-                                          cls="cs ga-wrap", id="cs-empty"), head=HEAD)
+                                          cls="cs ga-wrap", id="cs-empty"), head=HEAD, v2=True, quiet=True)
     t, c = r["total"][w], r["clicks"]
     own, all_ = c[f"own_{w}"], c[w]
     chips = Div(*[A(LABELS[k], href=f"{PATH}?w={k}", aria_current="true" if k == w else None, cls="cs-chip") for k in stats.WINDOWS], cls="cs-chips", role="group", aria_label="Time range")
@@ -65,7 +65,7 @@ def stats_page(owner, w="30"):
         P(marker, cls="cs-says", id="cs-marker"),
         Section(H2("Your trips"), Ul(*[trip_card(x, w) for x in r["trips"]], cls="cs-list"), P("Partner clicks are counted for you, not per trip: the link a family follows remembers whose trip it came from, not which one.", cls="cs-note"), cls="cs-trips"),
         P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Marker and links", href="/creators/settings"), " · ", A("How readers are counted", href="/privacy"), cls="cs-more"),
-        cls="cs ga-wrap"), head=HEAD)
+        cls="cs ga-wrap"), head=HEAD, v2=True, quiet=True)
 
 
 def register(app):

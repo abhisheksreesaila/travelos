@@ -117,8 +117,8 @@ def test_footer_links_are_only_real_destinations(real, client):
     footer = re.search(r"<footer.*?</footer>", client.get("/").text, re.S).group(0)
     assert re.findall(r'href="([^"]*)"', footer) == ["/guides", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
     sign_in(client)
-    footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S).group(0)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
-    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]      # the legal pages (F-076)
+    footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
+    assert footer is None      # F-272: the import page is a v2 page, which draws no site footer (the legal pages stay one link away on /privacy and /terms)
 
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):

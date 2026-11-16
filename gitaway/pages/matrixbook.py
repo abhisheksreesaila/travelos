@@ -216,7 +216,7 @@ def _answer(request, s, lane, w, inner, status=200):
     if request.headers.get("x-matrix") == "1":
         return Response(to_xml(inner), media_type="text/html", status_code=status, headers={"Cache-Control": "no-store"})
     back = A(icon("chev-left", 18, 2.4), "Back to the matrix", href=mx.href(s, mx.SQUARE, lane=lane.key, w=w.key), cls="btn mx-back")
-    return page(f"Book {lane.name}", Div(back, Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True)
+    return page(f"Book {lane.name}", Div(back, Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
 
 
 def _family(session):
