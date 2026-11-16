@@ -47,7 +47,7 @@ def test_the_last_hundred_reviews_show_as_a_trend_with_words_and_their_source(ma
     card = page.evaluate("getComputedStyle(document.querySelector('#mx-drawer .tr-dots')).backgroundColor")
     page_bg = page.evaluate("getComputedStyle(document.documentElement).backgroundColor")
     for x in look:
-        assert ratio(rgb(x["bg"]), rgb(card) if rgb(card) != [0, 0, 0] else rgb(page_bg)) >= 2.5, x
+        assert ratio(rgb(x["bg"]), rgb(card) if rgb(card) != [0, 0, 0] else rgb(page_bg)) >= 3, x      # WCAG non-text contrast: 3:1 for a mark
     assert page.locator("#mx-drawer .dr-rev").count() <= 12 and page.locator("#mx-drawer .dr-revs").first.locator(".dr-rev").count() == 4
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     if os.environ.get("F278_SHOTS"):

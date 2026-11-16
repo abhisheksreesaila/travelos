@@ -19,7 +19,7 @@
 
   // The extra-info row (F-277, D-870): the server sends chips only. A chip fetches its card when it is tapped, never before, so an untapped chip costs nothing; what was fetched is kept for the
   // place (tapping again is instant) and what you opened follows the rail to another place of the same kind. The first tap ends the nudge for good (localStorage, if the browser lets us).
-  var USED = 'ga-rail-used', cards = {};
+  var USED = 'ga-rail-used', cards = {}, asking = {};
   function used() { try { return !!localStorage.getItem(USED); } catch (e) { return false; } }
   function nudge() { rail.classList.toggle('is-nudge', !used()); }
   function spent() { try { localStorage.setItem(USED, '1'); } catch (e) { /* private window: the nudge comes back next visit, harmless */ } rail.classList.remove('is-nudge'); }
@@ -40,14 +40,17 @@
     var id = address(d, name), chip = chipOf(name);
     if (!chip) return;
     if (cards[id] && !fresh) { put(name, cards[id]); return; }
+    if (asking[id] && !fresh) return;      // F-277 review: a second tap while the first answer is on its way asks nothing
+    asking[id] = true;
     chip.setAttribute('aria-busy', 'true');
     fetch(id, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) {
+        delete asking[id];
         cards[id] = j.card;
         if (last && address(last, name) === id) put(name, j.card);      // an answer for a place you have left is kept, not shown
       })
-      .catch(function () { chip.removeAttribute('aria-busy'); chip.setAttribute('aria-expanded', 'false'); });
+      .catch(function () { delete asking[id]; chip.removeAttribute('aria-busy'); chip.setAttribute('aria-expanded', 'false'); });
   }
 
   function toggle(name, on) {
