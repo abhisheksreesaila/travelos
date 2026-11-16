@@ -181,3 +181,32 @@ def test_dev_live_reads_the_key_by_the_shell_from_its_private_file_and_holds_no_
     assert "set -a; . ~/.config/gitaway/liteapi-live.env; set +a" in command
     assert "GITAWAY_SHOWCASE=0" in command and "GITAWAY_DEV_LOGIN=1" in command and "python main.py" in command
     assert not re.search(r"LITEAPI_KEY\s*=\s*\S", command) and "live_" not in command
+
+
+# ---- F-269: the saved square's next step ----------------------------------------------------------------------------------------
+
+def save_next(client):
+    r = client.post("/plan/matrix/save", data=FORM, headers=FRAG)
+    return r.json()
+
+
+def test_plan_this_trip_after_save_f269_when_booking_opens_soon(live, client, monkeypatch):
+    sign_in(client)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    j = save_next(client)
+    assert j["saved"] == "Saved to your trip." and j["trip"] == "/trip/plan" and j["next"] == "Plan this trip"
+
+
+def test_plan_this_trip_after_save_f269_in_the_stand_in(live, client, monkeypatch):
+    monkeypatch.setattr(auth, "production", lambda: False)
+    sign_in(client)
+    assert save_next(client)["next"] == "Plan this trip"
+
+
+def test_plan_this_trip_after_save_f269_sandbox_keeps_open_the_trip(client, monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Sandbox())
+    sign_in(client)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    assert save_next(client)["next"] == "Open the trip"

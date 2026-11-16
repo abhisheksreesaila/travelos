@@ -160,7 +160,7 @@ def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sam
     with ses.family(who) as fam:
         assert len(familydb.rows(fam.db, "SELECT * FROM matrix_saves")) == 1            # saved twice: one row
     j = client.post("/plan/matrix/save", data=form, headers={"X-Matrix": "1"}).json()
-    assert j["saved"].startswith("Saved to your trip")
+    assert j["saved"].startswith("Saved to your trip") and j["next"] == "Plan this trip" and j["trip"] == "/trip/plan"      # F-269: a sample square books nothing real
 
 
 def test_each_place_wears_its_art_and_each_square_its_start_days_sky_above_the_total(sample, client):

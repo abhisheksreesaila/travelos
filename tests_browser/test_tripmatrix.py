@@ -205,7 +205,9 @@ def test_save_to_trip_keeps_you_on_the_matrix(matrix):
     page.click(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq >> nth=2")
     page.click("#mx-drawer .dr-save")
     expect(page.locator("#mx-drawer .mx-saved")).to_contain_text("Saved to your trip")
-    assert "/plan/matrix" in page.url
+    link = page.locator("#mx-drawer .mx-saved a")
+    expect(link).to_have_text("Open the trip")      # F-269: this stub square is a non-sample one in sandbox mode, so unchanged (the stand-in and soon say "Plan this trip": tests/test_live_prices.py)
+    assert link.get_attribute("href") == "/trip/plan" and "/plan/matrix" in page.url
 
 
 def test_without_the_script_every_square_is_a_link_to_its_own_page(matrix, stand):
