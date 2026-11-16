@@ -20,7 +20,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, ai, creatorclaim as cc, creatordraft as cd, importsource, reports, session as ses, showcase
+from gitaway import affiliate, ai, creatorclaim as cc, creatordraft as cd, importsource, reports, session as ses, showcase, v2pages
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, itinerary_body
@@ -29,7 +29,7 @@ from gitaway.pages import creatorimport
 
 MAX_BATCH = 5
 GOAL = 150
-HEAD = (Link(rel="stylesheet", href="/assets/css/creatorclaim.css"), Script(src="/assets/js/blogbutton.js", defer=True))
+HEAD = (Link(rel="stylesheet", href="/assets/css/creatorclaim.css"), *v2pages.HEAD, Script(src="/assets/js/blogbutton.js", defer=True))
 NO_STORE = {"Cache-Control": "private, no-store"}
 PRIVATE = {**NO_STORE, "X-Robots-Tag": "noindex, nofollow"}      # a claim link is a key: its pages are never cached and never indexed (F-194)
 NOINDEX = Meta(name="robots", content="noindex, nofollow")
@@ -125,7 +125,7 @@ def _draft_all(admin_id, captain, jobs):
 # ---- the claim page -----------------------------------------------------------------------------------------------------------
 
 def _message(title, body, status):
-    return FtResponse(page(title, Section(Div(H1(title), P(body), A("Turn your own post into a trip", href="/creators/import", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"), head=(NOINDEX,)), status_code=status, headers=PRIVATE)
+    return FtResponse(page(title, Section(Div(H1(title), P(body), A("Turn your own post into a trip", href="/creators/import", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"), head=(NOINDEX,), v2=True, quiet=True), status_code=status, headers=PRIVATE)
 
 
 def _signin_href(token):
@@ -163,7 +163,7 @@ def _claim_page(token, d, error="", session=None):
     else:
         held = cd.review_for(session, d, claimed=True) == "pending"      # F-194: their email is not at the post's site, so the captain looks first
         bar = _claim_bar(token, name, domain, error, f"Your sign-in email is not at {domain}, so the captain looks at the trip before it is listed." if held else "")
-    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD, NOINDEX), theme=trip.theme)
+    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD, NOINDEX), theme=trip.theme, v2=True, quiet=True)
 
 
 def _gate(token, me):

@@ -18,13 +18,13 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import HTMLResponse, RedirectResponse
 
-from gitaway import blogscan, creatordraft as cd, draftjobs as dj, importsource, reports, session as ses, showcase
+from gitaway import blogscan, creatordraft as cd, draftjobs as dj, importsource, reports, session as ses, showcase, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page
 
 PATH = "/creators/drafts"
 IMPORT = "/creators/import"
-HEAD = (Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/creatorimport.css"), Link(rel="stylesheet", href="/assets/css/creatordrafts.css"), Script(src="/assets/js/creatordrafts.js", defer=True))
+HEAD = (Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/creatorimport.css"), Link(rel="stylesheet", href="/assets/css/creatordrafts.css"), *v2pages.HEAD, Script(src="/assets/js/creatordrafts.js", defer=True))
 LABEL = {"drafting": "Drafting", "ready": "Ready to check", "failed": "Could not draft", "published": "Published"}
 ICON = {"drafting": "rotate", "ready": "check", "failed": "x", "published": "check"}
 
@@ -75,7 +75,7 @@ def scan_page(session, site="", posts=None, error="", status=200):
     if posts is None:
         body = Section(Div(H1("Import several posts"), P("Paste your blog's address. GitAway lists the posts that look like trips and drafts the ones you tick, in the background.", cls="ci-lede"),
                            cls="ci-top"), scan_form(site, error), A("My drafts", href=PATH, cls="btn", id="cdr-mine"), cls="ci ga-wrap")
-        return FtResponse(page("Import several posts", body, current="/creators", head=HEAD), status_code=status)
+        return FtResponse(page("Import several posts", body, current="/guides", head=HEAD, v2=True, quiet=True), status_code=status)
     n = dj.remaining(me.id)
     cap = min(n, dj.MAX_BATCH)
     form = Form(
@@ -87,7 +87,7 @@ def scan_page(session, site="", posts=None, error="", status=200):
         action=f"{PATH}/start", method="post", id="cdr-pick", data_max=str(cap), cls="cdr-form card")
     body = Section(Div(H1("Pick your posts"), P(f"Found {len(posts)} post{'s' if len(posts) != 1 else ''} on {urlsplit(site if '//' in site else '//' + site).hostname}, trip-like ones first. Tick the ones to draft.", cls="ci-lede"),
                        P(left_line(n), cls="ci-note", id="cdr-left", role="status"), cls="ci-top"), form, A("Use another address", href=f"{PATH}/scan", cls="btn"), cls="ci ga-wrap")
-    return FtResponse(page("Pick your posts", body, current="/creators", head=HEAD), status_code=status)
+    return FtResponse(page("Pick your posts", body, current="/guides", head=HEAD, v2=True, quiet=True), status_code=status)
 
 
 # ---- the list ---------------------------------------------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ def drafts_page(session, queued=0, hit=""):
     body = Section(Div(H1("My drafts"), P("Every post you have drafted from a link or text. Open one to check it; nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), *notes, cls="ci-top"),
                    drafts_list(me.id), Div(A(icon("plus", 18, 2.4), "Draft one post", href=IMPORT, cls="btn"), A(icon("map", 18, 2.4), "Import several posts", href=f"{PATH}/scan", cls="btn"), cls="ci-actions"),
                    P(left_line(left), cls="ci-hint", id="cdr-left"), cls="ci cdr ga-wrap")
-    return page("My drafts", body, current="/creators", head=HEAD)
+    return page("My drafts", body, current="/guides", head=HEAD, v2=True, quiet=True)
 
 
 def register(app):

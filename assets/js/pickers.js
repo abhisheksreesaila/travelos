@@ -86,6 +86,7 @@
       var left = Math.max(gap, Math.min(r.left, vw - w - gap));
       var top = r.bottom + gap;
       if (top + h > vh - gap && r.top - h - gap > gap) top = r.top - h - gap;
+      if (top + h > vh - gap) top = vh - h - gap;      // fits neither below nor above (a v2 page's 16px root makes the calendar 560px tall): slide up over the field so Done stays on screen
       box.style.left = left + "px"; box.style.top = Math.max(gap, top) + "px";
     }
     function outside(e) { if (!box.contains(e.target) && !trigger.contains(e.target)) close(false); }

@@ -16,12 +16,12 @@ from urllib.parse import parse_qsl, urlencode
 from fasthtml.common import A, Button, Div, Form, H1, H2, Input, Li, Link, Main, P, Span, Title, Ul
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase
+from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase, v2pages
 from gitaway.icons import icon
 from gitaway.layout import notice, styles
 from gitaway.partners import log, places, registry, statistics, travelpayouts
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"),)
+HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"), *v2pages.HEAD)
 _CLICK = re.compile(r"[0-9a-f]{10}")
 FINE = "GitAway is a control plane: partners keep your booking, refunds and customer service. We may earn a commission when you book through a partner link."
 
@@ -60,8 +60,8 @@ def _sandbox_path(partner, click, offer, trip, tail=""):
 
 
 def _shell(title, *content):
-    """A standalone full-screen document (no site header), like the pay sheet's pages."""
-    return (Title(f"GitAway · {title}"), *styles(*HEAD), Main(*content, id="main", cls="pt-stage"))
+    """The sandbox checkout's pages: a v2 reading page whose card is the stand-in for the partner's own checkout."""
+    return page(title, Div(*content, cls="pt-stage"), head=HEAD, noindex=True, v2=True, quiet=True)
 
 
 def _offer_card(offer, trip):

@@ -47,7 +47,7 @@ def sandbox_of(client, offer, query=HI):
 
 def complete(client, offer, query=HI):
     page = client.get(sandbox_of(client, offer, query)).text
-    action = re.search(r'<form[^>]*action="([^"]+)"', page).group(1)
+    action = re.search(r'<form[^>]*action="(/sandbox[^"]+)"', page).group(1)
     fields = dict(re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', page))
     return client.post(action, data=fields, follow_redirects=False)
 
