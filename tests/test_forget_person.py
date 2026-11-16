@@ -42,7 +42,7 @@ def folder(client):
         CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, member_id TEXT, created_by TEXT, orig TEXT, display TEXT, thumb TEXT);
     """)
     for pid, member, made in (("own", uid, "someone"), ("made", "kid", uid), ("other", "kid", "someone")):   # F-083: whose pass it is, who added it, a stranger's
-        fam.execute("INSERT INTO passes VALUES (?, ?, ?, ?, ?, ?)", (pid, member, made, f"{fid}/t/{pid}.pdf", f"{fid}/t/{pid}-display.jpg", f"{fid}/t/{pid}-thumb.jpg"))
+        fam.execute("INSERT INTO passes (id, member_id, created_by, orig, display, thumb) VALUES (?, ?, ?, ?, ?, ?)", (pid, member, made, f"{fid}/t/{pid}.pdf", f"{fid}/t/{pid}-display.jpg", f"{fid}/t/{pid}-thumb.jpg"))      # named columns: an earlier test may have made the real, wider table
     fam.execute("INSERT OR IGNORE INTO members (id, email) VALUES (?, ?)", (uid, EMAIL))
     fam.execute("INSERT INTO push_subscriptions VALUES ('https://x/1', ?, 'k', 'a', 'now')", (uid,))
     fam.execute("INSERT INTO thread VALUES ('m1', ?, 'hi')", (uid,))
