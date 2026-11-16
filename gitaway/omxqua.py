@@ -11,7 +11,7 @@ from fasthtml.common import Link
 
 ROOT = "oq-root oq-light oq-family-travel"
 # (path prefix, the stylesheets that go after omxqua.css). F-254: the Coast sheets of /plan and /creators retired with their pages.
-SKINS = (("/plan", ()), ("/creators", ()), ("/guides", ()), ("/report", ()), ("/admin", ()))   # F-181: Community trips (real creator trips live there)
+SKINS = (("/plan", ()), ("/creators", ()), ("/guides", ()))   # F-272: /report and /admin left with part B (Coast turned their v2 buttons ink)   # F-181: Community trips (real creator trips live there)
 # F-272 (D-810): pages that moved to design language v2 never wear Coast (it would fight v2's buttons and tokens): Plan it for me and the sandbox checkout left SKINS, these sit under /creators
 _V2 = ("/creators/drafts", "/creators/settings", "/creators/stats")
 _TRIP_PAGE = re.compile(r"/trips/([^/]+)/?")
