@@ -1,0 +1,122 @@
+{
+ "status": 200,
+ "body": {
+  "data": {
+   "prebookId": "feRYH3c4X",
+   "offerId": "AwJ2MQAAAABq_KWR0oOWVOZKnlefo6dNdLs_t3pLzEFTnk9sR0bZzq461kx-TGewxsB2K9AsuJ7pN2mPOPzxLBqiCNPLJv36Gd2U_WAudxc4-WNw0HoIdgUmoTDGhymHrOADOdjkGlySQsg6rDUC656kFt7BTki0j7muR3F56EFlP8Ih8CEBMHgR6OGkX8wAmFqCoEcmrH4mwL8OIkYS2NyvW-vjPdN8-qz81tIWGdTo-qE9exQFFdGKIgCBTakhYIZipSbhhQ4xKQcPkzqPMli4tBVHV9VfMDXNHqOTz1YpXg_NAkIF7vjgNSqydqXry_epNqCTOPOOYbsTZCG9dN1cK76Q8n8poxGBCNPR1cAy2iXcVASYzBDXsX6n5MUMWQiU3rO5FE5uJlM8krxCHwe_UsnYNhi000NOmsYUXy3p91QUKPkvwxRiHWISX81mBpzGzV9xlKvhCRHwBm4QqpNH8Pz3C1HDU4P1n5UffGdLe0uGX18dRc3DnPyDSQISfhCPl2Zn3Q8sIUzQZGt8UqOQJpI6ljbuKerF0ne5hmOWNker-HzBLlsT61_zvQooEnZIkGzhsC5u6KTVwNdkDPhf8xz7EvC8Ki3y5bdmgBESmTcupHw3Qibu8YgA7-VX8XXqswN3bkeuwA7BC6vQAXJ797G58v3rg8pj5p34631o48jtJ4uxT4EwKQIF9ziDLcQ_K5Ov8qLsk4DzRU8QL7fm8tZ3cUwHQi1QL3Ow2Fkgl-Y6o8Fzdd8xnv6uFqCehN49zOtH-8HdvKJR0FUU-TKp0phja5u8VMJAfWI8QNlUg21fhZkIe-D2Y6aPfrSvHBJaMGlACFOrrCu_4FK8Uztz9BUniXKeBkswADFIKbJ-bcF8GMiDrIWY3QWdoL_4TfSV0zoAK-RcMU2iUGJX4Xq4VjD0S2us61Kq2I5PtvWuuYPF3_Dc0ubxA0LZqBFutBM7aqi7o6jWRokaUuAd_gRHpB8M2rY-qRjFfcQMrLQQ1ZumYtSujdusEk9VZ8W8JQcuOYy0ZgMT8xLsPjmIZkEvYfHHTqacwqGmQsbrEKRnrzu7w7eaBDV9n9OUyaMJ1ie0ohh7y8Zwy2VYBPkF7huyeiEdaRcxK1-fSbGz_lMRWYWbhwJ2GiQzyftPBDwTF1nrjBK5RcSKoEzzvFUr7MLBAHADvtDuemztwk8R2ZYTAOfpC1wQ_Hy9D8QpZAOECFTvmNl5vjE_dA4oZ0LCiQQ3Pmt97N_lD3kLoTuG3fnQA5tnAisuFbSs4Lg8vCoLJwxgR1IklThjvgSlWZMN5TrTuopG70Am4DhdBOVM9dhrNWlfkOc8h4OkipgFVBPKffSc1aVvz-cTrS95tDuKQ7SKMxhgLBOeAT7n_EFqrySY3gfsSyZJZchyJK__eQtTQemq1uG0Sbb4M1y5-TZm9OtJ2V5VhVE=",
+   "hotelId": "lp41323",
+   "currency": "USD",
+   "termsAndConditions": "",
+   "roomTypes": [
+    {
+     "rates": [
+      {
+       "rateId": "I5GVURCFJVBFQR2FGNKEWTSSKZDVSMSUJVNEUU2HIEZUIRKOKJLEOWJSIRHU2WSTJVGVURCBJZKEKR22KRCE2TKSK5EEKM2HI5HFEWSHGQZEIT2PJJJUOQJTIRBU4USUI5MVUVCNJZFFQR2NGNKEOTSSLJDVSWSEJVMVUV2HKVNEIQKOLJMEOWJUKRHU4QSXJBAVURCBJZJFGR2ZLFKE6TSCK5EECM2UJFHFUVSHLFNEQWKNJJCEOSKZIRCU4USSI5EVSVCFG5BFGR2BLJCE2TKKKNDUKM2ILFNEYT2MGVFVMRZXINLEWTRWIZFVKMSFKBIVURKDJVJUIRZUK5KEGTKEGRDVSMSUJNHUYNCNGRNEKSJVKNBFAUKZKRHU6SSVJBATEVCLJ5FFKR2RGRCFCTRTKBGEUQ2HGREVUU2HLEZVIQKOIJKEKTJTIRGU6SSOI5ETGRCPJVBFKR2OGZDEKUSTJ5IFCWSEIFGVEV2HIVNEIQ2NIJJEOQKZIRATOQSSKBJEURCDJVFFMR2CGZCEWTKSKFDVSM2TI5KVGUCFJZFEKTKUKJCEOSKZIRCU4USOI5CVUQZSJVFFCRKBLFKECT2SKFDUCUSRPQ2TEMBOGY3HYMRQGI3C2MJSFUYTCIBRGA5DAMB2GAYHYUSPPR6HY7BSEBIXKZLFNYQEEZLEOMWCATLPMJUWY2LUPEQECY3DMVZXG2LCNRSSA53JORUCAQTBORUHI5LCPQYC4MBQPQWTALRQGF6HYLJQFYYDC7BQFYYDA",
+       "occupancyNumber": 1,
+       "name": "2 Queen Beds, Mobility Accessible with Bathtub",
+       "maxOccupancy": 4,
+       "adultCount": 2,
+       "childCount": 2,
+       "childrenAges": [
+        7,
+        10
+       ],
+       "boardType": "RO",
+       "boardName": "Room Only",
+       "remarks": "<br/><br/>In the event of an early departure, the property may charge you one night\u2019s room and tax. <br/> In the event of an early departure, the property may charge you one night\u2019s room and tax. <br/> Upon check-in photo identification and credit card is required. All special requests are subject to availability upon check-in. Special requests cannot be guaranteed and may incur additional charges. Guests are required to show a photo identification and credit card upon check-in. Please note that all Special Requests are subject to availability and additional charges may apply.<br/>",
+       "priceType": "commission",
+       "commission": [
+        {
+         "amount": -0.01,
+         "currency": "USD"
+        }
+       ],
+       "retailRate": {
+        "total": [
+         {
+          "amount": 520.66,
+          "currency": "USD"
+         }
+        ],
+        "suggestedSellingPrice": [
+         {
+          "amount": 598.77,
+          "currency": "USD",
+          "source": ""
+         }
+        ],
+        "initialPrice": null,
+        "taxesAndFees": [
+         {
+          "included": true,
+          "description": "LODGING",
+          "amount": 62.43,
+          "currency": "USD"
+         },
+         {
+          "included": true,
+          "description": "LODGING",
+          "amount": 9.79,
+          "currency": "USD"
+         }
+        ]
+       },
+       "cancellationPolicies": {
+        "cancelPolicyInfos": [
+         {
+          "cancelTime": "2026-12-10 10:00:00",
+          "amount": 148.88,
+          "currency": "USD",
+          "type": "amount",
+          "timezone": "GMT"
+         },
+         {
+          "cancelTime": "2026-12-11 10:00:00",
+          "amount": 520.66,
+          "currency": "USD",
+          "type": "amount",
+          "timezone": "GMT"
+         }
+        ],
+        "hotelRemarks": [],
+        "refundableTag": "RFN"
+       },
+       "paymentTypes": [
+        "NUITEE_PAY"
+       ],
+       "providerCommission": {
+        "amount": 0,
+        "currency": ""
+       },
+       "perks": [],
+       "promotions": null
+      }
+     ]
+    }
+   ],
+   "suggestedSellingPrice": 598.77,
+   "isPackageRate": true,
+   "commission": -0.01,
+   "price": 520.66,
+   "priceType": "commission",
+   "priceDifferencePercent": 0,
+   "cancellationChanged": false,
+   "boardChanged": false,
+   "supplier": "nuitee",
+   "supplierId": 2,
+   "transactionId": "tr_cts_rn7C59CgkErOfEyf2MIj6",
+   "secretKey": "[secretKey]",
+   "paymentTypes": [
+    "NUITEE_PAY",
+    "TRANSACTION_ID",
+    "ACC_CREDIT_CARD",
+    "WALLET"
+   ],
+   "checkin": "2026-12-12",
+   "checkout": "2026-12-16",
+   "sellingPriceToUser": 520.66
+  },
+  "guestLevel": 0,
+  "sandbox": true
+ }
+}

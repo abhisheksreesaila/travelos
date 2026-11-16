@@ -13,6 +13,9 @@ Real answers:
 - `cancel_unknown.json`: 404, code 4008.
 - `margin.json`: the same search with no margin and with `margin: 16`, the retail rate and `suggestedSellingPrice` of 11 hotels. At 16 they are equal to the cent.
 
-**Hand-shaped, not recorded:** `cancel_refundable.json` (the docs' fully refundable answer, status CANCELLED and a refund_amount; the sandbox offered no refundable rate to cancel).
+Recorded through the real payment form in a real browser (2026-11-16, the sandbox test card, a sandbox voucher of 10%; `tests_browser/test_zz_real_sandbox.py` was the scratch run, not kept):
+- `prebook_sdk_refundable.json`, `prebook_voucher_refundable.json`: a refundable San Diego stay (free until Dec 10, $148.88 from then, the whole $520.66 from Dec 11). The voucher prebook: price 520.66, voucherTotalAmount 52.06, sellingPriceToUser 468.60.
+- `book_transaction_id.json`: the TRANSACTION_ID book after the card paid (`paymentStatus: succeeded`, the voucher in it). Its account `feed` and `userId` are scrubbed.
+- `cancel_refundable.json`: that booking's cancel: CANCELLED, refund_amount 520.66 (the undiscounted price: the card paid 468.60), fee 0.
 
-**Not recorded:** a TRANSACTION_ID book after a real card payment. It needs LiteAPI's payment form in a browser (sandbox test card 4242 4242 4242 4242).
+**Not recorded:** an invoice, 3-D Secure, a card that is declined.

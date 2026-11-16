@@ -19,10 +19,11 @@ PATH = "/trip/booking/cancel"
 TICK = "Tick the box to say you mean to cancel this stay."
 
 
-def _came_back(c) -> str:
-    """What LiteAPI said about the cancel, in words: the refund, or the charge."""
+def _came_back(c, paid_cents=None) -> str:
+    """What LiteAPI said about the cancel, in words: the refund (never more than the card paid: with a voucher LiteAPI's refund_amount is the undiscounted price, probed), or the charge."""
+    refund = c["refund_cents"] if paid_cents is None else min(c["refund_cents"], paid_cents)
     if c["status"] == "CANCELLED":
-        return f"Cancelled. LiteAPI says {catalog.money(c['refund_cents'])} comes back to the card you paid with." if c["refund_cents"] else "Cancelled. Nothing was charged."
+        return f"Cancelled. LiteAPI says {catalog.money(refund)} comes back to the card you paid with." if refund else "Cancelled. Nothing was charged."
     return f"Cancelled. Nothing comes back: LiteAPI charged {catalog.money(c['fee_cents'])} for cancelling." if c["fee_cents"] else "Cancelled. Nothing comes back."
 
 
@@ -38,9 +39,9 @@ def panel(v, h, back: str = ""):
         if not row:
             return ""
         done = mb.cancelled(fam.db, booking)
-        pay = familydb.row(fam.db, "SELECT policy FROM matrix_payments WHERE booking_id = :b", b=booking) or {}
+        pay = familydb.row(fam.db, "SELECT policy, charge_cents FROM matrix_payments WHERE booking_id = :b", b=booking) or {}
     if done:
-        return Div(Div(icon("check", 16, 2.6), Span("Cancelled"), cls="hp-k"), P(_came_back(done), cls="bk-cancel-done", id="bk-cancelled"), cls="bk-cancel")
+        return Div(Div(icon("check", 16, 2.6), Span("Cancelled"), cls="hp-k"), P(_came_back(done, pay.get("charge_cents")), cls="bk-cancel-done", id="bk-cancelled"), cls="bk-cancel")
     policy = pay.get("policy") or ("Refundable: LiteAPI gives the money back." if row["refundable"] else "Non-refundable: if you cancel, nothing comes back.")
     ask = Form(Input(type="hidden", name="booking", value=booking), Input(type="hidden", name="next", value=back),
                Label(Input(type="checkbox", name="sure", value="1", required=True), Span("I want to cancel this stay"), cls="bk-cancel-sure"),

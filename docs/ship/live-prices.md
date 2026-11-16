@@ -55,7 +55,7 @@ The founder books their own stay here after a deploy. Money moves: Nuitée charg
 1. `railway up --service web --detach`. Check `/healthz`, a matrix square's price, and that the about-prices card says "Sold by Nuitée through LiteAPI ... GitAway never sees your card".
 2. Sign in on gitaway.me. Open a square, press Book, answer the questions (your real name, email and mobile number), and read the review: the total must be the square's (there is no "The price moved" line; if there is, the margin did not make the charge equal the shown price: stop and tell the builder the two numbers).
 3. First booking: pick a **refundable** stay. Apply your code, check the discounted total, pay with a real card in LiteAPI's form. The pass must show LiteAPI's booking id; the stay must be on /trip/plan "Booked on LiteAPI". LiteAPI's or the hotel's email arrives.
-4. Cancel that stay from its booking page. It must say what comes back ("LiteAPI says $X comes back to the card you paid with") and the card must be refunded. This is the one path the sandbox could not record (no refundable rate), so it is the real test.
+4. Cancel that stay from its booking page. It must say what comes back ("LiteAPI says $X comes back to the card you paid with") and the card must be refunded. The sandbox already did this path (a refundable stay paid in the real form with the test card, then cancelled: `tests_browser/test_matrixbook_real_sandbox.py`); this is the same with a real card and the live account, so it is the real test.
 5. Then book the real trip.
 
 ## How we'd know it works

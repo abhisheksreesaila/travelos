@@ -267,3 +267,24 @@ def test_the_mobile_number_and_the_requests_go_with_a_real_booking_as_words_from
     assert errors == {} and (got.phone, got.remarks) == ("+1 415 555 0100", "High floor; Quiet room. Arriving in the evening.")
     assert mb.with_extras(guest, mb.Extras("+1 415 555 0100")).remarks == "" and mb.with_extras(guest, mb.Extras("+1 415 555 0100", (), "Morning")).remarks == "Arriving in the morning."
     assert mb.with_extras(guest, mb.Extras("+1 415 555 0100", ("Crib in the room",))).remarks == "Crib in the room."
+
+
+# ---- the refund policy in words ------------------------------------------------------------------------------------------------------
+
+def policy_of(name):
+    return mb.policy_words(liteapi.read_prebook(json.loads((FIX / name).read_text())["body"], datetime(2026, 11, 16, tzinfo=timezone.utc)))
+
+
+def test_the_policy_says_every_step_of_a_refundable_stay_as_liteapi_gave_them():
+    assert policy_of("prebook_sdk_refundable.json") == "Free cancellation until Dec 10, 10:00 AM GMT. After that, cancelling costs $148.88; from Dec 11, 10:00 AM GMT, $520.66."
+
+
+def test_the_policy_of_a_non_refundable_stay_and_of_a_free_one_are_plain():
+    assert policy_of("prebook_sdk.json") == "Non-refundable: if you cancel, nothing comes back."
+    doc = json.loads((FIX / "prebook_sdk_refundable.json").read_text())["body"]
+    for info in doc["data"]["roomTypes"][0]["rates"][0]["cancellationPolicies"]["cancelPolicyInfos"]:
+        info["amount"] = 0
+    pre = liteapi.read_prebook(doc, datetime(2026, 11, 16, tzinfo=timezone.utc))
+    assert mb.policy_words(pre) == "Free cancellation: nothing is charged if you cancel."
+    doc["data"]["roomTypes"][0]["rates"][0]["cancellationPolicies"]["cancelPolicyInfos"] = []
+    assert mb.policy_words(liteapi.read_prebook(doc, datetime(2026, 11, 16, tzinfo=timezone.utc))) == "Refundable: you can cancel it from the booking page."

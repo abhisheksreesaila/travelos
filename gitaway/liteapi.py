@@ -878,8 +878,7 @@ class Prebook:
     pays_cents: int | None = None   # what the guest's card is charged: `sellingPriceToUser`, the price less a voucher's discount
     voucher_code: str = ""
     discount_cents: int = 0  # a voucher's discount (`voucherTotalAmount`), 0 without one
-    deadline: str = ""       # the first cancellation deadline's time, GMT, from LiteAPI ("" when there is none)
-    fee_cents: int = 0       # what cancelling after it costs
+    tiers: tuple = ()        # LiteAPI's cancellation steps, in order: (the time, GMT, as it gave it, what cancelling after it costs in cents); () when it gives none
     remarks: str = ""        # the hotel's cancellation remarks and the offer's terms, LiteAPI's own words
 
     @property
@@ -923,7 +922,7 @@ def read_prebook(answer, fetched: datetime) -> Prebook:
     return Prebook(str(d["prebookId"]), str(d.get("hotelId") or ""), str(rate.get("name") or ""), _day_of(d.get("checkin")), _day_of(d.get("checkout")), cents, fees,
                    policy.get("refundableTag") == "RFN", bool(d.get("priceDifferencePercent")) or bool(d.get("cancellationChanged")) or bool(d.get("boardChanged")), fetched,
                    str(d.get("secretKey") or ""), str(d.get("transactionId") or ""), pays, str(d.get("voucherCode") or ""), _cents(d.get("voucherTotalAmount")) or 0,
-                   str(infos[0].get("cancelTime") or "") if infos else "", (_cents(infos[0].get("amount")) or 0) if infos else 0, remarks[:1200])
+                   tuple((str(i.get("cancelTime") or ""), _cents(i.get("amount")) or 0) for i in infos if i.get("cancelTime")), remarks[:1200])
 
 
 def read_booking(answer, fetched: datetime) -> Booking:

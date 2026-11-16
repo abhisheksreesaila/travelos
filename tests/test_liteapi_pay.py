@@ -77,13 +77,28 @@ def test_a_prebook_without_the_form_has_no_keys_and_charges_its_price():
     assert (got.secret_key, got.transaction_id, got.pays_cents, got.charge_cents) == ("", "", 35900, 35900)
 
 
-def test_a_cancellation_policy_is_read_in_liteapis_words():
+def test_a_refundable_stays_cancellation_steps_are_read_as_liteapi_gave_them():
+    """A real refundable San Diego rate (recorded 2026-11-16 through the payment form): free until Dec 10, then $148.88, from Dec 11 the whole $520.66."""
+    got = read("prebook_sdk_refundable.json")
+    assert got.refundable is True and got.tiers == (("2026-12-10 10:00:00", 14888), ("2026-12-11 10:00:00", 52066)) and got.cents == 52066 and got.due_at_stay_cents == 0
+
+
+def test_the_hotels_remarks_are_kept_in_its_own_words():
     doc = json.loads((FIX / "prebook_sdk.json").read_text())["body"]
-    rate = doc["data"]["roomTypes"][0]["rates"][0]
-    rate["cancellationPolicies"] = {"cancelPolicyInfos": [{"cancelTime": "2026-12-10T18:59:00Z", "amount": 340.1, "currency": "USD", "type": "amount", "timezone": "GMT"}],
-                                    "hotelRemarks": ["Cancel by 7 pm local time."], "refundableTag": "RFN"}
-    got = liteapi.read_prebook(doc, AT)
-    assert (got.refundable, got.deadline, got.fee_cents, got.remarks) == (True, "2026-12-10T18:59:00Z", 34010, "Cancel by 7 pm local time.")
+    doc["data"]["roomTypes"][0]["rates"][0]["cancellationPolicies"]["hotelRemarks"] = ["Cancel by 7 pm local time."]
+    assert liteapi.read_prebook(doc, AT).remarks == "Cancel by 7 pm local time."
+
+
+def test_a_real_voucher_prebook_of_a_refundable_stay_says_what_the_card_pays():
+    got = read("prebook_voucher_refundable.json")
+    assert (got.cents, got.charge_cents, got.discount_cents, got.voucher_code) == (52066, 46860, 5206, "F274SANDBOX")
+
+
+def test_the_real_booking_made_after_the_payment_form_is_read():
+    """tests/fixtures/liteapi_pay/book_transaction_id.json: LiteAPI's answer to a TRANSACTION_ID book after a real card payment in its form (the sandbox test card), with a voucher."""
+    got = liteapi.read_booking(json.loads((FIX / "book_transaction_id.json").read_text())["body"], AT)
+    assert (got.booking_id, got.status, got.hotel, got.refundable, got.confirmation, got.checkin, got.checkout) == (
+        "7EBqw775l", "CONFIRMED", "Courtyard by Marriott San Diego Mission Valley/Hotel Circle", True, "test", date(2026, 12, 12), date(2026, 12, 16))
 
 
 # ---- the calls --------------------------------------------------------------------------------------------------------------
@@ -162,8 +177,8 @@ def test_cancelling_a_non_refundable_stay_says_nothing_comes_back(live):
 
 def test_cancelling_a_refundable_stay_says_what_comes_back(live, monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay(cancel="cancel_refundable.json"))
-    c = liteapi.cancel("wyOxZDui1", "fam").items[0]
-    assert (c.status, c.refund_cents, c.fee_cents) == ("CANCELLED", 34010, 0)
+    c = liteapi.cancel("7EBqw775l", "fam").items[0]
+    assert (c.status, c.refund_cents, c.fee_cents) == ("CANCELLED", 52066, 0)      # recorded from the sandbox: the undiscounted price, though the card paid $468.60 with a voucher
 
 
 def test_cancelling_a_booking_liteapi_does_not_know_is_failed_and_the_id_cannot_change_the_path(live, monkeypatch):

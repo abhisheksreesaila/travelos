@@ -2,10 +2,10 @@
  "status": 200,
  "body": {
   "data": {
-   "bookingId": "wyOxZDui1",
+   "bookingId": "7EBqw775l",
    "cancellation_fee": 0,
    "currency": "USD",
-   "refund_amount": 340.1,
+   "refund_amount": 520.66,
    "status": "CANCELLED"
   },
   "sandbox": true

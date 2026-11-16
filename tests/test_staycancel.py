@@ -5,8 +5,8 @@ from html import unescape
 
 import pytest
 
-from gitaway import familydb, importer, session as ses, tripimport as ti
-from tests.test_matrixbook_live import CANCEL, BOOK, GUEST, Live, pay_pane, real, token  # noqa: F401 (real is the fixture)
+from gitaway import catalog, familydb, importer, session as ses, tripimport as ti
+from tests.test_matrixbook_live import CANCEL, BOOK, GUEST, Live, pay_pane, payments, real, token  # noqa: F401 (real is the fixture)
 from tests.test_matrixbook_page import person, sign_in, stays_booked, text
 
 
@@ -47,8 +47,20 @@ def test_cancelling_a_non_refundable_stay_says_nothing_comes_back_and_marks_the_
 def test_cancelling_a_refundable_stay_says_what_comes_back(real, client):
     real.answers["cancel"] = "cancel_refundable.json"
     trip, href = booked_stay(client)
+    paid = payments()[0]["charge_cents"]
     client.post("/trip/booking/cancel", data={"booking": "uuJxfM0--", "sure": "1", "next": href})
-    assert "Cancelled. LiteAPI says $340.10 comes back to the card you paid with." in words(client.get(href).text)
+    assert f"Cancelled. LiteAPI says {catalog.money(min(52066, paid))} comes back to the card you paid with." in words(client.get(href).text)
+
+
+def test_a_refund_is_never_said_to_be_more_than_the_card_paid(real, client):
+    """With a voucher LiteAPI's refund_amount is the undiscounted price ($520.66 for a $468.60 charge, recorded): the page says what the card paid."""
+    real.answers["cancel"] = "cancel_refundable.json"
+    trip, href = booked_stay(client)
+    with ses.family(person()) as fam:
+        familydb.run(fam.db, "UPDATE matrix_payments SET charge_cents = 46860")
+        fam.db.conn.commit()
+    client.post("/trip/booking/cancel", data={"booking": "uuJxfM0--", "sure": "1", "next": href})
+    assert "Cancelled. LiteAPI says $468.60 comes back to the card you paid with." in words(client.get(href).text)
 
 
 def test_without_the_tick_or_when_liteapi_refuses_nothing_changes_and_the_page_says_why(real, client):

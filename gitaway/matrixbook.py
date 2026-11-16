@@ -220,11 +220,16 @@ def _when_gmt(iso: str) -> str:
 
 
 def policy_words(pre) -> str:
-    """What LiteAPI says about cancelling, in a sentence: a refundable stay's deadline and what it costs after, a non-refundable one's plain word."""
+    """What LiteAPI says about cancelling, in sentences: a refundable stay's first deadline, then what cancelling costs after it and after each later step (LiteAPI gave two for a real
+    San Diego stay: $148.88 from Dec 10, the whole price from Dec 11), a non-refundable one's plain word."""
     if not pre.refundable:
         return "Non-refundable: if you cancel, nothing comes back."
-    if pre.deadline:
-        return f"Free cancellation until {_when_gmt(pre.deadline)}." + (f" After that, cancelling costs {catalog.money(pre.fee_cents)}." if pre.fee_cents else "")
+    costly = [(t, f) for t, f in pre.tiers if f > 0]      # a step of 0 is no charge: LiteAPI's "fully refundable"
+    if pre.tiers and not costly:
+        return "Free cancellation: nothing is charged if you cancel."
+    if costly:
+        (first, fee), later = costly[0], costly[1:]
+        return (f"Free cancellation until {_when_gmt(first)}. After that, cancelling costs {catalog.money(fee)}" + "".join(f"; from {_when_gmt(t)}, {catalog.money(f)}" for t, f in later) + ".")
     return "Refundable: you can cancel it from the booking page."
 
 
