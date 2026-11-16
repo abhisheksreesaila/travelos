@@ -1598,7 +1598,7 @@ Needs: F-251. Build docs/design/planning-v2: the trip calendar (week and day) wi
 ## F-253 Creators v2 [done]
 Needs: F-250. Build docs/design/creators-v2 over the existing magic import (F-235): the landing, the live import, the book with page turns, edit and publish, the community shelf (real published books only off the showcase).
 
-## F-254 Subtract the old app [review]
+## F-254 Subtract the old app [done]
 Needs: F-251, F-252, F-253. Remove the pages the v2 journey replaced (the /plan lanes, /plan/grid, the old checkout, Where to?, forks, the cockpit, day pages, canvas, add screens, partner log …), redirecting their addresses into the journey; Direction A's tokens retire.
 
 ## F-255 The v2 top bar can take you places [done]

@@ -61,7 +61,9 @@ def test_a_guide_opens_over_the_matrix_and_closing_it_returns_exactly_where_you_
     expect(page.locator("#mx-rail .wg").first.locator(".wg-h")).to_have_text("Guides for Los Angeles")
     expect(page.locator("#mx-rail .wg").first.locator(".smp")).to_have_text("Sample")      # the showcase's guide says it is a sample
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 40; window.scrollTo(0, 60)")
-    row.scroll_into_view_if_needed()      # reaching the row may scroll the page: the state to keep is what is there when the sheet opens
+    page.evaluate("document.querySelector('#mx-rail .gd-row').scrollIntoView({block: 'center'})")      # reaching the row may scroll the page and load more squares
+    at_rest(page)      # the rail asks again once every square in view has settled (v2rail.js, mx:settled) and may swap its rows: wait for that before holding one
+    page.wait_for_function("""() => { const r = document.getElementById('mx-rail'), h = r.innerHTML; return new Promise(ok => setTimeout(() => ok(r.innerHTML === h), 600)); }""", polling=700)
     before = at_rest(page)
     assert before["open"] and before["drawer"]
     row.click()

@@ -6,7 +6,7 @@
 (function () {
   var rail = document.getElementById('mx-rail'), raw = document.getElementById('mx-data');
   if (!rail || !raw) return;
-  var data = JSON.parse(raw.textContent), kept = {}, want = '', last = null;
+  var data = JSON.parse(raw.textContent), kept = {}, want = '', last = null, shown = '';      // shown: the server's own words for what is on the rail now
 
   function address(d) {
     var u = new URL(data.rail, location.href);
@@ -17,6 +17,7 @@
   }
 
   function show(html, id) {
+    shown = html;
     rail.innerHTML = html;
     rail.dataset.id = id;
     rail.classList.remove('is-swap');
@@ -34,7 +35,7 @@
       .then(function (j) {
         kept[id] = j.html;
         if (want === id && (rail.dataset.id !== id || d.fresh)) {
-          if (rail.dataset.id === id && rail.innerHTML === j.html) return;      // the same widgets again: leave them be
+          if (rail.dataset.id === id && shown === j.html) return;      // the same widgets again: leave them be (compared with what the server sent last, not the page's rewritten markup, which never matched)
           show(j.html, id);
         }
       })
