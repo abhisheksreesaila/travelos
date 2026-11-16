@@ -11,7 +11,7 @@ The story of the brief (docs/briefs/unified-booking.md "The cover tells this sto
     the close     the headline again and Start a trip, then the footer.
 
 The header is the site's way in (founder, 2026-11-13): Guides and Plan a trip (`layout.NAV`), then Sign in. Start a trip and
-Plan a trip are one door, `layout.plan_href()`: sign in, then `/` decides: the family's trip, or the trip matrix (D-461).
+Plan a trip are one door, `layout.plan_href()`: the ask and the trip matrix, open to visitors; sign-in waits for Save, Book and Plan this trip (D-461, D-761).
 
 No jitter by construction (D-427): the frame is CSS sticky; assets/js/cover.js only sets data-part on the stage from an IntersectionObserver and adds
 .go to a part the first time it shows. cover.css does the rest on the --motion-* tokens: the outgoing screen fades, the incoming one settles in on

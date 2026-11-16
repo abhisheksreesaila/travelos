@@ -24,7 +24,7 @@ def test_a_visitor_sees_plan_a_trip_and_guides_and_sign_in_and_no_menu(client):
     html = client.get(MATRIX).text
     pills, menu, out = parts(html)
     assert [p[0] for p in pills] == ["Plan a trip", "Guides"]      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar; F-262: Guides replaced Community trips and For creators
-    assert pills[1:] == [("Guides", "/guides", False)] and pills[0][1].startswith("/signin")
+    assert pills[1:] == [("Guides", "/guides", False)] and pills[0][1] == "/plan/ask"      # D-761: a visitor searches without an account
     assert menu == [] and not out
     assert ">Sign in<" in html
 

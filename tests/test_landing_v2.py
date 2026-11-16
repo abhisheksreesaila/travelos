@@ -27,16 +27,16 @@ def _hrefs(fragment):
 def test_landing_header_is_the_sites_way_in(client):
     """D-458 (founder, 2026-11-13; F-262): the home page introduces, and its header is the way in: Guides, Plan a trip, Sign in."""
     header = _tag(client.get("/").text, "header", "cv-top")       # the signed-out landing is the cover (F-206)
-    assert _hrefs(header) == ["/", "/guides", "/signin", "/signin"]
+    assert _hrefs(header) == ["/", "/guides", "/plan/ask", "/signin"]      # D-761: Plan a trip opens the ask without an account; Sign in is its own button
     assert header.index("Guides") < header.index("Plan a trip")
 
 
 def test_other_pages_keep_their_header_nav(client):
     header = _tag(_get(client, "/creators"), "header", "ga-header")      # F-200: sign-in is a full-screen page with the brand and Cancel only
-    assert "/guides" in header and 'href="/signin"' in header      # signed out, Plan a trip signs in first, and / then decides (D-458, D-461)
+    assert "/guides" in header and 'href="/plan/ask"' in header and "/signin?next=" in header      # D-761: signed out, Plan a trip opens the ask; Sign in stays its own button
     for path in ["/guides", "/guides/make"]:       # F-253, F-262: the creator pages wear the v2 top bar, which carries the same way in
         top = re.search(r'<div class="v2-top">.*?(?=<main)', _get(client, path), re.S).group(0)
-        assert _hrefs(top)[1:3] == ["/signin", "/guides"] and _hrefs(top)[3].startswith("/signin?next="), path      # F-255: the pill begins with Plan a trip (it signs in first), then Community trips and For creators; then Sign in
+        assert _hrefs(top)[1:3] == ["/plan/ask", "/guides"] and _hrefs(top)[3].startswith("/signin?next="), path      # F-255, D-761: the pill begins with Plan a trip (open to visitors), then Guides; then Sign in
 
 
 def test_footer_carries_the_links_that_left_the_header(client):

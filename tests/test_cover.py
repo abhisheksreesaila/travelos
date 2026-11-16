@@ -177,7 +177,9 @@ def test_every_door_lands_on_a_real_page(client, monkeypatch, mode):
     monkeypatch.setenv("GITAWAY_SHOWCASE", mode)
     html = _cover(client)
     hero = _el(html, "section", "cv-hero")
-    door = "/signin"      # D-458, D-461: Start a trip and Plan a trip are one door: sign in, then / decides (the family's trip, or the matrix; showcase or not)
+    from gitaway import showcase
+    door = showcase.planning_path()      # D-458, D-461, D-761: Start a trip and Plan a trip are one door, open to visitors: the ask and the matrix (or the import where there is no matrix)
+    assert door != "/signin"
     assert _links(hero) == [door, "#compare"] and 'id="compare"' in html
     assert _links(_el(html, "section", "cv-close")) == [door]
     assert _links(_el(html, "header", "cv-top")) == ["/", "/guides", door, "/signin"]

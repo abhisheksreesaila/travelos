@@ -182,9 +182,9 @@ def site_header(current: str = "", traveler=None, nav: bool = True):
 
 
 def plan_href() -> str:
-    """Where "Plan a trip" and "Start a trip" go (D-461): the trip matrix when signed in (the family's own trip is one tap away on `/`), where it exists, else the
-    import of a trip already booked; signed out, sign in first, and `/` then decides."""
-    return showcase.planning_path() if session.request_traveler() else session.signin_href("/")
+    """Where "Plan a trip" and "Start a trip" go (D-461, D-761): the ask and the trip matrix where it exists, else the import of a trip already booked, for
+    everyone. A visitor searches and compares without an account; sign-in comes only where something is kept: Save, Book and Plan this trip."""
+    return showcase.planning_path()
 
 
 def site_footer(links=()):
