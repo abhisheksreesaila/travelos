@@ -61,4 +61,5 @@ New: `tests/test_planforme_pages.py::test_on_a_local_copy_the_stand_in_checkout_
 
 ## Totals
 
-Browser suite (`pixi run test-browser`, whole): see the final report; unit suite (`pixi run test`): see the final report.
+Browser suite, one whole run (18m49s): 480 passed, 8 skipped, 1 failed (test_trip_ask's race above, fixed after the run; test_trip_ask.py and test_cover.py together rerun 39 passed), so 481 passed. Start was 70 failed, 431 passed; 19 deleted tests and 1 new unit test account for the rest.
+Unit suite (`pixi run test`, deterministic order): 3633 passed (3632 on master plus the new stand-in test).
