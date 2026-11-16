@@ -62,7 +62,7 @@ def test_invite_then_join_as_a_second_dev_user_and_see_the_trip(contexts, base_u
     other.click("#join-signin")
     other.fill("#si-email", sam)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
+    other.wait_for_url("**/trip/plan*")      # the trip's home (F-252: the calendar; /trip/cockpit redirects there)
     other.goto(f"{base_url}/family")
     expect(other.locator("#fam-role")).to_contain_text("editor")
     expect(other.locator(".fam-member")).to_have_count(2)
@@ -80,13 +80,11 @@ def test_a_viewer_can_look_but_cannot_change_the_trip(contexts, base_url):
     ctx = contexts(DESKTOP)
     ctx.request.post(f"{base_url}/signin", form={"email": vi, "next": "/", "intent": "save"}, max_redirects=0)
     other = ctx.new_page()
-    other.goto(f"{base_url}/trip?tab=today")
-    expect(other.locator("#tp-viewer")).to_be_visible()
-    expect(other.locator("#tp-add")).to_have_count(0)                       # no way to add: the plus is gone
-    other.goto(f"{base_url}/trip/canvas?day=1")
-    expect(other.locator("#cz")).not_to_have_attribute("data-edit", "1")
+    other.goto(f"{base_url}/trip/plan")      # M5 triage: the old /trip and canvas are retired (F-254); the viewer's check moves to the v2 calendar
+    expect(other.locator(".cal-top")).to_be_visible()
+    expect(other.locator("[data-add]")).to_have_count(0)                    # no way to add: the plus is gone
     # a write posted from the page is refused, and nothing is added
-    status = other.evaluate("""async () => (await fetch('/trip/plans', {method: 'POST', body: new URLSearchParams({id: 'a1', day: '1', start: '10:00', title: 'Sneaky', kind: 'fun'})})).status""")
+    status = other.evaluate("""async () => (await fetch('/trip/plan/write', {method: 'POST', body: new URLSearchParams({op: 'add', day: '1', start: '600', end: '660', title: 'Sneaky', kind: 'fun'})})).status""")
     assert status == 403
     other.reload()
     expect(other.locator("text=Sneaky")).to_have_count(0)
