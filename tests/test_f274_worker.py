@@ -2,6 +2,9 @@
 statuses; such a row is given up on after HOLD + an hour and deleted by the purge; other failures back off (10 min, 20, 40, to a day); the worker spends its own small budget, never the
 family's own booking allowance; /admin counts only what LiteAPI did not refuse as unpaid; and a stay the worker books really lands on its trip."""
 import logging
+
+import pytest
+from sqlalchemy import text
 from datetime import datetime, timedelta, timezone
 
 from gitaway import bookingjobs, familydb, liteapi, matrixbook as mb, session as ses
@@ -10,6 +13,15 @@ from tests.test_liteapi_pay import GUEST, Pay, live as live_key  # noqa: F401
 from tests.test_matrixbook_live import pay_pane, real, token  # noqa: F401 (real is a fixture)
 from tests.test_matrixbook_page import person, stays_booked
 from tests.test_matrixbook_pay import family, live, pay, prepared  # noqa: F401 (fixtures)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_budgets():
+    """The booking budgets are per day and kept in community.db: each test starts with none spent."""
+    from gitaway import community
+    with community.connect() as db:
+        db.conn.execute(text("DELETE FROM liteapi_bookings"))
+        db.conn.commit()
 
 
 def books(box):
@@ -77,6 +89,7 @@ def test_other_failures_back_off_ten_twenty_forty_minutes_and_a_day_at_most(live
     pay(db, user, prep)
     aged(db, prep.token, minutes=11)
     monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (503, "application/json", b"{}"))
+    monkeypatch.setattr(liteapi, "PER_JOB_BOOK_A_DAY", 1000)
     now = datetime.now(timezone.utc)
     gaps = []
     for _ in range(9):
@@ -89,7 +102,7 @@ def test_other_failures_back_off_ten_twenty_forty_minutes_and_a_day_at_most(live
         familydb.run(db, "UPDATE matrix_payments SET created_at = :t", t=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         db.conn.commit()
     assert gaps[:4] == [10, 20, 40, 80] and gaps[-1] == 24 * 60 and mb.payment(db, prep.token)["attempts"] == 9
-    assert mb.payment(db, prep.token)["status"] == "paying"      # a failure that is not "unpaid" or "gone" never gives up
+    assert mb.payment(db, prep.token)["status"] == "needs_help"      # a failure that is not LiteAPI's "not paid" never gives up: past the hour it is kept for the captain
 
 
 def test_a_row_that_is_not_due_yet_is_left_alone(live, family, monkeypatch):

@@ -60,6 +60,7 @@ PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together
 PER_VISITOR_A_DAY = 60                   # uncached searches one signed-out visitor may make in a day (F-265, D-764): about three full matrices; a visitor is `stats.searcher`'s "v:" code
 VISITOR = "v:"
 A_DAY = 2000                             # and the whole site
+JOB_BOOK_A_DAY = 60      # and the worker's own cap for the whole site: its calls are counted apart from the interactive 200 (D-852)
 PER_JOB_BOOK_A_DAY = 6      # the booking worker's own allowance a family a day (key "job:<family>"): it never spends the family's interactive one (D-851)
 PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY = 20, 200      # booking calls (prebook, book, lookup) have their own daily budgets, so booking never spends a family's searches nor the reverse (F-233 review)
 STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
@@ -471,13 +472,21 @@ def visitor_over(family: str) -> bool:
         return db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": _day(), "f": family}).scalar() >= PER_VISITOR_A_DAY
 
 
+def _site(book: bool, who: str, total: int) -> tuple:
+    """(an SQL condition, the cap) for the site-wide count of a booking call: the worker's calls ("job:...") are counted and capped apart from everyone else's (D-852)."""
+    if not book:
+        return "", total
+    return (" AND family LIKE 'job:%'", JOB_BOOK_A_DAY) if who.startswith("job:") else (" AND family NOT LIKE 'job:%'", total)
+
+
 def _spend(family: str, book: bool = False) -> bool:
     """Count one uncached call for `family` today, if neither its budget nor the site's is spent. `book`: a booking call, counted in its own table against its own budgets."""
     day, who = _day(), family or "guest"
     table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
+    where, total = _site(book, who, total)
     with _LOCK, community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d{where}"), {"d": day}).scalar()
         if mine >= _per(who, per, book) or everyone >= total:
             return False
         if who.startswith(VISITOR) and not book:      # a visitor's code is good for the day it was made: yesterday's are gone
@@ -491,9 +500,10 @@ def can_search(family: str, book: bool = False) -> bool:
     """Whether `family` (and the site) still has calls left today: background work asks before it starts (F-229). `book`: the booking budgets."""
     day, who = _day(), family or "guest"
     table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
+    where, total = _site(book, who, total)
     with community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d{where}"), {"d": day}).scalar()
     return mine < _per(who, per, book) and everyone < total
 
 
