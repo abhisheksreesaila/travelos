@@ -78,6 +78,14 @@ def test_with_a_stripe_key_there_is_no_stand_in_even_on_a_local_copy(client, mon
     assert client.get(f"/sandbox/plan-for-me/{o['id']}").status_code == 404
 
 
+def test_on_a_local_copy_the_stand_in_checkout_is_its_own_page_not_a_partners_sandbox(client):
+    """M5: `/sandbox/{partner}/{click}` (partners) was registered before this page and answered "Nothing here" for it, so the stand-in checkout was unreachable."""
+    sign_in(client)
+    o = order()
+    r = client.get(f"/sandbox/plan-for-me/{o['id']}")
+    assert r.status_code == 200 and "Pay for Plan it for me" in text_of(r.text) and "Pay $29 (simulated)" in text_of(r.text)
+
+
 # ---- ordering ----------------------------------------------------------------------------------------------------
 
 def test_signed_out_goes_through_sign_in_and_nothing_is_ordered(client):

@@ -141,7 +141,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     shot(page, f"ready-{w}")
 
     page.click("#pf-open")
-    expect(page).to_have_url(re.compile(r"/trip\?trip="))
+    expect(page).to_have_url(re.compile(r"/trip/plan\?trip="))      # the trip opens on the v2 calendar (F-252)
     expect(page.get_by_text("Check in and rest").first).to_be_visible()
     assert overflow(page) <= 1
     shot(page, f"trip-{w}")
