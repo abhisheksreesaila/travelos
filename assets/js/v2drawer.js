@@ -93,7 +93,7 @@
       var id = slot.dataset.hid;
       if (!id) return;
       slot.dataset.state = 'loading';
-      (richKept[id] = richKept[id] || fetch('/plan/matrix/hotel?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      (richKept[id] = richKept[id] || fetch('/plan/matrix/hotel?id=' + encodeURIComponent(id) + (slot.dataset.pt ? '&pt=' + encodeURIComponent(slot.dataset.pt) : ''), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { return j.html || ''; }))
         .then(function (html) {
           if (!html) { slot.dataset.state = 'none'; slot.hidden = true; return; }

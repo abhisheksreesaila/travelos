@@ -1,7 +1,7 @@
 """The hotel's own page inside the opened square (F-275, D-860..D-865): what the hotel says about itself and what guests say about it, drawn from LiteAPI's /data/hotel and
 /data/reviews (gitaway/liteapi.py `hotel`, `reviews`; asked when a square is opened, never for every square).
 
-    GET /plan/matrix/hotel?id=<LiteAPI hotel id>    the fragment as JSON {html} for assets/js/v2drawer.js, which puts it in the hotel's slot; a plain `def` (the call can wait)
+    GET /plan/matrix/hotel?id=<LiteAPI hotel id>&pt=<traveller type>    the fragment as JSON {html} for assets/js/v2drawer.js, which puts it in the hotel's slot; a plain `def` (the call can wait)
     rich(h, rv)                                      the fragment as an element: the photo mosaic ("The hotel's own photos", a lightbox from "See all N photos"), the rating and
                                                      the hotel's words, its facilities and check-in times, the guests' sentiment by category and the newest reviews, and the hotel's rooms with their photos
     sample_slides()                                  the showcase's gallery: generic CC0 hotel pictures, each captioned "Sample photo · ..." (assets/photos/CREDITS.md); never reviews, off a real hotel
@@ -18,7 +18,7 @@ import secrets
 from fasthtml.common import Button, Details, Div, H4, Img, Li, P, Small, Span, Summary, Ul, to_xml
 from starlette.responses import JSONResponse
 
-from gitaway import liteapi
+from gitaway import liteapi, reviewtrend
 from gitaway.icons import icon
 
 PATH = "/plan/matrix/hotel"
@@ -29,10 +29,11 @@ _KEY = secrets.token_bytes(32)      # signs the hotel ids this process drew into
 MOSAIC = 5                # photos in the mosaic; the rest wait behind "See all"
 PHOTOS_MAX = 40           # photos kept in the fragment (a hotel can have a hundred)
 FACILITIES_SHOWN = 8
-REVIEWS_SHOWN = 4
+REVIEWS_SHOWN = 4         # cards before "Read more reviews" (reviewtrend.CARDS_MAX in all)
 SAMPLE_SLIDES = (("lobby-front-desk.jpg", "Hotel lobby"), ("room-bed-lamp.jpg", "Hotel room"), ("pool-courtyard.jpg", "Hotel pool"), ("breakfast-buffet.jpg", "Hotel breakfast"),
                  ("room-balcony-view.jpg", "Hotel room with a view"))
 TYPES = {"couple": "Couple", "extended_group": "Group", "solo_traveller": "Solo", "family_with_children": "Family", "friends": "Friends", "business": "Business"}
+TYPE_LOWER = {"family_with_children": "families", "couple": "couples", "solo_traveller": "solo travellers", "extended_group": "groups", "friends": "friends", "business": "business travellers"}
 COUNTRIES = {"us": "United States", "au": "Australia", "ca": "Canada", "gb": "United Kingdom", "de": "Germany", "fr": "France", "br": "Brazil", "mx": "Mexico", "nl": "Netherlands", "es": "Spain",
              "it": "Italy", "ie": "Ireland", "nz": "New Zealand", "jp": "Japan", "in": "India", "se": "Sweden", "ch": "Switzerland", "ae": "United Arab Emirates", "sg": "Singapore", "cn": "China"}
 
@@ -116,7 +117,7 @@ def _categories(rv):
 
 
 def _wordy(r) -> bool:
-    return bool(r.headline or r.pros or r.cons)
+    return reviewtrend.wordy(r)
 
 
 def _review(r):
@@ -126,18 +127,47 @@ def _review(r):
                P(icon("check", 15, 2.4), r.pros, cls="dr-rp") if r.pros else "", P(icon("flag", 15, 2.2), r.cons, cls="dr-rc") if r.cons else "", cls="dr-rev")
 
 
-def _reviews(rv):
-    """Only reviews with words are cards; the scores that came without any are counted once, never a card of their own."""
+SHAPES = {"good": "8 or more", "mixed": "6 or 7", "poor": "5 or less"}      # the strip's legend: a shape and a colour for each, so it reads without colour
+
+
+def _strip(t):
+    """The last reviews as dots, oldest to newest (F-278): a circle for a score of 8 or more, a diamond for 6 or 7, a triangle for 5 or less, each also a colour, with the plain words the server
+    computed (reviewtrend): the recent average against the hotel's rating, a streak, and the average for travellers like you. Every dot is aria-hidden; the strip says its counts once."""
+    n = len(t.dots)
+    said = f"The last {n} reviews, oldest to newest: {t.good} good, {t.mixed} mixed, {t.poor} poor"
+    dots = Div(*[Span(cls=f"tr-d is-{d.kind}", title=f"{score_text(d.score)}/10" + (f" · {d.date}" if d.date else ""), aria_hidden="true") for d in t.dots], cls="tr-dots", role="img", aria_label=said)
+    legend = Div(*[Span(Span(cls=f"tr-d is-{k}", aria_hidden="true"), f"{SHAPES[k]} · {getattr(t, k)}", cls="tr-key") for k in SHAPES], cls="tr-legend")
+    words = [P(w, cls="tr-w") for w in (t.recent, t.streak, t.like_you) if w]
+    return Div(H4(f"How the last {n} reviews went" + (f" · {t.span}" if t.span else ""), cls="dr-sub"), dots,
+               Div(Span("Oldest"), Span("Newest"), cls="tr-ends", aria_hidden="true"), legend, *words, cls="tr-strip")
+
+
+def source_line(rv) -> str:
+    named = reviewtrend.source_name(rv.items)
+    return f"Reviews from {named} (LiteAPI)" if named else "Reviews from LiteAPI"
+
+
+def _trend(rv, overall=None, ptype=""):
+    """The strip with its words, right under the rating (a number alone says little); "" when no review has a score."""
+    t = reviewtrend.trend(rv.items, overall, ptype) if rv and rv.items else None
+    return _strip(t) if t else ""
+
+
+def _reviews(rv, ptype=""):
+    """The cards in the reader's order (reviewtrend.order: only reviews with words, the party's own traveller type first, then newest, one good and one critical near the top);
+    the scores that came without words are counted once, never a card of their own. The source is said as LiteAPI labels it."""
     if not rv or not rv.items:
         return ""
-    wordy = [r for r in rv.items if _wordy(r)]
-    bare = len(rv.items) - len(wordy)
-    shown, rest = wordy[:REVIEWS_SHOWN], wordy[REVIEWS_SHOWN:]
+    cards = reviewtrend.order(rv.items, ptype)
+    bare = len(rv.items) - sum(1 for r in rv.items if _wordy(r))
+    shown, rest = cards[:REVIEWS_SHOWN], cards[REVIEWS_SHOWN:]
     note = P(f"Plus {bare} score{'' if bare == 1 else 's'} without words.", cls="dr-fine") if bare else ""
-    if not wordy:
-        return Div(H4("Reviews", cls="dr-sub"), P(f"{bare} score{'' if bare == 1 else 's'}, no words.", cls="dr-fine"), cls="dr-reviews")
-    return Div(H4(f"Newest of {rv.total:,} reviews" if rv.total else "Newest reviews", cls="dr-sub"), Div(*[_review(r) for r in shown], cls="dr-revs"),
-               Details(Summary("Read more reviews"), Div(*[_review(r) for r in rest], cls="dr-revs"), cls="dr-more") if rest else "", note, cls="dr-reviews")
+    src = P(source_line(rv), cls="dr-fine tr-src")
+    if not cards:
+        return Div(H4("Reviews", cls="dr-sub"), P(f"{bare} score{'' if bare == 1 else 's'}, no words.", cls="dr-fine"), src, cls="dr-reviews")
+    first = f", {TYPE_LOWER[ptype]} first" if ptype in TYPE_LOWER and any(r.type == ptype for r in cards) else ""
+    return Div(H4("What guests wrote" + first, cls="dr-sub"), Div(*[_review(r) for r in shown], cls="dr-revs"),
+               Details(Summary("Read more reviews"), Div(*[_review(r) for r in rest], cls="dr-revs"), cls="dr-more") if rest else "", note, src, cls="dr-reviews")
 
 
 def _rooms(h):
@@ -156,28 +186,28 @@ def room_photos(h) -> dict:
     return {r.name.lower(): r.photos[0] for r in h.rooms if r.photos}
 
 
-def rich(h, rv=None):
+def rich(h, rv=None, ptype=""):
     """The fragment: everything the hotel and its guests say, as one element for the hotel's slot. `h` is liteapi.HotelDetails, `rv` liteapi.HotelReviews or None."""
     mos = mosaic([(p.url, p.caption) for p in h.photos], h.name)
     times = P(Span(icon("calendar", 15, 2), f"Check-in from {h.checkin}") if h.checkin else "", Span(icon("calendar", 15, 2), f"Check-out by {h.checkout}") if h.checkout else "", cls="dr-times") if h.checkin or h.checkout else ""
     info = Div(Div(_paragraphs(h), _facilities(h), times, cls="dr-ic-l"), Div(_rating(h, rv), cls="dr-ic-r"), cls="dr-info")
-    return Div(mos, info, _categories(rv), _reviews(rv), _rooms(h), Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), cls="dr-richin")
+    return Div(mos, info, _trend(rv, h.rating, ptype), _categories(rv), _reviews(rv, ptype), _rooms(h), Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), cls="dr-richin")
 
 
-def fragment(hotel_id: str, family: str = ""):
+def fragment(hotel_id: str, family: str = "", ptype: str = ""):
     """(the element, or None when LiteAPI has nothing for this id) for the hotel's slot. Both calls go through the gate and are kept; either may be missing."""
     h = liteapi.hotel(hotel_id, family)
     if h is None:
         return None
-    return rich(h, liteapi.reviews(hotel_id, family))
+    return rich(h, liteapi.reviews(hotel_id, family), ptype)
 
 
 def register(app):
     @app.get(PATH)
-    def hotel_fragment(request, session, id: str = ""):
+    def hotel_fragment(request, session, id: str = "", pt: str = ""):
         from gitaway.pages import tripmatrix as mx
         hotel_id = unsign(id)
-        el = fragment(hotel_id, mx._who(request, session)) if hotel_id else None      # an id we did not draw is nothing: no call, no budget spent
+        el = fragment(hotel_id, mx._who(request, session), pt if pt in TYPES else "") if hotel_id else None      # an id we did not draw is nothing: no call, no budget spent
         if el is None:
             return JSONResponse({"html": ""}, headers={"Cache-Control": "no-store"})
         return JSONResponse({"html": to_xml(el)}, headers={"Cache-Control": "no-store"})

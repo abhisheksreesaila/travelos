@@ -138,6 +138,13 @@ def test_the_route_answers_the_fragment_and_nothing_for_a_hotel_it_does_not_have
     assert client.get("/plan/matrix/hotel?id=../x").json() == {"html": ""}
 
 
+def test_the_route_orders_the_reviews_for_the_party_type_it_is_given_and_ignores_a_made_up_one(real, client, monkeypatch):
+    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(reviews=(FIX / "reviews100.json").read_bytes()))
+    ask = lambda pt: client.get(f"/plan/matrix/hotel?id={hotelview.token(ID)}&pt={pt}").json()["html"]      # noqa: E731
+    assert "What guests wrote, families first" in ask("family_with_children") and "Families with children: 7.8 on average" in ask("family_with_children")
+    assert "What guests wrote</h4>" in ask("nonsense") and "first</h4>" not in ask("nonsense")
+
+
 def test_an_id_the_server_did_not_draw_is_nothing_and_spends_nobodys_allowance(real, client, monkeypatch):
     f = HotelFake()
     monkeypatch.setattr(liteapi, "TRANSPORT", f)
@@ -157,6 +164,7 @@ def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_ma
     assert sq.ok and sq.stays[0].hotel_id
     html = hotelview.to_xml(v2drawer.drawer(s, lane, w, sq))
     assert f'data-hid="{hotelview.token(sq.stays[0].hotel_id)}"' in html and 'data-state="idle"' in html
+    assert 'data-pt="family_with_children"' in html      # two adults and two kids: the reviews put families first (F-278)
     assert not [u for u in real.asked if "/data/" in u[0]]      # nothing asked for the hotel's photos until the script asks
 
 

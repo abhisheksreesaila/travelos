@@ -102,7 +102,7 @@ def test_reviews_carry_who_when_score_type_and_both_sides_in_their_own_words(fak
     assert (first.name, first.score, first.type, first.country, first.date) == ("Maria", 8, "extended_group", "au", "2026-11-14")
     assert first.headline == "Excellent airport shuttle service and facilities" and first.pros == "Clean and inviting"
     assert first.cons.startswith("Breakfast was not included") and rv.total == 6263 and len(rv.items) == 8
-    assert fake.asked == [f"https://api.liteapi.travel/v3.0/data/reviews?hotelId={ID}&limit=8&getSentiment=true"]
+    assert fake.asked == [f"https://api.liteapi.travel/v3.0/data/reviews?hotelId={ID}&limit=100&getSentiment=true"]
 
 
 def test_the_sentiment_has_a_score_and_a_sentence_per_category_and_the_pros_and_cons(fake):
