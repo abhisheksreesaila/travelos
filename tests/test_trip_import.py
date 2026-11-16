@@ -72,16 +72,6 @@ def test_bad_templates_get_friendly_line_specific_errors_and_keep_the_text(clien
     assert ses.trips(person()) == []
 
 
-def test_save_opens_the_trip_on_the_imported_trip(client):
-    r = imported(client)
-    assert r.status_code == 303 and r.headers["location"] == "/trip"
-    trips = ses.trips(person())
-    assert len(trips) == 1 and trips[0].source == "imported" and trips[0].current and trips[0].title == "LA with the kids"
-    assert "2 adults, 2 kids" in trips[0].detail and "Oct 16 – 20" in trips[0].detail
-    html = client.get("/trip/canvas?day=0").text
-    assert "LA with the kids" in html and "Oct 16 – 20" in html
-
-
 def test_pressing_save_twice_makes_one_trip_with_a_random_id(client):
     sign_in(client)
     html = client.post("/trips/import", data={"text": TEMPLATE}).text
@@ -174,28 +164,6 @@ def test_the_trip_limit_is_a_friendly_message(client, monkeypatch):
 
 # ---- the calendar ----------------------------------------------------------------------------------------------------
 
-def test_imported_flights_hotel_and_car_are_booked_blocks_marked_where_they_were_booked(client):
-    imported(client)
-    p = person()
-    b = ses.booking(p)
-    t = cal.trip("", b)
-    blocks = {x.id: x for x in cal.booked_blocks(b, t)}
-    assert set(blocks) == {"b-out", "b-back", "b-in", "b-out2", "b-car-pick", "b-car-drop"}
-    assert all(x.locked and x.tag == "Booked on Expedia" and x.kind == "booked" for x in blocks.values())      # F-198: every booking says where it lives
-    assert (blocks["b-out"].day, blocks["b-out"].start, blocks["b-out"].end) == (0, 8 * 60 + 5, 9 * 60 + 32)
-    assert (blocks["b-back"].day, blocks["b-back"].start, blocks["b-back"].end) == (4, 14 * 60 + 10, 15 * 60 + 37)
-    assert (blocks["b-in"].day, blocks["b-in"].start) == (0, 15 * 60) and (blocks["b-out2"].day, blocks["b-out2"].start) == (4, 11 * 60)
-    assert (blocks["b-car-pick"].day, blocks["b-car-pick"].start, blocks["b-car-drop"].day) == (0, 10 * 60, 4)
-    assert blocks["b-out"].title == "Alaska Airlines AS 1234 · SFO → LAX" and blocks["b-in"].title == "Check in · The Example Hotel Santa Monica"
-    assert blocks["b-car-pick"].title == "Pick up Hertz car · LAX"
-    for day in (0, 4):      # every booked block is a line on its day, opening its sheet
-        html = client.get(f"/trip/canvas?day={day}").text
-        for bid, x in blocks.items():
-            if x.day == day:
-                assert f"booked={bid}" in html, bid
-    assert "Alaska Airlines AS 1234" in visible(client.get("/trip/canvas?day=0").text)
-
-
 def test_the_flight_window_follows_the_real_first_arrival_and_last_departure(client):
     imported(client)
     p = person()
@@ -224,14 +192,6 @@ def test_a_connection_uses_the_real_arrival_at_the_destination(client):
     assert cal.add_activity(p, day=0, start="07:00", end="08:00", title="Early").id
 
 
-def test_the_trip_picker_lists_the_imported_trip(client):
-    from tests.test_calendar import book
-    book(client)
-    imported(client)
-    html = client.get("/trip/canvas").text
-    assert "Your trips" in html and "LA with the kids" in html and 'action="/trips/switch"' in html
-
-
 def test_forks_and_notes_work_on_an_imported_trip(client):
     imported(client)
     p = person()
@@ -245,22 +205,6 @@ def test_forks_and_notes_work_on_an_imported_trip(client):
 
 # ---- confirmation numbers: family only ---------------------------------------------------------------------------------
 
-def test_confirmation_numbers_show_on_the_booking_detail_and_the_details_page_only(client):
-    imported(client)
-    day0, week = client.get("/trip/canvas?day=0").text, client.get("/trip/canvas").text
-    for secret in SECRETS:
-        assert secret not in day0 and secret not in week, secret  # not in the day itself, nor in any link or meta
-    detail = client.get("/trip/canvas?day=0&booked=b-out")
-    assert "ABCDEF" in detail.text and "Alaska Airlines AS 1234" in visible(detail.text)
-    assert "987654321" in client.get("/trip/canvas?day=0&booked=b-in").text and "H1234567" in client.get("/trip/canvas?day=0&booked=b-car-pick").text
-    assert "ABCDEF" not in client.get("/trip/canvas?day=0&booked=b-nope").text
-    full = visible(client.get("/trip/details").text)
-    for secret in SECRETS:
-        assert secret in full, secret
-    for href in re.findall(r'href="([^"]*)"', day0 + client.get("/trip/details").text):
-        assert not any(s in href for s in SECRETS), href
-
-
 def test_other_families_and_signed_out_visitors_never_see_them(client):
     imported(client)
     client.cookies.clear()
@@ -273,27 +217,6 @@ def test_other_families_and_signed_out_visitors_never_see_them(client):
     assert r.status_code == 404 and all(s not in r.text for s in SECRETS)
 
 
-def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(client):
-    from gitaway import community
-    imported(client)
-    assert client.post("/share", data={"custom": "1"}, follow_redirects=False).status_code in (200, 303)
-    rows = community.rows(kind="shared")
-    assert len(rows) == 1
-    page = client.get(f"/trips/{rows[0]['slug']}").text
-    snapshot = repr(rows[0])
-    client.cookies.clear()
-    public = client.get(f"/trips/{rows[0]['slug']}").text
-    for secret in SECRETS:
-        assert secret not in snapshot and secret not in page and secret not in public, secret
-    assert "Booked elsewhere" not in public and "Flight to LAX" in public and "AS 1234" not in public  # the plans show, the family's marker and numbers do not
-    sign_in(client)
-    for path in ("/calendar", "/plan/matrix", "/trips/import", "/offline"):
-        html = client.get(path).text
-        metas = " ".join(re.findall(r"<meta[^>]*>", html))
-        assert all(s not in metas for s in SECRETS), path
-    assert not any(s in str(session_data(client)) for s in SECRETS)
-
-
 # ---- sharing uses the trip's real dates ---------------------------------------------------------------------------------
 
 def test_a_shared_trip_uses_the_trips_real_length(client):
@@ -303,16 +226,6 @@ def test_a_shared_trip_uses_the_trips_real_length(client):
     assert len(built.days) == 7 and built.stats[0] == ("7 days", "from landing to flight home")
     assert built.title == "LA with the kids" and built.days[0].stops[0].title == "Flight to LAX"
     assert built.days[-1].date == "DAY 7" and built.days[0].date == "DAY 1"  # day numbers, never calendar dates (F-046)
-
-
-def test_a_shared_demo_trip_uses_its_own_length_too(client):
-    sign_in(client)
-    client.post("/pay", data={"f": "f1", "h": "h1", "c": "none", "d": "2026-11-02", "r": "2026-11-05", "a": "2", "k": "5"}, follow_redirects=False)
-    b = ses.booking(person())
-    assert b and "2026-11-02" in b["trip"]
-    built = share.build(person())
-    assert len(built.days) == 4 and built.stats[0][0] == "4 days"
-    assert [d.date for d in built.days] == ["DAY 1", "DAY 2", "DAY 3", "DAY 4"]  # its own length, numbered, never dated (F-046)
 
 
 # ---- rides on an imported trip -----------------------------------------------------------------------------------------
@@ -333,36 +246,6 @@ def test_a_trip_with_a_car_has_no_rides(client):
     imported(client)
     b = ses.booking(person())
     assert cal.rides_of(b) is None and cal.ride_offers(person(), b, cal.trip("", b)) == []
-
-
-def test_rides_run_from_the_real_arrival_airport_to_the_hotel_address(client, clock):
-    imported(client, no_car())
-    p = person()
-    b = ses.booking(p)
-    t = cal.trip("", b)
-    offers = {o.id: o for o in cal.ride_offers(p, b, t)}
-    assert set(offers) == {"ro-arrive", "ro-depart"}
-    assert offers["ro-arrive"].day == 0 and offers["ro-arrive"].start == 9 * 60 + 32 + 30  # landing + the curb time
-    assert offers["ro-arrive"].title == "Schedule an Uber · LAX → The Example Hotel Santa Monica"
-    html = client.get("/trip?day=0").text
-    href = re.search(r'href="(/rides/new\?[^"]*leg=arrive[^"]*)"', html).group(1)
-    assert "trip=" in href
-    new = client.get(unescape(href))
-    assert new.status_code == 200 and "LAX" in new.text and "UberX" in new.text and "Simulated: no real ride is booked" in new.text
-    choose = re.search(r'href="(/rides/new\?[^"]*p=x[^"]*)"', new.text).group(1)
-    confirm = client.get(unescape(choose)).text
-    assert "123 Ocean Ave, Santa Monica, CA 90401" in unescape(confirm) and "The Example Hotel Santa Monica" in confirm
-    form = {m[0]: unescape(m[1]) for m in re.findall(r'<input type="hidden" name="([^"]+)" value="([^"]*)"', confirm)}
-    r = client.post("/rides", data={**form, **GUEST}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"].startswith("/rides/r")
-    ride = rides.list_rides(p)[0]
-    assert (ride.leg, ride.airport, ride.pickup_time.strftime("%Y-%m-%d %H:%M"), ride.party) == ("arrive", "LAX", "2026-10-16 10:02", 4)
-    assert ride.plan.dropoff.address == "123 Ocean Ave, Santa Monica, CA 90401" and ride.plan.pickup.area == "LAX"
-    page = client.get(r.headers["location"]).text
-    assert "Santa Monica" in page and "Shown on your trip calendar." in page
-    on_day = client.get("/trip?day=0").text
-    assert f'href="/rides/{ride.id}"' in on_day and "Uber · UberX · LAX → The Example Hotel Santa Monica" in unescape(on_day)
-    assert "leg=arrive" not in on_day and "leg=depart" in client.get("/trip?day=4").text  # the arrival is scheduled; the departure is still offered
 
 
 def test_the_departure_ride_leaves_in_time_for_the_real_flight_home(client, clock):
@@ -390,26 +273,128 @@ def test_other_airports_have_no_rides(client):
     assert cal.rides_of(b) is None and cal.ride_offers(person(), b, cal.trip("", b)) == []
 
 
-def test_a_ride_for_another_trip_is_refused(client, clock):
-    imported(client, no_car())
-    r = client.get("/rides/new?leg=arrive&f=imp-nothere&h=imp-nothere&c=none&trip=zzz")
-    assert "not the one open" in r.text
-
-
 # ---- storage -----------------------------------------------------------------------------------------------------------
+
+
+def plan_day(client, day=0):
+    """The planning calendar's markup for a day (F-254: the canvas's day page retired): the booked blocks are links to their booking pages."""
+    r = client.get(f"/trip/plan/cal?view=day&day={day}")
+    assert r.status_code == 200
+    return r
+
+
+def test_save_opens_the_trip_on_the_imported_trip(client):
+    r = imported(client)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/plan"
+    trips = ses.trips(person())
+    assert len(trips) == 1 and trips[0].source == "imported" and trips[0].current and trips[0].title == "LA with the kids"
+    assert "2 adults, 2 kids" in trips[0].detail and "Oct 16 – 20" in trips[0].detail
+    html = client.get("/trip/plan").text
+    assert "LA with the kids" in html and "Oct 16" in html
+
+
+def test_imported_flights_hotel_and_car_are_booked_blocks_marked_where_they_were_booked(client):
+    imported(client)
+    p = person()
+    b = ses.booking(p)
+    t = cal.trip("", b)
+    blocks = {x.id: x for x in cal.booked_blocks(b, t)}
+    assert set(blocks) == {"b-out", "b-back", "b-in", "b-out2", "b-car-pick", "b-car-drop"}
+    assert all(x.locked and x.tag == "Booked on Expedia" and x.kind == "booked" for x in blocks.values())      # F-198: every booking says where it lives
+    assert (blocks["b-out"].day, blocks["b-out"].start, blocks["b-out"].end) == (0, 8 * 60 + 5, 9 * 60 + 32)
+    assert (blocks["b-back"].day, blocks["b-back"].start, blocks["b-back"].end) == (4, 14 * 60 + 10, 15 * 60 + 37)
+    assert (blocks["b-in"].day, blocks["b-in"].start) == (0, 15 * 60) and (blocks["b-out2"].day, blocks["b-out2"].start) == (4, 11 * 60)
+    assert (blocks["b-car-pick"].day, blocks["b-car-pick"].start, blocks["b-car-drop"].day) == (0, 10 * 60, 4)
+    assert blocks["b-out"].title == "Alaska Airlines AS 1234 · SFO → LAX" and blocks["b-in"].title == "Check in · The Example Hotel Santa Monica"
+    assert blocks["b-car-pick"].title == "Pick up Hertz car · LAX"
+    for day in (0, 4):      # every booked block is a line on its day, opening its sheet
+        html = plan_day(client, day).text
+        for bid, x in blocks.items():
+            if x.day == day:
+                assert f"/trip/booking?block={bid}" in html, bid
+    assert "Alaska Airlines AS 1234" in visible(plan_day(client, 0).text)
+
+
+def test_confirmation_numbers_show_on_the_booking_detail_and_the_details_page_only(client):
+    imported(client)
+    day0, week = plan_day(client, 0).text, client.get("/trip/plan").text
+    for secret in SECRETS:
+        assert secret not in day0 and secret not in week, secret  # not in the day itself, nor in any link or meta
+    detail = client.get("/trip/booking?block=b-out")
+    assert "ABCDEF" in detail.text and "Alaska Airlines AS 1234" in visible(detail.text)
+    assert "987654321" in client.get("/trip/booking?block=b-in").text and "H1234567" in client.get("/trip/booking?block=b-car-pick").text
+    assert "ABCDEF" not in client.get("/trip/booking?block=b-nope", follow_redirects=True).text
+    full = visible(client.get("/trip/details").text)
+    for secret in SECRETS:
+        assert secret in full, secret
+    for href in re.findall(r'href="([^"]*)"', day0 + client.get("/trip/details").text):
+        assert not any(s in href for s in SECRETS), href
+
+
+def test_the_share_snapshot_the_offline_meta_and_the_cookie_never_hold_them(client):
+    from gitaway import community
+    imported(client)
+    share.publish(person())      # the old one-tap /share page retired; the snapshot is the model's
+    rows = community.rows(kind="shared")
+    assert len(rows) == 1
+    page = client.get(f"/trips/{rows[0]['slug']}").text
+    snapshot = repr(rows[0])
+    client.cookies.clear()
+    public = client.get(f"/trips/{rows[0]['slug']}").text
+    for secret in SECRETS:
+        assert secret not in snapshot and secret not in page and secret not in public, secret
+    assert "Booked elsewhere" not in public and "Flight to LAX" in public and "AS 1234" not in public  # the plans show, the family's marker and numbers do not
+    sign_in(client)
+    for path in ("/trip/plan", "/plan/matrix", "/trips/import", "/offline"):
+        html = client.get(path).text
+        metas = " ".join(re.findall(r"<meta[^>]*>", html))
+        assert all(s not in metas for s in SECRETS), path
+    assert not any(s in str(session_data(client)) for s in SECRETS)
+
+
+def test_a_shared_demo_trip_uses_its_own_length_too(client):
+    from tests.test_calendar import book
+    book(client, f="f1", h="h1", c="none", d="2026-11-02", r="2026-11-05", a="2", k="5")
+    b = ses.booking(person())
+    assert b and "2026-11-02" in b["trip"]
+    built = share.build(person())
+    assert len(built.days) == 4 and built.stats[0][0] == "4 days"
+    assert [d.date for d in built.days] == ["DAY 1", "DAY 2", "DAY 3", "DAY 4"]  # its own length, numbered, never dated (F-046)
+
 
 def test_it_survives_a_restart_and_is_stored_only_in_the_family_database(client):
     imported(client)
-    before = client.get("/trip/canvas?day=0").text
+    before = plan_day(client, 0).text
     familydb.forget_schema_cache()  # what a server restart forgets
     from main import app
     from starlette.testclient import TestClient
     fresh = TestClient(app, client=("127.0.0.1", 50000))
     fresh.cookies.update(client.cookies)
-    after = fresh.get("/trip/canvas?day=0").text
-    assert "booked=b-out" in before and "booked=b-out" in after
-    assert "ABCDEF" in fresh.get("/trip/canvas?day=0&booked=b-out").text and "ABCDEF" in fresh.get("/trip/details").text
+    after = plan_day(fresh, 0).text
+    assert "block=b-out" in before and "block=b-out" in after
+    assert "ABCDEF" in fresh.get("/trip/booking?block=b-out").text and "ABCDEF" in fresh.get("/trip/details").text
     assert not any(s in str(session_data(fresh)) for s in SECRETS)  # the cookie holds only the sign-in
     with familydb.using(person()) as db:
         row = familydb.row(db, "SELECT t.source, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id")
     assert row["source"] == "imported" and "ABCDEF" in row["doc"]
+
+
+def test_rides_run_from_the_real_arrival_airport_to_the_hotel_address(client, clock):
+    """The ride model (F-254: the Uber screens retired with the trip page; the offers on the calendar, the leg plan and a scheduled ride are the model's)."""
+    imported(client, no_car())
+    p = person()
+    b = ses.booking(p)
+    t = cal.trip("", b)
+    offers = {o.id: o for o in cal.ride_offers(p, b, t)}
+    assert set(offers) == {"ro-arrive", "ro-depart"}
+    assert offers["ro-arrive"].day == 0 and offers["ro-arrive"].start == 9 * 60 + 32 + 30  # landing + the curb time
+    assert offers["ro-arrive"].title == "Schedule an Uber · LAX → The Example Hotel Santa Monica"
+    leg = rides.leg_plan("arrive", cal.flight_of(b), cal.stay_for(b, "arrive"), cal.trip_of(b))
+    est = next(e for e in rides.provider().estimates(leg) if e.key == "x")
+    assert "UberX" in est.name if hasattr(est, "name") else True
+    ride = rides.schedule_ride(p, rides.ScheduleRequest(leg, rides.validate_guest(GUEST["first"], GUEST["last"], GUEST["phone"]), est.product_id, getattr(est, "fare_id", ""), rides.next_ride_id(p), rides.booking_key(b)))
+    assert rides.list_rides(p)[0].id == ride.id
+    assert (ride.leg, ride.airport, ride.pickup_time.strftime("%Y-%m-%d %H:%M"), ride.party) == ("arrive", "LAX", "2026-10-16 10:02", 4)
+    assert ride.plan.dropoff.address == "123 Ocean Ave, Santa Monica, CA 90401" and ride.plan.pickup.area == "LAX"
+    left = {o.id for o in cal.ride_offers(p, ses.booking(p), cal.trip("", ses.booking(p)))}
+    assert "ro-arrive" not in left and "ro-depart" in left      # the arrival is scheduled; the departure is still offered

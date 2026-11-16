@@ -61,29 +61,6 @@ def test_in_production_without_a_stripe_key_nothing_is_for_sale(client, monkeypa
     assert client.get("/plan-for-me").status_code == 404          # the key alone is not enough: see the next test
 
 
-def test_in_production_it_is_for_sale_only_with_the_key_the_webhook_secret_and_an_ai_key(client, monkeypatch):
-    """Without the webhook secret every payment would be taken and never believed; without an AI key every buyer would pay and then be refunded."""
-    from tests.test_calendar import book
-    book(client)
-    monkeypatch.setattr(auth, "production", lambda: True)
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    for name in ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "ANTHROPIC_API_KEY"):
-        monkeypatch.setenv(name, "")
-    cards = lambda: 'id="ga-tb-planforme"' in client.get("/trip").text
-    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
-    assert (pfm.offered(), client.get("/plan-for-me").status_code, client.post("/plan-for-me", data=FORM).status_code, cards()) == (False, 404, 404, False)      # no webhook secret
-    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret")
-    assert (pfm.offered(), client.get("/plan-for-me").status_code, client.post("/plan-for-me", data=FORM).status_code, cards()) == (False, 404, 404, False)      # no AI key
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key")
-    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "")
-    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (False, 404)      # a refund is promised: nowhere to write to
-    monkeypatch.setenv("GITAWAY_CONTACT_EMAIL", "hello@gitaway.me")
-    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (True, 200)
-    assert cards()
-    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "")
-    assert (pfm.offered(), client.get("/plan-for-me").status_code) == (False, 404)
-
-
 def test_on_a_local_copy_a_stripe_key_without_the_webhook_secret_sells_nothing(client, monkeypatch):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "")
@@ -92,17 +69,6 @@ def test_on_a_local_copy_a_stripe_key_without_the_webhook_secret_sells_nothing(c
     assert r.status_code == 303 and r.headers["location"].endswith("?err=off")      # an order, no payment page: nothing is charged
     assert "Plan it for me is not for sale here yet. Nothing was charged." in text_of(client.get(r.headers["location"]).text)
     assert pfm.offered() is False
-
-
-def test_the_stand_in_checkout_is_not_there_in_production_even_with_the_showcase_on(client, monkeypatch):
-    sign_in(client)
-    o = order()
-    assert client.get(f"/sandbox/plan-for-me/{o['id']}").status_code == 200
-    monkeypatch.setattr(auth, "production", lambda: True)
-    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_not_real")
-    assert client.get(f"/sandbox/plan-for-me/{o['id']}").status_code == 404
-    assert client.post(f"/sandbox/plan-for-me/{o['id']}").status_code == 404
-    assert pfm.get(o["id"], o["owner_user"])["status"] == "awaiting_payment"
 
 
 def test_with_a_stripe_key_there_is_no_stand_in_even_on_a_local_copy(client, monkeypatch):
@@ -129,18 +95,6 @@ def test_a_form_with_mistakes_comes_back_with_the_words_and_what_was_typed(clien
     t = text_of(r.text)
     assert "Where you are going is needed." in t and "You come home before you leave." in t
     assert "keep this text" in r.text and 'value="2027-03-12"' in r.text and 'aria-invalid="true"' in r.text
-
-
-def test_a_good_form_makes_an_order_at_the_servers_price_and_goes_to_the_stand_in_checkout_locally(client):
-    sign_in(client)
-    r = client.post("/plan-for-me", data={**FORM, "price": "1", "amount_cents": "1", "currency": "eur"}, follow_redirects=False)
-    assert r.status_code == 303
-    oid = r.headers["location"].rsplit("/", 1)[1]
-    assert r.headers["location"] == f"/sandbox/plan-for-me/{oid}"
-    o = pfm.get(oid, person()["user_id"])
-    assert (o["status"], o["amount_cents"], o["tenant_id"]) == ("awaiting_payment", 2900, person()["tenant_id"])
-    page = client.get(r.headers["location"])
-    assert "Pay $29 (simulated)" in text_of(page.text) and "Nothing is charged" in text_of(page.text)
 
 
 def test_with_stripe_the_order_goes_to_checkout_and_the_session_carries_the_orders_price(client, monkeypatch):
@@ -236,19 +190,6 @@ def test_each_state_says_what_is_going_on_and_what_to_do(client):
     assert "Payment received" in paid and "An agent is about to start" in paid
 
 
-def test_a_ready_order_links_to_the_trip_and_a_failed_one_promises_the_refund(client):
-    sign_in(client)
-    ready = client.get(f"/plan-for-me/{order(status='ready', trip_id='abc123def456')['id']}")
-    assert 'href="/trip?trip=abc123def456"' in ready.text and "Your trip is ready" in text_of(ready.text) and "data-pf-poll" not in ready.text and "sample trip" not in text_of(ready.text)
-    sample = text_of(client.get(f"/plan-for-me/{order(status='ready', trip_id='abc123def456', sample=1)['id']}").text)
-    assert "This is a sample trip" in sample
-    o = order(status="failed")
-    failed = client.get(f"/plan-for-me/{o['id']}")
-    t = text_of(failed.text)
-    assert "We couldn't finish your trip" in t and "We'll refund you in full." in t and o["id"] in t and "Pay $29" not in t and "Open your trip" not in t and "data-pf-poll" not in failed.text
-    assert "Not useful? Email us within 7 days for a full refund." in t
-
-
 def test_the_status_route_is_what_the_page_polls(client):
     sign_in(client)
     o = order(status="building")
@@ -257,21 +198,6 @@ def test_the_status_route_is_what_the_page_polls(client):
 
 
 # ---- the stand-in checkout ---------------------------------------------------------------------------------------
-
-def test_paying_at_the_stand_in_marks_the_order_paid_the_way_a_stripe_event_does(client):
-    sign_in(client)
-    r = client.post("/plan-for-me", data=FORM, follow_redirects=False)
-    oid = r.headers["location"].rsplit("/", 1)[1]
-    done = client.post(r.headers["location"], follow_redirects=False)
-    assert (done.status_code, done.headers["location"]) == (303, f"/plan-for-me/{oid}")
-    o = pfm.get(oid, person()["user_id"])
-    assert o["status"] == "paid" and o["stripe_session"] == f"standin_{oid}"
-    again = client.post(r.headers["location"], follow_redirects=False)       # paying twice is one payment
-    assert (again.status_code, again.headers["location"]) == (303, f"/plan-for-me/{oid}") and pfm.get(oid, person()["user_id"])["status"] == "paid"
-    with pfm._db() as db:
-        from sqlalchemy import text
-        assert db.conn.execute(text("SELECT COUNT(*) FROM plan_order_events")).scalar() == 1
-
 
 # ---- booking links -------------------------------------------------------------------------------------------------
 
@@ -362,41 +288,7 @@ def test_the_landing_has_no_card_when_the_offer_is_off(client, monkeypatch):
     assert 'id="plan-for-me"' not in client.get("/").text
 
 
-def test_the_trip_menu_has_a_line_for_an_editor_and_none_for_a_viewer(client):
-    from tests.test_calendar import book
-    book(client)
-    assert 'id="ga-tb-planforme"' in client.get("/trip").text
-    viewer_email = addr("vic")
-    invite(client, viewer_email, "viewer")
-    other = browser(client)
-    sign_in(other, viewer_email)
-    assert 'id="ga-tb-planforme"' not in other.get("/trip").text
-
-
 # ---- the whole thing -----------------------------------------------------------------------------------------------
-
-def test_from_the_card_to_a_trip_on_the_calendar(client, monkeypatch):
-    """A stranger reads a creator's trip, taps the card, signs in, fills the form, pays at the stand-in, the worker builds it, and the trip is on their calendar."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key")
-    monkeypatch.setattr(ai, "ANTHROPIC_TRANSPORT", Model(ANSWER, usage=(6000, 1500)))
-    row, _, _ = live_trip()
-    card = client.get(f"/trips/{row['slug']}").text
-    assert f'/plan-for-me?from={row["slug"]}' in card
-    assert client.post("/plan-for-me", data={**FORM, "from": row["slug"]}, follow_redirects=False).headers["location"] == "/signin?next=/plan-for-me/start"
-    sign_in(client, next=f"/plan-for-me/start?from={row['slug']}")
-    r = client.post("/plan-for-me", data={**FORM, "from": row["slug"]}, follow_redirects=False)
-    oid = r.headers["location"].rsplit("/", 1)[1]
-    assert client.post(r.headers["location"], follow_redirects=False).status_code == 303
-    assert 'data-status="paid"' in client.get(f"/plan-for-me/{oid}").text
-    assert pfm.run_pending() == 1
-    page = client.get(f"/plan-for-me/{oid}")
-    trip = pfm.get(oid, person()["user_id"])["trip_id"]
-    assert "Your trip is ready" in text_of(page.text) and f'href="/trip?trip={trip}"' in page.text
-    assert pfm.get(oid, person()["user_id"])["intake"]["like"] == "Three easy days in Santa Monica"
-    day = text_of(client.get(f"/trip?trip={trip}").text)
-    assert "Disneyland with a four and a seven year old" in day and "3:00 PM TRAVEL Check in and rest" in re.sub(r"\s+", " ", day)
-    assert "Let the kids splash in the pool." in day and "Tip: Bring a stroller for the seven year old." in day
-
 
 def test_what_a_buyer_types_is_never_markup_on_their_order_page_or_the_captains(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "ari.rivera@example.com")

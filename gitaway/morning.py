@@ -34,7 +34,7 @@ DEFAULT_MIN = 7 * 60 + 30   # 7:30 AM
 WINDOW = 60                 # minutes after the chosen time in which a missed push (a restart, a slow minute) is still sent
 SHOWN = 3                   # plans named in the text
 MAX_TITLE = 40
-URL = "/trip"
+URL = "/trip/plan"
 _TIME = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 _PRICE = re.compile(r"\s*\$\s?\d[\d,]*(?:\.\d+)?\S*")
 
@@ -76,7 +76,7 @@ def message(destination, phase, plans, day=None):
     lines = [f"{cal.fmt_time(start)} {_clean(title)}" for start, title in plans[:SHOWN]]
     if len(plans) > SHOWN:
         lines.append(f"+{len(plans) - SHOWN} more")
-    return {"title": f"Today's plan · {destination}", "body": " · ".join(lines) or "Nothing planned yet. Tap to say the plan for today.", "url": URL if day is None else f"/trip/canvas?day={int(day)}"}
+    return {"title": f"Today's plan · {destination}", "body": " · ".join(lines) or "Nothing planned yet. Tap to say the plan for today.", "url": URL if day is None else f"/trip/plan?day={int(day)}"}
 
 
 def todays_message(session, now):

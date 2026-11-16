@@ -211,8 +211,13 @@ def view(session, curl) -> View:
 
 
 def _party(t) -> str:
-    from gitaway import cockpit
-    return cockpit.party_text(t)
+    """'2 adults · kids 8 and 11'."""
+    adults = f"{t.adults} adult{'s' if t.adults != 1 else ''}"
+    kids = sorted(t.kid_ages)
+    if not kids:
+        return adults
+    ages = ", ".join(str(a) for a in kids[:-1]) + (" and " if len(kids) > 1 else "") + str(kids[-1])
+    return f"{adults} · {'kid' if len(kids) == 1 else 'kids'} {ages}"
 
 
 # ---- overlaps -----------------------------------------------------------------------------------------------------------------

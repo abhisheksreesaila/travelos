@@ -18,7 +18,7 @@ from collections import OrderedDict
 from threading import Lock
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Link, Main, NotStr, P, Section, Span
+from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Link, Main, NotStr, P, Script, Section, Span
 from fasthtml.common import to_xml
 from fasthtml.core import FtResponse
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -145,7 +145,7 @@ def register(app):
         body = sheet(sh, tripshare.first_names(session), tripshare.snapshot(session, exact=True)["exact"]) if sh else create_sheet()
         if request.headers.get("x-share") == "1":
             return HTMLResponse(to_xml(Div(body, cls="sh-frag", data_sheet="1")), headers={"Cache-Control": "no-store"})
-        return phone.shell("trip", join_note(), Main(Div(H1("Share to Instagram", cls="sh-page-h"), body, cls="sh-page"), id="main", cls="ph-main"), title="Share the trip", head=HEAD, scripts=SCRIPTS)
+        return page("Share the trip", Div(H1("Share to Instagram", cls="sh-page-h"), body, cls="sh-page"), current="trip", head=(*HEAD, *[Script(src=x, defer=True) for x in SCRIPTS]), noindex=True, footer=False, v2=True, quiet=True)
 
     @app.post(PATH)
     def share_save(request, session, names: str = "", exact: str = ""):
@@ -163,7 +163,7 @@ def register(app):
         CARDS.drop(tripshare.off(session))
         if "application/json" in request.headers.get("accept", ""):
             return JSONResponse({"off": True}, headers={"Cache-Control": "no-store"})
-        return RedirectResponse("/trip/cockpit", status_code=303)
+        return RedirectResponse("/trip/plan", status_code=303)
 
     @app.get("/s/{token}")
     def share_page(token: str):

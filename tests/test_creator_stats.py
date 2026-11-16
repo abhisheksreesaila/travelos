@@ -142,27 +142,8 @@ def test_yesterdays_seen_rows_are_purged_when_a_new_day_starts(client, monkeypat
 
 # ---- forks, "Plan this trip" taps, partner clicks ---------------------------------------------------------------------
 
-def test_a_fork_is_counted_for_the_day_and_all_time(client):
-    row, _, s = live_trip()
-    sign_in(client, "sam")
-    client.post("/fork", data={"next": f"/trips/{row['slug']}"}, follow_redirects=False)
-    assert table("trip_days") == [{"slug": row["slug"], "day": "2026-11-06", "views": 0, "forks": 1, "plans": 0}]
-    assert numbers(s["user_id"])["all"]["forks"] == 1
-
-
 def plan_from(client, row, handle, ip="203.0.113.7", ua=CHROME):
     return client.get(f"/plan?to=la&d=2027-03-05&r=2027-03-08&a=2&via={handle}", headers={"referer": f"http://testserver/trips/{row['slug']}", "x-forwarded-for": ip, "user-agent": ua})
-
-
-def test_a_tap_on_plan_this_trip_counts_once_per_reader_per_day_and_not_the_creator(client):
-    row, handle, s = live_trip()
-    plan_from(client, row, handle)
-    plan_from(client, row, handle)
-    plan_from(client, row, handle, ip="203.0.113.8")
-    assert numbers(s["user_id"], row["slug"])["all"]["plans"] == 2
-    sign_in(client, "maya@example.com")
-    plan_from(client, row, handle, ip="203.0.113.9")
-    assert numbers(s["user_id"], row["slug"])["all"]["plans"] == 2
 
 
 def test_a_plan_link_not_clicked_on_the_creators_own_page_is_not_a_tap(client):

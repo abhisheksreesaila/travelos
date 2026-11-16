@@ -132,26 +132,6 @@ def test_the_matrix_offers_a_trip_already_booked_to_the_import_when_signed_in(cl
     assert re.search(r'<a[^>]*href="/trips/import"[^>]*id="mx-import"[^>]*>Already booked\? Bring your trip in</a>', html)
 
 
-def test_the_cockpit_has_plan_another_trip_opening_the_matrix(client):
-    book(client)
-    html = client.get("/trip/cockpit").text
-    assert re.search(r'<a[^>]*href="/plan/ask"[^>]*id="ck-plan-another"[^>]*>.*?Plan another trip</a>', html, re.S)
-
-
-def test_saving_a_square_still_makes_the_family_a_trip_and_lands_it_on_the_cockpit(client):
-    sign_in(client, "ari")
-    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"
-    r = client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-05", "r": "2027-03-09", "a": "2", "k": "", "home": "SFO"}, follow_redirects=False)
-    assert where(r) == "/trip/cockpit"
-    assert where(client.get("/", follow_redirects=False)) == "/plan/ask"      # D-600: the trip is reached from Plan this trip and the bar, not the front door
-
-
-def test_a_search_that_does_not_hold_up_goes_back_to_the_booking_lanes(client):
-    sign_in(client, "ari")
-    r = client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-09", "r": "2027-03-05", "a": "2"}, follow_redirects=False)
-    assert urlsplit(where(r)).path == "/plan" and words(r)["place"] == "Lisbon"
-
-
 # ---- nothing links to what was deleted --------------------------------------------------------------------------------
 
 DELETED = ("/start", "/assets/css/start.css", "/assets/js/start.js", "/assets/css/landing.css", "/assets/js/landing.js")
@@ -215,19 +195,6 @@ def test_an_old_disneyland_link_with_an_airport_keeps_both(client):
     assert words(r) == {"to": "Disneyland", "home": "JFK", "d": "2027-03-16", "r": "2027-03-20", "a": "2"}
 
 
-def test_a_stale_pay_link_cannot_book_the_past_and_opens_the_matrix_with_what_is_wrong(client, monkeypatch):
-    from datetime import date
-
-    from gitaway import catalog
-    from tests.test_signin import stored_booking
-    sign_in(client)
-    monkeypatch.setattr(catalog, "today", lambda: date(2026, 11, 1))
-    r = client.post("/pay", data={"f": "f1", "h": "h1", "c": "c1", "d": "2026-10-17", "r": "2026-10-20", "a": "2"}, follow_redirects=False)
-    assert urlsplit(where(r)).path == "/plan/matrix" and words(r)["d"] == "2026-10-17"
-    assert stored_booking() is None
-    assert "today or later" in client.get(where(r)).text
-
-
 def test_the_pages_stylesheets_still_load_tokens_then_base_then_page(client):
     h = client.get("/trips/la-for-two-slow-mornings").text      # F-262: a creator's trip is a guide (guides.css); this one keeps its trip page
     idx = [h.index(f"/assets/css/{n}") for n in ("tokens.css", "base.css", "itinerary.css")]
@@ -247,10 +214,3 @@ def test_a_family_whose_trip_a_matrix_save_made_lands_on_its_cockpit_with_a_book
     assert ses.trips(person("ari")) and ses.booking(person("ari"))      # a trip without a booking cannot be made this way
     assert where(client.get("/", follow_redirects=False)) == "/plan/ask" and client.get("/trip/cockpit").status_code == 200      # D-600
 
-
-def test_a_trip_made_from_a_search_has_a_booking_so_the_cockpit_opens(client):
-    from gitaway import session as ses
-    from tests.test_signin import person
-    sign_in(client, "ari")
-    client.post("/trip/new", data={"place": "Lisbon", "d": "2027-03-05", "r": "2027-03-09", "a": "2"}, follow_redirects=False)
-    assert ses.booking(person("ari")) and client.get("/trip/cockpit").status_code == 200

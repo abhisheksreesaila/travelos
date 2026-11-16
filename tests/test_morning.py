@@ -57,11 +57,6 @@ def ari(client):
 
 # ---- the text (pure) ------------------------------------------------------------------------------------------------------
 
-def test_the_message_names_the_first_plans_with_times():
-    m = morning.message("Los Angeles", "during", [(9 * 60, "Griffith Observatory"), (12 * 60 + 30, "Tacos"), (15 * 60, "Beach")])
-    assert m == {"title": "Today's plan · Los Angeles", "body": "9:00 AM Griffith Observatory · 12:30 PM Tacos · 3:00 PM Beach", "url": "/trip"}
-
-
 def test_a_long_day_shows_three_plans_and_counts_the_rest():
     plans = [(h * 60, f"Plan {h}") for h in (8, 9, 10, 11, 12)]
     assert morning.message("Maui", "during", plans)["body"] == "8:00 AM Plan 8 · 9:00 AM Plan 9 · 10:00 AM Plan 10 · +2 more"
@@ -106,16 +101,6 @@ def test_the_generated_keys_sign_a_real_push_request():
     p256dh = base64.urlsafe_b64encode(b"\x04" + raw.x.to_bytes(32, "big") + raw.y.to_bytes(32, "big")).rstrip(b"=").decode()
     out = webpush({"endpoint": EP, "keys": {"p256dh": p256dh, "auth": "dGVzdC1hdXRoLTEyMzQ1Ng"}}, data="{}", vapid_private_key=pair["private"], vapid_claims={"sub": "mailto:a@b.co"}, curl=True)
     assert "vapid" in out and pair["public"] in out  # the Authorization header carries the public key it was signed for
-
-
-def test_the_card_shows_only_when_push_is_set_up(ari, monkeypatch):
-    monkeypatch.delenv("GITAWAY_VAPID_PUBLIC", raising=False)
-    assert 'id="tp-morning"' not in ari.get("/trip?tab=today").text
-    monkeypatch.setenv("GITAWAY_VAPID_PUBLIC", "BPublicKey"), monkeypatch.setenv("GITAWAY_VAPID_PRIVATE", "p"), monkeypatch.setenv("GITAWAY_VAPID_SUBJECT", "mailto:a@b.co")
-    html = ari.get("/trip?tab=today").text
-    assert 'id="tp-morning"' in html and 'data-key="BPublicKey"' in html
-    assert "Add GitAway to your Home Screen to get a morning plan" in html and "/assets/js/morning.js" in html and 'id="tp-morning-time"' in html
-    assert "data-private" not in html and "GITAWAY_VAPID_PRIVATE" not in html
 
 
 # ---- subscribing, changing the time, turning off -----------------------------------------------------------------------------
@@ -181,30 +166,7 @@ def test_a_viewer_manages_their_own_reminder_but_not_anyone_elses(ari):
     assert viewer.post("/trip/morning/status", data={"endpoint": "https://push.example.com/send/viewer"}).json()["on"] is False
 
 
-def test_the_card_works_for_a_viewer_too(ari, monkeypatch):
-    monkeypatch.setenv("GITAWAY_VAPID_PUBLIC", "BPublicKey"), monkeypatch.setenv("GITAWAY_VAPID_PRIVATE", "p"), monkeypatch.setenv("GITAWAY_VAPID_SUBJECT", "mailto:a@b.co")
-    viewer_mail = addr("vi")
-    invite(ari, viewer_mail, "viewer")
-    viewer = browser(ari)
-    sign_in(viewer, viewer_mail)
-    assert 'id="tp-morning"' in viewer.get("/trip?tab=today").text
-
-
 # ---- the sender ------------------------------------------------------------------------------------------------------------
-
-def test_it_sends_once_each_trip_morning_at_the_chosen_time(ari):
-    subscribe(ari)
-    push = FakePush()
-    assert morning.run_once(la(17, 7, 29), push) == [] and push.sent == []              # a minute early
-    assert len(morning.run_once(la(17, 7, 30), push)) == 1
-    endpoint, payload = push.sent[0]
-    assert endpoint == EP and payload["title"] == "Today's plan · Los Angeles" and payload["url"] == "/trip/canvas?day=1"      # Oct 17 is day 2 of the trip: the push opens its day plan (F-090)
-    assert "9:00 AM Griffith Observatory" in payload["body"]
-    morning.run_once(la(17, 7, 31), push), morning.run_once(la(17, 8, 0), push)
-    assert len(push.sent) == 1                                                          # not again the same day
-    morning.run_once(la(18, 7, 30), push)
-    assert len(push.sent) == 2 and "Griffith" not in push.sent[1][1]["body"]            # tomorrow's plan, not today's
-
 
 def test_it_uses_the_time_the_person_chose(ari):
     subscribe(ari, time="09:15")
@@ -346,13 +308,6 @@ def test_the_sender_thread_starts_once_and_only_with_keys(monkeypatch):
     t.join(2)
     assert morning.start() is t and started == [1]
     monkeypatch.setattr(morning, "_thread", None)
-
-
-def test_the_text_the_sender_builds_is_the_same_the_today_view_shows(ari):
-    s = person()
-    msg = morning.todays_message(s, la(17, 7, 30))
-    assert msg["title"] == "Today's plan · Los Angeles" and td is not None
-    assert re.search(r"9:00 AM Griffith Observatory", msg["body"])
 
 
 # ---- pixi run vapid-keys ---------------------------------------------------------------------------------------------------

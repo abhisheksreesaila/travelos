@@ -65,19 +65,6 @@ def test_the_buyer_sees_that_a_person_is_checking_it_and_nothing_of_the_plan(cli
     assert 'data-pf-poll=' in html          # the page reloads itself when the captain sends it
 
 
-def test_send_to_family_writes_the_trip_and_the_buyer_then_sees_it(client, captain, monkeypatch):
-    o = built(monkeypatch)
-    page = captain.get("/admin").text
-    assert re.search(r'<form[^>]*action="/admin/plan-for-me/send"', page) and f'name="order" value="{o["id"]}"' in page and f'href="/admin/plan-for-me/{o["id"]}"' in page
-    r = captain.post("/admin/plan-for-me/send", data={"order": o["id"]}, follow_redirects=False)
-    assert r.status_code == 303
-    after = pfm._row(o["id"])
-    assert after["status"] == "ready" and after["trip_id"]
-    assert [x[3] for x in calendar("ari")][:2] == ["Check in and rest", "Dinner · Downtown Disney District"]
-    sign_in(client, "ari")
-    assert f'href="/trip?trip={after["trip_id"]}"' in client.get(f"/plan-for-me/{o['id']}").text
-
-
 def test_sending_twice_makes_one_trip(captain, monkeypatch):
     o = built(monkeypatch)
     captain.post("/admin/plan-for-me/send", data={"order": o["id"]})

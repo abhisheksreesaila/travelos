@@ -74,9 +74,9 @@ def cancel_href(next_path):
     """Cancel goes back to the picks: the pay sheet itself would only bounce a signed-out traveler back here."""
     if next_path.startswith("/creators/finish"):
         return "/creators/draft"   # the finish page bounces a signed-out traveler straight back here
-    if next_path == "/trip" or next_path.startswith("/trip?"):
-        return "/"             # /trip bounces a signed-out traveler straight back here
-    return next_path.replace("/plan/pay?", "/plan?", 1) if next_path.startswith("/plan/pay?") else next_path
+    if next_path == "/trip/plan" or next_path.startswith("/trip/plan?"):
+        return "/"             # the plan bounces a signed-out traveler straight back here
+    return next_path
 
 
 # Google's own G (its sign-in brand guidelines): four fixed colours, the same in light and dark, on the button's own surface
@@ -199,15 +199,6 @@ def register(app):
         session.pop("login_next", None), session.pop("login_intent", None)
         if (full := _continue(session, asked, next_path)):
             return full
-        return RedirectResponse(next_path, status_code=303)
-
-    @app.post("/fork")
-    def fork(session, next: str = "/"):
-        """Fork the trip at `next` (/trips/<slug>) for the signed-in traveler, then go back. Signed out: sign in first."""
-        next_path = ses.safe_next(next)
-        if not ses.current_traveler(session):
-            return RedirectResponse(f"/signin?next={quote(next_path, safe='/')}&intent=fork", status_code=303)
-        ses.add_fork(session, next_path)
         return RedirectResponse(next_path, status_code=303)
 
     @app.route("/logout", methods=["GET", "POST"])

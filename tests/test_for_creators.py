@@ -109,34 +109,6 @@ def test_with_nothing_published_the_example_is_drawn_and_says_so(client, mode):
     assert "Open the trip" not in html
 
 
-def test_the_example_is_the_most_forked_real_trip(client, mode):
-    one = live_trip("maya@example.com", "Maya Chen", "Three easy days in Santa Monica")[0]
-    two = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]
-    assert two["slug"] in client.get("/guides/make").text            # nothing forked yet: the newest
-    for who in ("ari", "sam"):
-        c = stranger(client)
-        sign_in(c, who)
-        assert c.post("/fork", data={"next": f"/trips/{one['slug']}"}, follow_redirects=False).status_code in (200, 303)
-    html = client.get("/guides/make").text
-    assert 'data-kind="real"' in html and f'href="/trips/{one["slug"]}"' in html and two["slug"] not in html
-    text = words(html)
-    assert "A trip made this way" in text and "2 forks" in text and "Three easy days in Santa Monica" in text and "by Maya Chen" in text
-    assert "Santa Monica Pier" in text and "Lunch on Abbot Kinney" in text and "Sunset at the pier" in text
-
-
-def test_a_family_forking_twice_counts_once_and_a_sample_counts_nothing(client, mode):
-    slug = live_trip()[0]["slug"]
-    sign_in(client)
-    for _ in range(3):
-        client.post("/fork", data={"next": f"/trips/{slug}"})
-    assert community.fork_count(slug) == 1
-    if mode == "1":
-        client.post("/fork", data={"next": f"/trips/{next(iter(itineraries.ITINERARIES))}"})
-    with community.connect() as db:
-        from sqlalchemy import text
-        assert db.conn.execute(text("SELECT COUNT(*) FROM fork_counts")).scalar() == 1
-
-
 def test_a_taken_down_trip_is_never_the_example(client, mode):
     one = live_trip("maya@example.com", "Maya Chen", "Three easy days in Santa Monica")[0]
     two = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")[0]

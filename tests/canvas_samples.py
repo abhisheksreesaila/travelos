@@ -63,3 +63,10 @@ class FakeAzure:
         if self.failure:
             raise self.failure
         return azure_reply(self.answer)
+
+
+def added(client=None):
+    """The captain's messages, added to the open trip as the Ask box did (F-254: the box is gone, the model it called is `canvas.save`): Universal on day 1, Disney California Adventure on day 3."""
+    from gitaway import canvas
+    from tests.test_signin import person
+    return canvas.save(person("ari"), model_answer(), {"days": [1, 3]})

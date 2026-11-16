@@ -13,7 +13,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, accesslog, auth, draftjobs, expedia, familydb, hostdb, morning, omxqua, passkeys, planforme, say, session, showcase
+from gitaway import access, accesslog, auth, draftjobs, expedia, familydb, hostdb, morning, omxqua, passkeys, planforme, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -63,8 +63,7 @@ class BodyLimit:
     Content-Length) add up past it. FastHTML and our own beforeware read every POST body whole before a route runs, so a limit inside the route would come too late. Only the paths in LIMITS."""
 
     LIMITS = {"/stripe/webhook": planforme.MAX_WEBHOOK,
-              "/trips/import": expedia.MAX_PDF_BYTES + 100_000,        # F-198 review: a PDF or a pasted itinerary; the import's own check answers a declared size with its page first
-              "/trip/ask/propose": 12 * say.LIMIT + 100_000}           # the box's text (a character is at most 4 bytes, 3 times that form-encoded) and its few fields
+              "/trips/import": expedia.MAX_PDF_BYTES + 100_000}        # F-198 review: a PDF or a pasted itinerary; the import's own check answers a declared size with its page first
 
     class TooLarge(Exception):
         pass

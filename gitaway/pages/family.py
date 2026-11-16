@@ -176,6 +176,13 @@ def _problem_page(problem, signed_in):
 
 
 def register(app):
+    @app.get("/invite")
+    def invite_entry(session):
+        """The address old invitation links and shortcuts used (F-147): the invitations in Family. Signed out goes through sign-in first (intent=invite) and comes back there."""
+        if not ses.current_traveler(session):
+            return RedirectResponse(f"/signin?next={quote('/family#invite', safe='')}&intent=invite", status_code=303)
+        return RedirectResponse("/family#invite", status_code=303)
+
     def _admin_action(request, session, action, **form):
         """Run a model change for the signed-in admin; the family page again, with the message when the model refuses."""
         try:
@@ -246,7 +253,7 @@ def register(app):
         family = members.family_label(inv["tenant_id"])
         if inv["state"] == "accepted" and uid and inv["accepted_by"] == uid and members.role_in(uid, inv["tenant_id"]):
             members.set_active(session, inv["tenant_id"])  # signing in through this link already joined them; take them in
-            return RedirectResponse("/trip", status_code=303)
+            return RedirectResponse("/trip/plan", status_code=303)
         if inv["state"] != "pending":
             return _problem_page(members.InviteProblem(inv["state"], {"expired": "That invite has expired. Ask the family admin for a new one.", "revoked": "That invite was taken back. Ask the family admin for a new one.",
                                                                        "accepted": "That invite was already used."}[inv["state"]]), bool(uid))
@@ -273,4 +280,4 @@ def register(app):
         except members.InviteProblem as e:
             return _problem_page(e, True)
         members.set_active(session, joined["tenant_id"])
-        return RedirectResponse("/trip", status_code=303)
+        return RedirectResponse("/trip/plan", status_code=303)

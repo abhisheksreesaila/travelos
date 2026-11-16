@@ -1,14 +1,13 @@
-"""Partner links, the stand-in checkout and the family's partner log (autopilot M2/M3). The rules are gitaway.partners; this module is the screens.
+"""Partner links and the stand-in checkout (autopilot M2/M3; the family's partner log retired in F-254). The rules are gitaway.partners; this module is the screens.
 
 GET  /go/<offer id>?to=&d=&r=&a=&k=         log the click, then 302: with TRAVELPAYOUTS_MARKER to the tracked https link, else to the sandbox (showcase only)
 GET  /sandbox/<partner>/<click>?o=&...      a stand-in for the partner's checkout: the offer, its price, "Complete booking on <partner>"
 POST /sandbox/<partner>/<click>             the simulated conversion: recorded, and added to the family's trip as "Booked elsewhere · <partner>"
 GET  /sandbox/<partner>/<click>/done        says so
 GET  /book/<lane>?site=&place=&d=&r=&a=&k=  F-198: a booking lane's click, logged, then 302 to the partner (paying or plain); any destination, no keys needed
-GET  /partners                              the family's clicks and bookings with SubID, status and price at the partner (signed in); commission is on /admin (F-185)
 
 Writes are the editor role's like every other POST (gitaway/access.py): a viewer cannot book. Without the showcase, /sandbox is 404, /go is 404
-without a marker and /partners is 404 without a token (gitaway/showcase.py).
+without a marker (gitaway/showcase.py).
 """
 
 import re
@@ -80,7 +79,7 @@ def checkout_page(partner, click, offer, trip, *, signed_in):
         P(f"This page mimics {partner.name}'s checkout so you can feel the whole loop. Nothing is charged and nothing is booked with anyone.", cls="pt-fine"),
         Form(Input(type="hidden", name="o", value=offer.id), *[Input(type="hidden", name=n, value=v) for n, v in _trip_tail(trip).items()],
              Button(f"Complete booking on {partner.name}", type="submit", cls="btn btn-ink pt-go"),
-             A("Back to my plan", href="/plan?" + urlencode(_trip_tail(trip)), cls="pt-back"),
+             A("Back to my plan", href="/plan/matrix?" + urlencode(_trip_tail(trip)), cls="pt-back"),
              action=f"/sandbox/{partner.key}/{click}", method="post", cls="pt-form"),
         P("" if signed_in else "You will be asked to sign in so the booking can go in your trip.", cls="pt-fine"),
         cls="pt-card"))
@@ -93,36 +92,9 @@ def done_page(row, partner, offer_name):
         P(f"{offer_name} is booked on {partner.name} (sandbox). It is in your trip now, marked as booked elsewhere. {partner.name} keeps the booking; GitAway keeps a note of it.", cls="pt-lead"),
         Div(Span("Confirmation", cls="pt-k"), Span(row["confirmation"], cls="pt-v"), Span("Paid at the partner", cls="pt-k"), Span(catalog.money(row["price_cents"]), cls="pt-v"),
             cls="pt-facts"),
-        Div(A("Open my trip", href="/trip", cls="btn btn-ink"), A("Partner bookings", href="/partners", cls="btn"),
-            A("Keep planning", href="/plan?" + row["query"], cls="btn"), cls="pt-actions"),
+        Div(A("Open my trip", href="/trip/plan", cls="btn btn-ink"),
+            A("Keep planning", href="/plan/matrix?" + row["query"], cls="btn"), cls="pt-actions"),
         cls="pt-card"))
-
-
-def _status(row):
-    return ("Booked", "pt-st-booked") if row["state"] == "booked" else ("Clicked", "pt-st-clicked")
-
-
-def _row(row):
-    partner = partners.get(row["partner"])
-    label, cls = _status(row)
-    price = catalog.money(row["price_cents"]) if row["state"] == "booked" else "–"   # what the family paid the partner; what GitAway earns is on the admin page (F-185)
-    return Li(Div(Span(partner.name if partner else registry.NAMES.get(row["partner"], row["partner"]), cls="pt-who"), Span(label, cls=f"pt-status {cls}")),
-              Span(row["offer_name"], cls="pt-what"),
-              Div(Span("SubID", cls="pt-k"), Span(row["sub_id"], cls="pt-code"), Span("Price at the partner", cls="pt-k"), Span(price, cls="pt-v"),
-                *([Span("Partner status", cls="pt-k"), Span(statistics.row(row)["state"], cls="pt-v")] if row["state"] == "booked" else []), cls="pt-meta"),
-              cls="pt-row", data_state=row["state"])
-
-
-def partners_page(rows, *, live):
-    booked = [r for r in rows if r["state"] == "booked"]
-    note = "Live statistics are not connected yet." if live else "Sample data: clicks and bookings made in the sandbox."
-    return page("Partners", Main(
-        Div(H1("Partner bookings", cls="pt-title"),
-            P(f"{len(rows)} click{'s' if len(rows) != 1 else ''} · {len(booked)} booked", cls="pt-lead", id="pt-summary"),
-            P(note, cls="pt-fine"), P(FINE, cls="pt-fine"),
-            Ul(*[_row(r) for r in rows], cls="pt-list", aria_label="Clicks and bookings") if rows else
-            Div(P("No clicks yet. Pick a flight, a stay or a car and press Book on a partner.", cls="pt-lead"), A("Plan a trip", href="/plan", cls="btn btn-ink"), cls="pt-empty"),
-            cls="pt-card pt-wide"), cls="pt-stage", id="partners"), head=HEAD)
 
 
 class Creator:
@@ -215,7 +187,7 @@ def register(app):
         try:
             log.book(session, click, offer, trip, pt)
         except importer.SaveError as e:
-            return page("Not booked", Div(H2("We couldn't add that to your trip"), P(str(e)), A("Back to my plan", href="/plan", cls="btn btn-ink"), cls="pt-card"), head=HEAD)
+            return page("Not booked", Div(H2("We couldn't add that to your trip"), P(str(e)), A("Back to my plan", href=showcase.planning_path(), cls="btn btn-ink"), cls="pt-card"), head=HEAD)
         return RedirectResponse(f"/sandbox/{pt.key}/{click}/done", status_code=303)
 
     @app.get("/sandbox/{partner}/{click}/done")
@@ -224,9 +196,3 @@ def register(app):
         if not pt or not row or row["state"] != "booked" or row["partner"] != pt.key:
             return showcase.not_found()
         return done_page(row, pt, row["offer_name"])
-
-    @app.get("/partners")
-    def partners_log(session):
-        if not ses.current_traveler(session):
-            return RedirectResponse(ses.signin_href("/partners"), status_code=303)
-        return partners_page(log.clicks(session), live=bool(travelpayouts.token()))   # with a token the real statistics would be read here; not wired yet

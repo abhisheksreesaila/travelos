@@ -133,16 +133,6 @@ def test_a_text_that_does_not_read_goes_back_to_the_paste_page_with_the_problems
     assert r.status_code == 422 and 'id="ti-text"' in r.text and "nonsense" in r.text
 
 
-def test_the_import_link_waits_beside_the_matrix_where_trips_start(client):
-    sign_in(client)
-    client.post("/trips/import/save", data={"text": TEMPLATE})
-    html = client.get("/plan/matrix").text
-    assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Already booked\? Bring your trip in', html, re.S)
-    assert html.index('id="v2-sent"') < html.index('id="mx-import"') < html.index('id="mx-data"')      # planning a new trip comes first; the import is a quiet link in its meta row
-    bar = client.get("/trip/canvas").text      # and the top bar's trip menu, on the trip itself
-    assert re.search(r'<a [^>]*href="/trips/import"[^>]*>(?:(?!</a>).)*Import a trip you booked', bar, re.S)
-
-
 def test_the_pdf_picker_is_a_styled_button_that_shows_the_file_name(client):
     sign_in(client)
     html = client.get("/trips/import").text
@@ -223,4 +213,5 @@ def test_ten_adults_open_intact():
     text = re.sub(r"travelers:.*?(?=\nflights:)", "travelers:\n" + names + "\n", TEMPLATE, flags=re.S)
     plan = plan_of(text)
     assert plan.adults == 10 and tb.build(tb.load(tb.dump(tb.from_plan(plan)))) == plan
+
 

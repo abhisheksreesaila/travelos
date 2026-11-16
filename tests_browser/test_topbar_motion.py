@@ -37,7 +37,7 @@ def lively(browser, base_url):
         ctxs.append(ctx)
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
         for pick in (SAMPLE, SECOND):
-            ctx.request.post(f"{base_url}/pay", form=pick, max_redirects=0)
+            ctx.request.post(f"{base_url}/_test/pay", form=pick, max_redirects=0)
         page = ctx.new_page()
         page.goto(f"{base_url}/trip/canvas?day=0")
         page.wait_for_function("window.GA && GA.motion && !GA.motion.reduced()")
@@ -82,7 +82,7 @@ def test_the_phone_trip_sheet_still_opens_with_the_spring(browser, base_url):
     try:
         ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
         for pick in (SAMPLE, SECOND):
-            ctx.request.post(f"{base_url}/pay", form=pick, max_redirects=0)
+            ctx.request.post(f"{base_url}/_test/pay", form=pick, max_redirects=0)
         page = ctx.new_page()
         page.goto(f"{base_url}/trip/canvas?day=0")
         page.wait_for_function("window.GA && GA.motion && !GA.motion.reduced()")

@@ -39,6 +39,7 @@ def crew(client):
     invite(client, ed_mail, "editor"), invite(client, vi_mail, "viewer")
     ed, vi = browser(client), browser(client)
     sign_in(ed, ed_mail), sign_in(vi, vi_mail)
+    ed.mail, vi.mail = ed_mail, vi_mail      # who each browser is, for the writes that go through the model
     return client, ed, vi
 
 
@@ -49,9 +50,16 @@ def tag(html, id_):
 
 
 def thread(client, since=0):
-    r = client.get(f"/trip/family/thread?since={since}")
+    """The trip's thread as the Together drawer reads it (F-254: /trip/plan/thread): .text is every message's words."""
+    from types import SimpleNamespace
+    r = client.get("/trip/plan/thread?key=trip")
     assert r.status_code == 200
-    return r
+    return SimpleNamespace(status_code=200, text=" ".join(i["text"] for i in r.json()["items"]))
+
+
+def go_quiet(browser_, on=True):
+    """My own Quiet switch (the drawer has none since F-254; the model keeps it): the browser's person, through familythread."""
+    ft.set_quiet(person(browser_.mail), on)
 
 
 def subscribe(client, endpoint):
@@ -180,80 +188,7 @@ def test_applying_and_removing_a_forks_plans_write_one_card_each(client):
 
 # ---- the page and the poll fragment ----------------------------------------------------------------------------------------
 
-def test_the_family_tab_shows_the_thread_the_compose_bar_and_the_quiet_switch(client):
-    book(client)
-    ft.post_message(person("ari"), "Pool at four?")
-    add(client, id="a1", title="Beach", day="1", start="10:00", end="11:00")
-    html = client.get("/trip/family").text
-    assert "Pool at four?" in html and "Ari added Beach on" in html and "Plan change" in html
-    assert 'id="ft-thread"' in html and 'data-last="2"' in html and 'id="ft-compose"' in html and 'id="ft-quiet"' in html
-    assert "/assets/js/thread.js" in html and "/assets/css/thread.css" in html and 'aria-label="Message the family"' in html
-    assert "No messages yet" in html and 'id="ft-empty"' in html  # present, hidden once there is anything
-
-
-def test_an_empty_thread_shows_the_hint_and_a_busy_one_hides_it(client):
-    book(client)
-    assert "hidden" not in tag(client.get("/trip/family").text, "ft-empty")
-    ft.post_message(person("ari"), "hi")
-    assert "hidden" in tag(client.get("/trip/family").text, "ft-empty")
-
-
-def test_the_poll_returns_only_what_is_new_and_the_last_number(client):
-    book(client)
-    ari = person("ari")
-    ft.post_message(ari, "one"), ft.post_message(ari, "two")
-    first = thread(client)
-    assert "one" in first.text and "two" in first.text and first.headers["x-thread-last"] == "2" and "no-store" in first.headers["cache-control"]
-    nothing = thread(client, since=2)
-    assert nothing.text == "" and nothing.headers["x-thread-last"] == "2"
-    ft.post_message(ari, "three")
-    news = thread(client, since=2)
-    assert "three" in news.text and "one" not in news.text and news.headers["x-thread-last"] == "3"
-
-
-def test_my_messages_are_marked_mine_and_others_show_their_name(crew):
-    client, ed, _ = crew
-    say(client, "from the admin")
-    html = ed.get("/trip/family").text
-    assert "from the admin" in html and ">Ari<" in html                    # the editor sees who wrote it
-    assert re.search(r'class="ft-msg [^"]*\bft-me\b', client.get("/trip/family").text)      # and the author sees it as theirs (F-178: the class list also names the run)
-
-
-def test_a_photo_with_an_image_is_drawn_as_a_card(client):
-    book(client)
-    ft.post_photo(person("ari"), "/assets/photos/la.jpg", "Beach!")
-    html = thread(client).text
-    assert 'class="ft-photo"' in html and 'src="/assets/photos/la.jpg"' in html and "Beach!" in html
-
-
-def test_text_is_escaped(client):
-    book(client)
-    ft.post_message(person("ari"), "<script>alert(1)</script>")
-    assert "<script>alert" not in thread(client).text and "&lt;script&gt;" in thread(client).text
-
-
-def test_signed_out_gets_nothing(client):
-    assert client.get("/trip/family/thread").status_code == 401
-    assert client.post("/trip/family/message", data={"text": "hi"}, follow_redirects=False).status_code in (401, 403, 303)
-    assert client.get("/trip/family", follow_redirects=False).status_code == 303
-
-
 # ---- posting and pressing every button -----------------------------------------------------------------------------------
-
-def test_send_posts_the_message_and_answers_with_the_new_items(client):
-    book(client)
-    r = say(client, "Hello family")
-    assert r.status_code == 200 and "Hello family" in r.text and r.headers["x-thread-last"] == "1"
-    again = say(client, "Second", since=1)
-    assert "Second" in again.text and "Hello family" not in again.text
-
-
-def test_send_without_script_posts_the_form_and_lands_back_on_the_tab(client):
-    book(client)
-    r = client.post("/trip/family/message", data={"text": "No script here"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/trip/family"
-    assert "No script here" in client.get("/trip/family").text
-
 
 def test_an_empty_message_is_a_plain_error_the_page_can_show(client):
     book(client)
@@ -261,56 +196,9 @@ def test_an_empty_message_is_a_plain_error_the_page_can_show(client):
     assert r.status_code == 400 and "Write something first." in r.text
 
 
-def test_the_quiet_switch_turns_the_persons_pushes_off_and_on(client):
-    book(client)
-    assert 'aria-checked="false"' in tag(client.get("/trip/family").text, "ft-quiet")
-    r = client.post("/trip/family/quiet", data={"quiet": "1"}, headers={"X-Fragment": "1"})
-    assert r.json() == {"quiet": True} and ft.quiet(person("ari"))
-    assert 'aria-checked="true"' in tag(client.get("/trip/family").text, "ft-quiet") and "Quiet: no notifications" in client.get("/trip/family").text
-    assert client.post("/trip/family/quiet", data={"quiet": "0"}, headers={"X-Fragment": "1"}).json() == {"quiet": False} and not ft.quiet(person("ari"))
-    back = client.post("/trip/family/quiet", data={"quiet": "1"}, follow_redirects=False)   # without script: the form posts and the tab reloads
-    assert back.status_code == 303 and back.headers["location"] == "/trip/family"
-
-
 # ---- roles ----------------------------------------------------------------------------------------------------------------
 
-def test_a_viewer_may_talk_and_go_quiet_but_not_change_a_plan(crew):
-    client, _, viewer = crew
-    r = say(viewer, "Can I bring the dog?")
-    assert r.status_code == 200 and "Can I bring the dog?" in r.text
-    assert viewer.post("/trip/family/quiet", data={"quiet": "1"}, headers={"X-Fragment": "1"}).status_code == 200
-    refused = viewer.post("/trip/plans", data={**FORM, "id": "a1"}, follow_redirects=False)
-    assert refused.status_code == 403
-    assert [i["kind"] for i in ft.items(person("ari"))] == ["message"]     # the viewer's message is there; a refused change left no card
-
-
-def test_everyone_in_the_family_sees_the_same_thread(crew):
-    client, ed, viewer = crew
-    say(ed, "from the editor")
-    assert "from the editor" in client.get("/trip/family").text and "from the editor" in viewer.get("/trip/family").text
-
-
 # ---- pushes ---------------------------------------------------------------------------------------------------------------
-
-def test_a_message_pushes_everyone_with_the_morning_plan_on_but_not_the_author(crew, push):
-    client, ed, viewer = crew
-    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
-    say(client, "Dinner at 7 at Green Leaf")
-    ft.drain()
-    assert [e for e, _ in push.sent] == [EP_ED]
-    payload = push.sent[0][1]
-    assert payload["title"] == "Ari" and payload["body"] == "Dinner at 7 at Green Leaf" and payload["url"] == "/trip/family" and payload["tag"] == "family-thread"
-
-
-def test_a_plan_change_pushes_the_others_with_the_card_text(crew, push):
-    client, ed, _ = crew
-    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
-    add(ed, id="a1", title="Griffith Observatory", day="1", start="10:00", end="11:00")
-    ft.drain()
-    assert [e for e, _ in push.sent] == [EP_ARI]
-    assert push.sent[0][1]["title"] == "Plan changed" and push.sent[0][1]["url"] == "/trip/family"
-    assert " added Griffith Observatory on " in push.sent[0][1]["body"] and not push.sent[0][1]["body"].startswith("Ari ")   # the editor added it, not Ari
-
 
 def test_someone_who_never_turned_the_morning_plan_on_gets_no_push(crew, push):
     client, ed, _ = crew
@@ -318,35 +206,6 @@ def test_someone_who_never_turned_the_morning_plan_on_gets_no_push(crew, push):
     say(ed, "hello")
     ft.drain()
     assert push.sent == []                     # the only subscriber is the author
-
-
-def test_quiet_turns_pushes_off_for_that_person_only(crew, push):
-    client, ed, _ = crew
-    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
-    ed.post("/trip/family/quiet", data={"quiet": "1"}, headers={"X-Fragment": "1"})
-    say(client, "anyone?")
-    ft.drain()
-    assert push.sent == []
-    ed.post("/trip/family/quiet", data={"quiet": "0"}, headers={"X-Fragment": "1"})
-    say(client, "again?")
-    ft.drain()
-    assert [e for e, _ in push.sent] == [EP_ED]
-
-
-def test_a_burst_is_one_push_then_one_summary_when_the_window_ends(crew, push):
-    client, ed, _ = crew
-    subscribe(ed, EP_ED)
-    t = tenant(client)
-    mine = tid("ari")
-    for i in range(4):
-        ft.notify(t, "trip", "Plan changed", f"Ari added Plan {i}", exclude_person=mine, now=1000 + i * 10)
-    assert len(push.sent) == 1 and "Plan 0" in push.sent[0][1]["body"]            # the first goes at once; the other three wait
-    assert ft.flush_due(now=1000 + 60, send=push) == 0 and len(push.sent) == 1     # the window (two minutes) has not ended
-    assert ft.flush_due(now=1000 + ft.WINDOW + 1, send=push) == 1
-    assert len(push.sent) == 2 and push.sent[1][1]["body"] == "3 more updates on the trip" and push.sent[1][1]["url"] == "/trip/family"
-    assert ft.flush_due(now=1000 + 10 * ft.WINDOW, send=push) == 0 and len(push.sent) == 2    # told once
-    ft.notify(t, "trip", "Plan changed", "Ari added Later", exclude_person=mine, now=1000 + 10 * ft.WINDOW)
-    assert len(push.sent) == 3                                                     # a quiet spell later, the next one goes at once
 
 
 def test_one_waiting_update_is_told_in_the_singular(crew, push):
@@ -357,16 +216,6 @@ def test_one_waiting_update_is_told_in_the_singular(crew, push):
     ft.notify(t, "trip", "Plan changed", "Ari added B", exclude_person=mine, now=5010)
     ft.flush_due(now=5000 + ft.WINDOW, send=push)
     assert push.sent[-1][1]["body"] == "1 more update on the trip"
-
-
-def test_going_quiet_drops_what_was_waiting(crew, push):
-    client, ed, _ = crew
-    subscribe(ed, EP_ED)
-    t, mine = tenant(client), tid("ari")
-    ft.notify(t, "trip", "Plan changed", "Ari added A", exclude_person=mine, now=9000)
-    ft.notify(t, "trip", "Plan changed", "Ari added B", exclude_person=mine, now=9010)
-    ed.post("/trip/family/quiet", data={"quiet": "1"}, headers={"X-Fragment": "1"})
-    assert ft.flush_due(now=9000 + ft.WINDOW + 5, send=push) == 0 and len(push.sent) == 1
 
 
 def test_a_phone_the_push_service_refuses_for_good_is_forgotten(crew):
@@ -400,15 +249,6 @@ def test_a_removed_member_is_not_pushed(crew, push):
     assert push.sent == []
 
 
-def test_a_message_is_the_persons_own_words_and_a_price_in_it_is_not_filtered_from_the_thread(crew, push):
-    client, ed, _ = crew
-    subscribe(ed, EP_ED)
-    say(client, "Luau $85.00 per person")
-    assert "$85.00" in thread(client).text          # what someone types stays as typed in the thread...
-    ft.drain()
-    assert "$" not in push.sent[0][1]["body"]       # ...but the lock screen never shows an amount
-
-
 def test_change_cards_and_their_pushes_carry_no_confirmation_numbers_and_the_push_no_prices(crew, push):
     client, ed, _ = crew
     subscribe(ed, EP_ED)
@@ -420,17 +260,6 @@ def test_change_cards_and_their_pushes_carry_no_confirmation_numbers_and_the_pus
     from gitaway import session as ses
     b = ses.booking(person("ari"))
     assert b["id"] not in card and b["id"] not in push.sent[0][1]["body"]    # never the booking's confirmation number
-
-
-def test_without_push_keys_and_no_test_sender_nothing_is_sent_or_queued(crew, monkeypatch):
-    client, ed, _ = crew
-    subscribe(ed, EP_ED)
-    monkeypatch.setattr(ft, "SENDER", None)
-    assert not morning.configured()
-    assert ft.notify(tenant(client), "trip", "t", "b", exclude_person="x", now=10_000) == 0 and ft.flush_due(now=10**6) == 0
-    say(client, "still works")
-    ft.drain()
-    assert "still works" in thread(client).text
 
 
 def test_the_minute_loop_also_flushes_the_threads_waiting_updates(push, monkeypatch):
@@ -502,24 +331,6 @@ def test_a_push_is_queued_only_after_the_change_commits(client, monkeypatch):
     assert len(queued) == 1 and len(cards(client)) == 1
 
 
-def test_the_page_names_its_trip_and_a_stale_tab_is_refused(client):
-    from gitaway import session as ses
-    book(client)
-    ari = person("ari")
-    first = ses.trips(ari)[0].id
-    html = client.get("/trip/family").text
-    assert f'value="{first}"' in html and f'data-trip="{first}"' in html
-    book(client, f="f2")                                   # a second trip is opened; the old tab still shows the first
-    second = [t.id for t in ses.trips(person("ari")) if t.id != first][0]
-    assert say(client, "into the old trip", trip=first).status_code == 200
-    assert "into the old trip" in client.get(f"/trip/family/thread?since=0&trip={first}").text   # it went to the trip the tab was drawn for
-    assert ft.items(person("ari")) == []                                                       # not into the one open now
-    gone = say(client, "nowhere", trip="no-such-trip")
-    assert gone.status_code == 409 and "Reload" in gone.text and "Traceback" not in gone.text
-    assert client.get("/trip/family/thread?since=0&trip=no-such-trip").status_code == 409
-    assert client.get(f"/trip/family/thread?since=0&trip={second}").status_code == 200
-
-
 def test_one_family_cannot_read_anothers_thread(client):
     book(client)
     ft.post_message(person("ari"), "the Rivera family secret")
@@ -532,16 +343,140 @@ def test_one_family_cannot_read_anothers_thread(client):
     assert [i["text"] for i in ft.items(person("ari"))] == ["the Rivera family secret"]
 
 
-def test_a_run_from_one_person_has_one_first_and_one_last_and_a_plan_change_ends_it():
-    """F-178: the server draws where each message sits in its run; thread.js keeps the same classes live."""
-    from gitaway.pages import tab_family as tf
-    from fasthtml.common import to_xml
-    at = "2026-10-16T09:41:00+00:00"
-    def msg(n, who, kind="message"):
-        return {"n": n, "kind": kind, "author": who, "name": who.title(), "text": f"t{n}", "at": at, "payload": {"action": "move"} if kind == "change" else {}}
-    items = [msg(1, "maya"), msg(2, "maya"), msg(3, "maya"), msg(4, "ari"), msg(5, "ari", "change"), msg(6, "ari")]
-    got = []
-    for v in tf.fragment(items, "ari", "UTC"):
-        c = re.search(r'class="([^"]*)"', to_xml(v)).group(1).split()
-        got.append((("first" if "ft-first" in c else "") + ("last" if "ft-last" in c else ""), "ft-me" in c))
-    assert got == [("first", False), ("", False), ("last", False), ("firstlast", True), ("", False), ("firstlast", True)]   # (the plan change is no bubble: no run classes)
+def test_the_quiet_switch_turns_the_persons_pushes_off_and_on(client):
+    book(client)
+    ari = person("ari")
+    assert not ft.quiet(ari)
+    assert ft.set_quiet(ari, True) is True and ft.quiet(person("ari"))
+    assert ft.set_quiet(ari, False) is False and not ft.quiet(person("ari"))
+
+
+def test_a_viewer_may_talk_and_go_quiet_but_not_change_a_plan(crew):
+    client, _, viewer = crew
+    r = say(viewer, "Can I bring the dog?")
+    assert r.status_code == 204 and "Can I bring the dog?" in thread(viewer).text
+    go_quiet(viewer)
+    assert ft.quiet(person(viewer.mail))
+    refused = viewer.post("/trip/plan/write", data={"op": "add", "day": "1", "start": "600", "end": "660", "title": "Nope", "kind": "fun"}, follow_redirects=False)
+    assert refused.status_code == 403
+    assert [i["kind"] for i in ft.items(person("ari"))] == ["message"]     # the viewer's message is there; a refused change left no card
+
+
+def test_everyone_in_the_family_sees_the_same_thread(crew):
+    client, ed, viewer = crew
+    say(ed, "from the editor")
+    assert "from the editor" in thread(client).text and "from the editor" in thread(viewer).text
+
+
+def test_a_message_pushes_everyone_with_the_morning_plan_on_but_not_the_author(crew, push):
+    client, ed, viewer = crew
+    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
+    say(client, "Dinner at 7 at Green Leaf")
+    ft.drain()
+    assert [e for e, _ in push.sent] == [EP_ED]
+    payload = push.sent[0][1]
+    assert payload["title"] == "Ari" and payload["body"] == "Dinner at 7 at Green Leaf" and payload["url"] == "/trip/plan" and payload["tag"] == "family-thread"
+
+
+def test_a_plan_change_pushes_the_others_with_the_card_text(crew, push):
+    client, ed, _ = crew
+    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
+    add(ed, traveler=ed.mail, id="a1", title="Griffith Observatory", day="1", start="10:00", end="11:00")
+    ft.drain()
+    assert [e for e, _ in push.sent] == [EP_ARI]
+    assert push.sent[0][1]["title"] == "Plan changed" and push.sent[0][1]["url"] == "/trip/plan"
+    assert " added Griffith Observatory on " in push.sent[0][1]["body"] and not push.sent[0][1]["body"].startswith("Ari ")   # the editor added it, not Ari
+
+
+def test_quiet_turns_pushes_off_for_that_person_only(crew, push):
+    client, ed, _ = crew
+    subscribe(client, EP_ARI), subscribe(ed, EP_ED)
+    go_quiet(ed, True)
+    say(client, "anyone?")
+    ft.drain()
+    assert push.sent == []
+    go_quiet(ed, False)
+    say(client, "again?")
+    ft.drain()
+    assert [e for e, _ in push.sent] == [EP_ED]
+
+
+def test_a_burst_is_one_push_then_one_summary_when_the_window_ends(crew, push):
+    client, ed, _ = crew
+    subscribe(ed, EP_ED)
+    t = tenant(client)
+    mine = tid("ari")
+    for i in range(4):
+        ft.notify(t, "trip", "Plan changed", f"Ari added Plan {i}", exclude_person=mine, now=1000 + i * 10)
+    assert len(push.sent) == 1 and "Plan 0" in push.sent[0][1]["body"]            # the first goes at once; the other three wait
+    assert ft.flush_due(now=1000 + 60, send=push) == 0 and len(push.sent) == 1     # the window (two minutes) has not ended
+    assert ft.flush_due(now=1000 + ft.WINDOW + 1, send=push) == 1
+    assert len(push.sent) == 2 and push.sent[1][1]["body"] == "3 more updates on the trip" and push.sent[1][1]["url"] == "/trip/plan"
+    assert ft.flush_due(now=1000 + 10 * ft.WINDOW, send=push) == 0 and len(push.sent) == 2    # told once
+    ft.notify(t, "trip", "Plan changed", "Ari added Later", exclude_person=mine, now=1000 + 10 * ft.WINDOW)
+    assert len(push.sent) == 3                                                     # a quiet spell later, the next one goes at once
+
+
+def test_going_quiet_drops_what_was_waiting(crew, push):
+    client, ed, _ = crew
+    subscribe(ed, EP_ED)
+    t, mine = tenant(client), tid("ari")
+    ft.notify(t, "trip", "Plan changed", "Ari added A", exclude_person=mine, now=9000)
+    ft.notify(t, "trip", "Plan changed", "Ari added B", exclude_person=mine, now=9010)
+    go_quiet(ed, True)
+    assert ft.flush_due(now=9000 + ft.WINDOW + 5, send=push) == 0 and len(push.sent) == 1
+
+
+def test_a_message_is_the_persons_own_words_and_a_price_in_it_is_not_filtered_from_the_thread(crew, push):
+    client, ed, _ = crew
+    subscribe(ed, EP_ED)
+    say(client, "Luau $85.00 per person")
+    assert "$85.00" in thread(client).text          # what someone types stays as typed in the thread...
+    ft.drain()
+    assert "$" not in push.sent[0][1]["body"]       # ...but the lock screen never shows an amount
+
+
+def test_without_push_keys_and_no_test_sender_nothing_is_sent_or_queued(crew, monkeypatch):
+    client, ed, _ = crew
+    subscribe(ed, EP_ED)
+    monkeypatch.setattr(ft, "SENDER", None)
+    assert not morning.configured()
+    assert ft.notify(tenant(client), "trip", "t", "b", exclude_person="x", now=10_000) == 0 and ft.flush_due(now=10**6) == 0
+    say(client, "still works")
+    ft.drain()
+    assert "still works" in thread(client).text
+
+
+def test_text_is_escaped(client):
+    book(client)
+    ft.post_message(person("ari"), "<script>alert(1)</script>")
+    r = client.get("/trip/plan/thread?key=trip")
+    assert r.headers["content-type"].startswith("application/json")      # the drawer's thread is JSON, never markup the server wrote around someone's words...
+    assert r.json()["items"][0]["text"] == "<script>alert(1)</script>"
+    js = open(__import__("pathlib").Path(__file__).resolve().parent.parent / "assets" / "js" / "v2plan.js", encoding="utf-8").read()
+    assert "b.appendChild(document.createTextNode(i.text))" in js and "innerHTML = i.text" not in js      # ...and the script adds every word as a text node, so it is shown, not run
+
+
+def test_signed_out_gets_nothing(client):
+    assert client.get("/trip/plan/thread?key=trip", follow_redirects=False).status_code == 303      # through sign-in
+    assert client.post("/trip/family/message", data={"text": "hi"}, follow_redirects=False).status_code == 401
+    assert client.post("/trip/talk/message", data={"act": "a1", "text": "hi"}, follow_redirects=False).status_code == 401
+
+
+def test_a_message_names_its_trip_and_a_stale_tab_is_refused(client):
+    from gitaway import session as ses
+    book(client)
+    first = ses.trips(person("ari"))[0].id
+    book(client, f="f2")                                   # a second trip is opened; the old tab still shows the first
+    add(client, id="a1")
+    r = say(client, "into the old trip", trip=first)
+    assert r.status_code == 204                            # it went to the trip the tab was drawn for
+    assert [i for i in ft.items(person("ari")) if i["kind"] == "message"] == []      # not into the one open now
+    ari = person("ari")
+    second = ses.trips(ari)[0].id
+    assert ses.switch_trip(ari, first) and [i["text"] for i in ft.items(ari)] == ["into the old trip"]
+    ses.switch_trip(ari, second)
+    gone = say(client, "nowhere", trip="no-such-trip")
+    assert gone.status_code == 409 and "Reload" in gone.text and "Traceback" not in gone.text
+    plan = client.post("/trip/talk/message", data={"act": "a1", "text": "nowhere", "trip": "no-such-trip"}, headers={"X-Fragment": "1"})
+    assert plan.status_code in (400, 409) and "Traceback" not in plan.text and plan.text      # a plan of a trip the family does not have: refused in a sentence, nothing written

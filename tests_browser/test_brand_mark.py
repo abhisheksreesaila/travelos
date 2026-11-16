@@ -40,7 +40,7 @@ def _everywhere(browser, base_url, viewport, mode="light"):
     for path in ("/", "/signin", "/plan/matrix", "/guides", "/privacy"):
         look(path)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-    ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
+    ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
     for path in (f"/plan?to=hi&{TRIP}", "/creators", _creator(page, base_url), "/partners", "/trip/canvas?day=1", "/trip", "/family", "/trip/ask"):
         look(path)
     ctx.close()

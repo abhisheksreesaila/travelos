@@ -12,13 +12,6 @@ def test_roster_links_every_creator(client):
     assert 'action="/creators"' in html  # the paste box stays
 
 
-def test_profile_shows_bio_channel_and_trips(client):
-    h = client.get("/creators/aloha-mei").text
-    assert "Mei Tanabe" in h and "Honolulu slow honeymoon" in h and "203 forks" in h and "Couple friendly" in h
-    assert 'href="https://www.instagram.com/aloha.mei/"' in h
-    assert 'href="/plan?to=hi&amp;d=2027-02-12&amp;r=2027-02-19&amp;a=2"' in h
-
-
 def test_each_place_has_a_creator():
     assert {c.place for c in cp.CREATORS} == {"la", "sd", "hi", "nyc"}
     assert all(re.match(r"https://www\.(youtube|instagram)\.com/", c.channel) for c in cp.CREATORS)

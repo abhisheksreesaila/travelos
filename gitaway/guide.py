@@ -157,17 +157,17 @@ def from_trip(trip: Itinerary, *, stamped: str = "", private: list | None = None
                  not trip.real, src.byline if src else "", trip.author, handle if first and "." not in first else "", trip.real, stamped, list(private or []))      # no profile link while the byline is only the site (D-189)
 
 
-def plan_href(place: str, nights: int = 0) -> str:
+def plan_href(place: str, nights: int = 0, via: str = "") -> str:
     """"Plan this trip": booking's sentence (/plan/ask) with the guide's place as its Where to, and the guide's length as its dates (the matrix's own default first start day, so the reader
     changes them in the sentence); the place alone when GitAway does not know how to find it."""
     p = places.resolve(place)
     if not (p and p.known):
-        return "/plan/ask"
+        return "/plan/ask" + (f"?via={quote(via)}" if via else "")
     out = f"/plan/ask?to={quote(p.name)}"
     if nights:
         start = asksuggest.first_start()
         out += f"&d={start.isoformat()}&r={(start + timedelta(days=nights)).isoformat()}"
-    return out
+    return out + (f"&via={quote(via)}" if via else "")      # F-254: whose guide this is; /plan/ask turns it into the 30-day ga_via cookie when the click came from the creator's own page
 
 
 def is_guide(found) -> bool:

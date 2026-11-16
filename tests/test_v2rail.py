@@ -5,7 +5,7 @@ from html import unescape
 
 from gitaway import airportdrive, geo, interests, tripmatrix as tm, v2rail
 from gitaway.pages import tripmatrix as page
-from tests.test_plan_widgets import Router
+from tests.geo_support import Router
 from tests.test_signin import person, sign_in
 from tests.test_tripmatrix_page import MATRIX, real, sample  # noqa: F401 (fixtures)
 

@@ -1,4 +1,4 @@
-"""A real published trip without going through the editor: for the F-184 to F-186 tests, which care about what happens after a trip is live."""
+"""A real published trip without going through the editor: for the F-184 to F-186 tests, which care about what happens after a trip is live. Also TAHOE_TRIP, the captain's Lake Tahoe trip as the import reads it."""
 
 from gitaway import community
 from gitaway.itineraries import Day, Itinerary, Polaroid, Source, Stop
@@ -16,3 +16,25 @@ def live_trip(who="maya@example.com", name="Maya Chen", title="Three easy days i
                      stats=[("1 day", "from the post")], polaroids=pics, source=Source(f"{name} · Blog", "Their original post", "", "A photo from the post", source_url, "Read the original post", "From the blog") if source_url else None, author=name, real=True, handle=creator["handle"], plan_to=plan_to, plan_days=3)
     row = community.publish(s, trip, kind="scrapbook", meta={"handle": creator["handle"], "name": name, "place": plan_to})
     return row, creator["handle"], s
+
+
+TAHOE_TRIP = """trip:
+  title: Tahoe with the kids
+  destination: Lake Tahoe
+  start: 2026-12-19
+  end: 2026-12-26
+  booked_on: Expedia
+travelers:
+  - name: Ari
+  - name: Sam
+  - name: Kid 1
+    age: 8
+  - name: Kid 2
+    age: 11
+hotel:
+  name: Lakeside Cabin
+  address: 1 Lake Ave, South Lake Tahoe, CA 96150
+  check_in: 2026-12-19 16:00
+  check_out: 2026-12-26 10:00
+  confirmation: "TAHOE123"
+"""

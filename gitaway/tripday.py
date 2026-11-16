@@ -1,34 +1,15 @@
-"""The phone trip view's model (F-054): what is on today, what is next, and one line per day.
-
-Everything here is pure. The page is gitaway/pages/trip.py, which reads the family's trip the way the calendar does (gitaway.tripcal)
-and passes it in. "Today" is `catalog.today_in(zone)` and the minute of the day is `now_minute(zone)`, in the trip's own time zone (F-057), both pinned in
-tests (via `catalog.now_utc`). Nothing here reads a confirmation number: the cards carry titles, times and places only.
+"""A trip day as a timeline (F-054; trimmed by F-254 when the phone Today page retired): `phase` (before, during or after the trip), `timeline` (what the morning reminder reads), the booked blocks' places and
+Maps links. Pure: nothing here reads a confirmation number.
 """
 
-import importlib
 import re
 from dataclasses import dataclass, replace
-from urllib.parse import quote, quote_plus
-from zoneinfo import ZoneInfo
+from urllib.parse import quote_plus
 
-from gitaway import catalog, tripcal as cal, zones
+from gitaway import tripcal as cal, zones
 
-TZ = catalog.TZ
-DAY_TINTS = ("sun", "mint", "grape", "sky", "bubble")  # the calendar's day colours, in order
-_PHONE = re.compile(r"iPhone|iPod|Android.+Mobile|Windows Phone|Mobile Safari|Opera Mini|BlackBerry", re.I)
 _APPLE = re.compile(r"iPhone|iPad|iPod|Macintosh", re.I)
 _LEG = re.compile(r"\b([A-Z]{3}) → ([A-Z]{3})\b")
-
-
-def is_phone(ua) -> bool:
-    """A phone's browser (not a tablet's): the install's start page, /trip, is the day view for them as for everyone."""
-    return bool(_PHONE.search(ua or "")) and "iPad" not in (ua or "")
-
-
-def now_minute(zone=None) -> int:
-    """Minutes since midnight in a trip's time zone (default Los Angeles). Tests pin catalog.now_utc, or this."""
-    n = catalog.now_utc().astimezone(ZoneInfo(getattr(zone, "key", zone) or TZ.key))
-    return n.hour * 60 + n.minute
 
 
 def block_zone(block, dest_zone) -> str:
@@ -41,84 +22,13 @@ def block_zone(block, dest_zone) -> str:
     return dest_zone
 
 
-def clock_zone(plan, dest_zone) -> str:
-    """The zone the traveler is in now (F-057): the departure airport's until the arrival flight lands, then the destination's."""
-    if plan is None or not plan.legs or plan.arrive_leg is None:
-        return dest_zone
-    home = zones.AIRPORTS.get(plan.legs[0].origin)
-    if home is None or home == dest_zone:
-        return dest_zone
-    lands = plan.arrive_leg.arrive.replace(tzinfo=ZoneInfo(dest_zone))
-    return home if catalog.now_utc() < lands else dest_zone
-
-
-def clocks_for(zone_names, start) -> dict:
-    """{zone: (index of today in the trip, minute of the day)} for each zone, at the trip's first day `start`."""
-    return {z: ((catalog.today_in(z) - start).days, now_minute(z)) for z in set(zone_names)}
-
-
 def maps_url(place, ua="") -> str:
     """Apple Maps on Apple devices, Google Maps elsewhere. `place` is a name or address; nothing else goes in the link."""
     q = quote_plus(place)
     return f"https://maps.apple.com/?q={q}" if _APPLE.search(ua or "") else f"https://www.google.com/maps/search/?api=1&query={q}"
 
 
-def cached_coords(place):
-    """(latitude, longitude) of a place when gitaway.geo (F-068) already has it cached, else None. Cache only: this never makes a network call."""
-    try:
-        got = importlib.import_module("gitaway.geo").cached_coords(place)
-        lat, lon = float(got[0]), float(got[1])
-    except Exception:  # no geo module, no cached place, or a malformed answer
-        return None
-    return (lat, lon) if -90 <= lat <= 90 and -180 <= lon <= 180 else None
-
-
-def uber_url(address, coords=None) -> str:
-    """Uber's keyless deep link: pickup is the phone's own location, the dropoff address is filled in (and its latitude and longitude when known). '' when there is no address."""
-    if not address:
-        return ""
-    url = f"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]={quote(address, safe='')}"
-    return url + f"&dropoff[latitude]={coords[0]:.6f}&dropoff[longitude]={coords[1]:.6f}" if coords else url
-
-
-def drive_minutes(origin, destination):
-    """Minutes by car from one place to another, or None when not known. Asks gitaway.geo.drive_minutes (F-068) when that module exists."""
-    try:
-        geo = importlib.import_module("gitaway.geo")
-        fn = geo.drive_minutes
-    except (ImportError, AttributeError):
-        return None
-    try:
-        m = fn(origin, destination)
-    except Exception:  # a routing service that is down must not break Today
-        return None
-    return int(m) if isinstance(m, (int, float)) and not isinstance(m, bool) and m > 0 else None
-
-
-def leave_by(item, origin, minute, margin=0):
-    """(leave-by minute of the day, drive minutes, minutes left to leave) for an item reached from `origin`, or None when the drive time is unknown.
-    `minute` is the minute of the day now, in the item's own zone. `margin` is how early to be there (a departure flight, F-075)."""
-    if not (item and item.place and origin):
-        return None
-    m = drive_minutes(origin, item.place)
-    if m is None:
-        return None
-    at = item.start - margin - m
-    return at, m, at - minute
-
-
 DOMESTIC_EARLY, INTERNATIONAL_EARLY = 120, 180  # minutes to be at the airport before a departure (F-075)
-
-
-def flight_margin(origin, dest) -> int:
-    """Minutes to be at the airport before a flight from `origin` to `dest` (airport codes): 3 h international, else 2 h."""
-    return INTERNATIONAL_EARLY if zones.international(origin, dest) else DOMESTIC_EARLY
-
-
-def early_label(minutes) -> str:
-    """'2 h', '3 h', '1 h 30 min'."""
-    h, m = divmod(minutes, 60)
-    return f"{h} h" if not m else f"{h} h {m} min" if h else f"{m} min"
 
 
 def is_departure(block_id) -> bool:
@@ -161,25 +71,6 @@ class Item:
     overlaps: str = ""     # "Check out · Hotel and Lunch": what this plan sits on top of (F-086), shown as a small tag
 
 
-@dataclass(frozen=True)
-class Stay:
-    title: str      # "Your hotel tonight" | "Checking out today"
-    name: str
-    where: str
-    href: str = ""  # the trip details page, for an imported trip
-
-
-@dataclass(frozen=True)
-class DaySummary:
-    index: int
-    num: int
-    dow: str
-    tint: str
-    head: str
-    line: str
-    state: str      # done | today | later
-
-
 # ---- the phase of the trip ---------------------------------------------------------------------------------------------
 
 def phase(t, today):
@@ -189,10 +80,6 @@ def phase(t, today):
     if today > t.return_:
         return "after", (today - t.return_).days
     return "during", (today - t.depart).days
-
-
-def starts_in(n) -> str:
-    return "Trip starts tomorrow" if n == 1 else f"Trip starts in {n} days"
 
 
 # ---- one day's timeline ------------------------------------------------------------------------------------------------
@@ -281,62 +168,7 @@ def _mark(items, now, past):
     return out
 
 
-@dataclass(frozen=True)
-class Up:
-    kicker: str                # "UP NEXT · IN 40 MIN"
-    item: Item | None
-    detail: str = ""
-    uber: Item | None = None   # a ride still to schedule, else the one already set
-
-
-def up_next(items, now, tomorrow_first=None, clocks=None) -> Up:
-    """The dark card for today: what is happening now, else what is next, else 'all done' (with tomorrow's first item if there is one)."""
-    here = next((x for x in items if x.state == "now" and x.kind not in ("ride", "offer")), None)
-    nxt = next((x for x in items if x.state == "next"), None)
-    pending = [x for x in items if x.state != "done"]
-    uber = next((x for x in pending if x.kind == "offer"), None) or next((x for x in pending if x.kind == "ride"), None)
-    at = (lambda x: clocks[x.zone][1]) if clocks else (lambda x: now)  # the minute in the item's own zone
-    if here:
-        return Up(f"HAPPENING NOW · ENDS {until(here.end - at(here)).upper()}", here, span_label(here.start, here.end), uber)
-    if nxt:
-        return Up(f"UP NEXT · {until(nxt.start - at(nxt)).upper()}", nxt, span_label(nxt.start, nxt.end), uber)
-    if tomorrow_first:
-        return Up("ALL DONE TODAY", None, f"Tomorrow starts with {tomorrow_first.title} at {cal.fmt_time(tomorrow_first.start)}.")
-    return Up("ALL DONE TODAY", None, "Nothing else is planned. Add something fun?")
-
-
 # ---- one line per day, and the hotel card ----------------------------------------------------------------------------------
-
-def day_summaries(dates, blocks, acts, today_index):
-    last = len(dates) - 1
-    out = []
-    for i, d in enumerate(dates):
-        planned = sorted([x for x in acts if x.day == i], key=lambda x: (x.start, x.id))
-        booked = [b for b in blocks if b.day == i and b.kind != "ride"]
-        flies_in = i == 0 and any(b.id.startswith("b-out") and b.icon == "plane" for b in booked)
-        flies_home = i == last and any(b.id.startswith("b-back") and b.icon == "plane" for b in booked)
-        checks_in = any(b.title.startswith("Check in") for b in booked)
-        head = "Fly in · check in" if flies_in and checks_in else "Fly in" if flies_in else "Fly home" if flies_home else (planned[0].title if planned else "Wide open")
-        titles = [b.title.split(" · ")[0] if b.icon == "plane" else b.title for b in booked] + [x.title for x in planned]
-        line = " · ".join(titles[:4]) + (f" · and {len(titles) - 4} more" if len(titles) > 4 else "") if titles else "Nothing planned yet"
-        state = "today" if i == today_index else "done" if today_index is not None and i < today_index else "later"
-        out.append(DaySummary(i, d.day, d.strftime("%a").upper(), DAY_TINTS[i % 5], head, line, state))
-    return out
-
-
-def stay_card(b, dates, day) -> Stay | None:
-    """The hotel for the night of `day`, or the one you check out of that day, else None."""
-    last = len(dates) - 1
-    if cal.is_imported(b):
-        d = dates[day]
-        plan = cal.plan_of(b)
-        tonight = next((h for h in plan.hotels if h.check_in.date() <= d < h.check_out.date()), None)
-        leaving = next((h for h in plan.hotels if h.check_out.date() == d), None)
-        h = tonight or leaving
-        return Stay("Your hotel tonight" if tonight else "Checking out today", h.name, h.address or "", "/trip/details") if h else None
-    stay = cal.stay_of(b)
-    return Stay("Checking out today" if day == last else "Your hotel tonight", stay.name, stay.headline) if stay else None
-
 
 def hotel_place(b, dates, day) -> str:
     """The hotel's name and address, for Directions to the check in on `day`."""
@@ -350,13 +182,3 @@ def hotel_place(b, dates, day) -> str:
 
 
 # ---- the day as text to share (F-065) ------------------------------------------------------------------------------------
-
-def share_text(title, day, items, stay) -> str:
-    """A short plain-text summary of one day for Messages or WhatsApp: the date and trip, a line per booked item and plan (time and what),
-    and the hotel for the night. Never a price, a confirmation number, a note or a simulated Uber: only titles, times and the hotel's name and address."""
-    lines = [f"{day.strftime('%a %b')} {day.day} · {title}"]
-    shown = [x for x in items if x.kind not in ("ride", "offer")]
-    lines += [f"{cal.fmt_time(x.start)} {x.title}" for x in shown] or ["Nothing planned yet."]
-    if stay:
-        lines.append(f"{'Hotel tonight' if stay.title == 'Your hotel tonight' else stay.title}: {stay.name}" + (f", {stay.where}" if stay.where else ""))
-    return "\n".join(lines)

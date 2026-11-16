@@ -42,10 +42,6 @@ def resolve_theme(requested, trip: Itinerary) -> str:
     return requested if requested in THEMES else trip.theme
 
 
-def fork_href(trip):
-    return f"/signin?next=/trips/{trip.slug}&intent=fork"
-
-
 # ---------- hero ----------
 
 def _tag(t):
@@ -83,7 +79,6 @@ def _plan_note(trip):
 
 def _actions(trip, saved=False, forked=False):
     return Div(
-        A(icon("fork", 22, 2.4), "In your forks" if forked else "Fork this trip", href="/forks" if forked else fork_href(trip), cls="btn btn-primary btn-hero"),
         _plan_button(trip) if trip.real else Button(icon("share", 20), "Share", type="button", cls="btn btn-hero"),
         save_form(trip, saved),
         cls="hero-actions",
@@ -305,28 +300,6 @@ def _todo(trip):
         id="todo", cls="todo ga-wrap")
 
 
-# ---------- make it yours ----------
-
-def _yours(trip):
-    who = trip.source.byline.split(" · ")[0] if trip.source else trip.author
-    return Section(
-        Div(
-            H2("Make this trip yours"),
-            P(f"Fork it into your trips, then drop the days you love into your own calendar. "
-              f"The original stays exactly as {who} shared it."),
-            Div(A(icon("fork", 22, 2.4), "Fork this trip", href=fork_href(trip), cls="btn btn-primary btn-hero"),
-                _plan_button(trip) or A("Plan my own trip", href="/plan", cls="btn btn-hero"), cls="hero-actions"),
-            cls="yours-copy"),
-        Div(Div(cls="fork-back"),
-            Div(Span("YOUR FORKS", cls="fork-kicker"), Span(trip.title, cls="fork-title"),
-                Span(Span("Kid friendly", cls="tag fill-sun"), Span(f"{len(trip.days)} days", cls="tag fill-mint"),
-                     cls="fork-tags"),
-                Span("Apply to my trip", cls="fork-apply"), cls="fork-front"),
-            cls="fork-stack", aria_hidden="true"),
-        cls="yours ga-wrap",
-    )
-
-
 def plan_for_me_card(title, href, cls="pf-card ga-wrap", price=True):
     """"Want this built around your family?": the card that leads to Plan it for me (F-193). "" when it is not for sale here (no Stripe key in production)."""
     from gitaway import planforme as pfm, catalog  # here, not at the top: planforme reads the community database
@@ -377,7 +350,7 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _yours(trip), _todo(trip) if trip.real else "", plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _todo(trip) if trip.real else "", plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex: bool = False, waiting: bool = False):

@@ -291,7 +291,7 @@ def order_page(order, paid_back=False, trouble=""):
             body.append(P(TROUBLE[trouble], role="alert", cls="pf-error", id="pf-trouble"))
         body.append(Form(Button(icon("lock", 18, 2.4), f"Pay {catalog.money(order['amount_cents'])}", type="submit", cls="btn btn-primary pf-go", id="pf-pay"), action=f"{PATH}/{order['id']}/pay", method="post", cls="pf-act"))
     if status == "ready":
-        body.append(Div(A(icon("calendar", 20, 2.4), "Open your trip", href=f"/trip?trip={order['trip_id']}", cls="btn btn-primary pf-go", id="pf-open"), cls="pf-act"))
+        body.append(Div(A(icon("calendar", 20, 2.4), "Open your trip", href=f"/trip/plan?trip={order['trip_id']}", cls="btn btn-primary pf-go", id="pf-open"), cls="pf-act"))
         if order["sample"]:
             body.append(P("This is a sample trip: this copy of GitAway has no AI key, so the days are placeholders.", role="status", cls="pf-note", id="pf-sample"))
         body.append(_links(order))

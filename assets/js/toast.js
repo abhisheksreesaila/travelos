@@ -1,7 +1,7 @@
 // The one toast (F-108). GA.toast(text, opts) shows a short message as a light frosted pill at the top of the screen, just under the heading (assets/css/toast.css has the look).
 //
 //   GA.toast('Lunch moved to 12:30 PM', { undo: function () { ... } })      a clear Undo button inside it (the toast then stays 9 s instead of 4.5 s)
-//   GA.toast('Added 1 plan', { href: '/trip/canvas?day=1', label: 'See the day' })      a link inside it
+//   GA.toast('Added 1 plan', { href: '/trip/plan', label: 'See the plan' })      a link inside it
 //   GA.toast('Could not save that', { error: true })
 //   GA.hideToast(instant)                                                    fade it away (or remove it at once)
 //

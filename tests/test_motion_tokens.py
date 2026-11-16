@@ -29,8 +29,6 @@ def test_the_tokens_are_the_cards_spring_and_one_set():
     for token, value in (("--motion-spring-dur", "380ms"), ("--motion-spring", "cubic-bezier(.3, 1.12, .4, 1)"), ("--motion-dur", "240ms"), ("--motion-screen-dur", "340ms"), ("--motion-out", "cubic-bezier(.4, 0, .8, .4)"),
                          ("--motion-settle-dur", "280ms"), ("--motion-quick", "160ms"), ("--motion-fade", "120ms"), ("--motion-wiggle", "420ms")):
         assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", css), token
-    canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
-    assert ":root { --cz-dur: var(--motion-screen-dur); --cz-ease: var(--motion-zoom);" in canvas      # the canvas's levels zoom with a long soft landing, no overshoot (F-114, F-137)
 
 
 def test_no_animation_or_transition_duration_is_written_outside_the_tokens():
@@ -61,9 +59,7 @@ def test_no_script_gives_an_animation_a_duration_of_its_own():
 
 
 def test_every_sheet_menu_popover_toast_and_card_goes_through_the_helper():
-    for name, calls in (("ask_sheet.js", ("MO.open(", "MO.close(", "MO.spring(")), ("day_card.js", ("MO.open(", "MO.close(", "MO.spring(", "MO.flip(")), ("day_menu.js", ("MO.open(", "MO.close(")),
-                        ("ask.js", ("MO.open(", "MO.close(", "MO.reflow(")), ("toast.js", ("MO.open(", "MO.close(")), ("canvas_sos.js", ("GA.motion.open(", "GA.motion.close(")),
-                        ("pickers.js", ("MO.open(", "MO.close(")), ("workspace.js", ("MO.open(", "MO.close(", "MO.flip("))):
+    for name, calls in (("toast.js", ("MO.open(", "MO.close(")), ("pickers.js", ("MO.open(", "MO.close("))):
         text = (ASSETS / "js" / name).read_text(encoding="utf-8")
         for call in calls:
             assert call in text, (name, call)
@@ -74,16 +70,11 @@ def test_the_stand_in_for_the_helper_is_defined_once_and_no_script_carries_a_cop
     """F-110: a page whose motion.js did not load gets instant changes, never an error: from ONE stand-in (motion_fallback.js, loaded right after motion.js), not seven pasted copies."""
     stand_in = (ASSETS / "js" / "motion_fallback.js").read_text(encoding="utf-8")
     assert "GA.motion = {" in stand_in and "if (GA.motion) return;" in stand_in               # it yields to the real helper
-    for name in ("day_card.js", "ask_sheet.js", "day_menu.js", "ask.js", "toast.js", "pickers.js", "workspace.js"):
+    for name in ("toast.js", "pickers.js"):
         text = (ASSETS / "js" / name).read_text(encoding="utf-8")
         assert "var MO = window.GA.motion" in text, name
     copies = [p.name for p in (ASSETS / "js").glob("*.js") if "reflow: function" in p.read_text(encoding="utf-8")]
     assert copies == ["motion_fallback.js"], copies
-
-
-def test_the_wiggle_of_a_held_block_and_of_its_knobs_is_one_token():
-    grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
-    assert grid.count("animation: cz-wiggle var(--motion-wiggle)") == 2 and "cz-wiggle 0." not in grid
 
 
 def test_the_helper_is_on_every_page_before_the_toast():
@@ -96,9 +87,3 @@ def test_the_helper_is_on_every_page_before_the_toast():
 def test_the_screen_moves_use_the_spring_tokens():
     base = (ASSETS / "css" / "base.css").read_text(encoding="utf-8")
     assert "animation-duration: var(--motion-dur); animation-timing-function: var(--motion-ease)" in base          # the page changes (F-099): a quick calm cross-fade (F-114, F-116)
-    canvas = (ASSETS / "css" / "trip_canvas.css").read_text(encoding="utf-8")
-    assert "::view-transition-group(cz-hero) { animation-duration: var(--cz-dur); animation-timing-function: var(--motion-spring)" in canvas      # the tapped thing grows into the next level
-    assert "animation: cz-come-in var(--cz-dur) var(--cz-ease) both" in canvas                                                               # Day | Week
-    grid = (ASSETS / "css" / "day_grid.css").read_text(encoding="utf-8")
-    assert "animation: cz-pop var(--motion-settle-dur) var(--motion-spring)" in grid      # a new block (a moved one is GA.motion.land, F-112)
-    assert "GA.motion.land" in (ASSETS / "js" / "day_grid.js").read_text(encoding="utf-8")

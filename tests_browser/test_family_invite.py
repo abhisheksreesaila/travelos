@@ -28,7 +28,7 @@ def contexts(browser):
 def owner_page(contexts, base_url, viewport):
     ctx = contexts(viewport)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-    ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+    ctx.request.post(f"{base_url}/_test/pay", form=SAMPLE, max_redirects=0)
     page = ctx.new_page()
     page.goto(f"{base_url}/family")
     return page
@@ -117,7 +117,7 @@ def test_share_invite_copies_the_link_and_says_copied_where_sharing_is_not_avail
     ctx = contexts(DESKTOP)
     ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base_url)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-    ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+    ctx.request.post(f"{base_url}/_test/pay", form=SAMPLE, max_redirects=0)
     page = ctx.new_page()
     page.goto(f"{base_url}/family")
     link = invite_from_page(page, f"sam.kim@{uuid.uuid4().hex[:8]}.example.com", "viewer")
@@ -137,7 +137,7 @@ def test_share_invite_copies_the_link_when_the_share_sheet_fails_but_not_when_it
     ctx = contexts(DESKTOP)
     ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base_url)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
-    ctx.request.post(f"{base_url}/pay", form=SAMPLE, max_redirects=0)
+    ctx.request.post(f"{base_url}/_test/pay", form=SAMPLE, max_redirects=0)
     page = ctx.new_page()
     page.goto(f"{base_url}/family")
     link = invite_from_page(page, f"sam.kim@{uuid.uuid4().hex[:8]}.example.com", "viewer")

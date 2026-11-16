@@ -19,7 +19,7 @@ class Trip:
     adults: int = 2
 
     def plan_href(self):
-        return "/plan?" + urlencode({"to": self.place, "d": self.depart, "r": self.ret, "a": self.adults})
+        return "/plan/ask?" + urlencode({"to": self.place, "d": self.depart, "r": self.ret})
 
 
 @dataclass(frozen=True)

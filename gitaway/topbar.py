@@ -1,18 +1,18 @@
-"""The one top bar of the signed-in web (F-139; Direction A's top islands since F-200): the brand island (with the "Early preview" label), the nav pill
-Trip | Book | Family | Ask in the middle, and on the right the Beacon (the trip picker: an ink pill with the trip's live line while it is coming or under way), SOS and the avatar menu.
+"""The top bar of the signed-in web on the pages that are not v2 (the family page, the admin, the legal pages, the import of a trip already booked, sign-in's neighbours): the brand island, the nav pill
+Book | Plan | Guides in the middle and the avatar menu on the right. It says what the v2 bar (gitaway/v2.py, F-255) says, in Direction A's chrome; F-254 took out the old Trip, Family and Ask sections,
+the trip picker and SOS with the pages they opened.
 
-    bar()    the bar for this request's signed-in person ("" when signed out), drawn on every signed-in page; topbar.css shows it from 1020px up
-    STYLE    the stylesheet link, which layout.styles() adds to every page (the old header and the phone's tabs are unchanged below that width)
-    SCRIPT   topbar.js: the two menus and the "/" key
+    bar()    the bar for this request's signed-in person ("" when signed out); topbar.css shows it from 1020px up (the tablet and the phone keep the site header)
+    STYLE    the stylesheet link, which layout.styles() adds to every page
+    SCRIPT   topbar.js: the avatar menu
 
-The section marked is worked out from the request's path (`section`). Trip goes to /trip, which opens the open trip's day (today during the
-trip, else day 1); a family with no trip gets Start in its place. Ask and Family open what exists today (F-142 and F-143 dock them in a panel):
-Ask is the Ask box page (/trip/ask) and Family the family chat (/trip/family); "People and invites" in the avatar menu is the /family page.
+Book goes to the way in (`showcase.planning_path`), Plan to the trip's calendar (only with a trip), Guides to /guides; the avatar's menu holds Family members, Admin (the captain, with the count of
+reports not yet read), the light and dark switch and Sign out.
 """
 
 import logging
 
-from fasthtml.common import A, Button, Details, Div, Form, Header, Input, Kbd, Li, Nav, P, Script, Span, Summary, Ul
+from fasthtml.common import A, Button, Details, Div, Form, Header, Nav, Span, Summary
 
 from gitaway import session as ses, showcase
 from gitaway.icons import icon
@@ -25,18 +25,14 @@ SCRIPT_SRC = "/assets/js/topbar.js"
 
 
 def section(path: str) -> str:
-    """Which of Trip, Family and Ask a path belongs to: "ask", "family", "trip", or "" (the community and the like)."""
+    """Which of Book, Plan and Guides a path belongs to: "book", "plan", "guides", or "" (the family page and the like)."""
     p = (path or "").split("?")[0].rstrip("/") or "/"
-    if p == "/trip/canvas" and "panel=family" in (path or "").partition("?")[2].split("&"):
-        return "family"      # F-143: the day with the Family chats open in the panel
-    if p == "/trip/ask":
-        return "ask"
-    if p == "/trip/book":
-        return "book"      # F-200: Book this trip (F-198's lanes for the open trip)
-    if p == "/family" or p.startswith("/family/") or p == "/trip/family" or p.startswith("/trip/family/"):
-        return "family"
-    if p in ("/trip", "/plan", "/rides") or p.startswith(("/trip/", "/trips/build", "/trips/import", "/plan/")):
-        return "trip"
+    if p.startswith("/guides") or p.startswith("/creators"):
+        return "guides"
+    if p == "/trip/plan" or p.startswith("/trip/"):
+        return "plan"
+    if p.startswith(("/plan", "/trips/import", "/trips/build")):
+        return "book"
     return ""
 
 
@@ -44,74 +40,13 @@ def _link(label, href, key, current, ico=None, **extra):
     return A(icon(ico, 15, 2.2) if ico else "", label, href=href, cls=f"ga-tb-link ga-tb-{key}", aria_current="page" if key == current else None, **extra)
 
 
-def live(t) -> str:
-    """The Beacon's live line for the open trip (F-200): "in 12 days" (or "tomorrow") before it, "Day 2 of 5" during it, "" once it is over (the picker is then a plain island)."""
-    from gitaway import catalog
-    if t is None:
-        return ""
-    today = catalog.today()
-    if today < t.depart:
-        n = (t.depart - today).days
-        return "tomorrow" if n == 1 else f"in {n} days"
-    if today <= t.return_:
-        return f"Day {(today - t.depart).days + 1} of {(t.return_ - t.depart).days + 1}"
-    return ""
-
-
-def _trip_pick(trips, b, phone=False, label=(), sum_cls=""):
-    """The trip picker: the open trip's name and dates; its menu switches trips (POST /trips/switch, as the calendar's did) and plans or imports another.
-    `phone` is the same menu on a phone or tablet screen (topbar.css makes it a bottom sheet below 1020px and hides it above); its button is the `label` line the heading
-    already has (the eyebrow), with a small chevron, so the heading gets no extra row. A viewer cannot import."""
-    from gitaway import access, planforme as pfm, tripcal as cal
-    t = cal.trip("", b) if b else None
-    dates = cal.range_label(t.depart, t.return_) if t else ""
-    mine = [Li(Form(Input(type="hidden", name="trip", value=x.id), Input(type="hidden", name="next", value="/trip"),
-                    Button(Span(x.title, cls="ga-tb-sw-name"), Span(x.detail, cls="ga-tb-sw-dates"), type="submit", aria_current="true" if x.current else None, cls="ga-tb-sw"),
-                    action="/trips/switch", method="post")) for x in trips]
-    name = t.title if t else (trips[0].title if trips else "")
-    now = "" if phone else live(t)
-    summary = (Summary(*label, icon("chev-right", 12, 2.8, "ga-tb-chev"), cls=f"ga-tb-psum {sum_cls}".strip(), aria_label=f"Trip: {name}. Switch trips") if phone else
-               Summary(Span(icon("plane" if now else "sun", 15, 2.2), cls="ga-tb-tdot"), Span(name, cls="ga-tb-pickname"), Span(dates, cls="ga-tb-pickdates") if dates else "",
-                       Span(now, cls="ga-tb-live") if now else "", icon("chev-right", 14, 2.6, "ga-tb-chev"),
-                       cls="ga-tb-sum", aria_label=f"Trip: {name}{f', {now}' if now else ''}. Switch trips"))
-    return Details(
-        summary,
-        Div(Span("Your trips", cls="ga-tb-k") if len(trips) > 1 else P("This is your only trip so far. Add another and switch between them here.", cls="ga-tb-solo"),
-            Ul(*mine, cls="ga-tb-list") if len(trips) > 1 else "",
-            A(icon("plus", 16, 2.4), "Plan another trip", href=showcase.planning_path(), cls="ga-tb-item"),
-            A(icon("ticket", 16, 2.4), "Book this trip", href="/trip/book", cls="ga-tb-item", id=None if phone else "ga-tb-book") if t else "",   # F-198: the booking lanes for the open trip, any destination
-            A(icon("ledger", 16, 2.4), "Import a trip you booked", href="/trips/import", cls="ga-tb-item") if access.request_role() != "viewer" else "",
-            A(icon("share", 16, 2.4), "Publish this trip", href="/trip/publish", cls="ga-tb-item", id=None if phone else "ga-tb-publish") if access.request_role() != "viewer" else "",   # F-181: the trip as a creator page (ids on the bar's copy only: a phone's copy is on the same page)
-            A(icon("star", 16, 2.4), "Plan it for me", href="/plan-for-me", cls="ga-tb-item", id=None if phone else "ga-tb-planforme") if access.request_role() != "viewer" and pfm.offered() else "",   # F-193: an agent builds a whole trip
-            cls="ga-tb-pop ga-tb-pop-trip"),
-        cls="ga-tb-menu ga-tb-picker" + (" ga-tb-phonepick" if phone else "") + (" is-beacon" if now else ""))
-
-
-def trip_menu(*label, sum_cls=""):
-    """The trip menu for a phone or tablet screen (the bar is only there from 1020px), as the button of `label`, the heading's own eyebrow line.
-    "" when nobody is signed in or there is no trip (the caller then draws the plain label)."""
-    session = ses.request_session()
-    if ses.request_traveler() is None or session is None:
-        return ""
-    try:
-        trips = ses.trips(session)
-        b = ses.booking(session) if trips else None
-    except Exception:
-        log.exception("could not read the family's trips for the trip menu")
-        return ""
-    return _trip_pick(trips, b, phone=True, label=label, sum_cls=sum_cls) if trips and b is not None else ""
-
-
 def _me(who, new=0, admin=False):
-    """The avatar and its menu: who is signed in, People and invites, Guides, for the captain Admin with the count of reports not yet read
-    (F-196: a dot on the avatar says there is one) and Sign out."""
-    extra = [A(icon("star", 16, 2.2), "Guides", href="/guides", cls="ga-tb-item")]      # D-458, F-262: always; its page says when nothing is shared yet
+    """The avatar and its menu: who is signed in, Family members, for the captain Admin with the count of reports not yet read (F-196: a dot on the avatar says there is one) and Sign out."""
     return Details(
         Summary(Span(who.initials, cls=f"ga-tb-av fill-{who.color}"), Span(cls="ga-tb-dot-new") if new else "", cls="ga-tb-sum ga-tb-sum-me",
                 aria_label=f"{who.name}: account menu" + (f", {new} new report{'s' if new != 1 else ''}" if new else "")),
         Div(Span(who.name, cls="ga-tb-who"), Span(who.blurb, cls="ga-tb-mail"),
-            A(icon("users", 16, 2.2), "People and invites", href="/family", cls="ga-tb-item"),
-            *extra,
+            A(icon("users", 16, 2.2), "Family members", href="/family", cls="ga-tb-item"),
             A(icon("shield", 16, 2.2), "Admin", Span(f"{new} new", cls="ga-tb-new") if new else "", href="/admin", cls="ga-tb-item", id="ga-tb-admin") if admin else "",
             mode_switch("menu"),      # F-200: light, dark or the system's, remembered on this device
             Form(Button(icon("lock", 16, 2.2), "Sign out", type="submit", cls="ga-tb-item ga-tb-out"), action="/signout", method="post"),
@@ -132,25 +67,18 @@ def bar(path=None):
     if who is None or session is None:
         return ""
     try:
-        trips = ses.trips(session)
-        b = ses.booking(session) if trips else None
+        has_trip = bool(ses.trips(session)) and ses.booking(session) is not None
     except Exception:  # the bar must never take a page down: without the family's trips it shows the trip-less bar
         log.exception("could not read the family's trips for the top bar")
-        trips, b = [], None
-    from gitaway.pages import tripcanvas  # here, not at the top: that module draws pages with the shell, which draws this bar
+        has_trip = False
     current = section(path if path is not None else ses.request_path())
-    has_trip = bool(trips) and b is not None
-    return Header(       # F-200: three islands: the brand on the left, the nav pill in the middle, the Beacon, SOS and you on the right
+    return Header(       # F-200: three islands: the brand on the left, the nav pill in the middle, you on the right
         A("Skip to content", href="#main", cls="ga-skip"),
         Div(A(mark(), Span("GitAway", cls="ga-brand-name"), href="/", cls="ga-brand", aria_label="GitAway home"),
             preview(), cls="ga-tb-l"),       # the honest "Early preview" label, beside the brand
-        Nav(_link("Trip", "/trip/plan", "trip", current, "calendar") if has_trip else _link("Start", showcase.planning_path(), "trip", current, "plus"),
-            _link("Book", "/trip/book", "book", current, "ticket") if has_trip else "",
-            _link("Family", "/trip/family" if has_trip else "/family", "family", current, "users"),
-            A(icon("mic", 15, 2.2), "Ask", Kbd("/", cls="ga-tb-kbd"), href="/trip/ask", cls="ga-tb-link ga-tb-ask", id="ga-tb-ask", aria_current="page" if current == "ask" else None,
-              aria_keyshortcuts="/"),
+        Nav(_link("Book", showcase.planning_path(), "book", current, "ticket"),
+            _link("Plan", "/trip/plan", "plan", current, "calendar") if has_trip else "",
+            _link("Guides", "/guides", "guides", current, "star"),
             cls="ga-tb-nav", aria_label="Sections"),
-        Div(_trip_pick(trips, b) if has_trip else "",
-            A(icon("life", 15, 2.4), Span("SOS"), href=tripcanvas.curl(sos=True), cls="ga-tb-sos", aria_label="Emergency: call 911 and your people") if has_trip else "",
-            _me(who, *_admin_notice(session)), cls="ga-tb-r"),
+        Div(_me(who, *_admin_notice(session)), cls="ga-tb-r"),
         cls="ga-topbar", data_topbar="1")

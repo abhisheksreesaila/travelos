@@ -1,14 +1,16 @@
 """F-182 (M2): content that was taken down, or unpublished, can still be deleted by its owner, and deleting really deletes: the snapshot, the picture files, the draft. The takedowns row stays,
-so a taken-down address can never come back. (This reverses the second half of D-106, "the owner cannot unpublish a taken-down trip": see D-120.)"""
+so a taken-down address can never come back. (This reverses the second half of D-106, "the owner cannot unpublish a taken-down trip": see D-120.) A creator's draft is the path the v2 journey still has
+(`drafted`, tests/test_creator_import.py); a family's own published trip (the retired editor) is set up through the models."""
 
 import pytest
 
-from gitaway import community, publish
+from gitaway import community, familydb, publish, session as ses
 from gitaway import creatordraft as cd
 from tests.creator_import_support import with_edits
+from tests.live_trips import live_trip
 from tests.test_creator_import import drafted, fields_of, me, model, named, save, web  # noqa: F401  (fixtures and helpers)
-from tests.test_publish import family, go_live, stranger  # noqa: F401
 from tests.test_signin import person, tid
+from tests.test_trip_import import imported
 
 
 def _live_with_a_picture(client, did):
@@ -18,6 +20,23 @@ def _live_with_a_picture(client, did):
     slug = cd.get(tid(), did)["slug"]
     assert (publish.root() / slug).is_dir() and list((publish.root() / slug).iterdir())
     return slug
+
+
+def test_deleting_a_family_trip_removes_a_taken_down_page_and_its_files_too(client):
+    imported(client)
+    s = person()
+    row, _, _ = live_trip(who="ari", title="Our family week")
+    slug = row["slug"]
+    folder = publish.root() / slug
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / ("a" * 16 + "-display.jpg")).write_bytes(b"\xff\xd8x")
+    with ses.family(s) as fam:
+        trip_id = fam.trip_id
+        with familydb.transaction(fam.db):
+            familydb.run(fam.db, "INSERT INTO publications (trip_id, slug, published_by, published_at) VALUES (:t, :s, :u, :a)", t=trip_id, s=slug, u=s["user_id"], a=familydb.now())
+    community.take_down(slug)
+    publish.take_down_trip(s, trip_id)
+    assert community.get(slug, hidden=True) is None and not (publish.root() / slug).exists()
 
 
 def test_the_owner_can_unpublish_a_trip_the_captain_took_down_and_it_is_really_gone(drafted):
@@ -73,25 +92,3 @@ def test_the_editor_offers_delete_with_a_confirm_step(drafted):
     client, did = drafted
     html = client.get(f"/creators/import/{did}").text
     assert 'id="ci-delete"' in html and 'value="delete"' in html
-
-
-def test_a_family_trip_taken_down_by_the_captain_can_still_be_unpublished_by_its_owner(family):
-    client, pid = family
-    row = go_live(client, pid)
-    slug = row["slug"]
-    community.take_down(slug)
-    assert client.post("/trip/publish/unpublish", follow_redirects=False).status_code == 303
-    assert community.get(slug, hidden=True) is None and community.is_down(slug) and not (publish.root() / slug).exists()
-
-
-def test_deleting_a_family_trip_removes_a_taken_down_page_and_its_files_too(family):
-    client, pid = family
-    row = go_live(client, pid)
-    slug = row["slug"]
-    community.take_down(slug)
-    s = person()
-    from gitaway import familydb, session as ses
-    with ses.family(s) as fam:
-        trip_id = familydb.row(fam.db, "SELECT trip_id FROM publications WHERE slug = :s", s=slug)["trip_id"]
-    publish.take_down_trip(s, trip_id)
-    assert community.get(slug, hidden=True) is None and not (publish.root() / slug).exists()

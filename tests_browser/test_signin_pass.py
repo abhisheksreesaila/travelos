@@ -97,7 +97,16 @@ def test_the_dev_summary_shows_a_chevron_that_turns_when_open(open_signin):
 def test_the_sunset_half_reads_in_both_modes(browser, base_url, scheme):
     """F-240 (D-550): the laptop's left half is the story's colours; its words and the postcards' icons must read on them in light and dark
     (white words on each stop of the gradient 4.5:1, the yellow line is large text 3:1, each postcard's icon on its card 3:1)."""
-    from tests_browser.test_bubbles import contrast
+    def lum(rgb):
+        def ch(v):
+            v /= 255
+            return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+        return 0.2126 * ch(rgb[0]) + 0.7152 * ch(rgb[1]) + 0.0722 * ch(rgb[2])
+
+    def contrast(a, b):
+        hi, lo = sorted((lum(a), lum(b)), reverse=True)
+        return (hi + 0.05) / (lo + 0.05)
+
     ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce", color_scheme=scheme)
     try:
         page = ctx.new_page()

@@ -78,8 +78,6 @@ def _field(label, name, value="", **attrs):
     return Label(Span(label, cls="hp-lab"), Input(name=name, value=value, **attrs), cls="pz-field")
 
 
-# ---- Help: the "Passes & documents" section ------------------------------------------------------------------------------
-
 def _flight_form(f=None, back=""):
     """Add a flight, or fix one that was added by hand (f is its dict). `back`: a canvas address to return to (F-093)."""
     f = f or {}
@@ -176,82 +174,6 @@ def _flight_block(f, ps, can_edit, names, n):
     return Div(head, *cards, Div(*tools, cls="pz-tools") if tools else "", cls="hp-card pz-flight", id=f"pz-flight-{n}", data_flight=f["key"])
 
 
-def section(request, session, can_edit):
-    """The Help tab's "Passes & documents": a block per flight, the form to add a flight, and a line about who sees it."""
-    fl, ps = passes.flights(session), passes.listing(session)
-    names = passes.travellers(session)
-    err = request.query_params.get("err", "")
-    problem = Div(passes.ERRORS[err], role="alert", cls="hp-problem", id="pz-problem") if err in passes.ERRORS else ""
-    blocks = [_flight_block(f, ps.get(f["key"], []), can_edit, names, n) for n, f in enumerate(fl)]
-    if not blocks:
-        blocks = [Div(P("No flights on this trip yet." + (" Add one to keep everyone's seats and boarding passes in one place." if can_edit else ""), cls="hp-empty", id="pz-none"), cls="hp-card")]
-    add = Details(Summary(icon("plus", 16, 2.4), "Add a flight", cls="tp-mini hp-fix-sum"), _flight_form(), cls="hp-fix pz-addflight", id="pz-add-flight", data_fix="add-flight") if can_edit else ""
-    return Div(
-        Div(Span("HELP · FAMILY ONLY", cls="hp-k"), H2("Passes & documents", cls="pz-title"), cls="pz-head"),
-        problem, *blocks, add,
-        Div(icon("shield", 18, 2.4), Span(Span("Only your family sees these.", cls="pz-bold"), " Apple Wallet passes come from the airline's app; add them there, and keep a copy here for the gate."), cls="pz-priv"),
-        cls="pz", id="hp-passes")
-
-
-# ---- Today: the flight on its day ---------------------------------------------------------------------------------------------
-
-def flight_cards(v):
-    """(focal card, calm cards, titles of the timeline items the focal card replaces) for the flights that leave on the day Today is showing.
-
-    The focal card (dark, pulsing, "Show everyone's passes") is only for the flight's own day, today, before it leaves. On any other day, or once
-    it has left, the flight is a calm card: no pulse, and a way to the gate only on a day still to come."""
-    if v["phase"] != "during":
-        return "", "", ()
-    session, day = v["session"], v["dates"][v["sel"]]
-    todays = [f for f in passes.flights(session) if f["date"] == day]
-    if not todays:
-        return "", "", ()
-    allp, can_edit, focal, calm, hide = passes.listing(session), access.can_edit(v["role"]), [], [], []
-    for n, f in enumerate(todays):
-        zone = passes.flight_zone(f, v["zone"])
-        ps = allp.get(f["key"], [])
-        if f["source"] == "import" and not ps:
-            continue   # an imported flight is already an ordinary item of the day; it gets a card of its own once it has passes
-        boards = boards_of(ps)
-        if v["sel"] == v["today_idx"] and catalog.today_in(zone) == day:
-            minute = td.now_minute(zone)
-            if minute >= f["depart_min"]:
-                calm.append(_calm_card(f, n, "DEPARTED", ps, link=False))
-                continue
-            kicker = f"BOARDING {td.until(boards - minute).upper()}" if boards is not None and minute < boards else f"DEPARTS {td.until(f['depart_min'] - minute).upper()}"
-        else:
-            calm.append(_calm_card(f, n, f"FLIGHT · {day.strftime('%a %b').upper()} {day.day}", ps, link=day >= catalog.today_in(zone)))
-            continue
-        hide.append(f"{f['name']} · {f['origin']} → {f['dest']}")
-        stats = [(label, val) for label, val in (("BOARDING", clock(boards) if boards is not None else ""), ("GATE", gate_of(ps)), ("SEATS", seats_of(ps))) if val]
-        groups = {p["grp"] for p in ps if p["grp"]}
-        if ps:
-            action = A(icon("ticket", 18, 2.4), "Show everyone's passes", href=gate_url(f["key"]), cls="tp-btn tp-btn-coral", id=f"pz-show-{n}", data_show_passes=f["key"])
-        elif can_edit:
-            action = A(icon("plus", 18, 2.4), "Add the boarding passes", href="/trip/help#hp-passes", cls="tp-btn tp-btn-coral", id=f"pz-show-{n}")
-        else:
-            action = Span("No passes added yet.", cls="tp-up-sub", id=f"pz-show-{n}")
-        focal.append(Div(
-            Span(Span(cls="tp-pulse", aria_hidden="true"), kicker, cls="tp-kicker"),
-            Span(Span(f["origin"]), icon("plane", 26, 2.2), Span(f["dest"]), cls="tp-up-title pz-route"),
-            Span(flight_line(f), cls="tp-up-sub"),
-            Div(*[Div(Span(k, cls="pz-sk"), Span(val, cls="pz-sv")) for k, val in stats], cls="pz-stats") if stats else "",
-            action,
-            Span(f"Group {next(iter(groups))}, all {len(ps)} together" if len(groups) == 1 and len(ps) > 1 else "", cls="tp-up-sub pz-grp") if groups else "",
-            cls="tp-up pz-up", id="tp-up" if not focal else f"tp-up-{n}", data_flight=f["key"]))
-    return (Div(*focal, cls="pz-stack") if focal else ""), (Div(*calm, cls="pz-stack") if calm else ""), tuple(hide)
-
-
-def _calm_card(f, n, kicker, ps, link):
-    """A quiet card for a flight that is not about to board: when and where, the passes' seats, and (for a day still to come) the way to the gate."""
-    seats = seats_of(ps)
-    return Div(Span(icon("plane", 16, 2.4), kicker, cls="pz-calm-k"),
-               Span(f"{f['origin']} → {f['dest']}", cls="pz-calm-t"),
-               Span(flight_line(f) + (f" · Seats {seats}" if seats else ""), cls="tp-sub"),
-               A(icon("ticket", 16, 2.4), "Show everyone's passes", href=gate_url(f["key"]), cls="tp-mini pz-calm-a", id=f"pz-calm-show-{n}") if link and ps else "",
-               cls="pz-calm", id=f"tp-flight-{n}", data_flight=f["key"])
-
-
 # ---- the gate view ----------------------------------------------------------------------------------------------------------
 
 def _slide(p, f, i, n):
@@ -272,9 +194,8 @@ def _slide(p, f, i, n):
 
 
 def _today(session):
-    """Where Close goes: today's day view, where the flight card with everyone's passes is (F-201: a bare /trip is the cockpit now). A late import: the canvas imports this module."""
-    from gitaway.pages import tripcanvas
-    return tripcanvas.today_url(session)
+    """Where Close goes: the plan."""
+    return "/trip/plan"
 
 
 def gate_page(session, f, ps):
@@ -330,15 +251,15 @@ def _signed_in(session):
 
 
 def safe_back(url):
-    """A canvas address a form may return to after saving (F-093), else ""."""
-    return url if isinstance(url, str) and url.startswith("/trip/canvas") and not url.startswith("//") and len(url) < 300 and "\n" not in url else ""
+    """A booking's address a form may return to after saving (F-093, F-254), else ""."""
+    return url if isinstance(url, str) and url.startswith("/trip/booking") and not url.startswith("//") and len(url) < 300 and "\n" not in url else ""
 
 
-def _back(err="", anchor="hp-passes", to=""):
-    """Back to where the form was: the canvas sheet it was opened in (with `err=` when it was refused, for the sheet to say why), else Help."""
+def _back(err="", to=""):
+    """Back to where the form was: the booking it was opened in (with `err=` when it was refused, for the page to say why), else the plan."""
     if to:
         return RedirectResponse(to + (f"{'&' if '?' in to else '?'}err={err}" if err else ""), status_code=303)
-    return RedirectResponse(("/trip/help" + (f"?err={err}" if err else "")) + f"#{anchor}", status_code=303)
+    return RedirectResponse("/trip/plan", status_code=303)
 
 
 def register(app):
@@ -402,10 +323,10 @@ def register(app):
             return r
         f = next((x for x in passes.flights(session) if x["key"] == flight), None)
         if f is None:
-            return RedirectResponse("/trip/help", status_code=303)
+            return RedirectResponse("/trip/plan", status_code=303)
         ps = passes.listing(session).get(flight, [])
         if not ps:
-            return RedirectResponse("/trip/help#hp-passes", status_code=303)
+            return RedirectResponse("/trip/plan", status_code=303)
         return gate_page(session, f, ps)
 
     @app.get("/trip/passes/{pid}/{size}")

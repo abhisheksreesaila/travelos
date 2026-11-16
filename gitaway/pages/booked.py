@@ -84,8 +84,7 @@ def _flight(v, i, leg, can_edit, back):
 
 
 def _demo_flight(v, x, can_edit):
-    note = Span("Boarding passes are added on the trip's flights.", cls="hp-addr")
-    return ["Flight"], x.name, [note, A(icon("ticket", 18, 2.4), "Add the boarding passes", href="/trip/help#hp-passes", cls="tp-btn tp-btn-white", id="bk-add-passes") if can_edit else ""]
+    return ["Flight"], x.name, [Span("Boarding passes are added on the trip's flights.", cls="hp-addr")]
 
 
 def _added_flight(v, f, can_edit, back, gone):

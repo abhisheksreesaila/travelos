@@ -13,7 +13,6 @@ from starlette.responses import RedirectResponse
 from gitaway import session as ses, showcase
 from gitaway.pages import cover
 
-COCKPIT = "/trip/cockpit"
 
 
 def footer_links():

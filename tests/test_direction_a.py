@@ -117,22 +117,6 @@ def preview_on(html):
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(0))).strip() if m else ""
 
 
-def test_the_early_preview_label_is_in_the_shell_signed_out_and_signed_in(client):
-    """The brief's "What" 1: an honest "Early preview" label, small, in the shell: the site header, sign-in, the booking workspace, and once signed in the top bar
-    and the phone's trip screens. It opens one short line."""
-    from tests.test_calendar import book
-    line = "Early preview GitAway is new. Things will change; tell us what breaks."
-    for path in ("/", "/signin", "/plan/matrix", "/plan/ask", "/creators", "/for-creators", "/plan-for-me", "/plan?to=la&d=2027-03-05&r=2027-03-09&a=2"):
-        assert preview_on(client.get(path).text) == line, path
-    book(client)
-    for path in ("/plan/matrix", "/plan/ask", "/family", "/trip/canvas", "/trip/canvas?day=1", "/trip/family", "/trip/ask"):
-        html = client.get(path).text
-        assert preview_on(html) == line, path
-    canvas = client.get("/trip/canvas").text
-    assert len(PREVIEW.findall(canvas)) == 2      # the laptop's top bar and the phone's row; topbar.css and phone.css show one per width
-    assert 'class="ph-preview"' in canvas
-
-
 def test_tell_us_what_breaks_writes_to_the_contact_address_only_when_there_is_one(client, monkeypatch):
     monkeypatch.delenv("GITAWAY_CONTACT_EMAIL", raising=False)
     assert "mailto:" not in PREVIEW.search(client.get("/plan/matrix").text).group(0)

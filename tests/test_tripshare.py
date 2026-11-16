@@ -7,7 +7,7 @@ import re
 import pytest
 from PIL import Image
 
-from gitaway import catalog, geopack, tripshare
+from gitaway import catalog, tripshare
 from tests import tahoe
 from tests.test_signin import person, sign_in
 
@@ -21,8 +21,6 @@ def at(monkeypatch, utc):
 
 @pytest.fixture
 def tahoe_trip(client, monkeypatch):
-    monkeypatch.setattr(geopack, "TRANSPORT", tahoe.pack_transport)
-    monkeypatch.setattr(geopack, "LONG_SIDE", 512)
     sign_in(client)
     tahoe.seed(client, monkeypatch)
     at(monkeypatch, tahoe.NOW)
@@ -92,8 +90,8 @@ def test_art_is_found_for_a_place_named_with_more_words():
 
 # ---- the sheet -------------------------------------------------------------------------------------------------------------------------------
 
-def test_the_cockpit_has_the_button_and_it_opens_the_sheet(tahoe_trip):
-    cockpit = tahoe_trip.get("/trip/cockpit").text
+def test_the_plan_has_the_button_and_it_opens_the_sheet(tahoe_trip):
+    cockpit = tahoe_trip.get("/trip/plan").text
     assert re.search(r'<a [^>]*href="/trip/share"[^>]*id="sh-open"[^>]*>', cockpit) and "Share to Instagram" in cockpit
     assert "/assets/js/share.js" in cockpit and "/assets/css/share.css" in cockpit
 
@@ -213,7 +211,7 @@ def test_a_viewer_gets_403_everywhere_and_nothing_is_written(tahoe_trip, monkeyp
     assert tahoe_trip.post("/trip/share", data={"names": "1", "exact": "1"}, headers=hdr).status_code == 403
     assert tahoe_trip.post("/trip/share/off", headers=hdr).status_code == 403
     assert rows() == before and tripshare.find(token).names == ""      # not changed, not stopped
-    assert 'id="sh-open"' not in tahoe_trip.get("/trip/cockpit").text      # and the cockpit does not offer it
+    assert 'id="sh-open"' not in tahoe_trip.get("/trip/plan").text      # and the plan does not offer it
 
 
 def test_a_viewer_cannot_start_a_share_for_a_trip_that_has_none(tahoe_trip, monkeypatch):

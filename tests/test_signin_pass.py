@@ -25,22 +25,6 @@ def test_generic_pass_without_context(client):
     assert "SFO" in html and "LAX" in html  # the fallback route codes on the sky
 
 
-def test_search_pass_after_a_search(client):
-    html = get(client, SEARCH, "pay")
-    assert 'data-pass="search"' in html and "San Francisco to Los Angeles." in html
-    assert "SFO → LAX" in html and "Oct 16 – 20" in html and "4 nights" in html and "2 adults, 2 kids" in html
-    assert "Sign in to book this trip" in html  # the intent title stays
-
-
-def test_pay_url_is_a_search_too(client):
-    assert 'data-pass="search"' in get(client, "/plan/pay?f=f1&h=h1&c=none", "pay")
-
-
-def test_search_pass_uses_the_asked_dates_and_party(client):
-    html = get(client, "/plan?d=2026-11-02&r=2026-11-05&a=3&k=", "save")
-    assert "Nov 2 – 5" in html and "3 nights" in html and "3 adults" in html
-
-
 def test_fork_pass_has_the_trip_and_no_creator(client):
     for intent in ("fork", "save", "publish"):
         html = get(client, FORK, intent)
@@ -82,11 +66,6 @@ def test_google_button_only_with_keys(client, monkeypatch):
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
     html = get(client, SEARCH, "pay")
     assert "Continue with Google" in html and 'id="si-google"' in html and "/login?next=" in html
-
-
-def test_cancel_and_round_trip_stay(client):
-    html = get(client, "/plan/pay?f=f1&h=h1&c=none", "pay")
-    assert 'href="/plan?f=f1&amp;h=h1&amp;c=none"' in html and 'name="next" value="/plan/pay?f=f1&amp;h=h1&amp;c=none"' in html
 
 
 def test_the_half_beside_the_card_is_decorative_and_has_the_route_codes(client):

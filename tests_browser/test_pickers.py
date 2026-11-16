@@ -26,7 +26,7 @@ def make(browser, base_url):
         contexts.append(ctx)
         if signed_in:
             ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"})
-            ctx.request.post(f"{base_url}/pay", form={"f": "f1", "h": "h1", "c": "c1"})
+            ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"})
         page = ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))

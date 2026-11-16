@@ -80,24 +80,6 @@ def rows(html):
     return [(unescape(a), unescape(b)) for a, b in re.findall(r'<span class="fk-ptitle">([^<]*)</span><span class="fk-when">([^<]*)</span>', html)]
 
 
-def test_a_forks_preview_gives_untimed_stops_their_slots(client):
-    slug = publish_trip(days=1)
-    book(client)
-    fork_it(client, slug)
-    html = client.get(f"/forks?open={slug}").text
-    assert rows(html) == [("Surfjack Hotel", "Fri 16 · 9:00 AM – 11:00 AM"), ("Pearl Harbor tour", "Fri 16 · 1:00 PM – 3:00 PM"), ("Hanauma Bay", "Fri 16 · 6:00 PM – 8:00 PM")]
-
-
-def test_applying_it_puts_them_on_the_calendar_at_those_times(client):
-    slug = publish_trip(days=2)
-    book(client)
-    fork_it(client, slug)
-    r = client.post("/forks/apply", data={"slug": slug, "pick": ["d1s0", "d1s1", "d1s2", "d2s0"]}, follow_redirects=False)
-    assert r.status_code == 303
-    got = [(a["d"], cal.fmt_time(a["s"]), a["t"]) for a in stored_calendar()["a"]]
-    assert got == [(0, "9:00 AM", "Surfjack Hotel"), (0, "1:00 PM", "Pearl Harbor tour"), (0, "6:00 PM", "Hanauma Bay"), (1, "9:00 AM", "Surfjack Hotel")]
-
-
 # ---- no trip yet ----------------------------------------------------------------------------------------------------------------------------
 
 def trips_of(client):
@@ -106,57 +88,12 @@ def trips_of(client):
         return [(t["title"], t["depart"], t["return_on"]) for t in familydb.trips(fam.db)]
 
 
-def test_a_family_with_no_trip_sees_what_applying_will_do(client):
-    slug = publish_trip(days=3)
-    sign_in(client)
-    fork_it(client, slug)
-    html = client.get(f"/forks?open={slug}").text
-    assert len(rows(html)) == 9
-    text = unescape(re.sub(r"<[^>]+>", " ", html))
-    assert "Applying this starts your trip" in text and "3 days in Honolulu, Hawaii" in text and "Your calendar fills in once you have a trip" not in text
-    assert re.search(r'id="fk-apply"[^>]*>Start my trip with 9 plans<', html) and "Book a trip and you can drop" not in html
-
-
-def test_applying_a_fork_with_no_trip_makes_one_with_the_creators_place_and_length_and_adds_the_plans(client):
-    slug = publish_trip(days=3)
-    sign_in(client)
-    fork_it(client, slug)
-    r = client.post("/forks/apply", data={"slug": slug, "pick": [f"d{d}s{i}" for d in (1, 2, 3) for i in (0, 1, 2)]}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"].startswith(f"/forks?applied=") and f"src={slug}" in r.headers["location"]
-    [(title, depart, back)] = trips_of(client)
-    assert title == "Trip to Honolulu, Hawaii" and (cal.date.fromisoformat(back) - cal.date.fromisoformat(depart)).days + 1 == 3
-    assert (cal.date.fromisoformat(depart) - cal.date.today()).days == 30
-    t = cal.trip_of(ses.booking(person("ari")))
-    assert t.destination_name == "Honolulu, Hawaii" and len(cal.days(t)) == 3
-    assert len(stored_calendar()["a"]) == 9
-    html = client.get(r.headers["location"]).text
-    assert "Added 9 plans from Maya Chen" in html and "Undo" in html
-
-
-def test_applying_again_does_not_make_a_second_trip(client):
-    slug = publish_trip(days=1)
-    sign_in(client)
-    fork_it(client, slug)
-    for _ in range(2):
-        client.post("/forks/apply", data={"slug": slug, "pick": ["d1s0", "d1s1", "d1s2"]}, follow_redirects=False)
-    assert len(trips_of(client)) == 1 and len(stored_calendar()["a"]) == 3
-
-
 def test_a_family_that_already_has_a_trip_never_gets_another(client):
     slug = publish_trip(place="Los Angeles, California", plan_to="la", days=1)
     book(client)
     fork_it(client, slug)
     client.post("/forks/apply", data={"slug": slug, "pick": ["d1s0"]}, follow_redirects=False)
     assert len(trips_of(client)) == 1
-
-
-def test_a_long_creator_trip_is_capped_at_the_most_days_a_trip_can_have(client):
-    slug = publish_trip(days=14)
-    sign_in(client)
-    fork_it(client, slug)
-    client.post("/forks/apply", data={"slug": slug, "pick": ["d1s0"]}, follow_redirects=False)
-    [(_, depart, back)] = trips_of(client)
-    assert (cal.date.fromisoformat(back) - cal.date.fromisoformat(depart)).days + 1 == 14
 
 
 def test_no_trip_and_nothing_picked_makes_no_trip(client):
@@ -172,30 +109,6 @@ def test_no_trip_and_nothing_picked_makes_no_trip(client):
 def warning(html):
     m = re.search(r'<div[^>]*id="fk-place"[^>]*>(.*?)</div>', html, re.S)
     return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", m.group(1)))).strip() if m else None
-
-
-def test_a_fork_for_another_place_says_so_and_offers_to_apply_anyway(client):
-    slug = publish_trip(place="Honolulu, Hawaii", plan_to="hi", days=1)
-    book(client)      # a trip to Los Angeles
-    fork_it(client, slug)
-    html = client.get(f"/forks?open={slug}").text
-    assert warning(html) == "This trip is for Honolulu, Hawaii, but your trip is to Los Angeles. Its plans would land on days in the wrong place."
-    assert re.search(r'id="fk-apply"[^>]*>Apply 3 plans anyway<', html) and 'role="alert"' in re.search(r'<div[^>]*id="fk-place"[^>]*>', html).group(0)
-
-
-def test_a_fork_for_the_same_place_has_no_warning(client):
-    slug = publish_trip(place="Los Angeles, California", plan_to="la", days=1)
-    book(client)
-    fork_it(client, slug)
-    html = client.get(f"/forks?open={slug}").text
-    assert warning(html) is None and re.search(r'id="fk-apply"[^>]*>Apply 3 plans<', html)
-
-
-def test_a_place_the_catalog_does_not_know_is_compared_by_its_name(client):
-    slug = publish_trip(slug="yosemite-a1b2c3", place="Yosemite National Park", plan_to="", days=1)
-    book(client)
-    fork_it(client, slug)
-    assert warning(client.get(f"/forks?open={slug}").text) == "This trip is for Yosemite National Park, but your trip is to Los Angeles. Its plans would land on days in the wrong place."
 
 
 @pytest.mark.parametrize("fork_place,mine", [("Los Angeles, California", "Los Angeles"), ("Anaheim, California", "Los Angeles"), ("Disneyland Resort, Anaheim", "Los Angeles"), ("Honolulu, Hawaii", "Honolulu"),

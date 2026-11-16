@@ -72,15 +72,6 @@ def _offline_maps(monkeypatch):
     around.clear_cache()
     monkeypatch.setattr(around.GATE, "gap", 0.0)
     monkeypatch.setattr(around.GATE, "shut_until", None)
-    from gitaway import geopack   # F-201: nor the paper map's pack (Overpass, the terrain tiles); a pack builds in the test's own thread, its gates start open
-    def refuse_pack(url, data=None, timeout=0):
-        raise OSError("the network is off in tests")
-    monkeypatch.setattr(geopack, "TRANSPORT", refuse_pack)
-    monkeypatch.setattr(geopack, "ASYNC", False)
-    for gate in (geopack.OVERPASS_GATE, geopack.TILE_GATE):
-        monkeypatch.setattr(gate, "gap", 0.0)
-        monkeypatch.setattr(gate, "shut_until", None)
-    geopack.forget_failures()
 
 
 @pytest.fixture(autouse=True)
@@ -143,6 +134,18 @@ def slow_server():
 @pytest.fixture(scope="session")
 def base_url():
     from main import app
+
+    @app.post("/_test/pay")
+    def book_the_sample(session, f: str = "f1", h: str = "h1", c: str = "c1", d: str = "", r: str = "", a: str = "", k: str = ""):
+        """A seam for the browser tests only (the old checkout, POST /pay, retired in F-254): book the sample trip with these picks for the signed-in person, as it did."""
+        from starlette.responses import RedirectResponse
+        from gitaway import catalog, session as ses
+        trip = catalog.trip_from_url(d, r, a, k, "", "", "")
+        stay = catalog.stay_pick(h, None, None, trip) if h not in ("", "none") else None
+        fare = catalog.flight_pick(f, None, None, trip) if f not in ("", "none") else None
+        ses.book(session, catalog.quote(None if f in ("", "none") else f, None if h in ("", "none") else h, None if c in ("", "none") else c, stay, trip, fare))
+        return RedirectResponse("/trip/plan", status_code=303)
+
     app = Slowed(app)
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))

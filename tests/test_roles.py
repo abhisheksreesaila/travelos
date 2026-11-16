@@ -16,18 +16,15 @@ from tests.test_signin import session_data, sign_in, stored_calendar
 OPEN_FOR_VIEWERS = {
     "/signin", "/logout", "/signout",                         # signing in and out
     "/family/phone",                                         # my own phone number (F-069)
-    "/trips/switch", "/family/switch", "/family/stay",       # which trip I look at, which family I work in, dismissing the joined notice
+    "/family/switch", "/family/stay",       # which family I work in, dismissing the joined notice
     "/guides/make/trip",                                      # F-262: a draft of my planned trip is the person's own
     "/creators", "/creators/draft", "/creators/finish",       # a creator draft is the person's own, published to the community
     "/creators/import", "/creators/import/{token}",           # a creator's import of their own post (F-183): their own draft and their own page, not a family's plan
     "/join/{token}",                                          # using an invite link: joining another family
     "/trip/morning", "/trip/morning/time", "/trip/morning/off", "/trip/morning/status",   # a person's own phone reminder (F-066)
-    "/trip/photos", "/trip/photos/remove",                     # a viewer may add photos; removing is author-or-admin, checked by the route (F-071)
     "/passkeys/register/options", "/passkeys/register", "/passkeys/auth/options", "/passkeys/auth", "/passkeys/remove",   # a person's own Face ID sign-in (F-074)
-    "/trip/map/around",                                       # Around you looks up places near a point and changes nothing (F-073)
-    "/trip/talk/message", "/trip/talk/photo", "/trip/talk/voice",   # a viewer may talk on a plan: text, photo, voice note (F-091)
-    "/trip/family/message", "/trip/family/quiet",             # a viewer may talk in the family thread and silence their own pushes (F-070)
-    "/trip/family/seen",                                      # and mark the chats read for themselves (F-143)
+    "/trip/talk/message",   # a viewer may talk on a plan (F-091)
+    "/trip/family/message",             # a viewer may talk in the family thread (F-070)
     "/plan/ask",                                              # the search before the matrix (F-241): a viewer may search; the route stores the interests only for an editor or admin
     "/plan/matrix/warm",                                      # the trip matrix's head start: starts price searches the page is about to ask for, changes no plan (F-229)
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
@@ -112,22 +109,6 @@ def test_viewers_cannot_write_through_the_other_family_routes_either(crew):
                        ("/rides", {}), ("/forks/apply", {}), ("/trip/canvas/undo", {}), ("/fork", {"next": "/trips/sun-tacos-and-tide-pools"}), ("/pay", {"f": "f1"})]:
         assert viewer.post(path, data=data, follow_redirects=False).status_code == 403, path
     assert stored_calendar()["n"] == [] and stored_calendar()["a"] == []
-
-
-def test_a_viewer_still_reads_everything_and_may_switch_trips(crew):
-    owner, editor, viewer = crew
-    editor.post("/trip/plans", data={"id": "a1", **FORM})
-    html = viewer.get("/trip/canvas?day=1").text
-    assert "Venice Canals stroll" in html and "LA with the kids" in html
-    assert viewer.post("/trips/switch", data={"trip": "x"}, follow_redirects=False).status_code == 303
-    assert viewer.get("/family").status_code == 200
-
-
-def test_an_editor_edits_the_calendar_and_the_viewer_sees_it(crew):
-    owner, editor, viewer = crew
-    assert editor.post("/trip/plans", data={"id": "a1", **FORM}, follow_redirects=False).status_code == 303
-    assert "Venice Canals stroll" in viewer.get("/trip/canvas?day=1").text
-    assert editor.post("/family/invite", data={"email": addr(), "role": "viewer"}, follow_redirects=False).status_code == 403
 
 
 def test_a_signed_out_post_is_not_a_role_question(client):
