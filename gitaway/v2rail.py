@@ -15,7 +15,7 @@ import math
 from dataclasses import dataclass
 from datetime import timedelta
 
-from gitaway import airportdrive, placefacts, tripmatrix as tm
+from gitaway import airportdrive, placefacts, tripmatrix as tm, weather
 
 DAYS = 5
 MILES_PER_KM = 0.621371
@@ -50,6 +50,12 @@ def sky(place: str, first):
     """Five days of weather for `place` from `first`: weather.trip_weather's, so a forecast where it reaches and NOAA's typical days labelled as such, else nothing for a day."""
     from gitaway.pages.skystrip import weather_for      # here: the pages import this module
     return weather_for(place, first, first + timedelta(days=DAYS - 1))
+
+
+def has_weather(place: str, first) -> bool:
+    """Whether the place has any real weather at all (a station of its own), without asking for it: the weather chip is drawn on this alone, the days wait for the tap."""
+    from types import SimpleNamespace
+    return weather.where(SimpleNamespace(depart=first, return_=first, destination_name=place, key="", focus="", tz="")) is not None
 
 
 def miles(a: str, b: str) -> int | None:

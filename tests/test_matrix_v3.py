@@ -181,14 +181,15 @@ def test_a_flight_that_lands_the_next_day_says_plus_one_in_its_row_and_in_its_su
 
 # ---- the nights band and the rail ---------------------------------------------------------------------------------------------------------------------------
 
-def test_the_rail_is_a_row_of_chips_each_opening_a_card_that_starts_hidden(sample, client):
+def test_the_rail_is_a_row_of_chips_each_asking_for_its_card_when_tapped(sample, client):
     html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["html"])
-    chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="(wg-\d)" data-wg="\d" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
-    names = [c for _, c in chips]
-    assert "San Diego 66° · Sunny" in names and "Where you will be" in names and "About San Diego" in names
+    chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="wg-(\w+)" data-wg="(\w+)" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
+    names = [c for _, _, c in chips]
+    assert "Weather" in names and "Where you will be" in names and "About San Diego" in names      # the labels cost nothing: no temperature, no minutes until tapped
     assert any(c.startswith("Uber") and c.endswith("sample") for c in names)
-    for wid, _ in chips:
-        assert re.search(rf'<section[^>]*id="{wid}"[^>]*hidden', html) or re.search(rf'<section[^>]*hidden[^>]*id="{wid}"', html), wid
+    assert all(a == b for a, b, _ in chips) and 'id="wg-' not in html      # no card is drawn with the row
+    got = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12&wg=about").json()["card"]
+    assert 'id="wg-about"' in got and "About San Diego" in got
 
 
 # ---- the sky line: never a zero count -----------------------------------------------------------------------------------------------------------------------

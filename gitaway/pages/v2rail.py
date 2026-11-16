@@ -1,7 +1,8 @@
 """The frosted widget rail beside the matrix (F-251, D-620..), the prototype's right-hand column (docs/design/booking-v2/index.html `drawRail`): Apple-style translucent cards that follow
 the place you look at and the start day you opened. Beside the matrix on a laptop, a swipeable row under it on a phone.
 
-    GET /plan/matrix/rail    the rail for one lane and start day, as JSON {html} for assets/js/v2rail.js: a plain `def` (a drive can wait on the router for a moment)
+    GET /plan/matrix/rail            the chips for one lane and start day, as JSON {html} for assets/js/v2rail.js: only labels that cost nothing to know (F-277, D-870)
+    GET /plan/matrix/rail?wg=<name>  one chip's card, as JSON {card}: asked when its chip is tapped, never before (a drive can wait on the router, the weather on MET Norway), so a plain `def`
 
 Each widget has one real source or is not drawn (gitaway/v2rail.py): the weather (weather.py; typical days dotted and labelled, MET Norway's credit under it), where you will be (OSRM drives,
 typical, no live traffic; a straight-line distance from home), a cheaper airport (only when another airport's flights for the same days are already known and cost less), food that fits
@@ -11,7 +12,7 @@ page). Uber, traffic and what is on are the showcase's made-up samples and say S
 
 from fasthtml.common import A, Button, Div, Header, Li, NotStr, P, Section, Span, Ul, to_xml
 
-from gitaway import catalog, showcase, tripmatrix as tm, v2rail, weather
+from gitaway import airportdrive, catalog, showcase, tripmatrix as tm, v2rail, weather
 from gitaway.icons import icon
 from gitaway.pages import skystrip, weather_ui
 
@@ -20,20 +21,26 @@ SCHEMATIC = "Schematic, not to scale"
 NO_TRAFFIC = "Typical drive by road. No live traffic."
 
 
-def wg(title: str, ic, k: str, *body, sample=False, i=0, chip=""):
-    """One widget, folded (F-275, D-862): a chip of a few words that opens into the card, the frosted card with its kind's coloured icon, a title and, when any of it is made-up, a Sample pill.
-    Both are drawn; the card is hidden until its chip is tapped (assets/js/v2rail.js). Returns (chip, card)."""
-    card = Section(Header(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(title, cls="wg-h"), Span("Sample", cls="smp") if sample else "", Button(icon("x", 18, 2.4), type="button", cls="wg-x", data_wg_close=str(i), aria_label=f"Close {title}")),
-                   *body, cls="wg v2-glass", style=f"--i:{i}", id=f"wg-{i}", hidden=True)
-    chip_el = Button(Span(icon(ic, 15, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(chip or title), type="button", cls="wchip v2-glass", aria_expanded="false", aria_controls=f"wg-{i}", data_wg=str(i))
-    return chip_el, card
+def chip_of(title: str, ic, k: str, name: str, label: str = ""):
+    """A chip of a few words that fetches its card when tapped (assets/js/v2rail.js): the label is only what is cheap to know."""
+    return Button(Span(icon(ic, 15, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(label or title), type="button", cls="wchip v2-glass", aria_expanded="false", aria_controls=f"wg-{name}", data_wg=name)
+
+
+def wg(title: str, ic, k: str, *body, sample=False, name="", chip=""):
+    """One widget, folded (F-275, D-862): a chip and the frosted card it opens, with its kind's coloured icon, a title and, when any of it is made-up, a Sample pill. The card is only
+    drawn when asked for (F-277, D-870). Returns (chip, card)."""
+    card = Section(Header(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(title, cls="wg-h"), Span("Sample", cls="smp") if sample else "", Button(icon("x", 18, 2.4), type="button", cls="wg-x", data_wg_close=name, aria_label=f"Close {title}")),
+                   *body, cls="wg v2-glass", id=f"wg-{name}")
+    return chip_of(title, ic, k, name, chip), card
 
 
 def _ul(rows, cls="list"):
     return Ul(*rows, cls=cls)
 
 
-def weather_widget(place, w, i):
+def weather_widget(place, w, name, lazy=False):
+    if lazy:      # a chip with a real source behind it (a station for the place) and nothing asked yet: no forecast is fetched until the chip is tapped
+        return (chip_of("Weather", "sun", "wx", name), None) if v2rail.has_weather(place.name, w.depart) else ""
     tw = v2rail.sky(place.name, w.depart)
     days = [d for d in tw.days if d]
     if not days:
@@ -46,7 +53,7 @@ def weather_widget(place, w, i):
                  for d in days], cls="days5")
     return wg("Weather", "sun", "wx", Div(Span(f"{first.high_f}°", cls="n num"), Span(skystrip.WORDS.get(first.condition, ""), cls="bw"), cls="bigline"), P(note), strip,
               Div(*[A(t, href=h, rel="noopener", cls="fine fine-a") if h else Span(t, cls="fine") for t, h in weather.notes(tw) if not t.startswith("Typical ")], cls="credits"),
-              i=i, chip=f"{place.name} {first.high_f}° · {skystrip.WORDS.get(first.condition, 'Weather')}")
+              name=name)
 
 
 def _map(wh: v2rail.Where):
@@ -70,7 +77,10 @@ def _map(wh: v2rail.Where):
                Span(SCHEMATIC, cls="map-cap"), cls="map-w")
 
 
-def where_widget(s, lane, i, look_up=True):
+def where_widget(s, lane, name, look_up=True, lazy=False):
+    if lazy:      # the airport's coordinates are known (or the lane is another place than the asked one): the drives are asked when the chip is tapped
+        place = lane.places[0]
+        return (chip_of("Where you will be", "map", "see", name), None) if place.iata in airportdrive.AIRPORTS or (not lane.asked and s.place.name != place.name) else ""
     wh = v2rail.where(s, lane, look_up)
     if not wh.rows:
         return ""
@@ -82,22 +92,21 @@ def where_widget(s, lane, i, look_up=True):
     if wh.home_miles:
         rows.append(Div(Span(cls="dot", style="--k:var(--food)"), Span(f"{wh.home} → {wh.airport}, in a straight line"), Span(f"{wh.home_miles:,} mi", cls="num"), cls="ro"))
     drives = bool(wh.airport_min or wh.asked_min)
-    return wg("Where you will be", "map", "see", _map(wh) if drives else "", Div(*rows, cls="dist"), P(NO_TRAFFIC, cls="fine") if drives else "", i=i,
-              chip=f"{wh.airport_min} min from {wh.airport}" if wh.airport_min else f"{wh.asked_min} min from {wh.asked}" if wh.asked_min else "Where you will be")
+    return wg("Where you will be", "map", "see", _map(wh) if drives else "", Div(*rows, cls="dist"), P(NO_TRAFFIC, cls="fine") if drives else "", name=name)
 
 
-def cheaper_widget(s, lane, w, lanes, known, i):
+def cheaper_widget(s, lane, w, lanes, known, name):
     c = v2rail.cheaper_airport(s, lane, w, lanes, known)
     if c is None:
         return ""
     more = f"{tm.dollars(abs(c.trip_cents))} {'less' if c.trip_cents < 0 else 'more'}"
     return wg("A cheaper airport", "plane", "flight", Div(Span(tm.dollars(c.save_cents), cls="n num"), Span(f"less for {s.travelers}", cls="bw"), cls="bigline"),
               P(Span(f"Flights into {c.iata} ({c.place}) cost less than into {c.base_iata}.", cls="em"), f" The whole trip there is {more} on the same days."),
-              Button(f"Look at {c.place}", icon("arrow-right", 18, 2.2), type="button", cls="mini-btn", data_lane=c.lane), i=i,
+              Button(f"Look at {c.place}", icon("arrow-right", 18, 2.2), type="button", cls="mini-btn", data_lane=c.lane), name=name,
               chip=f"From {c.iata}: about {tm.dollars(c.save_cents)} less")
 
 
-def food_widget(sq, place, picked, i):
+def food_widget(sq, place, picked, name):
     rows = [Li(Span(Span(st.name, cls="b"), Span(Span("Breakfast included", cls="tagk"), f"{catalog.money(r.cents)} for the stay"), cls="t")) for st, r in (v2rail.breakfast(sq) if sq is not None and sq.ok else ())[:3]]
     sample = v2rail.sample(place) if showcase.on() else None
     if sample:
@@ -106,37 +115,37 @@ def food_widget(sq, place, picked, i):
             rows.append(Li(Span(Span(name, cls="b"), Span(Span(kind, cls="tagk"), f"{rest + ' · ' if rest else ''}{minutes} min"), cls="t")))
     if not rows:
         return ""
-    return wg("Food that fits you", "food", "food", _ul(rows), sample=bool(sample), i=i, chip=f"Food that fits you{' · sample' if sample else ''}")
+    return wg("Food that fits you", "food", "food", _ul(rows), sample=bool(sample), name=name, chip=f"Food that fits you{' · sample' if sample else ''}")
 
 
-def about_widget(place, i):
+def about_widget(place, name):
     facts = v2rail.about(place)
     if not facts:
         return ""
     items = [Li(Span(Span(f.text, cls="b"), A("Source", href=f.source, rel="noopener", target="_blank", cls="src")), hidden=n > 2) for n, f in enumerate(facts)]
-    return wg(f"About {place.name}", "list", "see", _ul(items), Button(f"Show all {len(facts)}", type="button", cls="link-btn", data_more="1") if len(facts) > 3 else "", i=i, chip=f"About {place.name}")
+    return wg(f"About {place.name}", "list", "see", _ul(items), Button(f"Show all {len(facts)}", type="button", cls="link-btn", data_more="1") if len(facts) > 3 else "", name=name, chip=f"About {place.name}")
 
 
-def uber_widget(sample, place, hotel, i):
+def uber_widget(sample, place, hotel, name):
     a, b = sample["uber"]
     return wg("Uber to the hotel", "car", "ride", Div(Div(Span("UberX", cls="k"), Span(a, cls="num b"), Span("4 seats, tight with bags"), cls="tile"),
                                                       Div(Span("UberXL", cls="k"), Span(b, cls="num b"), Span("6 seats, room for 4 bags"), cls="tile"), cls="tiles2"),
-              P(f"{place.iata} to {hotel}, a made-up estimate.", cls="fine"), sample=True, i=i, chip=f"Uber {a} · sample")
+              P(f"{place.iata} to {hotel}, a made-up estimate.", cls="fine"), sample=True, name=name, chip=f"Uber {a} · sample")
 
 
-def traffic_widget(sample, i):
+def traffic_widget(sample, name):
     t = sample["traffic"]
     top = max(t)
     bars = Div(*[Div(Span(cls="bar", style=f"height:{round(m / top * 100)}%;--k:{'var(--tix)' if m / top > .8 else 'var(--sun-ink)' if m / top > .55 else 'var(--see)'}"), Span(v2rail.TIMES[n], cls="num"))
                  for n, m in enumerate(t)], cls="bars")
-    return wg("Traffic when you land", "road", "tix", P(sample["route"], cls="route"), bars, P(f"Made up: {min(t)} min at the quietest, {top} min at 5 pm.", cls="fine"), sample=True, i=i, chip="Traffic when you land · sample")
+    return wg("Traffic when you land", "road", "tix", P(sample["route"], cls="route"), bars, P(f"Made up: {min(t)} min at the quietest, {top} min at 5 pm.", cls="fine"), sample=True, name=name, chip="Traffic when you land · sample")
 
 
-def trend_widget(sample, i):
-    return wg("Happening that week", "flame", "stay", _ul([Li(Span(Span(n, cls="b"), Span(d), cls="t")) for n, d in sample["trend"]]), sample=True, i=i, chip="Happening that week · sample")
+def trend_widget(sample, name):
+    return wg("Happening that week", "flame", "stay", _ul([Li(Span(Span(n, cls="b"), Span(d), cls="t")) for n, d in sample["trend"]]), sample=True, name=name, chip="Happening that week · sample")
 
 
-def guides_widget(s, lane, w, guides, i):
+def guides_widget(s, lane, w, guides, name):
     """"Guides for San Diego" (F-263): the published guides of the lane's place (and, on the showcase, the labelled sample ones), each opening in a sheet over the matrix that grows out of its row;
     nothing when there are none, which off the showcase is most places."""
     from gitaway.pages import guidesheet as gs, tripmatrix as mx
@@ -146,23 +155,48 @@ def guides_widget(s, lane, w, guides, i):
     place = lane.places[0].name
     base = mx.href(s, "/guides/sheet", lane=lane.key, w=w.key, ctx="book").split("?", 1)[1]
     return wg(f"Guides for {place}", "list", "see", P("What other families did there. It opens over your trips, so you keep your place.", cls="fine"),
-              gs.widget_rows(cards, lambda c: f"/guides/sheet?slug={c.slug}&{base}"), gs.widget_foot(place, total, len(cards)), sample=all(not c.real for c in cards), i=i,
+              gs.widget_rows(cards, lambda c: f"/guides/sheet?slug={c.slug}&{base}"), gs.widget_foot(place, total, len(cards)), sample=all(not c.real for c in cards), name=name,
               chip=f"{total} guide{'' if total == 1 else 's'} for {place}")
 
 
-def rail(s, lane, w, *, sq=None, lanes=(), known=None, picked=(), look_up=True, guides=((), 0)):
-    """The rail's widgets for `lane` on start day `w`: the head, then the widgets that have something real (or, on the showcase, made-up) to say."""
-    from gitaway.pages import tripmatrix as mx
+NAMES = {"guides": "Guides", "weather": "Weather", "where": "Where you will be", "uber": "Uber to the hotel", "traffic": "Traffic when you land", "cheaper": "A cheaper airport",
+         "food": "Food that fits you", "trend": "Happening that week", "about": "About this place"}      # in the order the chips come, and the title of a card with nothing to say
+EXTRA = "Extra info · tap any"
+NUDGE = "New: tap for weather, drive times, guides…"
+
+
+def _widget(name, s, lane, w, *, sq, lanes, known, picked, look_up, guides, lazy):
+    """One widget by name: (chip, card), or "" when it has nothing real to say. `lazy` builds only what costs nothing to know (the chip): the weather and the drives are not asked."""
     place = lane.places[0]
     sample = v2rail.sample(place) if showcase.on() else None
     hotel = sq.stays[0].name if sq is not None and sq.ok else place.city
-    items = [guides_widget(s, lane, w, guides, 0), weather_widget(place, w, 1), where_widget(s, lane, 2, look_up),
-             uber_widget(sample, place, hotel, 3) if sample else "", traffic_widget(sample, 4) if sample else "",
-             cheaper_widget(s, lane, w, lanes, known, 5) if known else "", food_widget(sq, place, picked, 6), trend_widget(sample, 7) if sample else "", about_widget(place, 8)]
-    got = [x for x in items if x != ""]
-    head = Span(f"Around {place.name}", cls="rl-h")
-    return Div(Div(head, *[c for c, _ in got], cls="rl-chips"), Div(*[card for _, card in got], cls="rl-cards"), cls="rl-in", data_lane=lane.key, data_w=w.key)
+    return {"guides": lambda: guides_widget(s, lane, w, guides, name), "weather": lambda: weather_widget(place, w, name, lazy), "where": lambda: where_widget(s, lane, name, look_up, lazy),
+            "uber": lambda: uber_widget(sample, place, hotel, name) if sample else "", "traffic": lambda: traffic_widget(sample, name) if sample else "",
+            "cheaper": lambda: cheaper_widget(s, lane, w, lanes, known, name) if known else "", "food": lambda: food_widget(sq, place, picked, name),
+            "trend": lambda: trend_widget(sample, name) if sample else "", "about": lambda: about_widget(place, name)}[name]()
+
+
+def rail(s, lane, w, *, sq=None, lanes=(), known=None, picked=(), look_up=True, guides=((), 0)):
+    """The extra-info row for `lane` on start day `w` (F-277, D-870): a label, the place, and a scroller of chips for the widgets that have something real (or, on the showcase, made-up)
+    to say. No card is drawn and no weather or drive is asked: each chip fetches its card when it is tapped (`card`)."""
+    place = lane.places[0]
+    got = [c for c in (_widget(n, s, lane, w, sq=sq, lanes=lanes, known=known, picked=picked, look_up=look_up, guides=guides, lazy=True) for n in NAMES) if c != ""]
+    top = Div(Span(icon("spark", 15, 2.2), Span(EXTRA), cls="rl-lab"), Span(f"Around {place.name}", cls="rl-h"), cls="rl-top")
+    return Div(top, Div(*[c for c, _ in got], cls="rl-chips"), P(NUDGE, cls="rl-nudge"), Div(cls="rl-cards"), cls="rl-in", data_lane=lane.key, data_w=w.key)
+
+
+def card(name, s, lane, w, **kw):
+    """The card of the chip tapped: the widget built for real now, or a card saying there is nothing for it (a drive no router answered). None for a name that is no widget."""
+    if name not in NAMES:
+        return None
+    got = _widget(name, s, lane, w, sq=kw.get("sq"), lanes=kw.get("lanes", ()), known=kw.get("known"), picked=kw.get("picked", ()), look_up=kw.get("look_up", True), guides=kw.get("guides", ((), 0)), lazy=False)
+    return got[1] if got != "" else wg(NAMES[name], "list", "see", P("Nothing known for this yet.", cls="fine"), name=name)[1]
 
 
 def html(s, lane, w, **kw) -> str:
     return to_xml(rail(s, lane, w, **kw))
+
+
+def card_html(name, s, lane, w, **kw) -> str | None:
+    c = card(name, s, lane, w, **kw)
+    return None if c is None else to_xml(c)

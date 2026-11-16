@@ -533,8 +533,8 @@ def register(app):
         return JSONResponse({"known": {k: square_json(*cell[k], sq) for k, sq in known.items()}}, headers={"Cache-Control": "no-store"})
 
     @app.get(RAIL)
-    def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
-        """The widget rail for one lane and start day (F-251): what is real about the place, drawn as the prototype's frosted cards. Squares are only read from what is already known
+    def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = "", wg: str = ""):
+        """The widget rail for one lane and start day (F-251): what is real about the place, as chips (F-277: `wg=` is one chip's card, asked when it is tapped). Squares are only read from what is already known
         (a cheaper airport needs two answers): nothing is searched here. A plain `def`: a drive can wait on the router for a moment, but only for a signed-in person
         (L-1): a stranger is shown the drives already kept, so the open page cannot spend the router's budget."""
         s = state(to, home, d, r, a, k, x, nb, b)
@@ -544,9 +544,11 @@ def register(app):
         lane_, w_ = pick(lanes, windows, lane, w)
         family = _family(session)
         known = lambda ln, win: gridsource.square(ln, win, s.adults, s.kid_ages, s.home, family, peek=True)      # noqa: E731
-        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session)),
-                                                 guides=gd.for_place(session, lane_.places[0].name)), "lane": lane_.key},
-                            headers={"Cache-Control": "no-store"})
+        kw = dict(sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session)), guides=gd.for_place(session, lane_.places[0].name))
+        if wg:      # one chip was tapped (F-277, D-870): its card is built now, and only now
+            card = v2rail.card_html(wg, s, lane_, w_, **kw)
+            return JSONResponse({"error": "No such widget."} if card is None else {"card": card, "lane": lane_.key}, status_code=404 if card is None else 200, headers={"Cache-Control": "no-store"})
+        return JSONResponse({"html": v2rail.html(s, lane_, w_, **kw), "lane": lane_.key}, headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)
     def trip_matrix_warm(request, session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):

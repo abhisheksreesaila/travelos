@@ -56,28 +56,64 @@ def test_the_samples_that_fit_what_the_family_is_into():
     assert [f[0] for f in v2rail.fits(food, ("hikes",))] == [food[0][0], food[1][0], food[2][0]]      # nothing fits: the first few
 
 
-def test_on_the_showcase_the_rail_has_the_real_widgets_and_the_made_up_ones_say_sample(sample, client):
+def _card(client, name, lane="sandiego", url=None):
+    """One chip's card: asked the way a tap asks it (F-277, D-870)."""
+    got = client.get((url or RAIL.replace("lane=sandiego", f"lane={lane}")) + f"&wg={name}")
+    return unescape(got.json()["card"]) if got.status_code == 200 else got.status_code
+
+
+def test_on_the_showcase_the_rail_is_chips_and_each_card_is_asked_for_when_tapped(sample, client):
     j = client.get(RAIL).json()
     html = unescape(j["html"])
-    assert j["lane"] == "sandiego" and "Around San Diego" in html and "Weather" in html and "Typical mid December · not a forecast yet." in html and html.count('class="d5 is-typ') == 5
-    assert "Where you will be" in html and "in a straight line" in html and "Schematic" not in html      # no router in tests: no drive, so no map and no minutes
-    assert "Uber to the hotel" in html and "Traffic when you land" in html and "Happening that week" in html and html.count('class="smp"') >= 4
-    assert "About San Diego" in html and "Source" in html and "Show all 4" in html
-    assert "Masala Coast" in html and "Food that fits you" in html
-    assert "live traffic" not in html or "No live traffic" in html
+    assert j["lane"] == "sandiego" and "Around San Diego" in html and "Extra info · tap any" in html and "New: tap for weather, drive times, guides…" in html
+    assert 'class="wg ' not in html and 'class="d5' not in html and "in a straight line" not in html      # chips only: no card is built until a chip is tapped
+    assert html.count('class="wchip v2-glass"') == 8      # weather, where, uber, traffic, food, trend, about, guides
+    weather = _card(client, "weather")
+    assert "Weather" in weather and "Typical mid December · not a forecast yet." in weather and weather.count('class="d5 is-typ') == 5
+    where = _card(client, "where")
+    assert "Where you will be" in where and "in a straight line" in where and "Schematic" not in where      # no router in tests: no drive, so no map and no minutes
+    assert "Uber to the hotel" in _card(client, "uber") and "Traffic when you land" in _card(client, "traffic") and "Happening that week" in _card(client, "trend")
+    assert _card(client, "uber").count('class="smp"') == 1
+    about = _card(client, "about")
+    assert "About San Diego" in about and "Source" in about and "Show all 4" in about
+    assert "Masala Coast" in _card(client, "food") and "Food that fits you" in _card(client, "food")
 
 
 def test_off_the_showcase_the_made_up_widgets_are_not_drawn(real, client):
     html = unescape(client.get(RAIL).json()["html"])
-    assert "Weather" in html and "About San Diego" in html and "Where you will be" in html
+    assert 'data-wg="weather"' in html and 'data-wg="about"' in html and 'data-wg="where"' in html
     for made_up in ("Uber", "Traffic when you land", "Happening that week", "Sample", "Masala Coast"):
         assert made_up not in html, made_up
+    assert "Nothing known for this yet." in _card(client, "uber") and "UberX" not in _card(client, "uber")      # asked for by name anyway: never the sample
+
+
+def test_a_chip_costs_nothing_until_it_is_tapped(sample, client, monkeypatch):
+    """F-277: the row asks no weather and no drive; the tap asks one widget's data once."""
+    from gitaway import weather
+    calls = []
+    monkeypatch.setattr(v2rail, "sky", lambda *a, **k: calls.append("sky") or weather.TripWeather((None,), "", "", None, False))
+    monkeypatch.setattr(airportdrive, "drive", lambda *a, **k: calls.append("drive") or None)
+    monkeypatch.setattr(airportdrive, "between", lambda *a, **k: calls.append("between") or None)
+    monkeypatch.setattr(weather, "forecast", lambda *a, **k: calls.append("forecast") or None)
+    sign_in(client)
+    for lane in ("sandiego", "orangecounty"):
+        html = unescape(client.get(RAIL.replace("lane=sandiego", f"lane={lane}")).json()["html"])
+        assert 'data-wg="weather"' in html and 'data-wg="where"' in html
+    assert calls == []
+    _card(client, "weather")
+    assert calls == ["sky"]
+    _card(client, "where", "orangecounty")
+    assert calls == ["sky", "drive", "between"]
+
+
+def test_a_card_for_no_widget_is_a_404(sample, client):
+    assert _card(client, "nonsense") == 404
 
 
 def test_the_rail_for_a_place_with_nothing_to_say_is_just_its_head(sample, client):
     j = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()
     html = unescape(j["html"])
-    assert "Around Orange County" in html and "Uber to the hotel" in html and "About Orange County" in html
+    assert "Around Orange County" in html and 'data-wg="uber"' in html and 'data-wg="about"' in html
 
 
 def test_a_rail_for_a_bad_address_is_a_400_and_an_unknown_lane_falls_back_to_the_asked_place(sample, client):
@@ -89,11 +125,11 @@ def test_the_drives_are_the_routers_own_times_the_airport_run_and_the_stay_to_th
     sign_in(client)
     router = Router(3900)      # 65 minutes whatever is asked
     monkeypatch.setattr(geo, "fetch", router)
-    html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()["html"])
+    html = _card(client, "where", "orangecounty")
     assert "SNA airport → Newport Beach" in html and "Newport Beach → San Diego" in html and html.count("65 min") >= 3      # two rows and the map's two labels
     assert "Schematic, not to scale" in html and "No live traffic" in html
     asked = len(router.urls)
-    client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12")
+    _card(client, "where", "orangecounty")
     assert len(router.urls) == asked      # kept: each drive is asked once
 
 
@@ -101,27 +137,27 @@ def test_a_stranger_is_shown_only_the_drives_already_kept_and_the_router_is_not_
     """L-1: the open rail route must not spend the router's budget for anyone. A signed-in person asks (and it is kept); a stranger is then served that kept answer."""
     router = Router(3900)
     monkeypatch.setattr(geo, "fetch", router)
-    url = "/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12"
-    cold = unescape(client.get(url).json()["html"])
+    url = "/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12&wg=where"
+    cold = unescape(client.get(url).json()["card"])
     assert router.urls == [] and "min" not in cold.split("Where you will be")[1].split("</section>")[0].replace("in a straight line", "")
     sign_in(client)
-    assert "SNA airport → Newport Beach" in unescape(client.get(url).json()["html"]) and router.urls
+    assert "SNA airport → Newport Beach" in unescape(client.get(url).json()["card"]) and router.urls
     asked = len(router.urls)
     from tests.test_members import browser
     stranger = browser(client)
-    warm = unescape(stranger.get(url).json()["html"])
+    warm = unescape(stranger.get(url).json()["card"])
     assert len(router.urls) == asked and "SNA airport → Newport Beach" in warm and "65 min" in warm
 
 
 def test_a_signed_out_rail_has_no_family_data(sample, client):
     """The family's picked interests are not read for a stranger: Cafes brings Bean & Wave to a signed-in rail, never to a signed-out one."""
-    url = RAIL
-    assert "Bean & Wave" not in unescape(client.get(url).json()["html"])
+    url = RAIL + "&wg=food"
+    assert "Bean & Wave" not in unescape(client.get(url).json()["card"])
     sign_in(client)
     interests.save(person(), ["cafes"])
-    assert "Bean & Wave" in unescape(client.get(url).json()["html"])
+    assert "Bean & Wave" in unescape(client.get(url).json()["card"])
     from tests.test_members import browser
-    assert "Bean & Wave" not in unescape(browser(client).get(url).json()["html"])
+    assert "Bean & Wave" not in unescape(browser(client).get(url).json()["card"])
 
 
 def test_a_town_that_did_not_geocode_is_not_asked_again_until_fail_wait_has_passed(monkeypatch):

@@ -32,5 +32,17 @@ def open_rail(page):
     """F-275 (D-862): the rail's widgets are chips until tapped. Wait for the chips, then open every closed one so its card shows."""
     page.wait_for_selector("#mx-rail .wchip[data-wg]")
     closed = page.locator("#mx-rail .wchip[aria-expanded='false']")
+    chips = page.locator("#mx-rail .wchip[data-wg]").count()
     while closed.count():
         closed.first.click()
+    page.wait_for_function("(n) => document.querySelectorAll('#mx-rail .wg:not([hidden])').length === n", arg=chips)      # each card is fetched when its chip is tapped (F-277)
+
+
+def set_mode(page, scheme):
+    """The site's light or dark is the person's choice kept in localStorage `ga-mode`, not the browser's colour scheme (lessons 2026-11-15): set it, reload, and check what the page really wears."""
+    if scheme == "dark":
+        page.evaluate("localStorage.setItem('ga-mode', 'dark')")
+        page.reload()
+        page.wait_for_selector("#mx.is-live")
+        page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    assert page.evaluate("document.documentElement.dataset.mode") == scheme
