@@ -44,9 +44,9 @@ def folder(client):
     for pid, member, made in (("own", uid, "someone"), ("made", "kid", uid), ("other", "kid", "someone")):   # F-083: whose pass it is, who added it, a stranger's
         fam.execute("INSERT INTO passes (id, member_id, created_by, orig, display, thumb) VALUES (?, ?, ?, ?, ?, ?)", (pid, member, made, f"{fid}/t/{pid}.pdf", f"{fid}/t/{pid}-display.jpg", f"{fid}/t/{pid}-thumb.jpg"))      # named columns: an earlier test may have made the real, wider table
     fam.execute("INSERT OR IGNORE INTO members (id, email) VALUES (?, ?)", (uid, EMAIL))
-    fam.execute("INSERT INTO push_subscriptions VALUES ('https://x/1', ?, 'k', 'a', 'now')", (uid,))
-    fam.execute("INSERT INTO thread VALUES ('m1', ?, 'hi')", (uid,))
-    fam.execute("INSERT INTO photos VALUES ('p1', ?, ?, ?, ?)", (uid, f"{fid}/t/p1.jpg", f"{fid}/t/p1-display.jpg", f"{fid}/t/p1-thumb.jpg"))
+    fam.execute("INSERT INTO push_subscriptions (endpoint, user_id, p256dh, auth, created_at) VALUES ('https://x/1', ?, 'k', 'a', 'now')", (uid,))
+    fam.execute("INSERT INTO thread (id, author, text) VALUES ('m1', ?, 'hi')", (uid,))
+    fam.execute("INSERT INTO photos (id, author, orig, display, thumb) VALUES ('p1', ?, ?, ?, ?)", (uid, f"{fid}/t/p1.jpg", f"{fid}/t/p1-display.jpg", f"{fid}/t/p1-thumb.jpg"))
     fam.commit()
     fam.close()
     (dst / "photos" / fid / "t").mkdir(parents=True)
