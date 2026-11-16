@@ -108,20 +108,20 @@ def test_the_captain_sees_the_new_count_in_the_account_menu_and_the_header_on_an
     cap = captain(client, monkeypatch)
     report(client, trip["slug"], "copyright")
     report(client, trip["slug"], "spam", ip="203.0.113.8")
-    def link(html, ident):
-        m = re.search(rf'<a [^>]*id="{ident}"[^>]*>.*?</a>', html, re.S)
-        return re.sub(r"<[^>]+>", " ", m.group(0)).split() if m else None, m and 'href="/admin"' in m.group(0)
+    def link(html, ident=None):      # the v2 bar's avatar menu holds the one Admin link
+        m = re.search(r'<a [^>]*href="/admin"[^>]*>.*?</a>', html, re.S)
+        return re.sub(r"<[^>]+>", " ", m.group(0)).split() if m else None, bool(m)
 
     html = cap.get("/family").text
-    assert link(html, "ga-tb-admin") == (["Admin", "2", "new"], True) and link(html, "ga-admin-link") == (["Admin", "(2", "new)"], True)
-    assert "ga-tb-dot-new" in html                                     # the avatar carries a dot too, so the menu is worth opening
+    assert link(html) == (["Admin", "(2", "new)"], True)
+    assert "v2-dot" in html                                     # the avatar carries a dot too, so the menu is worth opening
     cap.post("/admin/seen", data={"upto": str(max(r["id"] for r in reports.all_reports()))})
     html = cap.get("/family").text
-    assert link(html, "ga-tb-admin") == (["Admin"], True) and link(html, "ga-admin-link") == (["Admin"], True) and "ga-tb-dot-new" not in html     # still a way in, with nothing to count
+    assert link(html) == (["Admin"], True) and "v2-dot" not in html     # still a way in, with nothing to count
     other = client.__class__(client.app, client=("127.0.0.1", 50002))
     sign_in(other, "ari")
     html = other.get("/family").text
-    assert "ga-tb-admin" not in html and "ga-admin-link" not in html and "/admin" not in html
+    assert "/admin" not in html
 
 
 def test_a_database_made_before_the_seen_column_gains_it_and_its_old_reports_read_as_unseen(tmp_path, monkeypatch):

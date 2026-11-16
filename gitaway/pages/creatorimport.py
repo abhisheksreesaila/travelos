@@ -153,7 +153,7 @@ def preview_page(session, d, error=""):
                  action=f"{PATH}/{d['id']}", method="post", cls="ci-pub"),
             A(icon("chev-left", 18, 2.4), "Back to edit", href=f"{PATH}/{d['id']}", cls="btn", id="pb-back"), cls="pb-pv-act"),
         cls="pb-pv", id="pb-pv", role="region", aria_label="Preview")
-    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme)
+    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme, v2=True, quiet=True)
 
 
 async def _book_act(session, me, d, do, f):

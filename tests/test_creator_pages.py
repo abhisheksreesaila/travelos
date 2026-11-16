@@ -41,7 +41,7 @@ def test_every_text_pair_on_the_paper_is_4_5_to_1_or_better(which):
     assert not low, low
 
 
-def test_the_header_nav_is_guides_and_plan_a_trip():
+def test_the_cover_nav_is_guides_and_plan_a_trip():
     assert layout.NAV == [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]      # D-462: drawn as plan_href(); F-262: Guides replaced For creators and Community trips
 
 

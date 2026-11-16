@@ -18,7 +18,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase, v2pages
 from gitaway.icons import icon
-from gitaway.layout import notice, styles
+from gitaway.layout import notice, page, styles
 from gitaway.partners import log, places, registry, statistics, travelpayouts
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"), *v2pages.HEAD)

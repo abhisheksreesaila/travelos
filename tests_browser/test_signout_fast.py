@@ -13,19 +13,17 @@ def sign_in(ctx, base_url):
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
 
 def sign_out_button(page):
-    """The Sign out button that shows at this width: the avatar menu's in the laptop's top bar (opened first), else the site header's (F-139)."""
-    if page.locator(".ga-topbar").is_visible():
-        page.click(".ga-tb-account summary")
-        # F-153: the menu grows open with the spring (F-109); Playwright's click waits for it to stop moving, so wait here, before the clock starts
-        page.wait_for_function("""new Promise(done => {
-            const b = document.querySelector('.ga-tb-out'); let last = '', since = performance.now();
-            (function look() {
-                const r = b.getBoundingClientRect(), now = JSON.stringify(r);
-                if (now !== last) { last = now; since = performance.now(); }
-                if (performance.now() - since > 150) done(true); else requestAnimationFrame(look);
-            })();
-        })""")  # still for 150 ms: the menu has finished opening
-    return page.locator("button.ga-signout:visible, button.ga-tb-out:visible").first
+    """The Sign out button of the v2 bar's avatar menu (F-272: the one bar at every width), opened first."""
+    page.click("#v2-me")
+    page.wait_for_function("""new Promise(done => {
+        const b = document.querySelector('#v2-menu button'); let last = '', since = performance.now();
+        (function look() {
+            const r = b.getBoundingClientRect(), now = JSON.stringify(r);
+            if (now !== last) { last = now; since = performance.now(); }
+            if (performance.now() - since > 150) done(true); else requestAnimationFrame(look);
+        })();
+    })""")  # still for 150 ms: the menu has finished opening
+    return page.locator("#v2-menu button:visible").first
 
 
 THRESHOLD_SECONDS = 1.0  # the ticket: back on the landing within about a second

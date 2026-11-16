@@ -48,8 +48,7 @@
   font: 650 max(var(--label-min), 0.8125rem)/1.1 var(--f-ui); letter-spacing: .02em; }
 
 /* the foot: Privacy and Terms (the v2 bar does not carry them) */
-.pg-foot { width: min(46rem, 100% - 2rem); margin: 0 auto; padding: 0 0 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.5rem; }
-.pgs .pg.is-wide ~ .pg-foot { width: min(90rem, 100% - 3.5rem); }
+.pg-foot { width: min(90rem, 100% - 3.5rem); box-sizing: border-box; margin: 0 auto; padding: 0 0 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.5rem; }
 .pg-foot-nav { display: flex; gap: 0.25rem 1.25rem; }
 .pg-foot-nav a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target); min-height: var(--target); color: var(--ink); font-weight: 620; text-underline-offset: 0.2rem; }
 .pg-fine { color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); flex: 1 1 18rem; }
@@ -60,3 +59,6 @@
 
 /* the themed select (pickers.css, shared with Direction A pages): a well like the other fields */
 .pgs .ga-pick-btn { border-radius: 1rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line-2); font: 560 1rem/1.2 var(--f-ui); color: var(--ink); }
+
+/* a second phrase of a heading that only a laptop's old skin showed (desk_skin.css went with Direction A's top bar) */
+.ga-h-two { display: none; }

@@ -12,7 +12,7 @@ from gitaway import v2
 from tests.test_signin import sign_in
 
 CSS = Path(__file__).resolve().parent.parent / "assets" / "css"
-V2_STYLES = ["v2-tokens.css", "v2.css", "v2-moods.css", "v2drawer.css", "v2plan.css", "v2rail.css", "cv2.css", "cvedit.css", "matrixbook.css"]
+V2_STYLES = ["v2-tokens.css", "v2.css", "v2page.css", "v2-moods.css", "v2drawer.css", "v2plan.css", "v2rail.css", "cv2.css", "cvedit.css", "matrixbook.css"]
 PINK_VIOLET = re.compile(r"#8b2fc9|#c92a5e|#9333ea|#db2777|#c026d3|rgb\(\s*139[ ,]+47[ ,]+201|rgb\(\s*201[ ,]+42[ ,]+94|rgb\(\s*147[ ,]+51[ ,]+234|rgb\(\s*219[ ,]+39[ ,]+119", re.I)
 
 

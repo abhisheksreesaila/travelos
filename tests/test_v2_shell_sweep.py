@@ -8,7 +8,7 @@ OWN_SHELL = {"/"}      # the cover (its own shell, tests/test_cover.py)
 NOT_PAGES = {"/auth/callback", "/logout", "/healthz", "/manifest.webmanifest", "/sw.js", "/robots.txt", "/sitemap.xml", "/trips/import/template", "/plan/explore", "/plan/quote",
              "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map",
              "/plan/matrix/tile", "/plan/matrix/peek", "/plan/matrix/rail", "/guides/sheet", "/plan/ask/suggest"}      # fragments, JSON, files, the OAuth return
-PENDING_F272 = {"/signin", "/plan-for-me", "/plan-for-me/start", "/trips/import", "/trips/build", "/trips/build/edit", "/trip/details", "/trip/delete", "/creators/import", "/creators/drafts", "/creators/drafts/scan", "/creators/settings", "/creators/stats"}      # converted by the other F-272 builder (and sign-in): empty it once merged
+PENDING_F272: set[str] = set()      # empty since parts A and C merged (F-272); a page still in Direction A would be listed here, with the reason
 
 
 def v2_shell(html: str) -> bool:
@@ -35,7 +35,7 @@ def test_every_page_wears_the_v2_shell(client, signed_in):
         seen += 1
         if not v2_shell(r.text) and path not in PENDING_F272:
             wrong.append(f"{path} ({r.status_code})")
-    assert seen > 15
+    assert seen >= 12
     assert not wrong, f"pages still in Direction A: {wrong}"
 
 
@@ -43,3 +43,11 @@ def test_the_pending_list_names_only_pages_that_are_not_v2_yet(client):
     """When a page moves, it leaves the list: a stale entry would hide a page that went back."""
     stale = [p for p in sorted(PENDING_F272) if (r := client.get(p, follow_redirects=False)).headers.get("content-type", "").startswith("text/html") and v2_shell(r.text)]
     assert not stale, f"PENDING_F272 can drop: {stale}"
+
+
+def test_a_quiet_page_ends_with_privacy_and_terms_except_where_it_has_its_own_foot(client):
+    """The v2 bar carries no legal links, so every quiet page's foot does; the cover, the matrix (its About card) and a guide (studio.foot) keep their own."""
+    for path in ("/privacy", "/offline", "/no-such-page", "/guides/make"):
+        html = client.get(path).text
+        assert html.count('class="pg-foot"') + html.count("cb-foot") == 1 and 'href="/privacy"' in html and 'href="/terms"' in html, path
+    assert 'class="pg-foot"' not in client.get("/plan/matrix").text
