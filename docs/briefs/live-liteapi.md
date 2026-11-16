@@ -1,4 +1,4 @@
-Status: draft
+Status: approved (founder, 2026-11-16)
 
 # Live LiteAPI: real prices now, a real booking later
 
