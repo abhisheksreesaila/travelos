@@ -17,13 +17,13 @@ import logging
 import os
 import re
 
-from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, Main, P, Section, Span, Textarea, Ul
+from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, Link, P, Section, Span, Textarea, Ul
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
 from gitaway import affiliate, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
-from gitaway.layout import page
+from gitaway.layout import reading
 from gitaway.pages import creatorclaim as claims
 from gitaway.partners import failures, log
 
@@ -153,7 +153,7 @@ def check_page(o):
     days = [Section(H3(planview.day_label(i, d)), *[Div(Span(f"{planview.clock(st['start'])} · {st['kind']}", cls="ad-meta"), field(f"s{d}-{j}-title", st["title"], "Title"), field(f"s{d}-{j}-note", st["note"], "Note", 2), cls="ad-stop")
                                                    for j, st in enumerate(day["stops"])], cls="ad-sec") for d, day in enumerate(r["days"])]
     kids = ", ".join(planview.kid_words(i))
-    return page("Check a plan", Main(Div(
+    return reading("Check a plan", Div(Div(
         H1("Check a plan", cls="ad-title"), P(f"#{o['id'][:8]} · {o['email']} · {i['where']} · {i['start']} to {i['end']} · {i['adults']} adults" + (f" · kids {kids}" if kids else "")
                                              + f" · {i['pace']} · {i['budget']}", cls="ad-meta"),
         P(f"Must-dos: {i['must']}", cls="ad-note") if i["must"] else "",
@@ -161,7 +161,7 @@ def check_page(o):
              Div(Button("Save the edit", type="submit", cls="btn", id="pfm-save"), A("Back to admin", href=f"/admin#pfm-{o['id'][:8]}", cls="ad-link"), cls="ad-actions"),
              Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/edit", method="post", cls="ad-sec", id="pfm-check"),
         Form(Button(icon("check", 18, 2.4), "Send to family", type="submit", cls="btn btn-primary", id="pfm-send"), Input(type="hidden", name="order", value=o["id"]), action="/admin/plan-for-me/send", method="post", cls="ad-inline"),
-        cls="ad-card"), id="admin", cls="ad-stage"), head=HEAD)
+        cls="ad-card"), id="admin", cls="ad-stage"), wide=True, head=HEAD)
 
 
 PAID_TWICE = {"double": "Paid twice: the order was already paid", "unknown": "Paid for an order that no longer exists"}
@@ -196,7 +196,7 @@ def admin_page(drafted=()):
              ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"),
              ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"))     # F-220: the key's kind, never the key
     fresh = sum(1 for r in rep if not r["seen"])
-    return page("Admin", Main(
+    return reading("Admin", Div(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
             P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
@@ -217,7 +217,7 @@ def admin_page(drafted=()):
                     P("Estimates from the sandbox and from clicks (flights about 1.1%, stays and cars about 5%); the real figures come with the Travelpayouts statistics, which are not connected yet.", cls="ad-meta"),
                     Ul(*[Li(Span(n, cls="ad-name"), Span(f"{c} click{'s' if c != 1 else ''} · {b} booked · {catalog.money(cents)}", cls="ad-meta")) for n, c, b, cents in summary], cls="ad-list", id="ad-partners") if summary
                     else P("No partner clicks yet.", cls="ad-meta"), cls="ad-sec"),
-            cls="ad-card"), id="admin", cls="ad-stage"), head=HEAD)
+            cls="ad-card"), id="admin", cls="ad-stage"), wide=True, head=HEAD)
 
 
 def register(app):

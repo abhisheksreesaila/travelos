@@ -18,7 +18,7 @@ from contextvars import ContextVar
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import members, session as ses
-from gitaway.layout import page
+from gitaway.layout import notice
 
 SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 # Writes that do not touch a family's plans, so any member (viewers too) may make them.
@@ -71,9 +71,8 @@ def allows(role, need) -> bool:
 def refusal(request, session, role):
     """The friendly page a refused person gets (403)."""
     message = EDITOR_MESSAGE if role != "viewer" else VIEWER_MESSAGE
-    from fasthtml.common import A, Div, H1, P, Section, to_xml
-    body = page("Not allowed", Section(Div(H1("Only editors can change that"), P(message, id="refusal"),
-                                            A("Back to the trip", href="/trip/plan", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap"))
+    from fasthtml.common import A, H1, P, to_xml
+    body = notice("Not allowed", H1("Only editors can change that"), P(message, id="refusal"), A("Back to the trip", href="/trip/plan", cls="btn btn-primary"))
     return Response(to_xml(body), status_code=403, media_type="text/html")
 
 

@@ -20,12 +20,12 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H1, H2, Img, Input, Label, Link, Main, NotStr, P, Script, Section, Span
 from fasthtml.common import to_xml
-from fasthtml.core import FtResponse
+
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from gitaway import access, blogbutton, phone, placeart, session as ses, sharecard, tripshare
 from gitaway.icons import icon
-from gitaway.layout import join_note, page, plan_href
+from gitaway.layout import notice, page, plan_href, reading
 
 PATH = "/trip/share"
 HEAD = (Link(rel="stylesheet", href="/assets/css/share.css"),)
@@ -125,13 +125,13 @@ def public_page(sh):
     link = sh.link()
     art = placeart.art(sh.art, wx=None) if sh.art else None
     route = [Span(s, cls="sp-stop") for s in sh.route]
-    return page(sh.title, Section(
+    return reading(sh.title, Section(
         Div(Div(NotStr(art) if art else "", cls="sp-art"),
             Div(Span(f"{sh.days} day{'s' if sh.days != 1 else ''}", cls="sp-pill"), H1(sh.title), P(" · ".join(x for x in (sh.place, sh.month) if x), cls="sp-sub"),
                 Div(*[x for i, s in enumerate(route) for x in ((s, Span("→", cls="sp-arrow", aria_hidden="true")) if i < len(route) - 1 else (s,))], cls="sp-route") if route else "",
                 P("A family planned this trip on GitAway: flights, stays and days on one calendar.", cls="sp-note"),
-                A("Plan your own trip", href=plan_href(), cls="btn btn-ink sp-cta"), cls="sp-body"), cls="sp-card"),
-        cls="ga-wrap sp-wrap"),
+                A("Plan your own trip", href=plan_href(), cls="btn btn-primary sp-cta"), cls="sp-body"), cls="sp-card"),
+        cls="sp-wrap"),
         head=HEAD, noindex=True, description=f"{sh.title}: {sh.days} days in {sh.place or 'a new place'}, planned on GitAway.", image=blogbutton.base_url() + card_path(sh),
         og_type="article")
 
@@ -169,8 +169,7 @@ def register(app):
     def share_page(token: str):
         sh = tripshare.find(token)
         if not sh:
-            return FtResponse(page("Not shared", Section(Div(H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Plan a trip", href=plan_href(), cls="btn btn-ink"), cls="ga-wrap"),
-                                                        cls="ga-soon ga-wrap"), noindex=True), status_code=404)
+            return notice("Not shared", H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Plan a trip", href=plan_href(), cls="btn btn-primary"), status=404, noindex=True)
         return public_page(sh)
 
     @app.get("/s/{token}/card.png")

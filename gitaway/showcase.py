@@ -15,8 +15,6 @@ for a real creator, and the paste-a-link import (/creators POST, draft, finish, 
 import os
 import re
 
-from fasthtml.core import FtResponse
-
 from gitaway import auth
 
 # Paths (and everything under them) that exist only for sample or community content.
@@ -104,7 +102,6 @@ async def guard(req, sess):
 
 def not_found():
     """The 404 page of everything that does not exist (also what an unknown /go offer gets)."""
-    from gitaway.layout import page
-    from fasthtml.common import A, Div, H1, P, Section
-    return FtResponse(page("Not found", Section(Div(H1("Nothing here"), P("That page isn't part of GitAway."), A("Back home", href="/", cls="btn btn-primary")),
-                                                 cls="ga-soon ga-wrap")), status_code=404)
+    from gitaway.layout import notice
+    from fasthtml.common import A, H1, P
+    return notice("Not found", H1("Nothing here"), P("That page isn't part of GitAway."), A("Back home", href="/", cls="btn btn-primary"), status=404)

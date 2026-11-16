@@ -34,4 +34,4 @@ def register(app):
                 for s in placeart.SLUGS]
         wx = Section(H2("Weather layer"), Div(*(_tile(placeart.art("laketahoe", wx=w), w) for w in placeart.WX), cls="da-row"), cls="da-place")
         return page("Place art", H1("Place art"), P("F-223 preview, showcase only. Switch Light and Dark to see each day drawing turn to night."),
-                    wx, *rows, Section(H2("Sky strips"), *_strips(), cls="da-strips"), head=HEAD, noindex=True)
+                    wx, *rows, Section(H2("Sky strips"), *_strips(), cls="da-strips"), head=HEAD, noindex=True, v2="pgs", quiet=True)

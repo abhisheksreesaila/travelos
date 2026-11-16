@@ -11,7 +11,7 @@ from gitaway.icons import icon
 
 log = logging.getLogger(__name__)
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2page.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
@@ -55,9 +55,14 @@ def section_of(current: str) -> str:
     return ("plan" if c in ("trip", "/trip/plan") else "book" if c == "book" or c.startswith("/plan") else "guides" if c.startswith(("/guides", "/community", "/creators", "/for-creators")) else "")
 
 
+def admin_notice(session):
+    """(reports not yet read, is the captain): the count shows to an admin only, and (0, False) for everyone else."""
+    from gitaway.pages import admin  # here, not at the top: that module draws pages with the shell, which draws this bar
+    return (admin.new_reports(session), True) if admin.is_admin(session) else (0, False)
+
+
 def _state(traveler):
     """(has a trip, is the captain, reports not yet read) for the signed-in person; a family whose trips cannot be read is shown as having none."""
-    from gitaway import topbar      # here: topbar imports layout, which imports this module
     session = session_.request_session()
     if traveler is None or session is None:
         return False, False, 0
@@ -66,7 +71,7 @@ def _state(traveler):
     except Exception:
         log.exception("could not read the family's trips for the v2 top bar")
         has_trip = False
-    new, captain = topbar._admin_notice(session)
+    new, captain = admin_notice(session)
     return has_trip, captain, new
 
 

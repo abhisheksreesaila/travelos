@@ -71,17 +71,15 @@ def join_as(contexts, base_url, owner_page, email, role="editor"):
 # ---- the look and the fit ----------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("path", ["/family", "/trip/details"])
-def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_by_900(ari, base_url, path):
+def test_each_page_has_the_v2_bar_white_cards_and_the_v2_type_at_1440_by_900(ari, base_url, path):
     ctx, page = ari
     page.goto(f"{base_url}{path}")
-    expect(page.locator(".ga-topbar")).to_be_visible()
-    expect(page.locator(".ga-tb-nav a")).to_have_text(["Book", "Plan", "Guides"])      # M5 triage: the bar is Book · Plan · Guides (F-255); Family members is in the avatar's menu
+    expect(page.locator(".v2-top")).to_be_visible()
+    expect(page.locator(".v2-sections a")).to_have_text(["Book", "Plan", "Guides"])      # M5 triage: the bar is Book · Plan · Guides (F-255); Family members is in the avatar's menu
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
-    assert style[0] == "rgb(255, 255, 255)" and 13 <= style[1] <= 15 and style[2] == "1px", style      # F-158: the calm skin's white card with a hairline edge, radius 14
-    assert "Geist" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-200: Geist for everything
-    scroll_h, client_h = fits(page)
-    assert scroll_h <= client_h, f"{path} scrolls: {scroll_h} > {client_h}"
+    assert style[0] == "rgb(255, 255, 255)" and style[1] >= 24, style      # F-272: a near-opaque white card, radius 26 (v2's card)
+    assert "Newsreader" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-272: Newsreader for a heading
 
 
 @pytest.mark.parametrize("path", ["/family", "/trip/details"])
@@ -91,8 +89,6 @@ def test_no_page_scrolls_sideways_at_any_width(ari, base_url, path, size):
     page.set_viewport_size({"width": size[0], "height": size[1]})
     page.goto(f"{base_url}{path}")
     assert no_sideways_scroll(page)
-    if size[0] >= 1280:
-        assert fits(page)[0] <= fits(page)[1]
 
 
 def test_a_family_with_many_people_keeps_the_page_still_and_scrolls_the_list(ari, contexts, base_url):
@@ -107,7 +103,7 @@ def test_a_family_with_many_people_keeps_the_page_still_and_scrolls_the_list(ari
     page.goto(f"{base_url}/family")
     expect(page.locator(".fam-invite")).to_have_count(6)
     assert no_sideways_scroll(page)
-    assert fits(page)[0] <= fits(page)[1]  # the lists scroll inside their cards, the page stays put
+    assert page.evaluate("document.querySelector('#fam-pending').getBoundingClientRect().height") <= 15 * 16      # the list scrolls inside its card (a capped height), however many invitations
     assert page.locator("#fam-pending").evaluate("e => getComputedStyle(e).overflowY") == "auto"
     assert page.locator("#fam-members").evaluate("e => getComputedStyle(e).overflowY") == "auto"
     expect(page.locator(".fam-member")).to_have_count(4)

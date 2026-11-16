@@ -31,12 +31,10 @@ def test_landing_header_is_the_sites_way_in(client):
     assert header.index("Guides") < header.index("Plan a trip")
 
 
-def test_other_pages_keep_their_header_nav(client):
-    header = _tag(_get(client, "/creators"), "header", "ga-header")      # F-200: sign-in is a full-screen page with the brand and Cancel only
-    assert "/guides" in header and 'href="/plan/ask"' in header and "/signin?next=" in header      # D-761: signed out, Plan a trip opens the ask; Sign in stays its own button
-    for path in ["/guides", "/guides/make"]:       # F-253, F-262: the creator pages wear the v2 top bar, which carries the same way in
+def test_other_pages_wear_the_v2_bar_with_the_same_way_in(client):
+    for path in ["/creators", "/guides", "/guides/make", "/privacy"]:       # F-272: every page but the cover wears the v2 top bar, which carries the way in
         top = re.search(r'<div class="v2-top">.*?(?=<main)', _get(client, path), re.S).group(0)
-        assert _hrefs(top)[1:3] == ["/plan/ask", "/guides"] and _hrefs(top)[3].startswith("/signin?next="), path      # F-255, D-761: the pill begins with Plan a trip (open to visitors), then Guides; then Sign in
+        assert _hrefs(top)[1:3] == ["/plan/ask", "/guides"] and _hrefs(top)[3].startswith("/signin?next="), path      # F-255, D-761: the pill begins with Plan a trip (open to visitors), then Guides; Sign in stays its own button
 
 
 def test_footer_carries_the_links_that_left_the_header(client):

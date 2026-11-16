@@ -3,9 +3,9 @@
 import hashlib
 import hmac
 
-from fasthtml.common import A, Button, Details, Div, Footer, Form, Header, Link, Main, Meta, Nav, NotStr, P, Script, Span, Summary, Title
+from fasthtml.common import A, Button, Details, Div, Footer, Form, Link, Main, Meta, Nav, NotStr, P, Script, Span, Summary, Title
 
-from gitaway import session, showcase
+from gitaway import session, showcase, v2pages
 from gitaway.icons import icon
 
 
@@ -84,19 +84,13 @@ def styles(*extra, theme="sunset"):
         Link(rel="stylesheet", href="/assets/css/tokens.css"),
         Link(rel="stylesheet", href="/assets/css/base.css"),
         Link(rel="stylesheet", href="/assets/css/toast.css"),         # F-108: the one toast, on every page
-        Link(rel="stylesheet", href="/assets/css/topbar.css"),        # F-139: the signed-in desktop's one top bar (shown from 1020px up)
         Script(src="/assets/js/motion.js", defer=True),               # F-109: the one liquid motion (GA.motion); before every script that opens something
         Script(src="/assets/js/motion_fallback.js", defer=True),     # F-110: the one stand-in when motion.js did not load, so no script carries a copy
         Script(src="/assets/js/toast.js", defer=True),
-        Script(src="/assets/js/topbar.js", defer=True),               # F-139: the top bar's two menus and the "/" key
         Script(src="/assets/js/preview.js", defer=True),              # F-200: the "Early preview" label opens and closes
         *extra,
-        Link(rel="stylesheet", href="/assets/css/desk_skin.css"),     # F-158: the calm laptop skin, last so it wins over every page's own CSS; every rule in it sits under the desktop query and a signed-in page's top bar, so the phone, the tablet, the installed app and the landing never see it
     )
 
-# The site's way in, the same everywhere (founder, 2026-11-13, D-458; F-262): Plan a trip is drawn as `plan_href()`. Guides is always there: off the
-# showcase, before anyone has shared a guide, its page says so.
-NAV = [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]
 
 
 MARK = ('<svg class="ga-mark" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false">'
@@ -144,54 +138,10 @@ def avatar(traveler, cls="ga-avatar"):
     return Span(traveler.initials, cls=f"{cls} fill-{traveler.color}", title=traveler.name, aria_label=traveler.name)
 
 
-def account(traveler=None):
-    """Sign in link, or the traveler's avatar plus Sign out. Defaults to the request's traveler (see gitaway.session)."""
-    traveler = traveler or session.request_traveler()
-    if not traveler:
-        return A("Sign in", href=session.signin_href(), cls="btn btn-sm")
-    from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
-    new, captain = topbar._admin_notice(session.request_session())
-    return Div(
-        A(f"Admin ({new} new)" if new else "Admin", href="/admin", cls="ga-admin-link", id="ga-admin-link") if captain else "",     # F-196: the captain's way in, with the reports not yet read
-        A(avatar(traveler), href="/family", cls="ga-me", aria_label="Your family and who is in it", title=traveler.name),  # F-043: the family page
-        Form(Button("Sign out", type="submit", cls="ga-signout"), action="/signout", method="post"),
-        cls="ga-account",
-    )
-
-
-def site_header(current: str = "", traveler=None, nav: bool = True):
-    """The header. `nav=False` is the landing's: the brand and the account only.
-
-    A signed-in person's page (nav=True) also carries the one top bar (F-139, gitaway.topbar) before it: topbar.css shows the bar from 1020px up and
-    hides this header there; below that width this header is what shows, as before."""
-    from gitaway import topbar  # here, not at the top: topbar reads the family through gitaway.session
-    links = [A(label, href=plan_href() if href == NAV[-1][1] else href, aria_current="page" if href == current else None) for label, href in NAV]
-    top = topbar.bar() if nav and traveler is None else ""
-    return (top, Header(
-        A("Skip to content", href="#main", cls="ga-skip"),
-        Div(brand(), preview(), cls="ga-brand-row"),
-        *((Nav(*links, cls="ga-nav", aria_label="Main"),) if nav else ()),
-        account(traveler),
-        cls="ga-header ga-wrap", **({"data_has_topbar": "1"} if top else {}),
-    ))
-
-
 def plan_href() -> str:
     """Where "Plan a trip" and "Start a trip" go (D-461, D-761): the ask and the trip matrix where it exists, else the import of a trip already booked, for
     everyone. A visitor searches and compares without an account; sign-in comes only where something is kept: Save, Book and Plan this trip."""
     return showcase.planning_path()
-
-
-def site_footer(links=()):
-    """The footer. `links` is a list of (label, href) shown as a small nav; the landing puts the header's old links here."""
-    return Footer(
-        Span("GitAway", cls="ga-brand-name"),
-        Span("Trips shared by travelers and creators. Sample data only: no real bookings or payments." if showcase.on() else _footer_line(), cls="ga-fine"),      # F-200: fine print
-        *((Nav(*[A(label, href=href) for label, href in links], cls="ga-footer-nav", aria_label="More"),) if links else ()),
-        Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="ga-footer-nav", aria_label="Legal"),
-        mode_switch(),
-        cls="ga-footer ga-wrap",
-    )
 
 
 APP_MARK = "/assets/icons/icon-512.png"   # the picture a shared link shows when the page has none of its own
@@ -218,21 +168,38 @@ def _footer_line() -> str:
     return f"Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; {taken}"
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), nav: bool = True, footer_links=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = False, mood: str = "", quiet: bool = False):
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = True, mood: str = "", quiet: bool = False):
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
 
-    `nav=False` drops the header's links (brand and account stay) and `footer_links` adds a footer nav: the landing's pair of options.
     `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`). `footer=False` leaves the site footer out (the trip matrix, F-238: its Privacy and Terms sit in its own ⓘ).
-    `v2=True` (F-250, D-610; a string adds its classes, "is-results" for the results look) opts the page into design language v2 with one class: the sky, the v2 top bar, Newsreader and Inter (gitaway/v2.py); there is no site header, top bar or footer. `mood` is the sky's (gitaway/moods.py; none is beach). `quiet=True` (F-261) is a reading page's sky: no objects, a soft gradient framing the content."""
-    if v2:
-        from gitaway import v2 as v2_
-        return (
-            Title(f"GitAway · {title}" if title else "GitAway"),
-            *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-            Div(v2_.bg(mood, quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
-        )
+    `v2=True` (F-250, D-610; a string adds its classes, "is-results" for the results look) opts the page into design language v2 with one class: the sky, the v2 top bar, Newsreader and Inter (gitaway/v2.py); there is no site header, top bar or footer. `mood` is the sky's (gitaway/moods.py; none is beach). `quiet=True` (F-261) is a reading page's sky: no objects, a soft gradient framing the content. A quiet page also ends with `pg_foot()` (Privacy and Terms, F-272) unless `footer=False` (the page has its own, as the matrix's "About these prices") or it is a creator page (`cv`, whose foot is studio.foot)."""
+    from gitaway import v2 as v2_
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
-        *styles(*head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-        Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), *((site_footer(footer_links),) if footer else ()), data_theme=theme, cls="ga-page"),
+        *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
+        Div(v2_.bg(mood, quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"),
+            *((pg_foot(),) if quiet and footer and "cv" not in str(v2).split() else ()), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
     )
+
+
+def pg_foot():
+    """The foot of a v2 reading page (F-272, D-800): Privacy and Terms, which the v2 top bar does not carry. The sentence under it is the site footer's, as it was."""
+    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="pg-foot-nav", aria_label="Legal"),
+                  Span("Sample data only: no real bookings or payments." if showcase.on() else _footer_line(), cls="pg-fine"), cls="pg-foot")
+
+
+def reading(title: str, *content, wide: bool = False, current: str = "", **kw):
+    """A reading or form page in design language v2 (F-272, D-800): the quiet sky, the v2 top bar, one column (`.pg`, 46rem; `wide` 90rem for a page with two columns) and, as every quiet page, the foot with
+    Privacy and Terms (`page()` adds it). Its stylesheet is assets/css/v2page.css (in v2.HEAD): near-opaque cards, v2 buttons and fields for the Direction A classes `.btn`, `.tag` and plain inputs inside it."""
+    return page(title, Div(*content, cls="pg is-wide" if wide else "pg"), current=current, v2="pgs", quiet=True, **{**kw, "head": (*v2pages.HEAD, *kw.get("head", ()))})
+
+
+def notice(title: str, *body, status: int = 200, current: str = "", head=(), **kw):
+    """A short page with one message and a way on (a 404, a refusal, the offline page, a stand-in): the title, the words and the buttons in one card. `status` makes it the response's code."""
+    from fasthtml.core import FtResponse
+    out = reading(title, Div(*body, cls="pg-card pg-notice"), current=current, head=head, **kw)
+    return out if status == 200 else FtResponse(out, status_code=status)
+
+
+# The cover's way in (founder, 2026-11-13, D-458; F-262): Plan a trip is drawn as `plan_href()`. Guides is always there: off the showcase, before anyone has shared a guide, its page says so.
+NAV = [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]

@@ -1,0 +1,64 @@
+/* GitAway reading and form pages in design language v2 (F-272, D-800): the family page, the admin, privacy and terms, the report form, the notices (404, offline, not allowed).
+   A page is `layout.reading(...)`: the quiet sky (v2.css `.v2-bg.is-quiet`), the v2 top bar, and one column `.pg` inside the wrapper `.pgs`. This file is the shared part: type, near-opaque
+   cards, the pill buttons (`.btn`, `.btn-primary`), fields, tags and the foot. A card holding words you read is near-opaque, so every word keeps 4.5:1 in light and dark; no glass here.
+   Targets are 3rem (`--target` on a v2 page); a size under 1rem goes through max(var(--text-min), ...) or max(var(--label-min), ...). Press is v2.css's (`scale`), so nothing here transforms on :active. */
+.pgs .pg { width: min(46rem, 100% - 2rem); margin: 0 auto; padding: 1.5rem 0 3rem; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.pgs .pg > * { min-width: 0; }
+.pgs .pg.is-wide { width: min(90rem, 100% - 3.5rem); }
+@media (max-width: 719px) { .pgs .pg, .pgs .pg.is-wide { width: calc(100% - 2rem); padding-top: 1rem; } }
+:where(.pgs) h1 { margin: 0; font: var(--d-wt) clamp(2.1rem, 5.2vw, 3.25rem)/1.05 var(--f-display); letter-spacing: var(--d-track); }
+:where(.pgs) h2 { margin: 0; font: var(--d-wt) 1.625rem/1.12 var(--f-display); letter-spacing: var(--d-track); }
+:where(.pgs) h3 { margin: 0; font: 600 1.25rem/1.2 var(--f-display); letter-spacing: var(--d-track); }
+:where(.pgs) p { margin: 0; color: var(--ink-2); line-height: 1.5; text-wrap: pretty; overflow-wrap: anywhere; }
+:where(.pgs) a { color: var(--word); text-underline-offset: 0.2rem; }
+:where(.pgs) a:hover { color: var(--word); }
+
+/* the card: near-opaque, one soft shadow */
+.pgs .pg-card { padding: 1.25rem 1.5rem; border-radius: 1.625rem; background: var(--card-solid); box-shadow: var(--sh2), 0 0 0 1px var(--line); color: var(--ink); }
+.pgs .pg-notice { display: grid; gap: 0.75rem; justify-items: start; padding: 1.75rem 1.75rem 2rem; margin-top: 2rem; }
+.pgs .pg-notice > * { margin: 0; }
+.pgs .pg-notice p { font-size: 1.125rem; max-width: 36rem; }
+
+/* buttons: a pill, ink on a card; primary is the calm palette's indigo (D-700) */
+.pgs .btn { --btn-bg: var(--card-solid); --btn-fg: var(--ink); min-height: var(--target); padding: 0 1.375rem; border-radius: 62.4375rem; background: var(--btn-bg); color: var(--btn-fg); font: 650 1rem/1 var(--f-ui); letter-spacing: 0;
+  box-shadow: var(--sh1), inset 0 0 0 1px var(--line-2); }
+.pgs .btn:hover { color: var(--btn-fg); background: color-mix(in srgb, var(--btn-bg) 90%, var(--ink)); }
+.pgs .btn:active { transform: none; }
+.pgs .btn-primary, .pgs .btn-ink { --btn-bg: var(--cta-bg); --btn-fg: var(--cta-fg); box-shadow: var(--cta-sh); }
+.pgs .btn-primary:hover, .pgs .btn-ink:hover { background: color-mix(in srgb, var(--cta-bg) 88%, #000); box-shadow: var(--cta-sh-up); }
+.pgs .btn-sm { padding: 0 1.125rem; font-size: 1rem; }
+.pgs .btn:disabled, .pgs .btn[aria-disabled="true"] { opacity: .5; box-shadow: none; cursor: default; }
+.pgs .btn.is-danger, .pgs .is-danger .btn { --btn-fg: var(--food-i); }
+.pgs .btn svg { width: 1.25rem; height: 1.25rem; flex: none; }
+
+/* fields: a pill-cornered well on the card */
+.pgs :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="file"], [type="submit"], [type="button"]), select, textarea) {
+  min-height: var(--target); padding: 0 1rem; border: 0; border-radius: 1rem; background: var(--card-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); font: 520 1rem/1.3 var(--f-ui); min-width: 0; max-width: 100%; }
+.pgs textarea { padding: 0.75rem 1rem; min-height: 6.5rem; resize: vertical; }
+.pgs :where(input, select, textarea)::placeholder { color: var(--ink-3); opacity: 1; }
+.pgs :where(input, select, textarea):focus-visible { outline: 0.1875rem solid var(--flight); outline-offset: 0.0625rem; border-radius: 1rem; }
+.pgs :where(input, select, textarea)[aria-invalid="true"] { box-shadow: 0 0 0 0.1875rem var(--food); }
+.pgs .pg-label { font: 650 max(var(--label-min), 0.8125rem)/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.pgs .pg-hint { color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); line-height: 1.4; }
+.pgs .pg-error { padding: 0.75rem 1rem; border-radius: 1rem; background: var(--food-t); color: var(--food-i); font-weight: 620; }
+.pgs .pg-ok { padding: 0.75rem 1rem; border-radius: 1rem; background: var(--see-t); color: var(--see-i); font-weight: 620; }
+
+/* tags and chips: a quiet pill; a role or a state, never a day */
+.pgs .tag { display: inline-flex; align-items: center; height: auto; min-height: 1.75rem; padding: 0.25rem 0.75rem; border-radius: 62.4375rem; background: var(--card-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line);
+  font: 650 max(var(--label-min), 0.8125rem)/1.1 var(--f-ui); letter-spacing: .02em; }
+
+/* the foot: Privacy and Terms (the v2 bar does not carry them) */
+.pg-foot { width: min(90rem, 100% - 3.5rem); box-sizing: border-box; margin: 0 auto; padding: 0 0 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.5rem; }
+.pg-foot-nav { display: flex; gap: 0.25rem 1.25rem; }
+.pg-foot-nav a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target); min-height: var(--target); color: var(--ink); font-weight: 620; text-underline-offset: 0.2rem; }
+.pg-fine { color: var(--ink-2); font-size: max(var(--text-min), 0.9375rem); flex: 1 1 18rem; }
+@media (max-width: 719px) { .pg-foot { width: calc(100% - 2rem); padding-bottom: 6rem; } }      /* clear of the floating sections pill */
+
+/* the avatar's fills: the tints of the kinds, light in light and dark in dark (v2 redefines --sun as the sky's sun, which is not one) */
+.pgs .fill-sun { background: var(--ride-t); }
+
+/* the themed select (pickers.css, shared with Direction A pages): a well like the other fields */
+.pgs .ga-pick-btn { border-radius: 1rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line-2); font: 560 1rem/1.2 var(--f-ui); color: var(--ink); }
+
+/* a second phrase of a heading that only a laptop's old skin showed (desk_skin.css went with Direction A's top bar) */
+.ga-h-two { display: none; }

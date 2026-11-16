@@ -25,7 +25,7 @@ from gitaway import ai, community, creatorbook, creatordraft as cd, importsource
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, itinerary_body
-from gitaway.layout import page
+from gitaway.layout import notice, page
 from gitaway.pages import creatordrafts, studio
 from gitaway.pages.creatoredit import editor_page      # noqa: F401  (the claim page draws it too)
 
@@ -43,7 +43,7 @@ def _signin(path):
 
 
 def _gone():
-    return FtResponse(page("Not found", Section(Div(H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Start a new one", href=PATH, cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap")), status_code=404)
+    return notice("Not found", H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Start a new one", href=PATH, cls="btn btn-primary"), status=404)
 
 
 # ---- paste ---------------------------------------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ def preview_page(session, d, error=""):
                  action=f"{PATH}/{d['id']}", method="post", cls="ci-pub"),
             A(icon("chev-left", 18, 2.4), "Back to edit", href=f"{PATH}/{d['id']}", cls="btn", id="pb-back"), cls="pb-pv-act"),
         cls="pb-pv", id="pb-pv", role="region", aria_label="Preview")
-    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme)
+    return page(trip.title or "Your trip", bar, itinerary_body(trip), head=(*VIEW_HEAD, *HEAD), theme=trip.theme, v2=True, quiet=True)
 
 
 async def _book_act(session, me, d, do, f):

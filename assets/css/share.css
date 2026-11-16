@@ -65,10 +65,10 @@ html.sh-open, html.sh-open body { overflow: hidden; }
 
 /* ---------- the public page: /s/<token> ---------- */
 .sp-wrap { padding-top: 1.5rem; padding-bottom: 3rem; }
-.sp-card { display: grid; max-width: 34rem; margin: 0 auto; border-radius: var(--r-lg); overflow: hidden; background: var(--card); box-shadow: var(--shadow-lg); }
-.sp-art { aspect-ratio: 2 / 1; background: var(--paper-2); }
+.sp-card { display: grid; max-width: 34rem; margin: 0 auto; border-radius: 1.625rem; overflow: hidden; background: var(--card-solid); box-shadow: var(--sh3), 0 0 0 1px var(--line); }
+.sp-art { aspect-ratio: 2 / 1; background: var(--card-2); }
 .sp-body { display: grid; gap: 0.75rem; padding: 1.25rem 1.5rem 1.5rem; justify-items: start; }
-.sp-body h1 { margin: 0; font: 780 2.25rem/1.04 var(--font-display); letter-spacing: -.04em; overflow-wrap: anywhere; }
+.sp-body h1 { margin: 0; font: var(--d-wt) 2.5rem/1.04 var(--f-display); letter-spacing: var(--d-track); overflow-wrap: anywhere; }
 .sp-pill { display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0 0.875rem; border-radius: var(--r-pill); background: var(--k-flight); color: var(--k-on); font: 700 max(var(--text-min), 0.9375rem)/1 var(--font-body); }
 .sp-sub { margin: 0; font: 600 1.125rem/1.3 var(--font-body); color: var(--ink-2); }
 .sp-route { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }

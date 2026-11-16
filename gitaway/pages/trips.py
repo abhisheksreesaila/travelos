@@ -6,29 +6,19 @@ GET  /pub/<slug>/<file>   a published trip's public photo, public and cacheable;
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Div, H1, P, Section, cookie
+from fasthtml.common import A, H1, P, cookie
 from fasthtml.core import FtResponse
 from starlette.responses import FileResponse, RedirectResponse, Response
 
 from gitaway import affiliate, community, forks as forks_model, guide as gd, publish, seo, session as ses, showcase, stats
 from gitaway.pages import blogbutton
 from gitaway.itinerary_view import itinerary_page
-from gitaway.layout import page
+from gitaway.layout import notice
 
 
 def not_found():
-    body = page(
-        "Trip not found",
-        Section(
-            Div(
-                H1("This trip wandered off"),
-                P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
-                A("Find another guide", href="/guides", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"),
-            ),
-            cls="ga-soon ga-wrap",
-        ),
-    )
-    return FtResponse(body, status_code=404)
+    return notice("Trip not found", H1("This trip wandered off"), P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
+                  A("Find another guide", href="/guides", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"), status=404)
 
 
 def register(app):

@@ -20,7 +20,7 @@ from gitaway import community, creator_profiles, creators, hub, session as ses, 
 from gitaway.creators import MAX, SEASONS
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
-from gitaway.layout import page
+from gitaway.layout import notice, page, reading
 from gitaway.pages.guides import HEAD as HUB_HEAD, card as hub_card
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/creators.css"), Script(src="/assets/js/creators.js", defer=True))
@@ -78,9 +78,9 @@ def _real_item(c):
 def real_index():
     """/creators off the showcase: only the people who published a real trip, no paste box (the link import is simulated)."""
     people = community.real_creators()
-    return page("Creators", Section(H1("Creators on GitAway"), P("Families who published a trip they really took. Read it, fork it, plan your own."),
+    return reading("Creators", Section(H1("Creators on GitAway"), P("Families who published a trip they really took. Read it, fork it, plan your own."),
                                     P(A(icon("note", 18, 2.2), "Turn your own post into a trip", href="/creators/import", cls="btn btn-primary", id="cr-import")),
-                                    Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real ga-wrap"), current="/creators", head=HEAD)
+                                    Ul(*[_real_item(c) for c in people], cls="cr-roster"), cls="cr cr-real"), wide=True, current="/creators", head=HEAD)
 
 
 def real_profile(handle, mine=False):
@@ -123,8 +123,8 @@ def profile_page(c):
             A(f"{c.channel_label} channel", href=c.channel, rel="noopener", target="_blank", cls="btn cr-channel"),
             cls="cr-profile-head"),
         Section(H2(f"{c.name.split()[0]}'s trips"), Div(*[trip_card(t) for t in c.trips], cls="cr-trips"), cls="cr-profile-trips"),
-        P(A("All creators", href="/creators")), cls="cr cr-profile ga-wrap")
-    return page(c.name, body, current="/creators", head=HEAD)
+        P(A("All creators", href="/creators")), cls="cr cr-profile")
+    return reading(c.name, body, wide=True, current="/creators", head=HEAD)
 
 
 # ---------- paste ----------
@@ -152,8 +152,8 @@ def paste_page(session, link="", error="", status=200):
             P("Demo: nothing is fetched. The draft is a made-up transcript, picked from your link.", cls="cr-fine"),
             A(icon("note", 18, 2.2), "Pick up your draft", href="/creators/draft", cls="btn btn-sm cr-resume") if rec else "",
             cls="cr-paste-copy"),
-        steps, pitch(), roster(), cls="cr cr-paste ga-wrap")
-    return FtResponse(page("For creators", body, current="/creators", head=HEAD), status_code=status)
+        steps, pitch(), roster(), cls="cr cr-paste")
+    return FtResponse(reading("For creators", body, wide=True, current="/creators", head=HEAD), status_code=status)
 
 
 # ---------- the draft ----------
@@ -245,8 +245,8 @@ def draft_page(session, new=False, message="", status=200):
              Div(H1("Check your trip"), progress(1, creators.minutes_left(rec)), cls="cr-top"),
              Div(Div(_source(d), _questions(d), cls="cr-side"), stage, cls="cr-grid"),
              action="/creators/draft", method="post", id="cr-form", cls="cr-form"),
-        cls="cr ga-wrap")
-    return FtResponse(page("Check your trip", body, current="/creators", head=HEAD), status_code=status)
+        cls="cr")
+    return FtResponse(reading("Check your trip", body, wide=True, current="/creators", head=HEAD), status_code=status)
 
 
 # ---------- done ----------
@@ -329,11 +329,11 @@ def register(app):
             return _signin("/creators/finish")
         if rec.get("k") != "12":
             return RedirectResponse("/creators/draft", status_code=303)
-        return page("Publish your trip", Section(
+        return reading("Publish your trip", Section(
             Form(H1("Ready to publish"), P("You are signed in. One tap puts your trip in the community hub."),
                  Div(Button(icon("check", 20, 2.6), "Publish my trip", type="submit", cls="btn btn-ink"), A("Back to the draft", href="/creators/draft", cls="btn"), cls="cr-actions"),
-                 action="/creators/finish", method="post", id="cr-finish", data_auto="1", cls="cr-done-copy"), cls="cr ga-wrap"),
-            current="/creators", head=HEAD)
+                 action="/creators/finish", method="post", id="cr-finish", data_auto="1", cls="cr-done-copy"), cls="cr"),
+            wide=True, current="/creators", head=HEAD)
 
     @app.post("/creators/finish")
     def finish_post(session):
@@ -362,5 +362,5 @@ def register(app):
         if c is None and (found := real_profile(handle, mine=bool(me) and (community.creator_of(me.id) or {}).get("handle") == handle)) is not None:
             return found
         if c is None:
-            return FtResponse(page("Not found", Section(H1("Nothing here"), A("All creators", href="/creators"), cls="ga-soon ga-wrap")), status_code=404)
+            return notice("Not found", H1("Nothing here"), A("All creators", href="/creators", cls="btn"), status=404)
         return profile_page(c)
