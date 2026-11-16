@@ -18,7 +18,7 @@ Docs moved from docs.liteapi.travel to docs.nuitee.com (301). Sources: [user pay
 
 ## Margin (`margin` on `POST /hotels/rates`)
 - A number, a percentage that overrides the account's markup for that request. Probed on the sandbox: `retailRate.total` = net x (1 + margin/100) (340.10 at 0, 374.11 at 10, 391.08 at 15), and `suggestedSellingPrice` is at least net x 1.15 and follows the margin once it is higher.
-- At `margin: 16` the retail rate (what the guest pays) and `suggestedSellingPrice` (the public price the square shows) were **equal to the cent for 10 of 11 hotels and a cent apart for the rest** (`margin.json`: 394.48 and 394.48, 1046.34 and 1046.33). At 15 the retail rate was up to $2 under the public price. So GitAway sends `margin: 16` on every stay search with a live key (`liteapi.MARGIN`, `LITEAPI_MARGIN` to change it). The sandbox key is searched without one (its retail rate is what it shows).
+- At `margin: 16` the retail rate (what the guest pays) and `suggestedSellingPrice` (the public price the square shows) were **equal to the cent for 9 of 11 hotels and a cent apart for the other 2** (`margin.json`: 394.48 and 394.48, 1046.34 and 1046.33). At 15 the retail rate was up to $2 under the public price. So GitAway sends `margin: 16` on every stay search with a live key (`liteapi.MARGIN`, `LITEAPI_MARGIN` to change it). The sandbox key is searched without one (its retail rate is what it shows).
 - The commission field in the answer is our earnings on the booking.
 
 ## Book (`POST https://book.liteapi.travel/v3.0/rates/book`)

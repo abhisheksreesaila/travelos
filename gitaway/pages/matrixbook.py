@@ -154,14 +154,14 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     agree = Label(Input(type="checkbox", name="agree", required=True, checked=values.get("agree") == "on", cls="mxb-tick"), Span(icon("check", 16, 3), cls="mxb-cb", aria_hidden="true"),
                   Span("I have read the fare and hotel rules, including whether each stay is refundable."), cls="mxb-agree" + (" has-err" if errors.get("agree") else ""))
     last = (P(mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED + ". LiteAPI’s test card pays; no email is sent.", cls="mxb-fine") if not form else
-            P(mb.LIVE_WORDS if live else "Sandbox booking: the form takes LiteAPI’s test card, nothing is charged", cls="mxb-fine"))
+            P((mb.LIVE_WORDS if live else "Sandbox booking: the form takes LiteAPI’s test card, nothing is charged") + ". Next is LiteAPI’s secure payment form.", cls="mxb-fine"))
     review = (rv, Div(_moved(prep), data_moved="1"), _policy(prep) if form else "", _code_box(prep) if form else "", summary,
               P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. The flight is booked on its airline’s site.", cls="mxb-fine"),
               agree, P(errors["agree"], id="mxb-agree-e", cls="mxb-err", role="alert") if errors.get("agree") else "", last)
     panes = [Div(H3(STEPS[i][1], cls="mxb-q"), *body, cls="mxb-pane", data_pane=str(i), data_small=STEPS[i][0]) for i, body in enumerate((guest, contact, requests, review))]
     prog = Div(*[Span(cls="on" if i == 0 else "") for i in range(len(STEPS))], cls="mxb-prog", aria_hidden="true")
     foot = Div(Button("Back", type="button", cls="mxb-b2", data_back="1"), Span("Step 1 of 4", cls="mxb-stepn"), Button(Span("Continue"), icon("arrow-right", 20, 2.4), type="button", cls="mxb-b1", data_cont="1"),
-               Button(icon("check", 20, 2.8), Span(f"Continue to payment · {catalog.money(stays_total)}" if form else f"Book for {catalog.money(stays_total)}", data_sum="go"), type="submit",
+               Button(icon("check", 20, 2.8), Span(f"Continue · {catalog.money(stays_total)}" if form else f"Book for {catalog.money(stays_total)}", data_sum="go"), type="submit",
                       cls="mxb-b1 mxb-go sun"), cls="mxb-foot")
     at = min((i for f, i in (("first", 0), ("last", 0), ("email", 1), ("phone", 1), ("agree", 3)) if f in errors), default=0)      # the question a mistake is in opens first
     return Form(prog, Div(*panes, cls="mxb-panes"), foot, *_hidden(s, lane, w, pk, token=prep.token), method="post", action=CONFIRM, cls="mxb-f", data_step=str(at),
@@ -177,7 +177,7 @@ def _policy(prep: mb.Prep):
 def _code_box(prep: mb.Prep):
     """"Have a code?": a LiteAPI voucher code, checked by LiteAPI (the script asks POST /plan/matrix/book/code; without it the field is a note that the code needs the script)."""
     return Div(Label("Have a code?", fr="mxb-code", cls="mxb-l"),
-               Div(Input(id="mxb-code", type="text", autocomplete="off", autocapitalize="characters", spellcheck="false", maxlength="32", value=prep.voucher, data_code="1"),
+               Div(Input(id="mxb-code", type="text", autocomplete="off", autocapitalize="none", spellcheck="false", maxlength="32", value=prep.voucher, data_code="1"),
                    Button("Apply", type="button", cls="mxb-b2 mxb-apply", data_apply="1"), cls="mxb-codebox-r"),
                P("", id="mxb-code-msg", cls="mxb-hint", role="status", data_code_msg="1"), cls="mxb-field mxb-codebox")
 
@@ -194,7 +194,7 @@ def pay_form(prep: mb.Prep, secret: str, return_url: str):
                Div(Span("Charged now", cls="mxb-tl"), Span(catalog.money(pre.charge_cents), cls="num mxb-total", data_charge="1"), cls="mxb-sum t"),
                P(f"{catalog.money(pre.due_at_stay_cents)} more is paid at the hotel.", cls="mxb-fine") if pre.due_at_stay_cents else "",
                _policy(prep),
-               P("Sandbox: use LiteAPI’s test card 4242 4242 4242 4242, any future date, any 3 digits. Nothing is charged." if sandbox else mb.LIVE_WORDS + ".", cls="mxb-fine"),
+               P("Sandbox: use LiteAPI’s test card 4242 4242 4242 4242, any future date, any 3 digits. Nothing is charged.", cls="mxb-fine") if sandbox else "",
                Div(id="mxb-pay-el", cls="mxb-payel", data_pay_root="1", data_key="sandbox" if sandbox else "live", data_secret=secret, data_return=return_url, aria_label="Payment form"),
                P("Loading LiteAPI’s secure payment form…", cls="mxb-hint", data_pay_wait="1", role="status"),
                Noscript(P("LiteAPI’s payment form needs JavaScript. Turn it on for this page, then book again.", cls="mxb-note is-warn", role="alert")),
@@ -231,7 +231,7 @@ def _paid_page(done, pay, problem: str = "", status: int = 200):
                         P(icon("shield", 16, 2.4), mb.words(), cls="mxb-sandbox is-booked", role="status"), cls="mxb-head"),
                     Div(_confetti(), Div(Div(*what, cls="mxb-pass-mid"), stub, cls="mxb-pass"), back, cls="mxb-confirm", data_step="booked"), cls="mxb", data_at="booked")
     out = page("Your booking", Div(Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
-    return out if status == 200 else FtResponse(out, status_code=status)
+    return FtResponse(out, status_code=status, headers={"Cache-Control": "no-store"})
 
 
 def _flight_link(s, lane, w):
@@ -307,7 +307,8 @@ def _answer(request, s, lane, w, inner, status=200):
     if request.headers.get("x-matrix") == "1":
         return Response(to_xml(inner), media_type="text/html", status_code=status, headers={"Cache-Control": "no-store"})
     back = A(icon("chev-left", 18, 2.4), "Back to the matrix", href=mx.href(s, mx.SQUARE, lane=lane.key, w=w.key), cls="btn mx-back")
-    return page(f"Book {lane.name}", Div(back, Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
+    out = page(f"Book {lane.name}", Div(back, Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
+    return FtResponse(out, status_code=status, headers={"Cache-Control": "no-store"})      # the payment form's key may be on it
 
 
 def _family(session):
@@ -490,7 +491,7 @@ def register(app):
         f = sq.flight
         discount = sum(r_.prebook.discount_cents for r_ in prep.rows)
         return JSONResponse({"token": prep.token, "code": voucher, "stay": catalog.money(prep.total_cents), "total": catalog.money(f.cents + prep.total_cents), "discount": catalog.money(discount) if discount else "",
-                             "go": f"Continue to payment · {catalog.money(prep.total_cents)}", "moved": to_xml(_moved(prep)) if prep.changed else "",
+                             "go": f"Continue · {catalog.money(prep.total_cents)}", "moved": to_xml(_moved(prep)) if prep.changed else "",
                              "said": f"Code {voucher} applied." if discount else ("Code removed." if not voucher else f"Code {voucher} did not change the price.")},
                             headers={"Cache-Control": "no-store"})
 

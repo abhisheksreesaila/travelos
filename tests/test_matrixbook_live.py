@@ -100,7 +100,7 @@ def test_the_sheet_prebooks_for_the_payment_form_saves_the_ids_and_says_who_sell
     words = text(html)
     assert real.calls(PREBOOK) == [{"offerId": real.calls(PREBOOK)[0]["offerId"], "usePaymentSdk": True}] and len(real.calls(PREBOOK)) == 1
     assert "Sold by Nuitée through LiteAPI" in words and "GitAway never sees it" in words and "Non-refundable: if you cancel, nothing comes back." in words
-    assert "Have a code?" in words and "Continue to payment · $" in words and "Your card is charged when you pay" in words
+    assert "Have a code?" in words and "Continue · $" in words and "Your card is charged when you pay" in words
     rows = payments()
     assert len(rows) == 1 and (rows[0]["status"], rows[0]["prebook_id"], rows[0]["transaction_id"], rows[0]["charge_cents"]) == ("prebooked", "nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP", round((real.shown - 120) * 100))
     assert rows[0]["policy"] == "Non-refundable: if you cancel, nothing comes back."
@@ -262,7 +262,7 @@ def test_a_code_reprices_the_stay_and_only_the_checkout_shows_the_discount(real,
     assert r.status_code == 200 and j["code"] == "F274SANDBOX" and j["token"] != token(html)
     assert j["discount"] == f"${discount / 100:,.2f}" and j["said"] == "Code F274SANDBOX applied." and j["moved"] == ""
     assert real.calls(PREBOOK)[-1]["voucherCode"] == "F274SANDBOX" and real.calls(PREBOOK)[-1]["usePaymentSdk"] is True
-    assert j["stay"] == f"${(round(real.shown * 100) - discount) / 100:,.2f}" and j["go"] == f"Continue to payment · {j['stay']}"
+    assert j["stay"] == f"${(round(real.shown * 100) - discount) / 100:,.2f}" and j["go"] == f"Continue · {j['stay']}"
     new = {r_["id"]: r_ for r_ in payments()}[j["token"]]
     assert (new["voucher_code"], new["discount_cents"], new["charge_cents"]) == ("F274SANDBOX", discount, round((real.shown - 120) * 100) - discount)
 
@@ -343,3 +343,28 @@ def test_the_payment_script_is_loaded_by_the_sheets_script_from_one_address_and_
     assert source.count(liteapi.PAYMENT_SDK) == 1 and source.count("payment-wrapper") == 1
     for html in (sheet(client), pay_pane(client)[1].text, client.get(MATRIX).text):
         assert "payment-wrapper" not in html and "<script src=\"http" not in html
+
+
+# ---- what is said and kept ----------------------------------------------------------------------------------------------------------------
+
+def test_the_privacy_page_says_what_a_real_booking_sends_and_keeps(real, client):
+    words = " ".join(text(client.get("/privacy").text).split())
+    assert "Book is a real booking" in words and "never to GitAway, which never sees or keeps a card" in words and "at most seven days" in words and "sandbox" not in words.lower()
+
+
+def test_the_payment_answers_are_never_cached(real, client):
+    html = sheet(client)
+    r = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST}, headers=FRAG)
+    page_r = client.post("/plan/matrix/book/confirm", data={**FORM, "token": token(html), **GUEST})      # without the script: a page of its own
+    assert "no-store" in r.headers["cache-control"] and "no-store" in page_r.headers["cache-control"] and f'data-secret="{SECRET}"' in page_r.text
+    tok, ret = paid(client)
+    assert "no-store" in ret.headers["cache-control"]
+
+
+def test_no_source_of_the_sheet_has_a_card_field_or_stores_a_card():
+    """GitAway never renders, reads or keeps a card (D-842): the sources that draw and script the sheet and the tables hold no card words."""
+    from pathlib import Path
+    root = Path(__file__).parent.parent
+    for name in ("gitaway/pages/matrixbook.py", "assets/js/matrixbook.js", "gitaway/matrixbook.py", "gitaway/familydb_matrix.py"):
+        source = (root / name).read_text().lower()
+        assert not re.search(r"cc-number|cc-csc|cc-exp|cardnumber|card_number|cvc|cvv", source), name
