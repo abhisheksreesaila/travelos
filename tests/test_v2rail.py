@@ -1,5 +1,6 @@
 """F-251: the widget rail. Every widget has one real source or is not drawn; Uber, traffic and what is on are the showcase's made-up samples, labelled Sample, and not drawn off it.
 The pieces are plain functions (gitaway/v2rail.py); the route draws them (gitaway/pages/v2rail.py)."""
+import re
 from datetime import datetime, timezone
 from html import unescape
 
@@ -68,6 +69,8 @@ def test_on_the_showcase_the_rail_is_chips_and_each_card_is_asked_for_when_tappe
     assert j["lane"] == "sandiego" and "Around San Diego" in html and "Extra info · tap any" in html and "New: tap for weather, drive times, guides…" in html
     assert 'class="wg ' not in html and 'class="d5' not in html and "in a straight line" not in html      # chips only: no card is built until a chip is tapped
     assert html.count('class="wchip v2-glass"') == 8      # weather, where, uber, traffic, food, trend, about, guides
+    names = re.findall(r'data-wg="([^"]*)"', html)
+    assert names == ["guides", "weather", "where", "uber", "traffic", "food", "trend", "about"]      # a chip is named for its widget (a loop variable once renamed the food chip after a restaurant)
     weather = _card(client, "weather")
     assert "Weather" in weather and "Typical mid December · not a forecast yet." in weather and weather.count('class="d5 is-typ') == 5
     where = _card(client, "where")

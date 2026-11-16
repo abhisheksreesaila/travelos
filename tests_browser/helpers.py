@@ -32,10 +32,14 @@ def open_rail(page):
     """F-275 (D-862): the rail's widgets are chips until tapped. Wait for the chips, then open every closed one so its card shows."""
     page.wait_for_selector("#mx-rail .wchip[data-wg]")
     closed = page.locator("#mx-rail .wchip[aria-expanded='false']")
-    chips = page.locator("#mx-rail .wchip[data-wg]").count()
-    while closed.count():
-        closed.first.click()
-    page.wait_for_function("(n) => document.querySelectorAll('#mx-rail .wg:not([hidden])').length === n", arg=chips)      # each card is fetched when its chip is tapped (F-277)
+    same = "() => document.querySelectorAll('#mx-rail .wg:not([hidden])').length === document.querySelectorAll('#mx-rail .wchip[data-wg]').length"
+    for _ in range(40):      # each card is fetched when its chip is tapped (F-277), and a chip may still arrive as the squares settle: tap what is closed until every chip has its card
+        while closed.count():
+            closed.first.click()
+        if page.evaluate(same):
+            break
+        page.wait_for_timeout(200)
+    assert page.evaluate(same)
 
 
 def set_mode(page, scheme):

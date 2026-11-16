@@ -110,9 +110,9 @@ def food_widget(sq, place, picked, name):
     rows = [Li(Span(Span(st.name, cls="b"), Span(Span("Breakfast included", cls="tagk"), f"{catalog.money(r.cents)} for the stay"), cls="t")) for st, r in (v2rail.breakfast(sq) if sq is not None and sq.ok else ())[:3]]
     sample = v2rail.sample(place) if showcase.on() else None
     if sample:
-        for name, what, minutes, _ in v2rail.fits(sample["food"], picked):
+        for place_name, what, minutes, _ in v2rail.fits(sample["food"], picked):
             kind, _, rest = what.partition(" · ")
-            rows.append(Li(Span(Span(name, cls="b"), Span(Span(kind, cls="tagk"), f"{rest + ' · ' if rest else ''}{minutes} min"), cls="t")))
+            rows.append(Li(Span(Span(place_name, cls="b"), Span(Span(kind, cls="tagk"), f"{rest + ' · ' if rest else ''}{minutes} min"), cls="t")))
     if not rows:
         return ""
     return wg("Food that fits you", "food", "food", _ul(rows), sample=bool(sample), name=name, chip=f"Food that fits you{' · sample' if sample else ''}")
