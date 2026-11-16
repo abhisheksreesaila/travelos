@@ -11,14 +11,14 @@ import pytest
 from playwright.sync_api import expect
 
 from gitaway import gridsource, tripmatrix as tm
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_rail
 from tests_browser.look import audit
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "design" / "trip-matrix" / "built"
 URL = "/plan/matrix?to=San+Diego&home=SFO&d=2026-12-12&r=2026-12-16&a=2&k=7,10&x=2&b=2300"
-# dollars by lane, Dec 10 to 14: LA + San Diego is $50 more than San Diego on the 12th, the find
+# dollars by lane, Dec 10 to 14: LA + San Diego is $50 less than San Diego on the 12th, the find (D-860: a dearer square is never a find)
 TABLE = {"sandiego": (2310, 2260, 2140, 2080, 2390), "losangeles": (2480, 2410, 2350, 2400, 2550), "orangecounty": (2420, 2380, 2290, 2240, 2610),
-         "losangeles+sandiego": (2400, 2330, 2190, 2160, 2470), "orangecounty+sandiego": (2500, 2450, 2380, None, 2600)}
+         "losangeles+sandiego": (2400, 2330, 2090, 2160, 2470), "orangecounty+sandiego": (2500, 2450, 2380, None, 2600)}
 STARTS = ("2026-12-10", "2026-12-11", "2026-12-12", "2026-12-13", "2026-12-14")
 FLIGHT, FLIGHT_NIGHT = 60_000, 2_000      # the stand's flight: $600 at 4 nights and $20 more for each night more (F-237: a longer trip is not a pure multiple, so an estimate is not the answer)
 
@@ -115,7 +115,7 @@ def test_the_script_marks_the_squares_by_the_same_rules_as_gitaway_tripmatrix(ma
     assert {k: v[0] for k, v in live.items()} == {k: marks_at(4).get(k, ()) for k in live}      # gitaway/tripmatrix.py `marks` (change one, change the other)
     from gitaway.partners import places
     found = tm.find(tm.lanes(places.resolve("San Diego")), tm.windows(date(2026, 12, 12), date(2026, 12, 16), 2, date(2026, 9, 30)), totals())
-    assert live[found.key][0] == ("find",) and live["sandiego|2026-12-13"][0] == ("low",) and "over" in live["sandiego|2026-12-10"][0]
+    assert live[found.key][0] == ("find", "low") and live["sandiego|2026-12-13"][0] == ("low",) and "over" in live["sandiego|2026-12-10"][0]
     assert live["orangecounty+sandiego|2026-12-13"] == ((), "None found")
 
 
@@ -123,15 +123,15 @@ def test_the_script_marks_the_squares_by_the_same_rules_as_gitaway_tripmatrix(ma
 def test_the_pick_bar_says_the_find_with_real_totals(matrix):
     page = matrix()
     expect(page.locator("#mx-find .mx-pk-h")).to_have_text("Los Angeles + San Diego, Dec 12 to 16")
-    expect(page.locator("#mx-find .mx-pk-s")).to_have_text("$50 more than San Diego alone")
-    expect(page.locator("#mx-find .mx-pk-p")).to_have_text("$2,190")
+    expect(page.locator("#mx-find .mx-pk-s")).to_have_text("$50 less than San Diego alone")
+    expect(page.locator("#mx-find .mx-pk-p")).to_have_text("$2,090")
     expect(page.locator("#mx-find .mx-pk-badge")).to_have_text("Our pick")
     assert page.locator("#mx-find .mx-pk-art svg").count() >= 1                      # the place's own drawing
     page.click("#mx-find")
     expect(page.locator("#mx-drawer .dr-h")).to_have_text("Los Angeles + San Diego")
     expect(page.locator("#mx-drawer .dr-ti > p")).to_have_text("Sat, Dec 12 → Wed, Dec 16 · 4 nights · 2 adults, 2 kids")
-    expect(page.locator("#mx-drawer [data-slot='total']")).to_have_text("$2,190")
-    expect(page.locator("#mx-drawer [data-vs]")).to_contain_text("+$50 vs San Diego alone")
+    expect(page.locator("#mx-drawer [data-slot='total']")).to_have_text("$2,090")
+    expect(page.locator("#mx-drawer [data-vs]")).to_contain_text("$50 less than San Diego alone")
     expect(page.locator("#mx-drawer [data-pickword]")).to_be_visible()                  # the find says "Our pick:" in its drawer
     expect(page.locator("#mx-drawer")).to_contain_text("$160 of it paid at the hotel")
 
@@ -292,7 +292,7 @@ def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_sta
     assert len(fit) == 5 and all(ok and n >= 2 for ok, n in fit), fit
     on = page.evaluate("() => [...document.querySelectorAll('.mx-lane .mx-sq.is-on')].map(e => e.dataset.sq)")
     assert on == ["sandiego|2026-12-13", "losangeles|2026-12-12", "orangecounty|2026-12-13", "losangeles+sandiego|2026-12-12", "orangecounty+sandiego|2026-12-12"]
-    assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l").startswith("Found · +")
+    assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l") == "4 nights · $2,090"      # the band says its nights and total, never "Found"
     colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find');
         return [c(f)]; }""")
     assert colours[0] == "rgb(67, 56, 202)", colours      # the find is the one lit square (the flight indigo)
@@ -455,7 +455,7 @@ def test_sliding_shows_every_square_as_an_estimate_at_once_marks_none_and_search
     slide(page, 6, release=False)
     sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
     expect(sq.locator(".mx-in")).to_have_text("about $2,910")                         # $600 flight + $385 a night for six nights, from what was read at four
-    expect(page.locator(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq[data-sq='losangeles+sandiego|2026-12-12'] .mx-in")).to_have_text("about $2,985")      # two places: 3 nights each at their rates
+    expect(page.locator(".mx-lane[data-lane='losangeles+sandiego'] .mx-sq[data-sq='losangeles+sandiego|2026-12-12'] .mx-in")).to_have_text("about $2,835")      # two places: 3 nights each at their rates
     assert stand.asked == []                                                          # no search per step
     shown = page.evaluate("""() => [...document.querySelectorAll('.mx-lane .mx-sq')].map(e => [e.classList.contains('is-est'), e.getAttribute('aria-label'), ['is-find', 'is-low', 'is-over'].some(c => e.classList.contains(c))])""")
     assert len(shown) == 25 and all(est and label.endswith("an estimate") and not marked for est, label, marked in shown)      # an estimate is said as one and never marked
@@ -517,7 +517,7 @@ def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matri
 
 
 def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
-    page = matrix({"width": 320, "height": 640})      # (at 390 the last column starts 90px past the edge, inside the 120px margin the page reads ahead by on purpose (MARGIN in tripmatrix.js), so it IS "in view"; at 320 it is not)
+    page = matrix({"width": 320, "height": 1100})      # F-275: as tall as the sentence card and the chips need for the grid to be in view, as it was at 640 before. (at 390 the last column starts 90px past the edge, inside the 120px margin the page reads ahead by on purpose (MARGIN in tripmatrix.js), so it IS "in view"; at 320 it is not)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     page.wait_for_function(WAIT_IDLE)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 0")
@@ -603,7 +603,7 @@ def test_the_picker_rises_as_a_sheet_on_a_phone_and_grows_under_its_word_on_a_la
     word = desk.locator("#v2-sent .v2-w[data-k='nights']")
     word.click()
     pop, at = desk.locator("#v2-pop").bounding_box(), word.bounding_box()
-    assert desk.locator("#v2-pop.as-sheet").count() == 0 and pop["y"] >= at["y"] + at["height"] - 2 and abs((pop["x"] + pop["width"] / 2) - (at["x"] + at["width"] / 2)) < 40
+    assert desk.locator("#v2-pop.as-sheet").count() == 0 and pop["y"] >= at["y"] + at["height"] - 2 and pop["x"] <= at["x"] + at["width"] / 2 <= pop["x"] + pop["width"] and pop["x"] >= 0      # under its word (a word at the line's start leaves the popover at the page's edge)
 
 
 
@@ -641,12 +641,12 @@ def test_a_key_pressed_three_times_asks_once_for_where_it_stopped(matrix, stand)
     assert set(stand.asked_nights[before:]) == {7} and "r=2026-12-19" in page.url
 
 
-def test_at_1100_the_band_label_and_the_trip_bars_chips_stay_inside(matrix):
+def test_at_1100_the_band_stays_in_its_row_and_the_trip_bars_chips_stay_inside(matrix):
     """F-236 review: the band's words sit inside the band and the opened trip's tiles, timeline blocks and cost card inside it at the laptop's narrow end."""
     page = matrix(TABLET)
     page.click("#mx-find")
-    fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), a = getComputedStyle(b, '::after'), w = parseFloat(a.width);
-        return [w > 0 && r.right - parseFloat(a.right) - w >= r.left - 1, r.width]; })""")
+    fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), lane = b.closest('.mx-lane').getBoundingClientRect();
+        return [getComputedStyle(b, '::after').content === 'none' && r.top >= lane.top - 8 && r.bottom <= lane.bottom + 8, r.width]; })""")      # F-275: the band writes nothing and stays in its own row
     assert len(fit) == 5 and all(ok for ok, _ in fit), fit
     box = page.evaluate("""() => { const d = document.getElementById('mx-drawer'), r = d.getBoundingClientRect(),
         parts = [...d.querySelectorAll('.dr-pn, .dr-foot, .dr-head')].map(e => e.getBoundingClientRect());
@@ -774,9 +774,11 @@ def test_every_word_on_the_frosted_glass_rail_is_4_5_to_1_on_what_is_really_pain
     page.reload()
     page.wait_for_selector("#mx.is-live")
     page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
-    expect(page.locator("#mx-rail .wg").first).to_be_visible()
+    expect(page.locator("#mx-rail .wchip").first).to_be_visible()
+    open_rail(page)      # F-275: a widget is a chip until it is tapped; open them all, the cards and the chips are the glass
+    expect(page.locator("#mx-rail .wg:not([hidden])").first).to_be_visible()
     page.wait_for_timeout(900)
-    assert page.evaluate("getComputedStyle(document.querySelector('#mx-rail .wg')).backdropFilter").startswith("blur")
+    assert page.evaluate("getComputedStyle(document.querySelector('#mx-rail .wg:not([hidden])')).backdropFilter").startswith("blur")
     words = [w for w in page.evaluate(WORDS_JS.replace("'#mx *'", "'#mx-rail *'").replace("!e.closest('.mx-pop, .mx-isle, .mx-side, .is-off')", "true")) if w["shown"]]
     assert len(words) > 8
     page.add_style_tag(content="#mx-rail * { color: transparent !important; text-decoration-color: transparent !important; }")
@@ -805,19 +807,14 @@ def test_every_word_on_the_frosted_glass_rail_is_4_5_to_1_on_what_is_really_pain
 
 
 @pytest.mark.parametrize("last", [0, 4], ids=["first-column", "last-column"])
-def test_the_finds_band_label_and_its_our_pick_tag_never_overlap(matrix, monkeypatch, last):
-    """F-251 (D-624): the band's "Found" label sat on the same top edge as the "Our pick" tag and covered it when the find was on the last start day (a one-column band)."""
-    table = dict(TABLE)
+def test_no_band_label_floats_and_the_marks_sit_inside_their_square(matrix, monkeypatch, last):
+    """F-275 (D-863): the nights band's label sat on a lane's top or bottom edge and ran across the row beside it, and "Our pick" hung over the square above. The band writes nothing now;
+    the marks ("Our pick", "Cheapest") are a line inside their own square."""
     row = list(TABLE["losangeles+sandiego"])
     row[last] = 1900      # the find: a nearby trip well under San Diego on that day
-    table["losangeles+sandiego"] = tuple(row)
-    monkeypatch.setitem(TABLE, "losangeles+sandiego", table["losangeles+sandiego"])
+    monkeypatch.setitem(TABLE, "losangeles+sandiego", tuple(row))
     page = matrix(DESKTOP)
     page.wait_for_selector(".mx-sq.is-find")
-    boxes = page.evaluate("""() => { const sq = document.querySelector('.mx-sq.is-find'), lane = sq.closest('.mx-lane'), band = lane.querySelector('.mx-band');
-        const tag = getComputedStyle(sq, '::after'), lab = getComputedStyle(band, '::after'), s = sq.getBoundingClientRect(), b = band.getBoundingClientRect();
-        const tw = parseFloat(tag.width), th = parseFloat(tag.height), lw = parseFloat(lab.width), lh = parseFloat(lab.height);
-        const lt = lab.top !== 'auto' && parseFloat(lab.top) === parseFloat(lab.top) && lab.bottom === 'auto' ? b.top + parseFloat(lab.top) : b.bottom - parseFloat(lab.bottom) - lh;
-        return {tag: [s.left + s.width / 2 - tw / 2, s.top + parseFloat(tag.top), tw, th], lab: [b.right - parseFloat(lab.right) - lw, lt, lw, lh], lit: lane.classList.contains('is-lit')}; }""")
-    (tx, ty, tw, th), (lx, ly, lw, lh) = boxes["tag"], boxes["lab"]
-    assert boxes["lit"] and (tx + tw <= lx or lx + lw <= tx or ty + th <= ly or ly + lh <= ty), boxes
+    got = page.evaluate("""() => { const sq = document.querySelector('.mx-sq.is-find'), tag = getComputedStyle(sq, '::after');
+        return {bands: [...document.querySelectorAll('.mx-band')].map(b => getComputedStyle(b, '::after').content), tag: tag.content, pos: tag.position, fits: sq.scrollHeight <= sq.clientHeight + 1}; }""")
+    assert set(got["bands"]) == {"none"} and got["tag"] in ('"Our pick"', '"Pick · cheapest"') and got["pos"] == "static" and got["fits"], got

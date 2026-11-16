@@ -4,7 +4,7 @@
     windows(depart, return_, flex)  the columns: the same nights starting up to `flex` days either side, never before today
     stays_for(lane, window), legs_for(lane, window, home)   what a source searches for one square: two places split the nights and fly in to the first, home from the second
     marks(lanes, windows, totals, budget)   each answered square's marks: "find", "low" (the cheapest start in its lane), "over" (the budget)
-    find(lanes, windows, totals)    the discovery: a nearby trip that beats or nearly matches the asked place on the same dates, said in words
+    find(lanes, windows, totals)    the discovery: a nearby trip that costs less than, or the same as, the asked place on the same dates, said in words
     order(lanes, windows)           which squares to ask for first: the asked square, then the nearest dates and the likeliest places
     head_start(lanes, windows)      which squares the server starts searching as the page is drawn (F-229): the asked square, its day, its place
     rank(lanes, windows)            each square's turn at LiteAPI's gate (F-229): the head start first, then `order`
@@ -18,7 +18,7 @@ from datetime import date, datetime, timedelta
 
 from gitaway.partners import places as places_
 
-NEARLY_CENTS = 15_000      # a nearby trip up to $150 more than the asked place on the same dates "nearly matches" it (D-435)
+NEARLY_CENTS = 0           # a nearby trip is a find only when it costs no more than the asked place on the same dates (D-860: D-435 let a dearer one through and the page called it a find)
 MAX_FLEX = 3
 OK, OVER, FAILED, NONE, NO_SAMPLE, BUSY, LIMIT = "ok", "over budget", "failed", "none", "no sample", "busy", "visitor limit"
 SAID = {OVER: "Today’s price searches are used up. Back tomorrow.", FAILED: "Couldn’t search just now. Try again in a few minutes.",
@@ -92,6 +92,7 @@ class StayPart:
     offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
     address: str = ""     # the hotel's street address from the source, or "" (F-242: the opened square and the pass show it)
     rooms: tuple = ()     # F-251: the hotel's rooms the source gave (the shown room first, at most liteapi.MAX_ROOMS), each a RoomPart; one or none means there is no choice
+    hotel_id: str = ""    # F-275: LiteAPI's id of the hotel (for its photos and reviews, asked when the square is opened); "" for a sample
 
 
 @dataclass(frozen=True)
@@ -125,7 +126,7 @@ class Find:
     lane: str
     window: str
     diff_cents: int       # this square minus the asked place's on the same dates
-    words: str            # "Los Angeles + San Diego, $50 more than San Diego alone"
+    words: str            # "Los Angeles + San Diego, $10 less than San Diego alone"
     when: str             # "Dec 12 to 16"
 
     @property
@@ -260,7 +261,7 @@ def rank(lanes_, windows_) -> dict:
 # ---- marks ----------------------------------------------------------------------------------------------------------
 
 def find(lanes_, windows_, totals) -> Find | None:
-    """The nearby trip that beats or nearly matches (NEARLY_CENTS) the asked place on the same start day: the lowest difference wins, two places together
+    """The nearby trip that costs less than or the same as (NEARLY_CENTS = 0) the asked place on the same start day: never a dearer one (D-860): the lowest difference wins, two places together
     before one on a tie, then the lane's and the day's order. Only squares that have real totals take part."""
     asked = next((x for x in lanes_ if x.asked), None)
     if asked is None:
@@ -281,7 +282,7 @@ def find(lanes_, windows_, totals) -> Find | None:
         return None
     _, x, w, diff = best
     alone = " alone" if x.combo and asked.places[0] in x.places else ""
-    said = (f"{dollars(-diff)} less than {asked.name}" if diff < 0 else f"the same as {asked.name}" if diff == 0 else f"{dollars(diff)} more than {asked.name}{alone}")
+    said = f"{dollars(-diff)} less than {asked.name}{alone}" if diff < 0 else f"the same as {asked.name}{alone}"
     return Find(x.key, w.key, diff, f"{x.name}, {said}", when(w))
 
 

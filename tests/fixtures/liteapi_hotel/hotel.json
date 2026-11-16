@@ -1,0 +1,425 @@
+{
+ "data": {
+  "id": "lp1b8e6",
+  "name": "Hilton Los Angeles Airport",
+  "hotelDescription": "<p><strong>Convenient Airport Shuttle Service</strong><br>Benefit from the free 24-hour shuttle service to Los Angeles International Airport, ensuring a stress-free start or end to your trip.</p><p><strong>Diverse Dining Options</strong><br>Indulge in a variety of culinary experiences with 4 food venues to choose from, including American cuisine at The Café and northern Italian dishes at Andiamo.</p><p><strong>Relaxing Amenities</strong><br>Unwind in the spacious outdoor pool and whirlpool, or enjoy a drink at Landings Bar. The modern rooms with cable TV and the on-site fitness center cater to all your needs.</p><p>Book your stay at Hilton Los Angeles Airport for a memorable and comfortable experience.</p>",
+  "hotelImages": [
+   {
+    "url": "https://static.cupid.travel/hotels/490862436.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862436.jpg",
+    "caption": "hotel building",
+    "order": 0,
+    "defaultImage": true
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862440.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862440.jpg",
+    "caption": "lobby",
+    "order": 1,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/572758051.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/572758051.jpg",
+    "caption": "hotel building",
+    "order": 2,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862456.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862456.jpg",
+    "caption": "fitness center",
+    "order": 3,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862458.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862458.jpg",
+    "caption": "desk & workspace",
+    "order": 4,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862473.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862473.jpg",
+    "caption": "view from hotel room",
+    "order": 5,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862503.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862503.jpg",
+    "caption": "banquet hall",
+    "order": 6,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862515.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862515.jpg",
+    "caption": "meeting room",
+    "order": 7,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/603068255.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/603068255.jpg",
+    "caption": "living area",
+    "order": 8,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/490862476.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/490862476.jpg",
+    "caption": "living area",
+    "order": 9,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/28915-65113ef7.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/28915-65113ef7.jpg",
+    "caption": "",
+    "order": 10,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/28915-e25cb3fd.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/28915-e25cb3fd.jpg",
+    "caption": "",
+    "order": 11,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/28915-03321a83.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/28915-03321a83.jpg",
+    "caption": "",
+    "order": 12,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/28915-5405fc33.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/28915-5405fc33.jpg",
+    "caption": "",
+    "order": 13,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/28915-4450f9a7.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/28915-4450f9a7.jpg",
+    "caption": "",
+    "order": 14,
+    "defaultImage": false
+   },
+   {
+    "url": "https://static.cupid.travel/hotels/538412361.jpg",
+    "urlHd": "https://static.cupid.travel/hotels/538412361.jpg",
+    "caption": "entrance",
+    "order": 15,
+    "defaultImage": false
+   }
+  ],
+  "main_photo": "https://static.cupid.travel/hotels/490862436.jpg",
+  "thumbnail": "https://static.cupid.travel/hotels/490862436.jpg",
+  "starRating": 4,
+  "rating": 7.6,
+  "reviewCount": 6263,
+  "address": "5711 West Century Boulevard",
+  "city": "Los Angeles",
+  "country": "us",
+  "hotelFacilities": [
+   "Fitness facilities",
+   "WiFi available",
+   "Parking",
+   "Non-smoking rooms",
+   "Air conditioning",
+   "Fitness center",
+   "Swimming pool",
+   "24-hour front desk",
+   "Restaurant",
+   "Business center",
+   "Heating",
+   "Family rooms",
+   "Garden",
+   "Pets allowed",
+   "Lift / Elevator",
+   "Laundry",
+   "Luggage storage",
+   "Express check-in/check-out",
+   "Airport shuttle",
+   "Safety deposit box",
+   "Bar",
+   "Fax/photocopying",
+   "Tour desk",
+   "Facilities for disabled guests"
+  ],
+  "facilities": [
+   {
+    "facilityId": 0,
+    "name": "Fitness facilities"
+   },
+   {
+    "facilityId": 1,
+    "name": "WiFi available"
+   },
+   {
+    "facilityId": 2,
+    "name": "Parking"
+   },
+   {
+    "facilityId": 3,
+    "name": "Non-smoking rooms"
+   },
+   {
+    "facilityId": 4,
+    "name": "Air conditioning"
+   },
+   {
+    "facilityId": 5,
+    "name": "Fitness center"
+   },
+   {
+    "facilityId": 6,
+    "name": "Swimming pool"
+   },
+   {
+    "facilityId": 7,
+    "name": "24-hour front desk"
+   },
+   {
+    "facilityId": 8,
+    "name": "Restaurant"
+   },
+   {
+    "facilityId": 9,
+    "name": "Business center"
+   },
+   {
+    "facilityId": 10,
+    "name": "Heating"
+   },
+   {
+    "facilityId": 11,
+    "name": "Family rooms"
+   },
+   {
+    "facilityId": 12,
+    "name": "Garden"
+   },
+   {
+    "facilityId": 13,
+    "name": "Pets allowed"
+   },
+   {
+    "facilityId": 14,
+    "name": "Lift / Elevator"
+   },
+   {
+    "facilityId": 15,
+    "name": "Laundry"
+   },
+   {
+    "facilityId": 16,
+    "name": "Luggage storage"
+   },
+   {
+    "facilityId": 17,
+    "name": "Express check-in/check-out"
+   },
+   {
+    "facilityId": 18,
+    "name": "Airport shuttle"
+   },
+   {
+    "facilityId": 19,
+    "name": "Safety deposit box"
+   },
+   {
+    "facilityId": 20,
+    "name": "Bar"
+   },
+   {
+    "facilityId": 21,
+    "name": "Fax/photocopying"
+   },
+   {
+    "facilityId": 22,
+    "name": "Tour desk"
+   },
+   {
+    "facilityId": 23,
+    "name": "Facilities for disabled guests"
+   }
+  ],
+  "rooms": [
+   {
+    "id": 1000,
+    "roomName": "2 Double Beds",
+    "description": "",
+    "roomSizeSquare": null,
+    "roomSizeUnit": null,
+    "maxAdults": 4,
+    "maxChildren": 2,
+    "maxOccupancy": 4,
+    "bedTypes": [
+     {
+      "quantity": 1,
+      "bedType": "Double bed",
+      "bedSize": "Double bed"
+     }
+    ],
+    "roomAmenities": [],
+    "photos": [
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": true
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/3043765/laxahhh-rooms-suite-k1tru1-big-011.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/3043765/laxahhh-rooms-suite-k1tru1-big-011.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     }
+    ]
+   },
+   {
+    "id": 1001,
+    "roomName": "2 Double Hearing Accessible Room",
+    "description": "",
+    "roomSizeSquare": 30,
+    "roomSizeUnit": "m2",
+    "maxAdults": 4,
+    "maxChildren": 2,
+    "maxOccupancy": 4,
+    "bedTypes": [
+     {
+      "quantity": 1,
+      "bedType": "Double bed",
+      "bedSize": "Double bed"
+     }
+    ],
+    "roomAmenities": [],
+    "photos": [
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": true
+     },
+     {
+      "url": "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901909.jpg?k=c1d8411338c87178a8412acb9e0c8a87bf2a09c2d7b83bf7734a28a999517d26&o=&a=2002366",
+      "hd_url": "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901909.jpg?k=c1d8411338c87178a8412acb9e0c8a87bf2a09c2d7b83bf7734a28a999517d26&o=&a=2002366",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     },
+     {
+      "url": "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901910.jpg?k=5cb3e1078416023e5bfd247ffc939a7bcb9bb115f77a31965c430b60a4def665&o=&a=2002366",
+      "hd_url": "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901910.jpg?k=5cb3e1078416023e5bfd247ffc939a7bcb9bb115f77a31965c430b60a4def665&o=&a=2002366",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     }
+    ]
+   },
+   {
+    "id": 1002,
+    "roomName": "1 King Bed",
+    "description": "",
+    "roomSizeSquare": null,
+    "roomSizeUnit": null,
+    "maxAdults": 4,
+    "maxChildren": 2,
+    "maxOccupancy": 4,
+    "bedTypes": [
+     {
+      "quantity": 1,
+      "bedType": "King bed",
+      "bedSize": "King bed"
+     }
+    ],
+    "roomAmenities": [],
+    "photos": [
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/15526730/standard-king.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/15526730/standard-king.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": true
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/18418825/hilton-lax-standard-bathroom-copy.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/18418825/hilton-lax-standard-bathroom-copy.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     }
+    ]
+   },
+   {
+    "id": 1003,
+    "roomName": "1 King Bed Corner Room",
+    "description": "",
+    "roomSizeSquare": null,
+    "roomSizeUnit": null,
+    "maxAdults": 4,
+    "maxChildren": 2,
+    "maxOccupancy": 4,
+    "bedTypes": [
+     {
+      "quantity": 1,
+      "bedType": "King bed",
+      "bedSize": "King bed"
+     }
+    ],
+    "roomAmenities": [],
+    "photos": [
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/26938353/k1k-king-corner-room-1.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/26938353/k1k-king-corner-room-1.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": true
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/26938348/k1k-king-corner-room-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/26938348/k1k-king-corner-room-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     },
+     {
+      "url": "https://www.hilton.com/im/en/LAXAHHH/26938357/k1k-king-corner-bath-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "hd_url": "https://www.hilton.com/im/en/LAXAHHH/26938357/k1k-king-corner-bath-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+      "imageDescription": "",
+      "imageClass1": "",
+      "mainPhoto": false
+     }
+    ]
+   }
+  ],
+  "checkinCheckoutTimes": {
+   "checkin": "04:00 PM",
+   "checkinStart": "04:00 PM",
+   "checkinEnd": "11:00 PM",
+   "checkout": "12:00 PM"
+  }
+ }
+}

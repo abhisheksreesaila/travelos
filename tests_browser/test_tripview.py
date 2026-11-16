@@ -152,13 +152,14 @@ def test_opening_the_drawer_and_choosing_in_it_moves_no_focus_and_no_side(matrix
     assert page.errors == []
 
 
-def test_the_gallery_is_the_hotels_own_photo_or_the_places_drawing_labelled_and_it_scrolls(matrix, alt):  # noqa: F811
+def test_the_gallery_is_samples_or_the_hotels_own_photo_or_the_places_drawing_each_labelled_and_it_scrolls(matrix, alt):  # noqa: F811
     page = matrix(DESKTOP, signed_in=True)
     view = open_square(page, DESKTOP)
     slides = view.locator(".dr-hotel:not([hidden]) .dr-slide")
-    expect(slides).to_have_count(1)      # the stand's hotel has no photo: the place's drawing only, and it says so
-    expect(slides.first.locator(".dr-cap")).to_have_text("Illustration, not the hotel’s photo")
-    assert view.locator(".dr-nav").count() == 0                                          # nothing to go through, no arrows
+    expect(slides).to_have_count(6)      # a sample hotel: five generic hotel pictures, each said to be a sample (F-275), then the place's drawing, labelled
+    expect(slides.first.locator(".dr-cap")).to_have_text("Sample photo · Hotel lobby")
+    expect(slides.last.locator(".dr-cap")).to_have_text("Illustration, not the hotel’s photo")
+    assert view.locator(".dr-hotel:not([hidden]) .dr-nav").count() == 2                  # more than one: arrows
     shot(page, "1440-gallery")
 
 

@@ -9,7 +9,7 @@
 //      asked square has landed (or nothing in view is waiting); a search that takes a while says so in a word beside the count.
 //   4. Opening a square (F-251, D-620): the prototype's drawer grows down out of the square's column under the matrix, on a laptop and on a phone (assets/js/v2drawer.js); the widget rail
 //      beside it follows the place of the square (or the lane) you look at (assets/js/v2rail.js, through the events mx:follow, mx:look, mx:close and mx:settled).
-//      The ringed band of each lane (its nights, labelled "4 nights · $2,080", the find's lane "Found · +$50 vs San Diego alone") sits on the find's start in the find's lane,
+//      The ringed band of each lane (its nights, said in its data-l "4 nights · $2,080"; nothing is drawn on it, D-863) sits on the find's start in the find's lane,
 //      else the lane's cheapest start, else the opened square, and moves with the same rules as pages/tripmatrix.py `band_window` and `band_words`. Liquid at every width (D-439): the page sets
 //      data-liquid on <html>, so GA.motion keeps its spring on a laptop too. Reduced motion: fades.
 //   5. The nights slider (F-237, D-530 to D-535; F-238, D-542): one range input, in the popover of the sentence's "4 nights" word (the same word on a phone and a laptop). While it moves every square shows
@@ -91,7 +91,7 @@
     });
     if (!best) return null;
     var x = best.lane, d = best.diff;
-    var said = d < 0 ? money(-d) + ' less than ' + a.n : d === 0 ? 'the same as ' + a.n : money(d) + ' more than ' + a.n + (x.c ? ' alone' : '');
+    var said = (d < 0 ? money(-d) + ' less than ' : 'the same as ') + a.n + (x.c ? ' alone' : '');      // never a dearer one (D-860)
     return { key: key(x.k, best.w.k), lane: x.k, w: best.w.k, name: x.n, said: said, words: x.n + ', ' + said, when: best.w.when };
   }
   function less(a, b) { for (var i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] < b[i]; } return false; }
@@ -117,7 +117,7 @@
     var mine = known[k], base = known[key(a.k, p[1])];
     if (!x || x.a || !mine || !base || mine.s !== 'ok' || base.s !== 'ok') return '';
     var d = mine.c - base.c;      // pages/tripmatrix.py `vs_words`
-    return d < 0 ? money(-d) + ' less than ' + a.n : d === 0 ? 'the same as ' + a.n : '+' + money(d) + ' vs ' + a.n + (x.c ? ' alone' : '');
+    return (d < 0 ? money(-d) + ' less than ' : d === 0 ? 'the same as ' : money(d) + ' more than ') + a.n + (x.c ? ' alone' : '');
   }
 
   // ---- drawing what is known ----
@@ -165,7 +165,6 @@
       var g = touched ? estimate(key(x.k, w.k), N) : null;      // sliding: the band says an estimate as one
       return w.n + ' nights' + (g != null ? ' · about ' + money(g) : '');
     }
-    if (curFind && curFind.key === key(x.k, w.k)) return 'Found · ' + vs(curFind.key);
     return w.n + ' nights · ' + money(got.c);
   }
   function band(laneKey, wKey) {      // the ringed nights on a lane's start: its columns are the lane's squares', so it spans as many start days as the trip has nights, as far as there are any

@@ -133,6 +133,42 @@ def address(form) -> tuple:
     return page.href(s), ""
 
 
+# ---- suggestions: the sentence with one word changed (F-275, D-861) ------------------------------------------------------------------------------------------
+
+NEAR_AIRPORTS = {"SFO": "OAK", "OAK": "SFO", "SJC": "SFO", "LAX": "SNA", "SNA": "LAX"}      # the other airport a family may fly from
+SUGGEST_MAX = 5
+
+
+def _form_of(spec: dict) -> dict:
+    return {"to": spec["to"], "home": spec["home"], "d": spec["depart"], "n": spec["nights"], "a": spec["adults"], "k": ",".join(map(str, spec["kids"])), "x": spec["flex"],
+            "nb": "" if spec["nearby"] else "0", "b": spec["budget"] or ""}
+
+
+def suggestions(spec: dict) -> list:
+    """[(label, the matrix's address)] for a few one-word changes to the sentence, the nudges under it for people who do not know the words are buttons: a week later, a place
+    they may not have thought of, a budget, a shorter stay, another airport. Each is read through `address`, so one that cannot be searched is not offered."""
+    base = _form_of(spec)
+    here = address(base)[0]
+    depart = date.fromisoformat(spec["depart"])
+    later = depart + timedelta(days=7)
+    nights, lo = spec["nights"], spec["limits"]["nights"][0]
+    near = {p.name for p in places.nearby(places.resolve(spec["to"]))}
+    other = [n["n"] for n in spec["places"] if n["n"] != spec["to"] and n["n"] not in near][:1]
+    cap = max(1_000, -(-(spec["adults"] + len(spec["kids"])) * 600 // 500) * 500)      # about $600 a person, to the next $500
+    shorter = nights - 1 if nights - 1 >= lo else nights + 1
+    tries = [("A week later", {"d": later.isoformat()} if later <= date.fromisoformat(spec["last"]) else None)]
+    tries += [(name, {"to": name}) for name in other]
+    tries += [(f"Under {money(cap)}", {"b": cap}) if not spec["budget"] else ("Any budget", {"b": ""}), (f"{shorter} nights", {"n": shorter})]
+    if spec["home"] in NEAR_AIRPORTS:
+        tries.append((f"From {NEAR_AIRPORTS[spec['home']]}", {"home": NEAR_AIRPORTS[spec["home"]]}))
+    out = []
+    for label, change in tries:
+        got, problem = address({**base, **change}) if change is not None else ("", "")
+        if got and not problem and got != here:
+            out.append((label, got))
+    return out[:SUGGEST_MAX]
+
+
 def form_el(spec: dict, *inside) -> Form:
     """The form the words fill (assets/js/v2.js keeps its hidden fields as the sentence changes): it posts to /plan/ask, which reads the words as a search (`address`) and keeps the
     interests. `inside` is what the page puts in it: the sentence, and on the landing the Search button. Works without script as a plain form."""

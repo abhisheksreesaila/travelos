@@ -1,5 +1,5 @@
 """F-222: the trip matrix's sums. Places down (the asked one, its nearby ones, and each nearby one joined with it), start days across, each square the whole trip.
-The marks are plain rules on real totals: the cheapest start in a lane, over the budget, and the find ("Los Angeles + San Diego, $50 more than San Diego alone")."""
+The marks are plain rules on real totals: the cheapest start in a lane, over the budget, and the find ("Los Angeles + San Diego, $10 less than San Diego alone")."""
 from datetime import date
 
 import pytest
@@ -81,13 +81,20 @@ def test_the_cheapest_start_in_each_lane_is_marked_and_a_budget_marks_what_is_ov
     assert "losangeles|2026-12-11" not in marks                          # still waiting: no mark at all
 
 
-def test_the_find_is_a_nearby_trip_that_beats_or_nearly_matches_the_asked_place_on_the_same_dates():
-    t = totals(sandiego=[2310, 2260, 2140, 2080, 2390], losangeles_sandiego=[2400, 2330, 2190, 2160, 2470], orangecounty=[2600, 2600, 2600, 2600, 2600])
+def test_the_find_is_a_nearby_trip_that_costs_less_than_the_asked_place_on_the_same_dates():
+    t = totals(sandiego=[2310, 2260, 2140, 2080, 2390], losangeles_sandiego=[2300, 2330, 2190, 2160, 2470], orangecounty=[2600, 2600, 2600, 2600, 2600])
     found = tm.find(LANES, WINDOWS, t)
-    assert (found.lane, found.window, found.diff_cents) == ("losangeles+sandiego", "2026-12-12", 5_000)
-    assert found.words == "Los Angeles + San Diego, $50 more than San Diego alone"
-    assert found.when == "Dec 12 to 16"
+    assert (found.lane, found.window, found.diff_cents) == ("losangeles+sandiego", "2026-12-10", -1_000)
+    assert found.words == "Los Angeles + San Diego, $10 less than San Diego alone"
+    assert found.when == "Dec 10 to 14"
     assert tm.marks(LANES, WINDOWS, t)[found.key] == ("find",)
+
+
+def test_a_dearer_square_is_never_the_find_however_little_dearer_it_is():
+    """The live page said "Found · +$38 vs Lake Tahoe" of a trip $38 dearer (D-860): a find costs no more than the asked place."""
+    t = totals(sandiego=[2310, 2260, 2140, 2080, 2390], losangeles_sandiego=[2400, 2330, 2190, 2160, 2470], losangeles=[2311, 2261, 2141, 2081, 2391])
+    assert tm.find(LANES, WINDOWS, t) is None
+    assert all("find" not in m for m in tm.marks(LANES, WINDOWS, t).values())
 
 
 def test_a_cheaper_nearby_place_is_the_find_and_said_as_less():
@@ -100,9 +107,9 @@ def test_a_cheaper_nearby_place_is_the_find_and_said_as_less():
 
 def test_no_find_without_both_real_totals_or_when_nothing_comes_close():
     assert tm.find(LANES, WINDOWS, totals(losangeles=[1, 1, 1, 1, 1])) is None                  # the asked place has no answer yet: nothing to compare
-    assert tm.find(LANES, WINDOWS, totals(sandiego=[2000] * 5, losangeles=[None, None, None, None, 1000], orangecounty=[2151, None, None, None, None])) is not None
-    far = totals(sandiego=[2000] * 5, losangeles=[2151] * 5, orangecounty=[2500] * 5)
-    assert tm.find(LANES, WINDOWS, far) is None                                                  # $151 more is not nearly
+    assert tm.find(LANES, WINDOWS, totals(sandiego=[2000] * 5, losangeles=[None, None, None, None, 1000], orangecounty=[2001, None, None, None, None])).lane == "losangeles"
+    far = totals(sandiego=[2000] * 5, losangeles=[2001] * 5, orangecounty=[2500] * 5)
+    assert tm.find(LANES, WINDOWS, far) is None                                                  # a dollar more is not a find
     assert tm.find(tm.lanes(SD, nearby=False), WINDOWS, totals(sandiego=[2000] * 5)) is None
 
 

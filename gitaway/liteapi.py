@@ -4,6 +4,7 @@
     flights(legs=((origin, destination, date), ...), adults=, kid_ages=, family=)                      an Answer of Flights, cheapest first: each journey's cheapest offer
     prebook(offer_id, family=) / book(prebook_id, guest, reference, family=)                           F-233: an Answer of one Prebook / one Booking, sandbox key only, never kept
     about(hotel_id)                                                                                the hotel's own description as plain text, or ""
+    hotel(hotel_id) / reviews(hotel_id)                                                            F-275: the hotel's photos, words, facilities, rooms / its reviews and sentiment, kept a day
     mode()                                                                                             "sandbox" | "live" | "off", from LITEAPI_KEY's prefix
     searches_today()                                                                                   how many calls went out today, for /admin
 
@@ -29,6 +30,7 @@ import json
 import logging
 import os
 import queue
+import re
 import socket
 import threading
 import time
@@ -854,24 +856,165 @@ def forget_stays() -> None:
             del _CACHE[k]
 
 
-def about(hotel_id: str, family: str = "") -> str:
-    """The hotel's own description, HTML stripped; "" when there is no key, the budget is spent, or it could not be read."""
+@dataclass(frozen=True)
+class Photo:
+    url: str
+    caption: str = ""
+
+
+@dataclass(frozen=True)
+class Para:
+    lead: str      # the bold first words of a description paragraph ("Convenient Airport Shuttle Service"), or ""
+    text: str
+
+
+@dataclass(frozen=True)
+class HotelRoom:
+    name: str
+    size_m2: float | None
+    beds: tuple      # "Double bed", "King bed" ...
+    sleeps: int | None
+    photos: tuple    # https addresses of this room's own photos
+
+
+@dataclass(frozen=True)
+class HotelDetails:
+    """What the hotel says about itself (F-275, D-860): LiteAPI's /data/hotel."""
+    id: str
+    name: str
+    address: str
+    stars: float | None
+    rating: float | None
+    review_count: int
+    paragraphs: tuple
+    photos: tuple          # Photo, the hotel's own, https only
+    facilities: tuple
+    rooms: tuple
+    checkin: str
+    checkout: str
+
+    @property
+    def description(self) -> str:
+        return "\n\n".join((f"{p.lead}\n{p.text}" if p.lead and p.text else p.lead or p.text) for p in self.paragraphs)
+
+
+@dataclass(frozen=True)
+class Review:
+    name: str
+    date: str          # "2026-11-14"
+    score: float | None
+    type: str          # LiteAPI's traveller type: "couple", "extended_group" ...
+    country: str
+    headline: str
+    pros: str
+    cons: str
+
+
+@dataclass(frozen=True)
+class Category:
+    name: str
+    rating: float | None
+    description: str
+
+
+@dataclass(frozen=True)
+class HotelReviews:
+    """The newest reviews and LiteAPI's AI summary of all of them (F-275): the summary is a machine's reading of the guests' words and is labelled so."""
+    items: tuple
+    categories: tuple
+    pros: tuple
+    cons: tuple
+    total: int
+
+
+_LEAD = re.compile(r"^\s*(?:<p[^>]*>)?\s*<(?:strong|b)>(.*?)</(?:strong|b)>\s*(?:<br\s*/?>|:)?", re.S | re.I)
+
+
+def _paragraphs(html) -> tuple:
+    out = []
+    for chunk in re.split(r"</p>|\n\n", str(html or "")):
+        m = _LEAD.match(chunk)
+        lead = strip_html(m.group(1)) if m else ""
+        text_ = strip_html(chunk[m.end():] if m else chunk)
+        if lead or text_:
+            out.append(Para(lead.rstrip(":"), text_.lstrip(": ")))
+    return tuple(out)
+
+
+def _str(v) -> str:
+    return " ".join(str(v).split()) if isinstance(v, (str, int, float)) else ""
+
+
+def _bed(b) -> str:
+    kind = _str(b.get("bedType"))
+    return kind if "bed" in kind.lower() else f"{kind} bed"
+
+
+def read_hotel(answer) -> HotelDetails | None:
+    d = answer.get("data") if isinstance(answer, dict) else None
+    if not isinstance(d, dict) or not d.get("name"):
+        return None
+    photos = tuple(Photo(u, _str(i.get("caption")).capitalize()) for i in d.get("hotelImages") or () if isinstance(i, dict) and (u := _https(i.get("urlHd")) or _https(i.get("url"))))
+    rooms = []
+    for r in d.get("rooms") or ():
+        if not isinstance(r, dict) or not r.get("roomName"):
+            continue
+        beds = tuple(_bed(b) for b in r.get("bedTypes") or () if isinstance(b, dict) and b.get("bedType"))
+        size = _num(r.get("roomSizeSquare")) if r.get("roomSizeUnit") == "m2" else None
+        rooms.append(HotelRoom(_str(r["roomName"]), size, beds, int(_num(r.get("maxOccupancy")) or 0) or None,
+                               tuple(u for p in r.get("photos") or () if isinstance(p, dict) and (u := _https(p.get("hd_url")) or _https(p.get("url"))))))
+    times = d.get("checkinCheckoutTimes") if isinstance(d.get("checkinCheckoutTimes"), dict) else {}
+    return HotelDetails(_str(d.get("id")), _str(d["name"]), _str(d.get("address")), _num(d.get("starRating")), _num(d.get("rating")), int(_num(d.get("reviewCount")) or 0),
+                        _paragraphs(d.get("hotelDescription")), photos, tuple(_str(f) for f in d.get("hotelFacilities") or () if _str(f)), tuple(rooms),
+                        _str(times.get("checkinStart") or times.get("checkin")), _str(times.get("checkout")))
+
+
+def read_reviews(answer) -> HotelReviews | None:
+    if not isinstance(answer, dict):
+        return None
+    items = tuple(Review(_str(r.get("name")), _str(r.get("date"))[:10], _num(r.get("averageScore")), _str(r.get("type")), _str(r.get("country")), _str(r.get("headline")),
+                         _str(r.get("pros")), _str(r.get("cons"))) for r in answer.get("data") or () if isinstance(r, dict))
+    sa = answer.get("sentimentAnalysis") if isinstance(answer.get("sentimentAnalysis"), dict) else {}
+    cats = tuple(Category(_str(c.get("name")), _num(c.get("rating")), _str(c.get("description"))) for c in sa.get("categories") or () if isinstance(c, dict) and c.get("name"))
+    return HotelReviews(items, cats, tuple(_str(x) for x in sa.get("pros") or () if _str(x)), tuple(_str(x) for x in sa.get("cons") or () if _str(x)), int(_num(answer.get("total")) or 0))
+
+
+def _data_call(what: str, path: str, hotel_id: str, family: str, read):
+    """A hotel's data (not a price): through the gate, counted against the budget, kept DATA_KEEP; None when there is no key, no id, no budget or no answer."""
     hotel_id = str(hotel_id or "").strip()
     if not key() or not hotel_id.isalnum():
-        return ""
-    cache_key = ("about", mode(), hotel_id)
+        return None
+    cache_key = (what, mode(), hotel_id)
     kept = _kept(cache_key, DATA_KEEP)
     if kept is not None:
         return kept
     with _Gate() as gate:
-        through = gate.ok
-        if not through or not _spend(family):
-            return ""
-        answer = _ask("hotel", "/data/hotel?" + urlencode({"hotelId": hotel_id}), None, STAY_TIMEOUT)
-    words = strip_html(answer["data"].get("hotelDescription")) if isinstance(answer, dict) and isinstance(answer.get("data"), dict) else ""
-    if words:
-        _keep(cache_key, words)
-    return words
+        if not gate.ok or not _spend(family):
+            return None
+        answer = _ask(what, path.format(id=quote(hotel_id)), None, STAY_TIMEOUT)
+    got = read(answer) if answer is not None else None
+    if got is not None:
+        _keep(cache_key, got)
+    return got
+
+
+def hotel(hotel_id: str, family: str = "") -> HotelDetails | None:
+    """The hotel's own photos, words, facilities and rooms (F-275), asked when a square is opened, not for every square."""
+    return _data_call("hotel", "/data/hotel?hotelId={id}", hotel_id, family, read_hotel)
+
+
+REVIEWS_SHOWN = 8
+
+
+def reviews(hotel_id: str, family: str = "") -> HotelReviews | None:
+    """The newest reviews and LiteAPI's sentiment summary (F-275)."""
+    return _data_call("reviews", f"/data/reviews?hotelId={{id}}&limit={REVIEWS_SHOWN}&getSentiment=true", hotel_id, family, read_reviews)
+
+
+def about(hotel_id: str, family: str = "") -> str:
+    """The hotel's own description, HTML stripped; "" when there is no key, the budget is spent, or it could not be read."""
+    h = hotel(hotel_id, family)
+    return h.description if h else ""
 
 
 # --- booking (F-233, D-480): prebook a stay's offer, then book it with the sandbox's own test card; never with a live key

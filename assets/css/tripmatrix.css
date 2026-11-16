@@ -199,3 +199,52 @@
   .mx-isle { transition: opacity var(--motion-fade) linear; }
   .mx-isle.is-leaving { translate: none; }
 }
+
+
+/* ---------- F-275 (D-860..D-865): the matrix v3, docs/design/matrix-v3 ---------- */
+
+/* the sentence on its own opaque card, its words buttons you can see, a hint and suggestions under it: people who book are not used to a sentence that is a form */
+.v2.is-results .v2-hero { display: block; justify-items: stretch; padding: 0.875rem 0 1rem; }
+.v2-qcard { width: 100%; box-sizing: border-box; --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem 1.75rem 1.25rem; border-radius: var(--r-xl); background: var(--card-solid);
+  box-shadow: var(--sh3), 0 0 0 1px var(--line); text-align: left; }
+.v2-qhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.625rem; margin-bottom: 0.5rem; }
+.v2-ql { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.v2-hint { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem; border-radius: 62.4375rem; background: var(--w-bg); color: var(--word); font: 620 1rem/1 var(--f-ui); }
+.v2-hint svg { width: 1rem; height: 1rem; }
+.v2.is-results .v2-qcard .v2-sent { max-width: none; font-size: clamp(1.4rem, 2vw, 2.0625rem); line-height: 1.7; text-wrap: pretty; letter-spacing: -0.012em; color: var(--ink-2); }
+.v2-qcard .v2-w { padding: 0.02em 0.3em 0.02em 0.42em; margin: 0 0.04em; border-radius: 0.5em; text-decoration: none; background: var(--w-bg); box-shadow: inset 0 -0.125rem 0 var(--w-line); color: var(--word); }
+.v2-qcard .v2-w::after { content: ""; display: inline-block; width: 0.3em; height: 0.3em; margin-left: 0.3em; border-right: 0.09em solid currentColor; border-bottom: 0.09em solid currentColor; rotate: 45deg; translate: 0 -0.14em; opacity: .75;
+  transition: rotate var(--v2-pop) var(--spring); }
+.v2-qcard .v2-w:hover { background: color-mix(in srgb, var(--flight) 20%, var(--card-solid)); box-shadow: inset 0 -0.125rem 0 var(--word); }
+.v2-qcard .v2-w[aria-expanded="true"] { background: var(--word); color: var(--card-solid); box-shadow: none; }
+.v2-qcard .v2-w[aria-expanded="true"]::after { rotate: 225deg; translate: 0 0.1em; }
+.v2-sugs { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.875rem; padding-top: 0.875rem; border-top: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.v2-sugs::-webkit-scrollbar { display: none; }
+.v2-sugs > * { flex: none; }
+.v2-sug { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.875rem 0 0.75rem; border: 1px dashed var(--line-2); border-radius: 62.4375rem; color: var(--ink); text-decoration: none; font: 580 1rem/1 var(--f-ui); }
+.v2-sug svg { width: 1rem; height: 1rem; color: var(--word); }
+.v2-sug:hover { background: var(--card-2); border-style: solid; color: var(--ink); }
+@media (max-width: 719px) {
+  .v2-qcard { padding: 1.125rem 1rem 0.875rem; border-radius: 1.625rem; }
+  .v2.is-results .v2-qcard .v2-sent { font-size: 1.3rem; line-height: 1.55; }
+  .v2-qcard .v2-w { display: inline-block; box-sizing: border-box; min-height: var(--target); margin-block: 0.1rem; padding-block: 0.6rem 0.4rem; line-height: 1.2; max-width: 100%; }
+  .v2-sugs { margin-inline: -1rem; padding-inline: 1rem; }
+}
+
+/* go wide on a laptop (founder: use the full screen): the stage, the top bar and the grid take up to 1680px; the columns share what is there */
+.v2.is-results :is(.v2-stage, .v2-top) { max-width: 105rem; }
+.mx-results { max-width: none; }
+.mx { --ch: 5.25rem; }
+
+/* the nights: a tint behind the lane's squares and nothing written on it, so no label ever floats across the row above or below (the status and the lane's own lead say the nights) */
+.mx-band::after { content: none; }
+.mx-lane.is-lit .mx-band::after { content: none; }
+.mx-lane.is-lit { padding-bottom: 0; }
+
+/* the square's mark sits inside it (a caption under the total), never over a neighbour: "Our pick" and "Cheapest" */
+.mx-sq.is-find::after, .mx-sq.is-find.is-low::after { position: static; translate: none; margin-top: -0.0625rem; padding: 0.1875rem 0.5rem; box-shadow: none; }
+.mx-sq.is-low:not(.is-find)::after { content: "Cheapest"; color: var(--see-i); font: 700 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; }
+.mx-sq.is-wait::after { content: ""; }
+
+.mx-about .mx-pop { left: auto; right: 0; }      /* the About button is at the card's right end now that the card is wide */
+@media (max-width: 719px) { .mx-about .mx-pop { left: 0.75rem; right: 0.75rem; } }

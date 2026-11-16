@@ -1,20 +1,26 @@
 /* The widget rail beside the matrix (F-251, D-620..; gitaway/pages/v2rail.py, assets/js/v2rail.js). The prototype's right-hand column (docs/design/booking-v2/index.html): restrained frosted cards over
    the sky (`.v2-glass`, the one place blur is allowed), following the place you look at. Beside the matrix on a laptop (sticky, the whole height of the screen); a swipeable row of cards on a
    phone. Motion: only --v2-* tokens; reduced motion: nothing moves. Every text is 1rem or more except the small all-caps labels (--label-min). */
-.mx-results { display: grid; grid-template-columns: minmax(0, 1fr) 21.5rem; gap: 1.375rem; align-items: start; }
-.mx-main { max-width: none; }
-.rl { position: sticky; top: 1rem; min-width: 0; max-height: calc(100svh - 2rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1.25rem; }
-.rl::-webkit-scrollbar { display: none; }
-.rl-in { display: grid; gap: 0.875rem; }
-.rl-row { display: grid; gap: 0.875rem; }
-.rl-head { display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.25rem 0.125rem; }
-.rl-art { position: relative; width: 2.75rem; height: 2.75rem; flex: none; border-radius: 0.875rem; overflow: hidden; box-shadow: var(--sh1); background: var(--card-2); }
-.rl-art > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rl-head > div { display: grid; min-width: 0; }
-.rl-h { font: var(--d-wt) 1.375rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.rl { margin: 0 0 1rem; min-width: 0; }
+.rl-in { display: grid; gap: 0.75rem; }
+.rl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.rl-h { margin-right: 0.25rem; color: var(--ink); font: 650 1rem/1.2 var(--f-ui); }
 .rl-s { color: var(--ink-2); font-size: 1rem; }
-.rl.is-swap .wg, .rl.is-swap .rl-head { animation: v2-wgin var(--v2-rail) var(--v2-ease) both; animation-delay: calc(var(--i, 0) * var(--v2-drawer-stagger)); }
+/* a widget folded into a chip (F-275, D-862): the secondary things stay a line of frosted words; a tap opens the card, a tap again folds it */
+.wchip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 0.875rem 0 0.5rem; border: 0; border-radius: 62.4375rem; cursor: pointer; color: var(--ink); font: 580 1rem/1.2 var(--f-ui); text-align: left; }
+.wchip .ic { display: grid; place-items: center; width: 1.875rem; height: 1.875rem; flex: none; border-radius: 0.625rem; background: var(--k, var(--card-2)); color: var(--on); }
+.wchip .ic svg { width: 1rem; height: 1rem; }
+.wchip[aria-expanded="true"] { background: var(--card-solid); box-shadow: var(--sh2); }
+.wchip.is-skel { pointer-events: none; color: var(--ink-3); }
+.wchip.is-skel .ic { background: var(--card-2); }
+.rl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 0.75rem; align-items: start; }
+.rl-cards:not(:has(.wg:not([hidden]))) { display: none; }
+.wg:not([hidden]) { animation: v2-wgin var(--v2-rail) var(--v2-ease) both; }
+.wg[hidden] { display: none; }
+.wg-x { flex: none; display: grid; place-items: center; width: var(--target); height: var(--target); margin: -0.75rem -0.75rem -0.75rem 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; }
+.wg-x:hover { background: var(--card-2); color: var(--ink); }
 @keyframes v2-wgin { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
+.rl.is-swap .wchip { animation: v2-wgin var(--v2-rail) var(--v2-ease) both; animation-delay: calc(var(--i, 0) * var(--v2-drawer-stagger)); }
 
 .wg { position: relative; padding: 1rem 1.125rem 1.125rem; color: var(--ink); }
 .wg > header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.625rem; }
@@ -81,17 +87,10 @@
 .wg.is-skel { min-height: 5.5rem; }
 .wg.is-skel .ic { background: var(--card-2); }
 
-@media (max-width: 1099px) {
-  .mx-results { grid-template-columns: minmax(0, 1fr); }
-  .rl { position: relative; top: 0; order: -1; max-height: none; overflow: visible; padding: 0; }
-  .rl-head { margin-bottom: 0.625rem; }
-  .rl-row { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -1.75rem; padding: 0.125rem 1.75rem 0.625rem; scroll-padding: 0 1.75rem; }
-  .rl-row::-webkit-scrollbar { display: none; }
-  .rl-row .wg { flex: 0 0 18.75rem; scroll-snap-align: start; }
-}
 @media (max-width: 719px) {
-  .rl { order: 0; margin-top: 0.875rem; }
-  .rl-row { margin: 0 -1rem; padding: 0.125rem 1rem 0.625rem; scroll-padding: 0 1rem; }
-  .rl-row .wg { flex-basis: 17.625rem; }
+  .rl-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -1rem; padding: 0.125rem 1rem; scroll-snap-type: x proximity; }
+  .rl-chips::-webkit-scrollbar { display: none; }
+  .rl-chips > * { flex: none; }
+  .rl-cards { grid-template-columns: minmax(0, 1fr); }
 }
-@media (prefers-reduced-motion: reduce) { .rl.is-swap .wg, .rl.is-swap .rl-head { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rl.is-swap .wchip, .wg:not([hidden]) { animation: none; } }

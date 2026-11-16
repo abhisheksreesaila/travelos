@@ -353,3 +353,11 @@ def test_a_forecast_day_on_screen_shows_met_norways_credit_a_typical_one_does_no
     html = client.get(MATRIX).text
     line = re.search(r'<p class="mx-credit">(.*?)</p>', html, re.S).group(1)
     assert "based on data from MET Norway" in line and 'href="https://docs.api.met.no/doc/License"' in line and "updated 6:10 AM" in line
+
+
+def test_a_dearer_square_says_plainly_how_much_more_never_a_find():
+    """D-860: "+$38 vs Lake Tahoe" read as a find; the chip says "$38 more than Lake Tahoe", and a cheaper one says less."""
+    from gitaway.pages import tripmatrix as mx
+    assert mx.vs_words(3_800, "Lake Tahoe", False) == "$38 more than Lake Tahoe"
+    assert mx.vs_words(5_000, "San Diego", True) == "$50 more than San Diego alone"
+    assert mx.vs_words(-3_800, "Lake Tahoe", False) == "$38 less than Lake Tahoe" and mx.vs_words(0, "Lake Tahoe", False) == "the same as Lake Tahoe"

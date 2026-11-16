@@ -46,6 +46,7 @@ NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip a
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
+HINT = "Tap any word to change it"
 CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 ESTIMATES = "“About” prices are estimates from what is known. Exact prices when you let go."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
@@ -199,9 +200,10 @@ def age_words(fetched) -> str:
 
 def vs_words(diff, asked_name, combo) -> str:
     """The panel's chip beside a nearby square's total. assets/js/tripmatrix.js `vs` says the same words."""
+    alone = " alone" if combo else ""
     if diff < 0:
-        return f"{tm.dollars(-diff)} less than {asked_name}"
-    return f"the same as {asked_name}" if diff == 0 else f"+{tm.dollars(diff)} vs {asked_name}{' alone' if combo else ''}"
+        return f"{tm.dollars(-diff)} less than {asked_name}{alone}"
+    return f"the same as {asked_name}{alone}" if diff == 0 else f"{tm.dollars(diff)} more than {asked_name}{alone}"
 
 
 def _art(place, cls="mx-art"):
@@ -290,7 +292,7 @@ def fact_el(s: State):
 
 
 def find_el():
-    """The pick bar (the prototype's "Our pick"): the find, drawn by assets/js/tripmatrix.js `drawFind` when the squares say one (a nearby trip that beats or nearly matches the
+    """The pick bar (the prototype's "Our pick"): the find, drawn by assets/js/tripmatrix.js `drawFind` when the squares say one (a nearby trip that costs less than or the same as the
     asked place); a skeleton of it while squares are still coming in, nothing when there is none."""
     return A(Span(cls="mx-pk-art", aria_hidden="true"), Span(Span(cls="mx-pk-h"), Span(cls="mx-pk-s"), cls="mx-pk-t"), Span("Our pick", cls="mx-pk-badge"), Span(cls="mx-pk-p num"),
              Span("Open", icon("arrow-right", 18, 2.2), cls="mx-pk-open"), href="#", cls="mx-find is-empty", id="mx-find", aria_live="polite", data_open="")
@@ -386,7 +388,10 @@ def import_el(id="mx-import"):
 def hero_el(spec, problems=()):
     """The sentence on top of the results: its form (hidden fields, posted by the script when a word changes), the sentence, and what is wrong in words when a search cannot run."""
     err = P(" ".join(problems), cls="v2-error", id="v2-error", role="alert") if problems else ""
-    return Div(v2sentence.form_el(spec, v2sentence.sentence(spec), err), import_el(), cls="v2-hero")
+    sug = v2sentence.suggestions(spec)
+    head = Div(Span("Your trip", cls="v2-ql"), Span(icon("spark", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
+    tries = Nav(Span("Try", cls="v2-ql"), *[A(icon("plus", 16, 2.4), label, href=to, cls="v2-sug") for label, to in sug], cls="v2-sugs", aria_label="Suggested changes") if sug else ""
+    return Div(Div(head, v2sentence.form_el(spec, v2sentence.sentence(spec), err), tries, cls="v2-qcard"), import_el(), cls="v2-hero")
 
 
 def matrix_page(s: State, family="", typed="", problems=(), picked=()):
@@ -402,9 +407,9 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     card = Div(Div(status_el(s, total), legend_el(s), about_el(s, skies, sample), P(sky_note(skies), cls="mx-ah-n"), P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"), cls="mx-top"),
                find_el(), lanes_el(s, lanes, windows, skies), credit_el(skies), cls="mx-card")
     drawer = Div(id="mx-drawer", cls="dr-wrap", aria_label="The square you opened", aria_live="polite", hidden=True)      # the drawer grows into it (assets/js/tripmatrix.js, v2drawer.js)
-    rail = Aside(Div(*[Section(Header(Span(cls="ic")), P("Looking around…", cls="fine"), cls="wg v2-glass is-skel") for _ in range(3)], cls="rl-row"), id="mx-rail", cls="rl", aria_label="Around the place", aria_live="polite")
-    results = Div(Div(card, drawer, cls="mx-main"), rail, cls="mx-results")
-    body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), results,
+    rail = Aside(Div(Div(*[Span(Span(cls="ic"), "Looking around…", cls="wchip v2-glass is-skel") for _ in range(3)], cls="rl-chips"), cls="rl-in"), id="mx-rail", cls="rl", aria_label="Around the place", aria_live="polite")
+    results = Div(Div(card, drawer, cls="mx-main"), cls="mx-results")
+    body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), rail, results,
                Script(NotStr(page_data(s, lanes, windows, {})), type="application/json", id="mx-data"), fact_el(s), *machinery,
                cls="v2-stage mx", id="mx", data_v2="results", data_waiting="1")
     return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results", mood=moods.choose(s.place, s.depart, s.return_))
