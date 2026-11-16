@@ -42,13 +42,16 @@ def shot(page, name):
         page.screenshot(path=str(REPORT / f"f275-{name}.png"))
 
 
-def test_a_suggestion_chip_runs_the_sentence_with_one_word_changed(matrix):  # noqa: F811
+def test_a_suggestion_chip_stages_one_word_changed_and_update_runs_the_sentence(matrix):      # F-280: a chip stages; Update searches  # noqa: F811
     page = matrix(DESKTOP)
     expect(page.locator(".v2-hint")).to_have_text("Change any word")
     chip = page.locator(".v2-sug", has_text="A week later")
     expect(chip).to_be_visible()
     assert chip.bounding_box()["height"] >= 47.5
     chip.click()
+    assert "d=2026-12-19" not in page.url      # staged, not searched
+    expect(page.locator('#v2-sent .v2-w[data-k="start"]')).to_have_text("Sat, Dec 19")
+    page.locator(".v2-update").click()
     page.wait_for_url("**d=2026-12-19**")
     assert "r=2026-12-23" in page.url and "home=SFO" in page.url
     expect(page.locator('#v2-sent .v2-w[data-k="start"]')).to_have_text("Sat, Dec 19")
