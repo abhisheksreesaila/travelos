@@ -67,12 +67,14 @@ def test_without_the_matrix_a_family_with_no_trip_lands_on_the_import(client, no
 
 # ---- Plan a trip, Start a trip -----------------------------------------------------------------------------------------
 
-def test_signed_out_plan_a_trip_and_start_a_trip_sign_in_then_come_back_to_the_front_door(client):
+def test_signed_out_plan_a_trip_and_the_wish_open_the_ask_without_an_account(client):
+    """D-761: a visitor searches and compares without signing in; Sign in stays its own button."""
     cover = client.get("/").text
     nav = re.search(r'<nav[^>]*class="cv-nav".*?</nav>', cover, re.S).group(0)
-    assert hrefs(nav)[-1] == "/signin"
-    assert 'href="/signin"' in re.search(r'<div class="cv-ctas">.*?</div>', cover, re.S).group(0)
-    assert hrefs(header_of(client.get("/community").text)).count("/signin") >= 1       # Plan a trip (and Sign in)
+    assert hrefs(nav)[-1] == "/plan/ask"
+    assert re.search(r'<form[^>]*action="/plan/ask"[^>]*method="post"', cover)      # F-266: the hero's wish is the ask's own box
+    page = client.get("/community").text
+    assert "/plan/ask" in hrefs(header_of(page)) and 'href="/signin?next=' in page
 
 
 def test_signed_in_plan_a_trip_opens_the_matrix(client):
