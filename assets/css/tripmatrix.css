@@ -248,3 +248,6 @@
 
 .mx-about .mx-pop { left: auto; right: 0; }      /* the About button is at the card's right end now that the card is wide */
 @media (max-width: 719px) { .mx-about .mx-pop { left: 0.75rem; right: 0.75rem; } }
+
+/* captions on every square state read 4.5:1 (live check: "Cheapest" was blue on the blue of the opened square) */
+.mx-sq.is-open.is-low:not(.is-find)::after { color: var(--on); }

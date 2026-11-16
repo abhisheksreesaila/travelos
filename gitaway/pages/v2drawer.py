@@ -119,7 +119,8 @@ def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int):
                   for j, st in enumerate(alts)]
     nights = shown.nights
     sub = Div(f"Rooms for {party} · {nights} night{'s' if nights != 1 else ''}", cls="dr-sub")
-    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=st.hotel_id, hidden=j != 0,
+    from gitaway.pages import hotelview
+    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), hidden=j != 0,
                  role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
     return Div(Div(*hotels, cls="dr-hl"),
                Div(sub, *room_lists,
@@ -166,15 +167,29 @@ def _flight_btn(f: tm.FlightPart, k: int, base: int, on: bool):
                   data_times=_plus(f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "")))
 
 
+ADJ = {"sun": "sunny", "cloud": "cloudy", "rain": "rainy", "snow": "snowy", "wind": "windy"}
+
+
+def sky_words(days) -> str:
+    """What the trip's days are like, from weather.py's days only: "3 of 4 days typically sunny" when any day is sunny, else what most days are ("Typically snowy · 40°", the average high).
+    Never a zero count (live check: "0 of 4 days typically sunny" for a snowy January)."""
+    typical = any(d.kind != weather.FORECAST for d in days)
+    sunny = sum(1 for d in days if d.condition == "sun")
+    if sunny:
+        return f"{sunny} of {len(days)} days {'typically ' if typical else ''}sunny"
+    kinds = [d.condition for d in days if d.condition in ADJ]
+    word = ADJ[max(dict.fromkeys(kinds), key=kinds.count)] if kinds else "mixed"
+    high = round(sum(d.high_f for d in days) / len(days))
+    return f"{'Typically ' + word if typical else word.capitalize()} · {high}°"
+
+
 def _why(s, lane, w, sq, asked_sq):
     """One line on why this trip: the sky for its nights, where its total stands against the budget and against the asked place. Each part only where it is known."""
     from gitaway.pages import tripmatrix as mx
     bits = []
     days = [d for p, a, b in tm.stays_for(lane, w) for d in weather_for(p.name, a, b).days if d]
     if days:
-        sunny = sum(1 for d in days if d.condition == "sun")
-        typical = any(d.kind != weather.FORECAST for d in days)
-        bits.append(Span(f"{sunny} of {len(days)} days {'typically ' if typical else ''}sunny"))
+        bits.append(Span(sky_words(days)))
     if s.budget_cents:
         gap = s.budget_cents - sq.cents
         bits.append(Span(f"{tm.dollars(abs(gap))} {'under' if gap >= 0 else 'over'} your {tm.dollars(s.budget_cents)}", data_budget=str(s.budget_cents // 100)))

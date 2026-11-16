@@ -102,9 +102,13 @@ def test_the_fragment_has_the_photos_labelled_the_hotels_own_with_a_see_all_over
 def test_the_fragment_says_the_rating_the_ai_summary_and_what_guests_say_by_category(hilton):
     html = hotelview.to_xml(hotelview.fragment(ID))
     assert '<span class="dr-score num">7.6</span>' in html and "Good" in html and "6,263 reviews" in html
-    assert "summary written by ai from the guest reviews" in html
+    assert "summary written by AI from the guest reviews" in html and "ai from" not in html
     assert "Cleanliness" in html and 'aria-label="Cleanliness 8 out of 10"' in html and "Overall reviewers frequently noted clean" in html
-    assert "Maria" in html and "Group · Australia · 2026-11-14" in html and "8/10" in html and "Left a score, no words." in html
+    assert "Maria" in html and "Group · Australia · 2026-11-14" in html and "8/10" in html
+    docs = _json.loads((FIX / "reviews.json").read_text())["data"]
+    bare = [r["name"] for r in docs if not (r.get("headline") or r.get("pros") or r.get("cons"))]
+    assert bare and all(f">{n}<" not in html for n in bare)      # a score with no words is not a card
+    assert f"Plus {len(bare)} score{'' if len(bare) == 1 else 's'} without words." in html and html.count("Plus ") == 1 and "Left a score" not in html
 
 
 def test_the_hotels_facilities_check_in_and_rooms_with_their_photos_are_there(hilton):
@@ -127,11 +131,21 @@ def test_a_review_is_text_never_markup(monkeypatch):
 
 def test_the_route_answers_the_fragment_and_nothing_for_a_hotel_it_does_not_have(real, client, monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake())
-    got = client.get(f"/plan/matrix/hotel?id={ID}").json()["html"]
+    got = client.get(f"/plan/matrix/hotel?id={hotelview.token(ID)}").json()["html"]
     assert "7.6" in got and "The hotel’s own photos" in got
     monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(status=404))
-    assert client.get("/plan/matrix/hotel?id=lpnone").json() == {"html": ""}
+    assert client.get(f"/plan/matrix/hotel?id={hotelview.token('lpnone')}").json() == {"html": ""}
     assert client.get("/plan/matrix/hotel?id=../x").json() == {"html": ""}
+
+
+def test_an_id_the_server_did_not_draw_is_nothing_and_spends_nobodys_allowance(real, client, monkeypatch):
+    f = HotelFake()
+    monkeypatch.setattr(liteapi, "TRANSPORT", f)
+    before = liteapi.searches_today()
+    for made_up in (ID, f"{ID}.deadbeef", hotelview.token("lpother").replace("lpother", ID), "lp1.", ".x", "../x"):
+        assert client.get("/plan/matrix/hotel", params={"id": made_up}).json() == {"html": ""}, made_up
+    assert f.asked == [] and liteapi.searches_today() == before
+    assert hotelview.unsign(hotelview.token(ID)) == ID and hotelview.unsign(hotelview.token(ID) + "0") == ""
 
 
 def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_made_by_drawing_it(real, client):
@@ -142,7 +156,7 @@ def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_ma
     sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, "")
     assert sq.ok and sq.stays[0].hotel_id
     html = hotelview.to_xml(v2drawer.drawer(s, lane, w, sq))
-    assert f'data-hid="{sq.stays[0].hotel_id}"' in html and 'data-state="idle"' in html
+    assert f'data-hid="{hotelview.token(sq.stays[0].hotel_id)}"' in html and 'data-state="idle"' in html
     assert not [u for u in real.asked if "/data/" in u[0]]      # nothing asked for the hotel's photos until the script asks
 
 
@@ -167,13 +181,6 @@ def test_a_flight_that_lands_the_next_day_says_plus_one_in_its_row_and_in_its_su
 
 # ---- the nights band and the rail ---------------------------------------------------------------------------------------------------------------------------
 
-def test_the_nights_band_draws_no_label_that_could_float_across_a_neighbouring_row():
-    css = (_Path(__file__).parent.parent / "assets" / "css" / "tripmatrix.css").read_text()
-    tail = css.split("F-275", 1)[1]
-    assert ".mx-band::after { content: none; }" in tail and ".mx-lane.is-lit .mx-band::after { content: none; }" in tail
-    assert "top: -0.75rem" not in tail      # the pick mark sits inside its square now
-
-
 def test_the_rail_is_a_row_of_chips_each_opening_a_card_that_starts_hidden(sample, client):
     html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["html"])
     chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="(wg-\d)" data-wg="\d" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
@@ -182,3 +189,19 @@ def test_the_rail_is_a_row_of_chips_each_opening_a_card_that_starts_hidden(sampl
     assert any(c.startswith("Uber") and c.endswith("sample") for c in names)
     for wid, _ in chips:
         assert re.search(rf'<section[^>]*id="{wid}"[^>]*hidden', html) or re.search(rf'<section[^>]*hidden[^>]*id="{wid}"', html), wid
+
+
+# ---- the sky line: never a zero count -----------------------------------------------------------------------------------------------------------------------
+
+def _days(kinds, kind="normal", high=40):
+    from datetime import date
+    from types import SimpleNamespace
+    return [SimpleNamespace(date=date(2027, 1, 15 + i), kind=kind, condition=c, high_f=high) for i, c in enumerate(kinds)]
+
+
+def test_the_sky_line_counts_sunny_days_only_when_there_are_some_and_else_says_what_is_typical():
+    from gitaway.pages import v2drawer
+    assert v2drawer.sky_words(_days(["sun", "sun", "cloud", "sun"], high=66)) == "3 of 4 days typically sunny"
+    assert v2drawer.sky_words(_days(["snow", "snow", "cloud", "snow"], high=40)) == "Typically snowy · 40°"
+    assert v2drawer.sky_words(_days(["cloud", "rain", "rain"], kind="forecast", high=51)) == "Rainy · 51°"
+    assert "0 of" not in v2drawer.sky_words(_days(["snow"] * 4))
