@@ -1,0 +1,11 @@
+# Light web 3D that still feels immersive (research for cover v3)
+
+Read 2026-11-15: the [mesh3d.gallery](https://mesh3d.gallery/) index (a curated gallery of Three.js and WebGL sites, tagged by technique, interaction and download weight) and two entries on it, [Dominik Fojcik's portfolio](https://mesh3d.gallery/website/dominik-fojcik) (voxel portrait, scroll flies a camera through scenes, 8.4 MB) and [Orvae](https://mesh3d.gallery/website/orvae) (five chapters above the clouds, cursor pushes stones, 27.1 MB). These are notes on principles, not on anyone's look; nothing of theirs is used.
+
+1. **Arrive at places, don't scroll past sections.** Each scroll stretch should end in a distinct scene with a clear arrival. A few chapters (Orvae has five) give rhythm, and each can be cheap. *For us: five beats, one per step of the loop, each a settled state the scene springs into.*
+2. **A stylised, low-detail world carries the mood.** Voxels, low poly, flat shading and paper are what make these scenes feel crafted; detail is not. *For us: a 1,280-face flat-shaded globe in canvas 2D, a paper postcard, a miniature table of CSS boxes. No models, no textures.*
+3. **Small local responses make depth tactile.** A stone that moves under the cursor or an orb that lights on hover feels physical without a physics engine. *For us: the postcard tilts toward the pointer, the table turns a little when nudged, and it springs back.*
+4. **The weight gap is a choice.** 8.4 MB and 27 MB pages can both feel immersive; the page that loads in a blink wins on a phone. *For us: no WebGL library, at most 15 KB of script per direction (6 KB gzipped), everything drawn in SVG, CSS or canvas.*
+5. **Text and the call stay plain HTML; 3D is the enhancement.** The words and the button must be readable before (and without) the scene, and the scene must stop when it is off screen, the tab is hidden, or motion is reduced. *For us: captions are HTML cards, the loop pauses when not visible, and reduced motion shows each beat as a still, readable frame.*
+
+Mobile: neither entry says how it handles phones, which is itself a warning. We design the phone frame first: the scene sits in the top part, the words in a card at the thumb, and no gesture fights the page's scroll.
