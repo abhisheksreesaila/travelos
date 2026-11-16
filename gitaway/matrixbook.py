@@ -21,10 +21,12 @@ from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 
-from gitaway import familydb, liteapi
+from gitaway import auth, familydb, liteapi, showcase
 
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
+SOON_WORDS = "Booking opens soon"
+SANDBOX, STAND_IN, SOON = "sandbox", "stand-in", "soon"
 HOLD = 15 * 60                  # seconds a prebooked room is kept for the guest form
 HELD_PER_FAMILY = 5             # prebooked rooms kept per family, the oldest dropped first
 PER_MINUTE, PER_DAY = 5, 20     # Book presses a person may make (both routes), counted in community.db
@@ -37,6 +39,25 @@ SAID = {liteapi.GONE: "That room was just taken. Go back to the matrix and open 
         liteapi.OFF: "Booking needs the LiteAPI sandbox key; this site has none (or a live one, which never books).",
         liteapi.FAILED: "LiteAPI did not answer just now. Nothing was booked. Try again in a minute.",
         liteapi.DUPLICATE: "LiteAPI says this room is already booked, but we could not find the booking. Check your bookings with LiteAPI before booking again."}
+
+
+def mode() -> str:
+    """What Book does (F-267, D-768): SANDBOX books in LiteAPI's sandbox (a `sand_` key, as F-233; a sample square is a stand-in by its own flag); STAND_IN plays the sample booking
+    and asks LiteAPI to book nothing (a live key anywhere but production, where it shows real prices, and the showcase with one); SOON books nothing at all and says so (a live key
+    in production, until the real booking exists). `liteapi.prebook` and `book` refuse a live key whatever this says (D-480)."""
+    if liteapi.mode() == "live":
+        return SOON if auth.production() and not showcase.on() else STAND_IN
+    return SANDBOX
+
+
+def words(sample: bool = False) -> str:
+    """The one sentence that says what a booking here is, for the sheet's pill and the panel's foot."""
+    return SAMPLE_WORDS if sample or mode() == STAND_IN else (SOON_WORDS if mode() == SOON else NOTHING_CHARGED)
+
+
+def stands_in(sample: bool = False) -> bool:
+    """Is this booking the sample stand-in: a sample square, or a live key off production (its squares are real but nothing may be booked)?"""
+    return sample or mode() == STAND_IN
 
 
 @dataclass(frozen=True)

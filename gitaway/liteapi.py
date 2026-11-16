@@ -54,6 +54,8 @@ FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes
 FAIL_KEEP = timedelta(minutes=5)
 DATA_KEEP = timedelta(hours=24)          # a hotel's own words
 PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together, everyone signed out) may make in a day
+PER_VISITOR_A_DAY = 60                   # uncached searches one signed-out visitor may make in a day (F-265, D-764): about three full matrices; a visitor is `stats.searcher`'s "v:" code
+VISITOR = "v:"
 A_DAY = 2000                             # and the whole site
 PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY = 20, 200      # booking calls (prebook, book, lookup) have their own daily budgets, so booking never spends a family's searches nor the reverse (F-233 review)
 STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
@@ -267,7 +269,14 @@ def _board(rate) -> str:
 def _room_of(rt, rate) -> Room:
     fees = (rate.get("retailRate") or {}).get("taxesAndFees") or ()
     due = sum(_cents(f.get("amount")) or 0 for f in fees if isinstance(f, dict) and f.get("included") is False and f.get("currency") == "USD")
-    return Room(str(rate.get("name") or ""), _board(rate), (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", _usd(rt.get("offerRetailRate")), due, rt["offerId"])
+    return Room(str(rate.get("name") or ""), _board(rate), (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", _shown(rt), due, rt["offerId"])
+
+
+def _shown(rt) -> int | None:
+    """The price a room shows (F-267, D-767). With a live key, LiteAPI's public selling price (`suggestedSellingPrice`: about 15% over the retail rate, the price the big sites
+    show, so never under the hotel's own); when a rate has none, or none we can read, the retail rate (`offerRetailRate`), and nothing more said. A sandbox key shows the retail rate."""
+    public = _usd(rt.get("suggestedSellingPrice")) if mode() == "live" else None
+    return public if public is not None else _usd(rt.get("offerRetailRate"))
 
 
 def read_stays(answer, fetched: datetime) -> tuple:
@@ -418,6 +427,19 @@ def _day() -> str:
     return now().date().isoformat()
 
 
+def _per(family: str, per: int, book: bool) -> int:
+    """A visitor's own allowance, else the family's budget (a booking call is a signed-in family's, never a visitor's)."""
+    return PER_VISITOR_A_DAY if family.startswith(VISITOR) and not book else per
+
+
+def visitor_over(family: str) -> bool:
+    """Is `family` a visitor whose own allowance for today is spent (not the site's total)?"""
+    if not family.startswith(VISITOR):
+        return False
+    with community.connect() as db:
+        return db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": _day(), "f": family}).scalar() >= PER_VISITOR_A_DAY
+
+
 def _spend(family: str, book: bool = False) -> bool:
     """Count one uncached call for `family` today, if neither its budget nor the site's is spent. `book`: a booking call, counted in its own table against its own budgets."""
     day, who = _day(), family or "guest"
@@ -425,8 +447,10 @@ def _spend(family: str, book: bool = False) -> bool:
     with _LOCK, community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
         everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
-        if mine >= per or everyone >= total:
+        if mine >= _per(who, per, book) or everyone >= total:
             return False
+        if who.startswith(VISITOR) and not book:      # a visitor's code is good for the day it was made: yesterday's are gone
+            db.conn.execute(text("DELETE FROM liteapi_searches WHERE family LIKE 'v:%' AND day != :d"), {"d": day})
         db.conn.execute(text(f"INSERT INTO {table} (day, family, n) VALUES (:d, :f, 1) ON CONFLICT(day, family) DO UPDATE SET n = n + 1"), {"d": day, "f": who})
         db.conn.commit()
     return True
@@ -439,7 +463,7 @@ def can_search(family: str, book: bool = False) -> bool:
     with community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
         everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
-    return mine < per and everyone < total
+    return mine < _per(who, per, book) and everyone < total
 
 
 def searches_today() -> int:
