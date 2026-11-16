@@ -11,6 +11,7 @@ The box's sentence is the place, then parts joined with " · " (a comma works to
 """
 
 import re
+from dataclasses import replace
 from datetime import timedelta
 
 from gitaway import catalog, tripsentence, v2sentence
@@ -49,6 +50,12 @@ def _starts():
     first = catalog.today() + timedelta(days=LEAD_DAYS)
     first += timedelta(days=(5 - first.weekday()) % 7)
     return [first + timedelta(days=7 * i) for i in range(STARTS)]
+
+
+def default_window(today=None) -> tuple:
+    """(start, nights, flex) for a wish that names a place and no dates (F-268): the Friday at least LEAD_DAYS after `today`, 3 nights, give or take 2 days."""
+    first = (today or catalog.today()) + timedelta(days=LEAD_DAYS)
+    return first + timedelta(days=(4 - first.weekday()) % 7), 3, 2
 
 
 def first_start():
@@ -126,11 +133,15 @@ def search(text, home) -> tuple:
     said = _FROM.search(rest)
     rest = _FROM.sub("", rest)
     ask = _read(rest)
+    no_dates = ask.depart is None and ask.return_ is None
+    if no_dates and ask.unread == ("dates",):      # a place and nothing about when: a window to start from, shown in the results' sentence for the reader to change
+        start, nights, flex = default_window()
+        ask = replace(ask, depart=start, return_=start + timedelta(days=nights), flex=ask.flex if ask.flex is not None else flex)
     if ask.unread:
         from gitaway.pages.tripmatrix import MISSING      # here, not at the top: the page imports this module's neighbours
         return "", " ".join(MISSING[x] for x in ask.unread)
     form = {"to": place.name, "home": catalog.clean_home(said.group(1)) if said else home, "d": ask.depart.isoformat(), "n": (ask.return_ - ask.depart).days, "a": ask.adults,
-            "k": ",".join(map(str, ask.kid_ages)), "b": ask.budget_cents // 100 if ask.budget_cents else ""}
+            "k": ",".join(map(str, ask.kid_ages)), "b": ask.budget_cents // 100 if ask.budget_cents else "", "x": "" if ask.flex is None else ask.flex}
     return v2sentence.address(form)
 
 

@@ -79,8 +79,6 @@ def test_free_typing_reads_like_the_chips_do():
 @pytest.mark.parametrize("text,problem", [
     ("", "Say where you would like to go."),
     ("Narnia", "We don't know that place yet."),
-    ("San Diego", "Say when, like “Dec 12 to 16”."),
-    ("San Diego · 2 adults", "Say when, like “Dec 12 to 16”."),
 ])
 def test_a_search_that_cannot_run_says_why_in_words(text, problem):
     assert asksuggest.search(text, "SFO") == ("", problem)
@@ -115,3 +113,19 @@ def test_the_suggest_route_returns_the_same_words(client):
 
 def test_a_signed_out_visitor_may_ask_for_suggestions_too(client):
     assert client.get("/plan/ask/suggest", params={"q": "san"}).status_code == 200
+
+
+def test_f268_default_window_is_the_friday_four_weeks_out_for_three_nights_give_or_take_two():
+    assert asksuggest.default_window(date(2026, 11, 15)) == (date(2026, 12, 18), 3, 2)      # today Sunday: +28 is Sunday Dec 13, the Friday after
+    assert asksuggest.default_window(date(2026, 11, 20)) == (date(2026, 12, 18), 3, 2)      # today Friday: +28 is itself a Friday
+
+
+def test_place_only_f268_a_place_with_no_dates_gets_the_default_window(monkeypatch):
+    monkeypatch.setattr(asksuggest.catalog, "today", lambda: date(2026, 11, 15))
+    for text in ("San Diego", "San Diego · 2 adults"):
+        to, problem = asksuggest.search(text, "SFO")
+        q = parse_qs(urlsplit(to).query)
+        assert problem == "" and q["d"] == ["2026-12-18"] and q["r"] == ["2026-12-21"] and q["x"] == ["2"]
+    to, _ = asksuggest.search("San Diego, Dec 12 to 16", "SFO")      # dates said are kept
+    assert parse_qs(urlsplit(to).query)["d"] == ["2026-12-12"]
+    assert asksuggest.search("Narnia", "SFO") == ("", "We don't know that place yet.")      # never a guessed place
