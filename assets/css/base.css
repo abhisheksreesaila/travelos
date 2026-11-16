@@ -39,8 +39,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* THE LOGO, one definition for every page (D-61, Direction A since F-200): an ink tile (white in dark mode) with the fork's three nodes in kind colours, so the colour belongs to the trip,
    and the wordmark in Geist 750. It reads only the mark tokens (tokens.css), so no skin can recolour it; tests_browser/test_brand_mark.py measures it on every page in both modes.
    layout.mark() draws it; the sign-in card's logo is the same pair. */
-.ga-brand-mark, .si-logo { width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.625rem; background: var(--mark-bg); display: grid; place-items: center; }
-.ga-brand-mark svg, .si-logo svg { width: 1.5rem; height: 1.5rem; }
+.ga-brand-mark { width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.625rem; background: var(--mark-bg); display: grid; place-items: center; }
+.ga-brand-mark svg { width: 1.5rem; height: 1.5rem; }
 .ga-mark .mk-l { stroke: var(--mark-line); } .ga-mark .mk-a { stroke: var(--mark-a); } .ga-mark .mk-b { stroke: var(--mark-b); } .ga-mark .mk-c { stroke: var(--mark-c); }
 .ga-brand-name, .si-brand { font-family: var(--font-brand); font-weight: 750; font-size: 1.5rem; letter-spacing: -0.03em; color: var(--ink); }
 .ga-nav { display: flex; align-items: center; gap: 2rem; font-weight: 600; }
@@ -193,10 +193,10 @@ html { background: var(--ground); }
 @media (max-width: 720px) {
   .ga-brand-row .ga-preview { position: static; }      /* on a phone the line hangs from the row's left edge, so it stays on the screen */
   /* in the site header the label is a small row under the nav, so the brand and Sign in keep their row (it did not fit beside them) */
-  .ga-header:not(.si-head) { position: relative; }
-  .ga-header:not(.si-head) .ga-brand-row { display: contents; }
-  .ga-header:not(.si-head) .ga-preview { order: 4; flex: 1 0 100%; margin-top: -0.5rem; }
-  .ga-header:not(.si-head) .ga-preview-sum { margin-block: -0.5rem; padding-inline: 0; }
+  .ga-header { position: relative; }
+  .ga-header .ga-brand-row { display: contents; }
+  .ga-header .ga-preview { order: 4; flex: 1 0 100%; margin-top: -0.5rem; }
+  .ga-header .ga-preview-sum { margin-block: -0.5rem; padding-inline: 0; }
 }
 .ga-preview { position: relative; flex: none; }
 .ga-preview-sum { list-style: none; display: inline-flex; align-items: center; min-height: var(--target); padding: 0 0.25rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
