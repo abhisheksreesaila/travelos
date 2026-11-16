@@ -59,6 +59,7 @@ class MatrixPayment:
     refundable: int = 0
     voucher_code: str = ""
     discount_cents: int = 0
+    policy: str = ""        # the refund policy as it was shown before paying (matrixbook.policy_words)
     status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked
     booking_id: str = ""
     guest_first: str = ""

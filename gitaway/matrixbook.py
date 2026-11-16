@@ -27,7 +27,7 @@ from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 
-from gitaway import auth, familydb, liteapi, showcase
+from gitaway import auth, catalog, familydb, liteapi, showcase
 
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
@@ -209,6 +209,25 @@ def clean_extras(phone, requests, arrive):
     return Extras(p, tuple(r for r in REQUESTS if r in picked), arrive if arrive in ARRIVALS else ""), errors
 
 
+def _when_gmt(iso: str) -> str:
+    """"Dec 10, 6:59 PM GMT" from LiteAPI's cancel time, else its own text."""
+    from datetime import datetime
+    try:
+        at = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except ValueError:
+        return iso
+    return f"{at:%b} {at.day}, {at.hour % 12 or 12}:{at:%M} {'AM' if at.hour < 12 else 'PM'} GMT"
+
+
+def policy_words(pre) -> str:
+    """What LiteAPI says about cancelling, in a sentence: a refundable stay's deadline and what it costs after, a non-refundable one's plain word."""
+    if not pre.refundable:
+        return "Non-refundable: if you cancel, nothing comes back."
+    if pre.deadline:
+        return f"Free cancellation until {_when_gmt(pre.deadline)}." + (f" After that, cancelling costs {catalog.money(pre.fee_cents)}." if pre.fee_cents else "")
+    return "Refundable: you can cancel it from the booking page."
+
+
 def with_extras(guest: liteapi.Guest, extras: Extras) -> liteapi.Guest:
     """The lead guest with the mobile number and the requests the checkout asked, for a real booking (the card sandbox booking sends the name and email only): the requests are words
     of the fixed list, so a remark is never typed text."""
@@ -367,9 +386,9 @@ def save_prebook(db, token: str, user_id: str, row: Row) -> None:
     pre = row.prebook
     with familydb.transaction(db):
         familydb.run(db, "INSERT OR IGNORE INTO matrix_payments (id, user_id, place, hotel, room, checkin, checkout, prebook_id, transaction_id, charge_cents, due_at_stay_cents, "
-                         "refundable, voucher_code, discount_cents, status, created_at, updated_at) VALUES (:i, :u, :p, :h, :r, :a, :o, :pb, :tx, :c, :d, :f, :v, :x, 'prebooked', :now, :now)",
+                         "refundable, voucher_code, discount_cents, policy, status, created_at, updated_at) VALUES (:i, :u, :p, :h, :r, :a, :o, :pb, :tx, :c, :d, :f, :v, :x, :pol, 'prebooked', :now, :now)",
                      i=token, u=user_id, p=row.place, h=row.part.name[:120], r=pre.room[:120], a=pre.checkin.isoformat(), o=pre.checkout.isoformat(), pb=pre.prebook_id, tx=pre.transaction_id,
-                     c=pre.charge_cents, d=pre.due_at_stay_cents, f=1 if pre.refundable else 0, v=pre.voucher_code, x=pre.discount_cents, now=familydb.now())
+                     c=pre.charge_cents, d=pre.due_at_stay_cents, f=1 if pre.refundable else 0, v=pre.voucher_code, x=pre.discount_cents, pol=policy_words(pre)[:300], now=familydb.now())
 
 
 def payment(db, token: str) -> dict | None:

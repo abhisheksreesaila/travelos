@@ -182,3 +182,20 @@
   .mxb-f.is-fold .mxb-pane.is-on { animation: none; }
   .mxb-prog span::after { transition: none; }
 }
+
+/* The payment form (F-274, D-842): the review's refund policy and "Have a code?", and LiteAPI's own card form in our sheet. The card fields are LiteAPI's, in their frame: nothing of ours styles a
+   card input. Colour is the tokens; no motion of its own. */
+.mxb-policy { display: grid; gap: 0.375rem; padding: 0.875rem 1rem; border-radius: 1.25rem; background: var(--card-2); }
+.mxb-pol-t { display: flex; align-items: center; gap: 0.5rem; color: var(--ink); font: 650 1.0625rem/1.3 var(--f-ui); }
+.mxb-pol-h { margin: 0; color: var(--ink); font-size: 1.0625rem; font-weight: 600; line-height: 1.4; }
+.mxb-remarks { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
+.mxb-codebox { display: grid; gap: 0.375rem; }
+.mxb-codebox-r { display: flex; gap: 0.5rem; align-items: stretch; }
+.mxb-codebox-r input { flex: 1; min-width: 0; height: 3.5rem; padding: 0 1rem; border: 0; border-radius: 1rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 520 1.125rem/1 var(--f-ui); text-transform: uppercase; box-sizing: border-box; }
+.mxb-codebox-r input:focus { outline: none; box-shadow: inset 0 0 0 0.15625rem var(--flight); }
+.mxb-apply { flex: none; min-width: 5rem; }
+.mxb-hint.is-err { color: var(--food-i); }
+.mxb-off { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 1rem; color: var(--see-i); }
+.mxb-off[hidden] { display: none; }
+.mxb-paying { gap: 0.75rem; padding: 0.5rem 1.5rem 1.25rem; overflow-y: auto; }
+.mxb-payel { min-height: 15rem; border-radius: 1.25rem; background: var(--card-2); padding: 0.75rem; box-sizing: border-box; }
