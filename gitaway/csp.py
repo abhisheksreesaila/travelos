@@ -13,7 +13,7 @@ HEADER = "content-security-policy-report-only"
 STRIPE = "https://js.stripe.com https://m.stripe.network https://b.stripecdn.com https://r.stripe.com https://merchant-ui-api.stripe.com https://api.stripe.com"
 HCAPTCHA = "https://hcaptcha.com https://*.hcaptcha.com"
 LITEAPI = "https://payment-wrapper.liteapi.travel"
-AMAZON = "https://apay-us.amazon.com https://*.stripecdn.com"
+AMAZON = "https://apay-us.amazon.com"
 POLICY = "; ".join((
     "default-src 'self'",
     f"script-src 'self' {LITEAPI} {STRIPE} {HCAPTCHA} {AMAZON}",

@@ -50,6 +50,7 @@ GONE, DUPLICATE, BAD_CODE = "gone", "duplicate", "bad code"      # a prebook or 
 MARGIN = 16.0                            # percent put on the net rate of every live stay search (F-274, D-840): the sandbox showed the retail rate and `suggestedSellingPrice` equal to the cent at 16
 PAYMENT_SDK = "https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"      # LiteAPI's payment form script, the one script of another site GitAway loads, from the booking sheet only (D-841)
 PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
+NOT_PAID = "not paid"      # a TRANSACTION_ID book LiteAPI refuses because the payment was never made (HTTP 400, code 2014): not "LiteAPI is down" (F-274, D-851)
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
@@ -59,6 +60,7 @@ PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together
 PER_VISITOR_A_DAY = 60                   # uncached searches one signed-out visitor may make in a day (F-265, D-764): about three full matrices; a visitor is `stats.searcher`'s "v:" code
 VISITOR = "v:"
 A_DAY = 2000                             # and the whole site
+PER_JOB_BOOK_A_DAY = 6      # the booking worker's own allowance a family a day (key "job:<family>"): it never spends the family's interactive one (D-851)
 PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY = 20, 200      # booking calls (prebook, book, lookup) have their own daily budgets, so booking never spends a family's searches nor the reverse (F-233 review)
 STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
 STAY_ASK = 10                            # seconds LiteAPI is asked to answer a stay search in (its `timeout`; the sandbox does not always keep it)
@@ -456,6 +458,8 @@ def _day() -> str:
 
 def _per(family: str, per: int, book: bool) -> int:
     """A visitor's own allowance, else the family's budget (a booking call is a signed-in family's, never a visitor's)."""
+    if book and family.startswith("job:"):
+        return PER_JOB_BOOK_A_DAY
     return PER_VISITOR_A_DAY if family.startswith(VISITOR) and not book else per
 
 
@@ -980,8 +984,8 @@ def _allowed(body: dict | None) -> bool:
     if m != "live":
         return False
     body = body or {}
-    if "usePaymentSdk" in body:      # a prebook: new business, only where booking is on
-        return body["usePaymentSdk"] is True and real_booking()
+    if "usePaymentSdk" in body:      # a prebook: new business, only where booking is on, and never with a payment of its own in it
+        return body["usePaymentSdk"] is True and "payment" not in body and real_booking()
     if "payment" in body:           # a book: only what a paid form's transaction can finish
         pay = body["payment"]
         return isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId"))
@@ -1025,6 +1029,8 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
             log.warning("LiteAPI %s not done (HTTP %s, code %s)", what, status, code)
             if code == 4002 and (body or {}).get("voucherCode"):      # LiteAPI's 4002 for a voucher it does not accept: said as that, not as a room taken
                 return Answer(BAD_CODE, (), at)
+            if code == 2014:      # "payment not completed": the guest never paid, which is not LiteAPI being down
+                return Answer(NOT_PAID, (), at)
             return Answer(GONE if status in gone or code in (2001, 4002) else DUPLICATE if code == 4005 else FAILED, (), at)
     finally:
         _BOOK_TURN.release()

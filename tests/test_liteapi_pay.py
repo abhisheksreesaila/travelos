@@ -123,9 +123,9 @@ def test_a_book_after_the_payment_form_pays_with_the_transaction_id(live):
                                 "payment": {"method": "TRANSACTION_ID", "transactionId": "tr_cts_j_DBi8RkjWF1hJDzmsryP"}}
 
 
-def test_a_book_of_a_payment_never_made_is_refused_and_says_failed(live, monkeypatch):
+def test_a_book_of_a_payment_never_made_is_refused_and_says_not_paid(live, monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay(book="book_unpaid.json"))
-    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_x").status == liteapi.FAILED
+    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_x").status == liteapi.NOT_PAID
 
 
 def test_a_live_key_can_never_send_the_sandbox_card(live):
@@ -138,7 +138,8 @@ def test_a_live_key_can_never_send_the_sandbox_card(live):
 
 def test_no_live_call_can_carry_the_card_method_whatever_is_asked_of_order(live):
     for body in ({"payment": {"method": "ACC_CREDIT_CARD"}}, {"payment": {"method": "TRANSACTION_ID"}}, {"payment": {"method": "WALLET", "transactionId": "t"}},
-                 {"usePaymentSdk": False}, {"payment": "ACC_CREDIT_CARD"}):
+                 {"usePaymentSdk": False}, {"payment": "ACC_CREDIT_CARD"},
+                 {"usePaymentSdk": True, "payment": {"method": "ACC_CREDIT_CARD"}}, {"usePaymentSdk": True, "payment": {"method": "TRANSACTION_ID", "transactionId": "t"}}):
         assert liteapi._order("x", "/rates/book", body, 5, "fam", liteapi.read_booking).status == liteapi.OFF, body
     assert live.asked == []
 

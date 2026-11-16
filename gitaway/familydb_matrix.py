@@ -60,13 +60,15 @@ class MatrixPayment:
     voucher_code: str = ""
     discount_cents: int = 0
     policy: str = ""        # the refund policy as it was shown before paying (matrixbook.policy_words)
-    status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked
+    status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked; or unpaid (LiteAPI said the form was never paid: given up, deleted by the purge)
     booking_id: str = ""
     guest_first: str = ""
     guest_last: str = ""
     guest_email: str = ""
     guest_phone: str = ""
     guest_remarks: str = ""
+    attempts: int = 0       # booking tries the worker has made for this payment (D-851): the back-off doubles from 10 minutes to a day
+    next_try_at: str = ""   # the worker leaves it alone until then
     created_at: str = ""
     updated_at: str = ""
 
