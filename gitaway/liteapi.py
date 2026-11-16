@@ -38,7 +38,7 @@ from urllib.parse import urlsplit
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from sqlalchemy import text
 
@@ -46,7 +46,9 @@ from gitaway import community
 
 API = "https://api.liteapi.travel/v3.0"
 BOOK_API = "https://book.liteapi.travel/v3.0"      # prebook and book live on their own host (F-233)
-GONE, DUPLICATE = "gone", "duplicate"      # a prebook or book the room or rate is no longer there for; a book whose clientReference was already used
+GONE, DUPLICATE, BAD_CODE = "gone", "duplicate", "bad code"      # a prebook or book the room or rate is no longer there for; a book whose clientReference was already used; a voucher code LiteAPI refuses (F-274)
+MARGIN = 16.0                            # percent put on the net rate of every live stay search (F-274, D-840): the sandbox showed the retail rate and `suggestedSellingPrice` equal to the cent at 16
+PAYMENT_SDK = "https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"      # LiteAPI's payment form script, the one script of another site GitAway loads, from the booking sheet only (D-841)
 PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
@@ -175,6 +177,25 @@ def mode() -> str:
     return "off" if not k else ("sandbox" if k.startswith("sand_") else "live")
 
 
+def margin() -> float | None:
+    """The percentage a live stay search carries (`margin`), so the price charged is the public price shown (F-274, D-840): LITEAPI_MARGIN, else MARGIN. A sandbox key sends none."""
+    if mode() != "live":
+        return None
+    try:
+        m = float(os.environ.get("LITEAPI_MARGIN", "").strip() or MARGIN)
+    except ValueError:
+        return MARGIN
+    return m if 0 <= m <= 40 else MARGIN
+
+
+def real_booking() -> bool:
+    """May a live key book (and so charge a real card)? In production unless GITAWAY_LIVE_BOOKING=0; anywhere else only with GITAWAY_LIVE_BOOKING=1 (D-841), so a dev box with the
+    live key reads prices and plays the sample booking by default."""
+    from gitaway import auth
+    flag = os.environ.get("GITAWAY_LIVE_BOOKING", "").strip()
+    return mode() == "live" and (flag != "0" if auth.production() else flag == "1")
+
+
 class _Lines:
     """A streamed answer's lines as they arrive. `cut()` shuts the socket down from another thread (the reader closes it), so a line that hangs ends."""
 
@@ -204,10 +225,10 @@ class _Lines:
             pass
 
 
-def _send(url: str, headers: dict, body: bytes | None, timeout: float):
+def _send(url: str, headers: dict, body: bytes | None, timeout: float, method: str = ""):
     """(status, content type, the body, at most MAX_BYTES + 1 of it; or a stream's lines, `_Lines`). An HTTP error is an answer, not an exception; a redirect
     is refused (it would carry the key)."""
-    req = urllib.request.Request(url, data=body, headers=headers, method="POST" if body is not None else "GET")
+    req = urllib.request.Request(url, data=body, headers=headers, method=method or ("POST" if body is not None else "GET"))
     try:
         r = _opener.open(req, timeout=timeout)      # noqa: S310 (a fixed https URL)
     except urllib.error.HTTPError as e:
@@ -782,6 +803,8 @@ def stays(*, checkin: date, checkout: date, adults: int, kid_ages=(), city: str 
     body = {**where, "checkin": checkin.isoformat(), "checkout": checkout.isoformat(), "currency": "USD", "guestNationality": "US",
             "occupancies": [{"adults": adults, "children": ages}], "limit": HOTEL_LIMIT, "timeout": STAY_ASK,
             "maxRatesPerHotel": 1}      # one rate a hotel: 104 KB instead of 7.8 MB at the same price (measured 2026-11-13, none of 27 hotels dearer)
+    if margin() is not None:
+        body["margin"] = margin()
     return _search("stays", "/hotels/rates", body, STAY_KEEP, STAY_TIMEOUT, family, read_stays, cached_only, rank=rank, wait=wait)
 
 
@@ -848,6 +871,19 @@ class Prebook:
     refundable: bool
     changed: bool            # the price, the cancellation terms or the board moved since the search: the person is told before booking
     fetched: datetime
+    secret_key: str = ""     # the payment form's key (usePaymentSdk), never saved, never logged, only given to the form on the page (F-274)
+    transaction_id: str = ""  # what book pays with (TRANSACTION_ID); LiteAPI cannot give it back later, so it is saved at once
+    pays_cents: int | None = None   # what the guest's card is charged: `sellingPriceToUser`, the price less a voucher's discount
+    voucher_code: str = ""
+    discount_cents: int = 0  # a voucher's discount (`voucherTotalAmount`), 0 without one
+    deadline: str = ""       # the first cancellation deadline's time, GMT, from LiteAPI ("" when there is none)
+    fee_cents: int = 0       # what cancelling after it costs
+    remarks: str = ""        # the hotel's cancellation remarks and the offer's terms, LiteAPI's own words
+
+    @property
+    def charge_cents(self) -> int:
+        """What is charged for the stay itself (the fees paid at the hotel are on top): the card's amount, else the price."""
+        return self.cents if self.pays_cents is None else self.pays_cents
 
 
 @dataclass(frozen=True)
@@ -879,8 +915,13 @@ def read_prebook(answer, fetched: datetime) -> Prebook:
     rate = next((r for rt in d.get("roomTypes") or () for r in rt.get("rates") or ()), None) or {}
     fees = sum(_cents(f.get("amount")) or 0 for f in (rate.get("retailRate") or {}).get("taxesAndFees") or () if isinstance(f, dict) and f.get("included") is False)
     policy = rate.get("cancellationPolicies") or {}
+    infos = [i for i in policy.get("cancelPolicyInfos") or () if isinstance(i, dict)]
+    remarks = " ".join(str(x).strip() for x in [*(policy.get("hotelRemarks") or ()), d.get("termsAndConditions") or ""] if str(x).strip())
+    pays = _cents(d.get("sellingPriceToUser"))
     return Prebook(str(d["prebookId"]), str(d.get("hotelId") or ""), str(rate.get("name") or ""), _day_of(d.get("checkin")), _day_of(d.get("checkout")), cents, fees,
-                   policy.get("refundableTag") == "RFN", bool(d.get("priceDifferencePercent")) or bool(d.get("cancellationChanged")) or bool(d.get("boardChanged")), fetched)
+                   policy.get("refundableTag") == "RFN", bool(d.get("priceDifferencePercent")) or bool(d.get("cancellationChanged")) or bool(d.get("boardChanged")), fetched,
+                   str(d.get("secretKey") or ""), str(d.get("transactionId") or ""), pays, str(d.get("voucherCode") or ""), _cents(d.get("voucherTotalAmount")) or 0,
+                   str(infos[0].get("cancelTime") or "") if infos else "", (_cents(infos[0].get("amount")) or 0) if infos else 0, remarks[:1200])
 
 
 def read_booking(answer, fetched: datetime) -> Booking:
@@ -896,14 +937,46 @@ def read_booking(answer, fetched: datetime) -> Booking:
                    answer.get("sandbox") is True, fetched)
 
 
+@dataclass(frozen=True)
+class Cancelled:
+    booking_id: str
+    status: str              # "CANCELLED" (nothing charged) or "CANCELLED_WITH_CHARGES"
+    refund_cents: int        # what comes back to the guest's card
+    fee_cents: int           # what the cancellation cost
+    fetched: datetime
+
+
+def read_cancel(answer, fetched: datetime) -> Cancelled:
+    d = answer.get("data") if isinstance(answer, dict) and "error" not in answer else None
+    if not isinstance(d, dict) or not d.get("bookingId") or d.get("status") not in ("CANCELLED", "CANCELLED_WITH_CHARGES") or d.get("currency") != "USD":
+        raise Unreadable("no cancellation")
+    refund, fee = _cents(d.get("refund_amount")), _cents(d.get("cancellation_fee"))
+    if refund is None or fee is None:
+        raise Unreadable("no amounts")
+    return Cancelled(str(d["bookingId"]), d["status"], refund, fee, fetched)
+
+
 _BOOK_TURN = threading.BoundedSemaphore(1)      # one booking call in flight on the whole site: it holds one of the AT_ONCE gate places, never two (F-233 review)
 
 
-def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API) -> Answer:
+def _allowed(body: dict | None) -> bool:
+    """Which calls this key may make (D-480, reopened in D-840): a sandbox key all of them; a live key only where real booking is on (`real_booking`), and then never with the
+    sandbox's own card: a book pays with TRANSACTION_ID alone and a prebook asks for the payment form (an ACC_CREDIT_CARD book would charge the LiteAPI account's own card)."""
+    m = mode()
+    if m == "sandbox":
+        return True
+    if m != "live" or not real_booking():
+        return False
+    body = body or {}
+    pay = body.get("payment")
+    return (pay is None or (isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId")))) and body.get("usePaymentSdk", True) is True
+
+
+def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "") -> Answer:
     """One booking call: sandbox key only, one at a time across the site, through the gate and the booking budgets, never cached, never asked again by itself (the first may
     have gone through), and a failure logs the call and its HTTP status, never the body (it can hold a guest's email). `gone`: the HTTP statuses that mean the room or rate is
-    no longer there. No `body`: a GET."""
-    if mode() != "sandbox":
+    no longer there. No `body`: a GET, or `method` (a PUT)."""
+    if not _allowed(body):
         return Answer(OFF)
     if not can_search(family, True):
         return Answer(OVER)
@@ -918,7 +991,7 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
                 return Answer(OVER)
             at = now()
             try:
-                status, ctype, raw = TRANSPORT(base + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout)
+                status, ctype, raw = TRANSPORT(base + path, _headers(body), json.dumps(body).encode() if body is not None else None, timeout, *((method,) if method else ()))
                 if len(raw) > MAX_BYTES:
                     raise Unreadable("too big")
                 doc = read_body(ctype, raw)
@@ -934,6 +1007,8 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
             err = doc.get("error") if isinstance(doc, dict) else None
             code = err.get("code") if isinstance(err, dict) else None
             log.warning("LiteAPI %s not done (HTTP %s, code %s)", what, status, code)
+            if code == 4002 and (body or {}).get("voucherCode"):      # LiteAPI's 4002 for a voucher it does not accept: said as that, not as a room taken
+                return Answer(BAD_CODE, (), at)
             return Answer(GONE if status in gone or code in (2001, 4002) else DUPLICATE if code == 4005 else FAILED, (), at)
     finally:
         _BOOK_TURN.release()
@@ -956,15 +1031,23 @@ def booking_for(reference: str, family: str = "") -> Answer:
     return _order("booking lookup", "/bookings?" + urlencode({"clientReference": str(reference)}), None, STAY_TIMEOUT, family, _the_booking(str(reference)), base=API)
 
 
-def prebook(offer_id: str, family: str = "") -> Answer:
-    """The stay's offer confirmed before anyone books: an Answer of one Prebook, GONE when the room sold out or the offer expired (search again, never retry the offer)."""
-    return _order("prebook", "/rates/prebook", {"offerId": str(offer_id), "usePaymentSdk": False}, PREBOOK_TIMEOUT, family, read_prebook, gone=(409,))
+def prebook(offer_id: str, family: str = "", *, sdk: bool = False, voucher: str = "") -> Answer:
+    """The stay's offer confirmed before anyone books: an Answer of one Prebook, GONE when the room sold out or the offer expired (search again, never retry the offer). `sdk`:
+    ask for the payment form's `secretKey` and `transactionId` (what a live key always needs); `voucher`: a LiteAPI voucher code, BAD_CODE when LiteAPI does not accept it."""
+    body = {"offerId": str(offer_id), "usePaymentSdk": bool(sdk), **({"voucherCode": str(voucher)} if voucher else {})}
+    return _order("prebook", "/rates/prebook", body, PREBOOK_TIMEOUT, family, read_prebook, gone=(409,))
 
 
-def book(prebook_id: str, guest: Guest, reference: str, family: str = "") -> Answer:
-    """Book the prebooked room for `guest`, paid with the sandbox key's own test card (`ACC_CREDIT_CARD`: nothing is charged). `reference` is the idempotency key: the
-    same one twice is DUPLICATE, never a second booking. An Answer of one Booking."""
+def book(prebook_id: str, guest: Guest, reference: str, family: str = "", transaction_id: str = "") -> Answer:
+    """Book the prebooked room for `guest`. With a `transaction_id` (the payment form's, paid) the payment is `TRANSACTION_ID`; without one, and only with a sandbox key, it is the
+    sandbox key's own test card (`ACC_CREDIT_CARD`: nothing is charged). A live key never sends the card method. `reference` is the idempotency key: the same one twice is
+    DUPLICATE, never a second booking. An Answer of one Booking."""
     person = {"firstName": guest.first, "lastName": guest.last, "email": guest.email}
-    body = {"prebookId": str(prebook_id), "clientReference": str(reference), "holder": person, "guests": [{"occupancyNumber": 1, **person}],
-            "payment": {"method": "ACC_CREDIT_CARD"}}
+    pay = {"method": "TRANSACTION_ID", "transactionId": str(transaction_id)} if transaction_id else {"method": "ACC_CREDIT_CARD"}
+    body = {"prebookId": str(prebook_id), "clientReference": str(reference), "holder": person, "guests": [{"occupancyNumber": 1, **person}], "payment": pay}
     return _order("book", "/rates/book", body, BOOK_TIMEOUT, family, read_booking, gone=(410,))
+
+
+def cancel(booking_id: str, family: str = "") -> Answer:
+    """Cancel a booking (PUT /bookings/{id}): an Answer of one Cancelled saying what came back. Asking again answers the same; an unknown booking is FAILED."""
+    return _order("cancel", "/bookings/" + quote(str(booking_id), safe=""), None, BOOK_TIMEOUT, family, read_cancel, method="PUT")
