@@ -29,7 +29,7 @@ OPEN_FOR_VIEWERS = {
     "/plan/matrix/warm",                                      # the trip matrix's head start: starts price searches the page is about to ask for, changes no plan (F-229)
     "/report",                                                # reporting a public trip or creator: anyone, signed out too (F-185)
     "/admin/draft", "/admin/link", "/admin/revoke", "/admin/drafts/{token}", "/claim/{token}",   # F-188: the captain's drafts for creators (404 unless GITAWAY_ADMIN_EMAILS) and a creator claiming their own post
-    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen",    # the captain's buttons (F-194: approve a trip that waits for him): the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
+    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen", "/admin/payments/resolve",    # the captain's buttons (F-194: approve a trip that waits for him): the route answers 404 unless the email is in GITAWAY_ADMIN_EMAILS (F-185)
     "/creators/settings",                                     # a creator's own affiliate marker (F-184)
     "/admin/plan-for-me/edit", "/admin/plan-for-me/send",     # the captain's founder check of a built plan (F-197): 404 unless GITAWAY_ADMIN_EMAILS
     "/creators/drafts/scan", "/creators/drafts/start", "/creators/drafts/{token}",   # a creator's own batch of posts and drafts list (F-190): their drafts, not a family's plan

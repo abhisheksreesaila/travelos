@@ -390,15 +390,35 @@ def mark_cancelled(session, trip_id: str, booking_id: str) -> None:
 def stuck(db, before: str, due: str = "") -> list:
     """The payments left `paying` (the guest was sent to the card form) since before `before` (an ISO time): paid, perhaps, and not booked. `due`: only those the worker may try now
     (no back-off pending at that time)."""
-    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'paying' AND updated_at < :t AND (:d = '' OR next_try_at IS NULL OR next_try_at = '' OR next_try_at <= :d) "
-                             "ORDER BY updated_at", t=before, d=due)
+    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status IN ('paying', 'needs_help') AND updated_at < :t AND (:d = '' OR next_try_at IS NULL OR next_try_at = '' OR next_try_at <= :d) "
+                             "ORDER BY COALESCE(attempts, 0), updated_at DESC", t=before, d=due)      # the fewest tries and the freshest first: a likely paid row before the abandoned ones
+
+
+def needs_help(db, token: str) -> None:
+    """Past the hour and LiteAPI has not said "not paid" (a hold gone, an outage, anything else): the guest may have paid. Keep the row whole, count and list it on /admin; the worker
+    still tries it, slowly. Only the captain's `resolve` ends it."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET status = 'needs_help' WHERE id = :i AND status = 'paying'", i=token)
+
+
+def resolve(db, token: str) -> bool:
+    """The captain dealt with a `needs_help` row (refunded it, or booked it by hand): blank the guest and mark it `resolved`; the purge deletes it."""
+    with familydb.transaction(db):
+        return familydb.run(db, "UPDATE matrix_payments SET status = 'resolved', guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now "
+                                "WHERE id = :i AND status = 'needs_help'", i=token, now=familydb.now()) == 1
+
+
+def wait_until(db, token: str, at: str) -> None:
+    """Leave the row alone until `at` (an ISO time) without counting a try: our own limit was spent, which says nothing about LiteAPI or the payment."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET next_try_at = :t WHERE id = :i", t=at, i=token)
 
 
 def give_up(db, token: str) -> None:
-    """LiteAPI says this form was never paid (or its hold is gone) and the hour is past: mark it `unpaid` and drop the guest at once; the purge deletes the row."""
+    """LiteAPI itself says this form was never paid (code 2014) and the hour is past: mark it `unpaid` and drop the guest at once; the purge deletes the row."""
     with familydb.transaction(db):
         familydb.run(db, "UPDATE matrix_payments SET status = 'unpaid', guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now "
-                         "WHERE id = :i AND status = 'paying'", i=token, now=familydb.now())
+                         "WHERE id = :i AND status IN ('paying', 'needs_help')", i=token, now=familydb.now())
 
 
 def back_off(db, token: str, at, base) -> None:
@@ -443,7 +463,7 @@ def purge(db) -> None:
     from datetime import datetime, timedelta, timezone
     at = datetime.now(timezone.utc)
     with familydb.transaction(db):
-        familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'unpaid'")
+        familydb.run(db, "DELETE FROM matrix_payments WHERE status IN ('unpaid', 'resolved')")
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
         familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
@@ -484,7 +504,7 @@ def finish(db, family: str, token: str, user_id: str, budget: str = "") -> Resul
     ref = reference(family, token, 0)
     mine = familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)
     if not mine:
-        if pay["status"] != "paying":
+        if pay["status"] not in ("paying", "needs_help"):
             return Result(liteapi.FAILED)
         guest, errors = clean_guest(pay["guest_first"], pay["guest_last"], pay["guest_email"])
         if errors:
