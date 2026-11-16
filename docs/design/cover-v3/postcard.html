@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One postcard</title>
+<meta name="description" content="Cover v3, direction B refined: one postcard that becomes the search, the square, the calendar, the trip, the guide, the post, and someone else's trip. Sample content.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&display=swap" rel="stylesheet">
+<script>
+/* before paint: the remembered mode; reduced motion (or #still) is the still version */
+(function () {
+  var R = document.documentElement, m = null;
+  try { m = localStorage.getItem('cv3-mode'); } catch (e) {}
+  if (m !== 'dark' && m !== 'light') m = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  R.setAttribute('data-mode', m);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || /still/.test(location.hash)) R.setAttribute('data-still', '');
+})();
+</script>
+<style>
+/* ============ tokens: the liquid kit's (kit/liquid/liquid.css), copied so this file stands alone ============ */
+:root {
+  --brand: #4338CA; --brand-tint: #E4E3FB; --on-brand: #fff;
+  --f-display: "Newsreader", Georgia, serif; --f-ui: "Inter", system-ui, sans-serif;
+  --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF; --glow-a: #DBEFFA; --glow-b: #FFF4C2;
+  --m-1: #D3E6F8; --m-2: #E6EEF9; --m-3: #F4F7FC; --m-a: #C5E3F5; --m-b: #E4EAF8;
+  --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73;
+  --card: #fff; --card-t: rgb(255 255 255 / .9); --line: rgb(15 17 36 / .10);
+  --glass: rgb(255 255 255 / .62); --glass-line: rgb(255 255 255 / .75);
+  --sun: #FFB547; --cloud: color-mix(in srgb, #fff 85%, transparent);
+  --ring-dim: rgb(15 17 36 / .16);
+  --sh1: 0 1px 2px rgb(20 20 60 / .06), 0 2px 8px rgb(20 20 60 / .06);
+  --sh2: 0 2px 6px rgb(20 20 60 / .08), 0 14px 32px -10px rgb(40 30 110 / .22);
+  --sh3: 0 4px 14px rgb(20 20 60 / .08), 0 40px 80px -28px rgb(40 30 110 / .40);
+  --glass-sh: 0 10px 30px -14px rgb(40 30 110 / .25);
+  --cta-sh: 0 10px 24px -12px color-mix(in srgb, var(--brand) 70%, transparent);
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  --spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-quick: 200ms; --t-press: 90ms; --t-release: 480ms; --t-slow: 1000ms;
+  /* the postcard is paper in both modes */
+  --paper: #FBF7EF; --pink: #13203A; --pink-2: #3B4A66; --pen: #2A2185;
+  /* one unit: the card is drawn at 1px per unit on a laptop and shrinks to fit */
+  --u: min(1px, calc((100vw - 2rem) / 680), calc((100svh - 8rem) / 560));
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --brand: #4F46E5; --brand-tint: #24215A;
+  --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F; --glow-a: #0C2A3E; --glow-b: #3A300C;
+  --m-1: #0E1B33; --m-2: #172A4A; --m-3: #25395B; --m-a: #123152; --m-b: #1D2A55;
+  --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4;
+  --card: #171A33; --card-t: rgb(23 26 51 / .9); --line: rgb(255 255 255 / .10);
+  --glass: rgb(26 28 56 / .80); --glass-line: rgb(255 255 255 / .10); --cloud: rgb(255 255 255 / .06);
+  --ring-dim: rgb(244 245 251 / .16);
+  --sh1: 0 1px 2px rgb(0 0 0 / .3); --sh2: 0 12px 30px -10px rgb(0 0 0 / .6); --sh3: 0 40px 80px -28px rgb(0 0 0 / .8);
+  --glass-sh: 0 10px 30px -14px rgb(0 0 0 / .6); --cta-sh: 0 10px 24px -12px rgb(0 0 0 / .7);
+  --paper: #EDE6D7;
+  color-scheme: dark;
+}
+
+/* ============ base ============ */
+* { box-sizing: border-box; }
+html { background: var(--sky-3); -webkit-text-size-adjust: 100%; }
+body { margin: 0; color: var(--ink); font: 450 1.0625rem/1.5 var(--f-ui); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+h1, h2 { font-family: var(--f-display); font-weight: 600; letter-spacing: -0.025em; text-wrap: balance; margin: 0; }
+em { font-style: italic; font-weight: 480; color: var(--ink-2); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 10px; }
+.num { font-variant-numeric: tabular-nums; }
+.label { font: 650 0.8125rem/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.chip-s { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 .625rem; border-radius: 99px; background: #FFF1B8; color: #5C4300; font: 700 .8125rem/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; }
+:root[data-mode="dark"] .chip-s { background: #4A3B0A; color: #FFE7A0; }
+:is(button, a.btn, .round) { transition: scale var(--t-release) var(--spring), background-color var(--t-quick), color var(--t-quick), translate var(--t-quick) var(--ease); }
+:is(button, a.btn, .round):active { scale: .96; transition: scale var(--t-press) var(--ease); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.25rem; padding: 0 1.625rem; border: 0; border-radius: 99px; background: var(--brand); color: var(--on-brand); font: 650 1.0625rem/1 var(--f-ui); text-decoration: none; box-shadow: var(--cta-sh); cursor: pointer; }
+.btn:hover { translate: 0 -1px; }
+.btn.soft { background: var(--card); color: var(--ink); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); }
+.btn.sm { min-height: 2.75rem; padding: 0 1.125rem; font-size: 1rem; }
+.round { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--sh1); cursor: pointer; }
+.round svg { width: 1.25rem; height: 1.25rem; }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); box-shadow: inset 0 0 0 1px var(--glass-line), var(--glass-sh); }
+
+/* ============ the sky (kit): sun into a sleepy moon, clouds, stars; the snow mood ============ */
+.sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: radial-gradient(60% 42% at 8% 0%, color-mix(in srgb, var(--glow-a) 90%, transparent), transparent 70%),
+              radial-gradient(48% 36% at 96% 8%, color-mix(in srgb, var(--glow-b) 90%, transparent), transparent 70%),
+              radial-gradient(70% 50% at 50% 104%, color-mix(in srgb, var(--brand-tint) 95%, transparent), transparent 70%),
+              linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); }
+.sky::after { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity var(--t-slow) var(--ease);
+  background: radial-gradient(60% 42% at 8% 0%, var(--m-a), transparent 70%), radial-gradient(48% 36% at 96% 8%, var(--m-b), transparent 70%), linear-gradient(180deg, var(--m-1), var(--m-2) 52%, var(--m-3)); }
+.sky[data-mood="snow"]::after { opacity: 1; }
+.sky > * { z-index: 1; }
+.sky .sun { position: absolute; right: 6%; top: 11%; width: 8rem; height: 8rem; border-radius: 50%; background: var(--sun);
+  box-shadow: 0 0 0 2rem color-mix(in srgb, var(--sun) 20%, transparent), 0 0 0 4.4rem color-mix(in srgb, var(--sun) 9%, transparent);
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--spring-soft); }
+.sky[data-mood="snow"] .sun { transform: translateY(5vh) scale(.8); }
+.sky .moon { position: absolute; right: 6%; top: 10%; width: 8rem; height: 8rem; opacity: 0; transform: translateY(60vh) rotate(-24deg); filter: drop-shadow(0 0 28px rgb(243 235 211 / .28));
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--spring-soft); }
+.sky .zz { animation: zz 3.9s ease-in-out infinite alternate; }
+@keyframes zz { from { opacity: .25; translate: 0 2px; } to { opacity: 1; translate: 0 -2px; } }
+.sky .stars { position: absolute; left: 0; top: 0; width: 100%; height: 42vh; opacity: 0; transition: opacity var(--t-slow) var(--ease); }
+.sky .stars circle { fill: #F3EBD3; animation: tw 3.9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.4s); }
+@keyframes tw { from { opacity: .3; } to { opacity: .9; } }
+:root[data-mode="dark"] .sky .sun { opacity: 0; transform: translateY(60vh) scale(.8); }
+:root[data-mode="dark"] .sky .moon { opacity: 1; transform: none; transition-delay: var(--t-quick); }
+:root[data-mode="dark"] .sky .stars { opacity: 1; }
+.sky .cloud { position: absolute; fill: var(--cloud); animation: drift 60s linear infinite alternate; }
+@keyframes drift { to { translate: 6vw 0; } }
+
+/* ============ the bar ============ */
+.bar { position: fixed; z-index: 50; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: .625rem; padding: .875rem 1.5rem 0; pointer-events: none; }
+.bar > * { pointer-events: auto; }
+.bar .sp { flex: 1; }
+.brand { display: inline-flex; align-items: center; gap: .625rem; min-height: 3rem; color: var(--ink); text-decoration: none; font: 560 1.5rem/1 var(--f-display); letter-spacing: -0.03em; }
+.brand svg { width: 2.125rem; height: 2.125rem; }
+
+/* ============ the story: one sticky stage over eight beats ============ */
+#story { position: relative; height: calc(8 * 100svh); }
+.beats { position: absolute; inset: 0; pointer-events: none; }
+.beats i { position: absolute; left: 0; right: 0; height: 100svh; top: calc(var(--k) * 100svh); }
+.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; perspective: 1100px; perspective-origin: var(--cx) var(--cy); --cx: 64%; --cy: 52%; }
+
+/* the gallery: other families' postcards drifting through the room, one step nearer every beat */
+.gal { position: absolute; left: var(--cx); top: var(--cy); width: 0; height: 0; transform-style: preserve-3d; }
+.gal-spin { position: absolute; transform-style: preserve-3d; animation: spin 140s linear infinite; }
+@keyframes spin { to { rotate: z 360deg; } }
+.gal i { position: absolute; left: -75px; top: -50px; width: 150px; height: 100px; border-radius: 8px; background: var(--g); border: 5px solid var(--paper); box-shadow: 0 10px 24px -12px rgb(20 20 60 / .4);
+  transition: transform 1500ms var(--spring-soft), opacity 900ms var(--ease); }
+:root[data-mode="dark"] .gal i { filter: brightness(.78); }
+.gal i b { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; background: rgb(251 247 239 / .92); color: var(--pink); font: italic 560 12px/1.2 var(--f-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the ring of words: it turns one word per beat, the way the story goes round */
+.ring { position: absolute; left: var(--cx); top: var(--cy); width: var(--rd); height: var(--rd); translate: -50% -50%; --rd: min(94svh, 60vw); pointer-events: none; }
+.ring svg { width: 100%; height: 100%; overflow: visible; rotate: var(--rot, -22.5deg); transition: rotate 1300ms var(--spring-soft); }
+.ring text { font: 600 58px/1 var(--f-display); letter-spacing: -0.01em; fill: var(--ring-dim); transition: fill 600ms var(--ease); }
+.ring text.now { fill: var(--ink); }
+.ring circle.dot { fill: var(--ring-dim); }
+.ring circle.track { fill: none; stroke: var(--ring-dim); stroke-width: 1.5; stroke-dasharray: 2 12; opacity: .7; }
+
+/* the postcard */
+.rig { position: absolute; left: var(--cx); top: var(--cy); width: 0; height: 0; transform-style: preserve-3d; }
+.bob { position: absolute; transform-style: preserve-3d; }
+.stage[data-beat="0"] .bob { animation: bob 6s ease-in-out infinite alternate; }
+@keyframes bob { from { transform: translateY(-6px) rotateX(3deg) rotateZ(-1.2deg); } to { transform: translateY(6px) rotateX(-2deg) rotateZ(1deg); } }
+.pc { position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); translate: -50% -50%; transform: rotateY(var(--turn, 0deg)); transform-style: preserve-3d;
+  transition: transform 1100ms var(--spring-soft), width 950ms var(--spring-soft), height 950ms var(--spring-soft); --w: 520; --h: 340; }
+.stage[data-beat="1"] .pc { --w: 640; --h: 400; }
+.stage[data-beat="2"] .pc { --w: 380; --h: 410; }
+.stage[data-beat="3"] .pc { --w: 660; --h: 430; }
+.stage[data-beat="4"] .pc { --w: 540; --h: 350; }
+.stage[data-beat="5"] .pc { --w: 400; --h: 540; }
+.stage[data-beat="6"] .pc { --w: 400; --h: 500; }
+.stage[data-beat="7"] .pc { --w: 520; --h: 340; }
+.side { position: absolute; inset: 0; border-radius: calc(16 * var(--u)); overflow: hidden; background: var(--paper); box-shadow: var(--sh3); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.side.b { transform: rotateY(180deg); }
+
+/* ============ the faces (all drawn on paper; the type has floors so a phone can read it) ============ */
+.f { position: absolute; inset: 0; color: var(--pink); font: 500 max(11px, calc(14 * var(--u)))/1.3 var(--f-ui); }
+.f svg.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.f .artbox { position: relative; overflow: hidden; border-radius: calc(9 * var(--u)); }
+.f .ttl { position: absolute; left: calc(18 * var(--u)); top: calc(16 * var(--u)); text-shadow: 0 1px 0 rgb(255 255 255 / .6); }
+.f .ttl small { display: block; font: 700 max(9px, calc(11 * var(--u)))/1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #29406A; }
+.f .ttl b { display: block; margin-top: calc(4 * var(--u)); font: italic 560 max(17px, calc(32 * var(--u)))/1 var(--f-display); letter-spacing: -0.02em; }
+.f .ttl b + b { font-size: max(13px, calc(21 * var(--u))); }
+.stampbox { position: absolute; right: calc(14 * var(--u)); top: calc(14 * var(--u)); width: calc(46 * var(--u)); height: calc(54 * var(--u)); padding: calc(4 * var(--u)); background: #FBF7EF;
+  -webkit-mask: radial-gradient(circle at 3px 3px, transparent 1.6px, #000 1.8px) -3px -3px / 6px 6px; mask: radial-gradient(circle at 3px 3px, transparent 1.6px, #000 1.8px) -3px -3px / 6px 6px; }
+.stampbox i { display: block; height: 100%; background: linear-gradient(180deg, #4338CA 0 50%, #FFB547 50% 60%, #4338CA 60%); }
+.pm { position: absolute; width: calc(70 * var(--u)); height: calc(70 * var(--u)); color: #29406A; opacity: .5; rotate: -14deg; }
+@keyframes rise { from { opacity: 0; translate: 0 calc(10 * var(--u)); } }
+@keyframes pop { 0% { opacity: 0; scale: .6; } 60% { opacity: 1; } }
+@keyframes wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes press { 0%, 100% { scale: 1; } 40% { scale: .93; } }
+@keyframes fade { from { opacity: 0; } }
+
+/* 0 and 7: the wish (art on the left, the sentence written on the right) */
+.f.wish { display: grid; grid-template-columns: 1.08fr 1fr; gap: calc(14 * var(--u)); padding: calc(12 * var(--u)); }
+.wish .write { position: relative; padding: calc(70 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u)) 0; display: flex; flex-direction: column; }
+.wish .write::before { content: ""; position: absolute; left: calc(-8 * var(--u)); top: calc(14 * var(--u)); bottom: calc(14 * var(--u)); border-left: 1.5px solid rgb(19 32 58 / .14); }
+.wish .dear { font: italic 500 max(12px, calc(16 * var(--u)))/1 var(--f-display); color: var(--pink-2); }
+.wish .sent { margin: calc(8 * var(--u)) 0 0; font: italic 500 max(15px, calc(24 * var(--u)))/1.32 var(--f-display); color: var(--pink); }
+.wish .w { display: inline-block; color: var(--pen); border-bottom: 2px dotted color-mix(in srgb, #4338CA 70%, transparent); animation: wipe 520ms var(--ease) both; animation-delay: calc(500ms + var(--i) * 380ms); }
+.wish .caret { display: inline-block; width: 2px; height: .95em; vertical-align: -.12em; margin-left: 2px; background: #4338CA; animation: blink 1s steps(1) infinite 2.2s, fade 1ms 2s both; }
+@keyframes blink { 50% { opacity: 0; } }
+.wish .go { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: calc(6 * var(--u)); padding: calc(10 * var(--u)) calc(16 * var(--u)); border-radius: 99px; background: #4338CA; color: #fff; font: 650 max(11px, calc(14 * var(--u)))/1 var(--f-ui); box-shadow: 0 8px 18px -10px #4338CA;
+  animation: pop 600ms var(--spring) both 2.1s, press 420ms var(--ease) 3.1s; }
+.wish .go svg { width: 1.1em; height: 1.1em; }
+.wish .pm { right: calc(52 * var(--u)); top: calc(16 * var(--u)); }
+.wish .from { position: absolute; left: calc(14 * var(--u)); bottom: calc(14 * var(--u)); display: inline-flex; align-items: center; gap: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)); border-radius: 99px; background: rgb(251 247 239 / .94); color: #2A2185; font: 650 max(10px, calc(12 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop 600ms var(--spring) both 300ms; }
+.wish .from svg { width: 1.1em; height: 1.1em; }
+.wish .sig { position: absolute; left: calc(14 * var(--u)); bottom: calc(14 * var(--u)); padding: calc(4 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: rgb(251 247 239 / .9); font: italic 500 max(12px, calc(15 * var(--u)))/1.2 var(--f-display); }
+.wish .from + .sig { bottom: calc(48 * var(--u)); }
+
+/* 1: compare (the matrix) */
+.f.mx { padding: calc(18 * var(--u)); display: flex; flex-direction: column; gap: calc(12 * var(--u)); }
+.mx header { display: flex; align-items: baseline; justify-content: space-between; gap: calc(10 * var(--u)); animation: fade 400ms var(--ease) both 300ms; }
+.mx header b { font: 600 max(15px, calc(23 * var(--u)))/1.1 var(--f-display); letter-spacing: -0.015em; }
+.mx header span { color: var(--pink-2); font-size: max(10px, calc(12 * var(--u))); text-align: right; }
+.mx .g { flex: 1; display: grid; grid-template-columns: 1.3fr repeat(5, 1fr); grid-template-rows: auto repeat(3, 1fr); gap: calc(8 * var(--u)); }
+.mx .h { text-align: center; color: var(--pink-2); font: 600 max(10px, calc(12 * var(--u)))/1.2 var(--f-ui); animation: fade 400ms var(--ease) both 350ms; }
+.mx .h b { display: block; color: var(--pink); font-size: max(11px, calc(14 * var(--u))); }
+.mx .pl { align-self: center; font: 600 max(11px, calc(14 * var(--u)))/1.15 var(--f-ui); animation: fade 400ms var(--ease) both 400ms; }
+.mx .pl small { display: block; color: var(--pink-2); font-weight: 500; font-size: max(10px, calc(12 * var(--u))); }
+.mx .sq { position: relative; display: grid; place-content: center; justify-items: center; gap: calc(3 * var(--u)); border-radius: calc(10 * var(--u)); background: #fff; box-shadow: 0 1px 2px rgb(20 20 60 / .08), inset 0 0 0 1px rgb(19 32 58 / .08);
+  font: 700 max(11px, calc(15 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; animation: pop 520ms var(--spring) both; animation-delay: calc(450ms + var(--i) * 45ms); }
+.mx .sq svg { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
+.mx .sq.over { color: #8A8FA6; background: #F4F2EC; }
+.mx .sq.pick { animation: pop 520ms var(--spring) both calc(450ms + var(--i) * 45ms), lit 700ms var(--ease) forwards 1.5s; }
+.mx .sq.pick small { padding: calc(3 * var(--u)) calc(7 * var(--u)); border-radius: 99px; background: #fff; color: #2A2185; font: 700 max(9px, calc(11 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop 500ms var(--spring) both 1.9s; }
+@keyframes lit { to { background: #4338CA; color: #fff; box-shadow: 0 0 0 calc(4 * var(--u)) rgb(67 56 202 / .22), 0 14px 24px -10px #4338CA; scale: 1.08; } }
+.mx .tap { position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 2px #fff; opacity: 0; animation: tap 700ms var(--ease) 2.5s; }
+@keyframes tap { 0% { opacity: 1; scale: .9; } 100% { opacity: 0; scale: 1.5; } }
+
+/* 2: the square, opened (the whole trip) */
+.f.sqr { display: flex; flex-direction: column; }
+.sqr .artbox { height: 31%; border-radius: 0; flex: none; }
+.sqr .artbox .ttl { top: auto; bottom: calc(12 * var(--u)); }
+.sqr .artbox .ttl b { font-size: max(16px, calc(26 * var(--u))); }
+.sqr .body { flex: 1; padding: calc(12 * var(--u)) calc(18 * var(--u)) calc(16 * var(--u)); display: flex; flex-direction: column; }
+.sqr .row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: calc(10 * var(--u)); padding: calc(7 * var(--u)) 0; border-bottom: 1px solid rgb(19 32 58 / .09); animation: rise 500ms var(--ease) both; animation-delay: calc(400ms + var(--i) * 140ms); }
+.sqr .row .ic { display: grid; place-items: center; width: calc(28 * var(--u)); height: calc(28 * var(--u)); border-radius: calc(8 * var(--u)); }
+.sqr .row .ic svg { width: 60%; height: 60%; }
+.sqr .row b { display: block; font-weight: 650; }
+.sqr .row small { display: block; color: var(--pink-2); font-size: max(10px, calc(12 * var(--u))); }
+.sqr .row .p { font-weight: 650; font-variant-numeric: tabular-nums; }
+.sqr .tot { display: flex; align-items: baseline; justify-content: space-between; padding: calc(10 * var(--u)) 0 calc(8 * var(--u)); animation: rise 500ms var(--ease) both 900ms; }
+.sqr .tot span { color: var(--pink-2); }
+.sqr .tot b { font: 600 max(20px, calc(32 * var(--u)))/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.sqr .book { position: relative; margin-top: auto; display: grid; place-items: center; min-height: calc(46 * var(--u)); border-radius: 99px; background: #4338CA; color: #fff; font: 700 max(12px, calc(15 * var(--u)))/1 var(--f-ui); box-shadow: 0 10px 22px -12px #4338CA;
+  animation: rise 500ms var(--ease) both 1.1s, press 420ms var(--ease) 1.9s, booked 400ms var(--ease) forwards 2.2s; }
+@keyframes booked { to { background: #0F766E; box-shadow: 0 10px 22px -12px #0F766E; } }
+.sqr .book > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: calc(6 * var(--u)); }
+.sqr .book .b2 { opacity: 0; animation: show 300ms var(--ease) forwards 2.2s; }
+@keyframes show { to { opacity: 1; } }
+.sqr .book .b1 { animation: fade 250ms var(--ease) reverse forwards 2.15s; }
+.sqr .book .b2 svg { width: 1.1em; height: 1.1em; }
+.sqr .confetti i { position: absolute; left: 50%; top: 50%; width: calc(7 * var(--u)); height: calc(10 * var(--u)); border-radius: 2px; background: var(--c); opacity: 0; animation: burst 1100ms var(--ease) 2.25s; }
+@keyframes burst { 0% { opacity: 1; translate: 0 0; rotate: 0deg; } 100% { opacity: 0; translate: var(--x) var(--y); rotate: 260deg; } }
+.sqr .fine { margin-top: calc(6 * var(--u)); text-align: center; color: var(--pink-2); font-size: max(10px, calc(11 * var(--u))); }
+
+/* 3: the calendar, planned together */
+.f.cal { padding: calc(16 * var(--u)); display: grid; grid-template-rows: auto auto 1fr; gap: calc(8 * var(--u)); --cols: 5; }
+.cal header { display: flex; align-items: center; gap: calc(10 * var(--u)); }
+.cal header b { font: 600 max(15px, calc(22 * var(--u)))/1.1 var(--f-display); flex: 1; }
+.cal .who { display: flex; align-items: center; }
+.cal .av { display: inline-grid; place-items: center; width: calc(28 * var(--u)); height: calc(28 * var(--u)); min-width: 20px; min-height: 20px; margin-left: calc(-6 * var(--u)); border-radius: 50%; border: 2px solid var(--paper); font: 700 max(10px, calc(12 * var(--u)))/1 var(--f-ui); animation: pop 500ms var(--spring) both; animation-delay: calc(300ms + var(--i) * 120ms); }
+.cal .creator { margin-left: calc(8 * var(--u)); padding: calc(5 * var(--u)) calc(9 * var(--u)); border-radius: 99px; border: 1.5px dashed #4338CA; color: #2A2185; font: 650 max(10px, calc(12 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop 500ms var(--spring) both 700ms; }
+.cal .days { display: grid; grid-template-columns: repeat(var(--cols), 1fr); text-align: center; color: var(--pink-2); font: 600 max(10px, calc(12 * var(--u)))/1 var(--f-ui); }
+.cal .days b { color: var(--pink); }
+.cal .grid { position: relative; border-radius: calc(10 * var(--u)); background: #fff; box-shadow: inset 0 0 0 1px rgb(19 32 58 / .08);
+  background-image: linear-gradient(90deg, rgb(19 32 58 / .07) 1px, transparent 1px); background-size: calc(100% / var(--cols)) 100%; }
+.cal .blk { position: absolute; left: calc(var(--c) * 100% / var(--cols) + 4 * var(--u)); width: calc(min(var(--n, 1), var(--cols) - var(--c)) * 100% / var(--cols) - 8 * var(--u)); top: var(--t); height: var(--hh);
+  padding: calc(5 * var(--u)) calc(7 * var(--u)); border-radius: calc(8 * var(--u)); overflow: hidden; font: 600 max(10px, calc(12 * var(--u)))/1.2 var(--f-ui); background: var(--bg); border-left: 3px solid var(--bd); }
+.cal .blk small { display: flex; align-items: center; gap: 3px; margin-top: 2px; font-weight: 500; color: var(--pink-2); font-size: max(9px, calc(11 * var(--u))); }
+.cal .blk small svg { width: 1em; height: 1em; }
+.cal .blk.lock { animation: fade 400ms var(--ease) both 350ms; }
+.cal .blk.plan { animation: drop 620ms var(--spring) both; animation-delay: calc(900ms + var(--i) * 380ms); }
+@keyframes drop { from { opacity: 0; translate: 0 calc(-16 * var(--u)); scale: .92; } }
+.cal .blk.guide { background: #fff; border: 1.5px dashed #4338CA; border-left-width: 1.5px; }
+.cal .blk.guide em { display: block; color: #2A2185; font: 700 max(9px, calc(10 * var(--u)))/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; font-style: normal; margin-bottom: 2px; }
+.cal .cur { position: absolute; z-index: 3; left: 0; top: 0; display: flex; align-items: flex-start; gap: 2px; pointer-events: none; animation: glide 1500ms var(--ease) both; animation-delay: var(--d); }
+.cal .cur svg { width: calc(18 * var(--u)); height: calc(18 * var(--u)); min-width: 13px; min-height: 13px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .2)); }
+.cal .cur span { margin-top: calc(12 * var(--u)); padding: 2px 6px; border-radius: 6px; background: var(--bd); color: #fff; font: 700 max(9px, calc(11 * var(--u)))/1.3 var(--f-ui); }
+@keyframes glide { from { opacity: 0; translate: var(--fx) var(--fy); } 15% { opacity: 1; } to { opacity: 1; translate: var(--tx) var(--ty); } }
+
+/* 4: go (the trip happens; the sky turns from the coast to the snow) */
+.f.go { padding: calc(10 * var(--u)); }
+.go .artbox { position: absolute; inset: calc(10 * var(--u)); }
+.go .veil { position: absolute; inset: 0; opacity: 0; background: linear-gradient(180deg, rgb(214 228 246 / .9), rgb(235 241 250 / .55) 55%, transparent); animation: fade 900ms var(--ease) reverse forwards 2.4s; }
+.go .flakes { position: absolute; inset: -20% 0 0; opacity: 0; background-image: radial-gradient(circle, #fff 1.4px, transparent 2px), radial-gradient(circle, #fff 1px, transparent 1.6px); background-size: 46px 46px, 28px 28px; background-position: 0 0, 13px 17px;
+  animation: fade 900ms var(--ease) reverse forwards 2.4s, snow 7s linear infinite; }
+@keyframes snow { to { background-position: 0 46px, 13px 45px; } }
+.go .chips { position: absolute; left: 50%; bottom: calc(14 * var(--u)); translate: -50% 0; display: flex; gap: calc(4 * var(--u)); padding: calc(4 * var(--u)); border-radius: 99px; background: rgb(251 247 239 / .78); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: rise 500ms var(--ease) both 500ms; }
+.go .chips span { display: inline-flex; align-items: center; gap: calc(4 * var(--u)); padding: calc(6 * var(--u)) calc(9 * var(--u)); border-radius: 99px; font: 650 max(10px, calc(12 * var(--u)))/1 var(--f-ui); color: var(--pink-2); white-space: nowrap; font-variant-numeric: tabular-nums;
+  animation: today 600ms var(--ease) both; animation-delay: calc(800ms + var(--i) * 460ms); }
+.go .chips span svg { width: 1.15em; height: 1.15em; }
+@keyframes today { 0% { background: transparent; } 30%, 70% { background: #fff; color: var(--pink); scale: 1.06; } 100% { background: transparent; color: var(--pink); } }
+.go .chips span:nth-child(4) { animation: today4 600ms var(--ease) forwards; animation-delay: calc(800ms + 3 * 460ms); }
+@keyframes today4 { 30% { scale: 1.08; } to { background: #fff; color: var(--pink); } }
+.go .stamp { position: absolute; padding: calc(6 * var(--u)) calc(10 * var(--u)); border: 2.5px solid currentColor; border-radius: calc(8 * var(--u)); background: rgb(251 247 239 / .85); font: 800 max(10px, calc(13 * var(--u)))/1.1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; animation: stamp 500ms var(--spring) both; }
+@keyframes stamp { from { opacity: 0; scale: 1.8; } }
+.go .stamp.s1 { left: 44%; top: 15%; color: #0B5C8A; rotate: -9deg; animation-delay: 1.1s; }
+.go .stamp.s2 { right: 7%; top: 40%; color: #3E4F86; rotate: 7deg; animation-delay: 2.7s; }
+
+/* 5: share (the guide: their days, their words) */
+.f.guide { display: flex; flex-direction: column; }
+.guide .artbox { height: 22%; flex: none; border-radius: 0; }
+.guide .body { flex: 1; padding: calc(14 * var(--u)) calc(20 * var(--u)) calc(16 * var(--u)); display: flex; flex-direction: column; }
+.guide h3 { margin: 0; font: 600 max(16px, calc(25 * var(--u)))/1.08 var(--f-display); letter-spacing: -0.02em; animation: rise 500ms var(--ease) both 300ms; }
+.guide .by { margin-top: calc(4 * var(--u)); color: var(--pink-2); font-size: max(10px, calc(12 * var(--u))); animation: rise 500ms var(--ease) both 400ms; }
+.guide ol { list-style: none; margin: calc(10 * var(--u)) 0 0; padding: 0; }
+.guide li { display: grid; grid-template-columns: calc(48 * var(--u)) 1fr; gap: calc(10 * var(--u)); padding: calc(8 * var(--u)) 0; border-top: 1px solid rgb(19 32 58 / .09); animation: rise 500ms var(--ease) both; animation-delay: calc(600ms + var(--i) * 260ms); }
+.guide li > b { font: 700 max(9px, calc(11 * var(--u)))/1.25 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--pink-2); min-width: 3.4em; }
+.guide li q { font: italic 500 max(12px, calc(15 * var(--u)))/1.3 var(--f-display); quotes: "\201C" "\201D"; }
+.guide li small { display: block; margin-top: 2px; color: #2A2185; font: 650 max(9px, calc(11 * var(--u)))/1.2 var(--f-ui); }
+.guide .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: calc(8 * var(--u)); padding-top: calc(10 * var(--u)); color: var(--pink-2); font-size: max(10px, calc(11 * var(--u))); animation: rise 500ms var(--ease) both 1.9s; }
+.guide .foot span { display: inline-flex; align-items: center; gap: 4px; }
+.guide .foot svg { width: 1.1em; height: 1.1em; flex: none; }
+.guide .pub { position: relative; display: grid; padding: calc(9 * var(--u)) calc(16 * var(--u)); border-radius: 99px; background: #4338CA; color: #fff; font: 700 max(11px, calc(13 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: press 420ms var(--ease) 2.5s, booked 400ms var(--ease) forwards 2.8s; }
+.guide .pub > span { grid-area: 1 / 1; text-align: center; }
+.guide .pub .b1 { animation: fade 250ms var(--ease) reverse forwards 2.75s; }
+.guide .pub .b2 { opacity: 0; animation: show 300ms var(--ease) forwards 2.8s; }
+
+/* 6: post (the only place the pink-violet gradient lives) */
+.f.post { padding: calc(16 * var(--u)); display: flex; flex-direction: column; gap: calc(10 * var(--u)); color: #fff; background: linear-gradient(150deg, #F59AC0, #B67BEF 52%, #6E58EE); }
+.post header { display: flex; align-items: center; gap: calc(8 * var(--u)); font: 650 max(11px, calc(13 * var(--u)))/1 var(--f-ui); animation: fade 400ms var(--ease) both 300ms; }
+.post header i { display: grid; place-items: center; width: calc(30 * var(--u)); height: calc(30 * var(--u)); min-width: 22px; min-height: 22px; border-radius: 50%; background: #fff; color: #6E58EE; font: 800 max(10px, calc(12 * var(--u)))/1 var(--f-ui); font-style: normal; box-shadow: 0 0 0 2px rgb(255 255 255 / .5); }
+.post header span { opacity: .85; font-weight: 500; }
+.post .artbox { flex: 1; border: calc(6 * var(--u)) solid #FBF7EF; border-radius: calc(14 * var(--u)); box-shadow: 0 16px 30px -18px rgb(40 20 90 / .7); animation: pop 600ms var(--spring) both 350ms; }
+.post h3 { margin: 0; font: 600 max(16px, calc(26 * var(--u)))/1.05 var(--f-display); letter-spacing: -0.02em; animation: rise 500ms var(--ease) both 600ms; }
+.post .acts { display: flex; align-items: center; gap: calc(12 * var(--u)); animation: rise 500ms var(--ease) both 800ms; }
+.post .acts svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); min-width: 17px; min-height: 17px; }
+.post .acts .heart { animation: heart 700ms var(--spring) both 1.3s; }
+@keyframes heart { 0% { scale: 1; fill: transparent; } 40% { scale: 1.45; } 100% { scale: 1; fill: #fff; } }
+.post .acts .likes { margin-left: auto; font: 650 max(11px, calc(13 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; }
+.post .link { align-self: flex-start; padding: calc(6 * var(--u)) calc(10 * var(--u)); border-radius: 99px; background: rgb(255 255 255 / .22); font: 600 max(10px, calc(12 * var(--u)))/1 var(--f-ui); animation: rise 500ms var(--ease) both 1s; }
+.post .float i { position: absolute; left: var(--x); bottom: 18%; width: calc(16 * var(--u)); height: calc(16 * var(--u)); opacity: 0; animation: float 1800ms var(--ease) forwards; animation-delay: var(--d); }
+.post .float svg { width: 100%; height: 100%; fill: #fff; }
+@keyframes float { 0% { opacity: 0; translate: 0 0; } 20% { opacity: .95; } 100% { opacity: 0; translate: var(--dx) calc(-140 * var(--u)); } }
+
+/* 7: pass it on (the copies fan out from behind the card) */
+.twin { position: absolute; left: 0; top: 0; width: calc(300 * var(--u)); height: calc(196 * var(--u)); padding: calc(7 * var(--u)); border-radius: calc(12 * var(--u)); background: var(--paper); box-shadow: var(--sh2); opacity: 0; translate: -50% -50%;
+  transform: translate3d(0, 0, -40px) rotate(0deg) scale(.9); transition: transform 900ms var(--spring-soft), opacity 300ms var(--ease); }
+.twin > div { position: relative; height: 100%; border-radius: calc(7 * var(--u)); background: var(--g); overflow: hidden; }
+.twin b { position: absolute; left: calc(10 * var(--u)); bottom: calc(10 * var(--u)); padding: calc(4 * var(--u)) calc(8 * var(--u)); border-radius: calc(7 * var(--u)); background: rgb(251 247 239 / .94); color: var(--pink); font: italic 560 max(12px, calc(15 * var(--u)))/1.2 var(--f-display); }
+.stage[data-beat="7"] .twin { opacity: 1; transition-delay: 500ms; }
+.stage[data-beat="7"] .twin.t1 { transform: translate3d(calc(-250 * var(--u)), calc(-150 * var(--u)), -80px) rotate(-8deg); }
+.stage[data-beat="7"] .twin.t2 { transform: translate3d(calc(260 * var(--u)), calc(140 * var(--u)), -60px) rotate(7deg); transition-delay: 750ms; }
+.saved { position: absolute; left: 0; top: calc(200 * var(--u)); translate: -50% 0; padding: .625rem .875rem; border-radius: 1rem; background: var(--card); box-shadow: var(--sh2), 0 0 0 1px var(--line); font: 600 .9375rem/1.25 var(--f-ui); white-space: nowrap; opacity: 0; scale: .9; transition: opacity 400ms var(--ease), scale 600ms var(--spring); }
+.saved small { display: block; color: var(--ink-2); font-weight: 500; font-size: .8125rem; }
+.stage[data-beat="7"] .saved { opacity: 1; scale: 1; transition-delay: 1400ms; }
+
+/* ============ the words: bold, one line at a time, rolling with the story ============ */
+.caps { position: absolute; z-index: 5; left: max(1.5rem, 5.5vw); top: 50%; translate: 0 -50%; width: min(31rem, 35vw); display: grid; }
+.caps::before { content: ""; position: absolute; inset: -4rem -6rem -4rem -10rem; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--sky-2) 85%, transparent), transparent); pointer-events: none; }
+.cap { grid-area: 1 / 1; align-self: center; opacity: 0; translate: 0 2rem; visibility: hidden; pointer-events: none;
+  transition: opacity 450ms var(--ease), translate 800ms var(--spring-soft), visibility 0s linear 450ms; }
+.cap.past { translate: 0 -2rem; }
+.cap.now { opacity: 1; translate: 0 0; visibility: visible; pointer-events: auto; transition-delay: 140ms, 140ms, 0s; }
+.cap .label { display: flex; align-items: center; gap: .5rem; margin-bottom: .875rem; }
+.cap .label i { display: inline-grid; place-items: center; width: 1.625rem; height: 1.625rem; border-radius: 50%; background: var(--brand); color: var(--on-brand); font: 700 .8125rem/1 var(--f-ui); font-style: normal; letter-spacing: 0; }
+.cap h1, .cap h2 { font-size: clamp(2.5rem, 4.4vw, 4.25rem); line-height: 1.0; }
+.cap h1 { font-size: clamp(2.75rem, 5vw, 4.75rem); }
+.cap p { margin: 1rem 0 0; color: var(--ink-2); font-size: 1.1875rem; line-height: 1.5; max-width: 28rem; }
+.cap .acts { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1.75rem; }
+.cap .hint { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-2); font: 560 1rem/1 var(--f-ui); }
+.cap .hint svg { width: 1.125rem; height: 1.125rem; animation: nudge 1.8s var(--ease) infinite; }
+@keyframes nudge { 50% { translate: 0 4px; } }
+
+/* the pager: eight stops, the words of the ring */
+.pager { position: absolute; z-index: 6; right: 1.25rem; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: .125rem; padding: .375rem; border-radius: 99px; }
+.pager button { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.pager button::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--ink-3); opacity: .45; transition: scale 400ms var(--spring), opacity 300ms, background-color 300ms; }
+.pager button[aria-current]::before { background: var(--brand); opacity: 1; scale: 1.6; }
+.pager button span { position: absolute; right: calc(100% + .25rem); padding: .375rem .625rem; border-radius: 99px; background: var(--card); box-shadow: var(--sh1); font: 600 .875rem/1 var(--f-ui); white-space: nowrap; opacity: 0; translate: .5rem 0; pointer-events: none; transition: opacity 200ms, translate 300ms var(--spring); }
+.pager button:is(:hover, :focus-visible) span { opacity: 1; translate: 0 0; }
+
+/* ============ the close ============ */
+.end { position: relative; display: grid; place-items: center; min-height: 80svh; padding: 4rem 1rem 6rem; }
+.endcard { max-width: 38rem; padding: 2.5rem; border-radius: 2rem; background: var(--card-t); box-shadow: var(--sh2), 0 0 0 1px var(--line); text-align: center; }
+.endcard h2 { font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.02; }
+.endcard p { margin: 1rem auto 0; max-width: 28rem; color: var(--ink-2); font-size: 1.1875rem; }
+.endcard .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-top: 1.75rem; }
+.endcard small { display: block; margin-top: 1.5rem; color: var(--ink-3); font-size: .9375rem; }
+
+/* ============ phone: the card up top, the words at the thumb ============ */
+@media (max-width: 760px) {
+  :root { --u: min(calc((100vw - 2rem) / 540), calc((100svh - 24rem) / 520)); }
+  .stage[data-beat="1"] .pc { --w: 520; --h: 380; }
+  .stage[data-beat="3"] .pc { --w: 520; --h: 440; }
+  .stage[data-beat="4"] .pc { --w: 520; --h: 340; }
+  .bar { padding: .625rem 1rem 0; }
+  .bar .chip-s { display: none; }
+  .stage { --cx: 50%; --cy: 37%; perspective: 900px; }
+  .ring { --rd: min(118vw, 62svh); }
+  .ring text { font-size: 64px; }
+  .gal i { left: -50px; top: -34px; width: 100px; height: 68px; border-width: 4px; }
+  .gal i b { font-size: 10px; }
+  .caps { left: 1rem; right: 1rem; top: auto; bottom: calc(1rem + env(safe-area-inset-bottom)); translate: none; width: auto; }
+  .caps::before { display: none; }
+  .cap { align-self: end; padding: 1.25rem; border-radius: 1.5rem; background: var(--card-t); box-shadow: var(--sh2), 0 0 0 1px var(--line); }
+  .cap h1, .cap h2 { font-size: 2rem; }
+  .cap p { font-size: 1rem; margin-top: .5rem; }
+  .cap .label { margin-bottom: .5rem; }
+  .cap .acts { margin-top: 1rem; }
+  .cap .hint { display: none; }
+  .pager { display: none; }
+  /* fewer columns on the card */
+  .mx .g { grid-template-columns: 1.2fr repeat(3, 1fr); }
+  .mx .c4, .mx .c5 { display: none; }
+  .mx header span { display: none; }
+  .f.cal { --cols: 3; }
+  .cal .blk.far, .cal .days .far, .cal .creator { display: none; }
+  .guide li.opt { display: none; }
+  .go .chips span em { display: none; }
+  .wish .write { padding-top: calc(60 * var(--u)); }
+  .saved { display: none; }
+}
+@media (max-width: 760px) and (max-height: 700px) { .cap p { display: none; } }
+
+/* ============ still: everything lands where it ends, nothing travels ============ */
+:root[data-still] *, :root[data-still] *::before, :root[data-still] *::after { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; transition-delay: 0s !important; }
+:root[data-still] .gal-spin { animation: none !important; }
+</style>
+</head>
+<body>
+<div class="sky" data-mood="shore" aria-hidden="true"></div>
+
+<header class="bar">
+  <a class="brand" href="#" aria-label="GitAway">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/><path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#fff"/><path d="M5 31c5-3 9-3 14 0s9 3 16 0" fill="none" stroke="#C92A5E" stroke-width="2.5"/></svg>
+    <span>GitAway</span>
+  </a>
+  <span class="sp"></span>
+  <span class="chip-s">Concept · sample content</span>
+  <button class="round" type="button" id="modeBtn" aria-label="Dark mode" aria-pressed="false"><svg class="is-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+  <a class="btn sm" href="#">Start a trip</a>
+</header>
+
+<main>
+<section id="story" aria-label="One trip, passed along">
+  <div class="stage" data-beat="0">
+    <div class="gal" aria-hidden="true"><div class="gal-spin"></div></div>
+    <div class="ring" aria-hidden="true"><svg viewBox="0 0 1000 1000"></svg></div>
+    <div class="rig" aria-hidden="true">
+      <div class="twin t1" style="--g:linear-gradient(180deg,#F8DCCB 0 55%,#7BA568 55% 80%,#5F8F54 80%)"><div><b>The Okafors · Chicago</b></div></div>
+      <div class="twin t2" style="--g:linear-gradient(180deg,#E0D8F7 0 58%,#8FA8C8 58% 78%,#F7FAFE 78%)"><div><b>Lena &amp; Jo · Denver</b></div></div>
+      <div class="bob"><div class="pc"><div class="side a"></div><div class="side b"></div></div></div>
+      <div class="saved">Made theirs by 214 families<small>sample</small></div>
+    </div>
+
+    <div class="caps">
+      <article class="cap" data-k="0">
+        <div class="label">GitAway · one trip, passed along</div>
+        <h1>Every trip starts as <em>a wish.</em></h1>
+        <p>Say it the way you'd tell a friend. GitAway turns one sentence into every way to go.</p>
+        <div class="acts"><a class="btn" href="#">Start a trip</a><span class="hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Follow the postcard</span></div>
+      </article>
+      <article class="cap" data-k="1">
+        <div class="label"><i>1</i>Compare</div>
+        <h2>Every way to go, <em>on one card.</em></h2>
+        <p>Places down, days across. Each square is the whole trip for four: flights, stays, one total. The best one lights up.</p>
+      </article>
+      <article class="cap" data-k="2">
+        <div class="label"><i>2</i>Book</div>
+        <h2>Tap a square. <em>That's the trip.</em></h2>
+        <p>The flight, both stays and the sky, in one view. Book it in one go.</p>
+      </article>
+      <article class="cap" data-k="3">
+        <div class="label"><i>3</i>Plan</div>
+        <h2>Everyone <em>gets a pen.</em></h2>
+        <p>Your people add the zoo, the tacos, the sled hill to one calendar. A creator's guide adds the tip that saves a morning.</p>
+      </article>
+      <article class="cap" data-k="4">
+        <div class="label"><i>4</i>Go</div>
+        <h2>Then you <em>just go.</em></h2>
+        <p>Beach on day one, snow by day four. The plan, the weather and the bookings ride along.</p>
+      </article>
+      <article class="cap" data-k="5">
+        <div class="label"><i>5</i>Share</div>
+        <h2>Bring it home <em>as a guide.</em></h2>
+        <p>Your days, your tips, in your own words. Nothing invented; prices and bookings stay private.</p>
+      </article>
+      <article class="cap" data-k="6">
+        <div class="label"><i>6</i>Post</div>
+        <h2>Give it <em>to the world.</em></h2>
+        <p>One card for Instagram, one link back to the whole trip.</p>
+      </article>
+      <article class="cap" data-k="7">
+        <div class="label"><i>7</i>Pass it on</div>
+        <h2>And someone else's <em>trip begins.</em></h2>
+        <p>The Riveras in Austin made it theirs in one tap. Give back, get back, and round it goes.</p>
+        <div class="acts"><a class="btn" href="#">Start a trip</a><a class="btn soft" href="#">Browse guides</a></div>
+      </article>
+    </div>
+
+    <nav class="pager glass" aria-label="The story"></nav>
+  </div>
+  <div class="beats" aria-hidden="true"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i><i style="--k:7"></i></div>
+</section>
+
+<section class="end">
+  <div class="endcard">
+    <div class="label">Book · Plan · Guides</div>
+    <h2>Go somewhere, <em>together.</em></h2>
+    <p>Choose the whole trip in one view, plan it with your people, and pass it on as a guide.</p>
+    <div class="acts"><a class="btn" href="#">Start a trip</a><a class="btn soft" href="#">Browse guides</a></div>
+    <small>Concept. The families, places and prices are samples.</small>
+  </div>
+</section>
+</main>
+
+<script>
+(function () {
+  var R = document.documentElement, $ = function (s, r) { return (r || document).querySelector(s); }, $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var still = function () { return R.hasAttribute('data-still'); };
+
+  /* ---------- the sky ---------- */
+  var sky = $('.sky'), CL = '<path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/>';
+  var cloud = function (st) { return '<svg class="cloud" style="' + st + '" viewBox="0 0 120 50">' + CL + '</svg>'; };
+  var ST = [[70,40,2.4],[160,110,1.8],[260,30,2.2],[330,150,1.6],[430,70,2.6],[520,20,1.8],[610,120,2.2],[700,50,1.6],[790,140,2.4],[880,24,1.8],[960,96,2.2],[1040,170,1.6],[1130,40,2.4],[1240,120,1.8],[1330,60,2.2],[1400,150,1.6]];
+  sky.innerHTML = '<div class="sun"></div><svg class="moon" viewBox="0 0 100 100"><defs><mask id="mc"><rect width="100" height="100" fill="#fff"/><circle cx="73" cy="36" r="34" fill="#000"/></mask></defs><circle cx="50" cy="50" r="42" fill="#F3EBD3" mask="url(#mc)"/><path d="M19 57 q5 5 10 0" fill="none" stroke="#6B5B3A" stroke-width="2.4" stroke-linecap="round"/><path d="M21 69 q3.5 3 7 0" fill="none" stroke="#6B5B3A" stroke-width="2.2" stroke-linecap="round"/><circle cx="15" cy="64" r="3.4" fill="#F4A9A0" opacity=".7"/><g class="zz" fill="#F3EBD3" font-family="Newsreader, Georgia, serif" font-weight="600"><text x="80" y="28" font-size="13">z</text><text x="89" y="15" font-size="10">z</text></g></svg>' +
+    '<svg class="stars" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMin slice">' + ST.map(function (s, i) { return '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + s[2] + '" style="--i:' + i + '"/>'; }).join('') + '</svg>' +
+    cloud('left:4%;top:9%;width:170px') + cloud('left:40%;top:6%;width:120px;animation-duration:80s') + cloud('left:22%;top:78%;width:200px;animation-duration:95s');
+
+  /* ---------- mode ---------- */
+  var modeBtn = $('#modeBtn');
+  var syncMode = function () { var d = R.getAttribute('data-mode') === 'dark'; modeBtn.setAttribute('aria-pressed', d); modeBtn.setAttribute('aria-label', d ? 'Light mode' : 'Dark mode'); };
+  modeBtn.addEventListener('click', function () { var m = R.getAttribute('data-mode') === 'dark' ? 'light' : 'dark'; R.setAttribute('data-mode', m); try { localStorage.setItem('cv3-mode', m); } catch (e) {} syncMode(); });
+  syncMode();
+
+  /* ---------- the drawings the faces share ---------- */
+  var ART = '<svg class="art" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="SKY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE0F6"/><stop offset=".6" stop-color="#E7E6FA"/><stop offset="1" stop-color="#FDE3CC"/></linearGradient></defs>' +
+    '<rect width="400" height="260" fill="url(#SKY)"/><circle cx="118" cy="110" r="28" fill="#FFB547"/><circle cx="118" cy="110" r="42" fill="#FFB547" opacity=".18"/>' +
+    '<path d="M210 176 L292 70 L374 176Z" fill="#8FA8C8"/><path d="M292 70 L374 176 L328 176 L300 112Z" fill="#7893B8"/><path d="M292 70 L274 94 L284 90 L292 102 L302 88 L312 96Z" fill="#fff"/>' +
+    '<path d="M300 176 L352 112 L410 176Z" fill="#A9BCD6"/><path d="M352 112 L338 130 L346 127 L352 136 L360 126 L368 132Z" fill="#fff"/>' +
+    '<path d="M0 168 Q60 158 120 166 T240 166 L240 260 H0Z" fill="#A7D3EE"/><path d="M0 184 Q60 174 130 182 T250 182 L250 260 H0Z" fill="#78B8E3"/>' +
+    '<path d="M0 214 Q80 200 160 210 T260 206 L262 260 H0Z" fill="#F4D9A0"/><path d="M226 200 Q300 182 400 192 V260 H232Z" fill="#F7FAFE"/><path d="M240 222 Q320 208 400 216 V260 H244Z" fill="#E3ECF7"/>' +
+    '<g transform="translate(196 214) scale(1.6)"><path d="M0 0 Q2 -14 6 -28" fill="none" stroke="#7A4E26" stroke-width="2.4" stroke-linecap="round"/><g fill="#1F8A5B"><path d="M6 -28q-10-3-15 4 8-3 15-4z"/><path d="M6 -28q10-4 15 3-8-3-15-3z"/><path d="M6 -28q-5-9-13-8 8 2 13 8z"/><path d="M6 -28q4-10 12-9-8 2-12 9z"/></g></g>' +
+    '<g fill="#2F6B4F"><path d="M300 222 l10 -26 l10 26z"/><path d="M322 226 l8 -20 l8 20z"/><path d="M356 220 l11 -30 l11 30z"/></g></svg>';
+  var WISH = '<svg class="art" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="SKW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9E4F8"/><stop offset="1" stop-color="#FDE3CC"/></linearGradient></defs><rect width="400" height="260" fill="url(#SKW)"/>' +
+    '<circle cx="290" cy="96" r="30" fill="#FFB547"/><circle cx="290" cy="96" r="46" fill="#FFB547" opacity=".16"/><path d="M60 70a14 14 0 0 1 2-28 20 20 0 0 1 36-4 16 16 0 0 1 28 9 11 11 0 0 1 5 23z" fill="#fff" opacity=".9"/>' +
+    '<path d="M0 190 Q100 172 200 186 T400 182 V260 H0Z" fill="#9CCBEA"/><path d="M0 214 Q120 198 240 210 T400 206 V260 H0Z" fill="#78B8E3"/><path d="M0 238 Q140 226 280 236 T400 232 V260 H0Z" fill="#F4D9A0"/>' +
+    '<path d="M150 178 l40 0 l-6 9 h-28z" fill="#2B3A4A"/><path d="M170 178 V140 l18 34z" fill="#fff"/><path d="M168 178 V146 l-14 30z" fill="#FBF7EF"/></svg>';
+  var PM = '<svg class="pm" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="40" cy="40" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="40" y="37" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="9" fill="currentColor">SAMPLE</text><text x="40" y="49" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="8" fill="currentColor">DEC 2026</text></svg>';
+  var I = {
+    arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#FFB547"/></svg>',
+    snow: '<svg viewBox="0 0 24 24" fill="none" stroke="#5B7DB8" stroke-width="2.2" stroke-linecap="round"><path d="M12 4v16M5 8l14 8M5 16l14-8"/></svg>',
+    mix: '<svg viewBox="0 0 24 24"><circle cx="9" cy="10" r="4.5" fill="#FFB547"/><path d="M8 19a3.5 3.5 0 0 1 .4-7 4.8 4.8 0 0 1 9.2 1.3A2.9 2.9 0 0 1 17 19z" fill="#9AA6C4"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" fill="#9AA6C4"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17.5 18z"/></svg>',
+    plane: '<svg viewBox="0 0 24 24" fill="#0369A1"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z"/></svg>',
+    bed: '<svg viewBox="0 0 24 24" fill="none" stroke="#8B2FC9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6" fill="#8B2FC9"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    heart: '<svg class="heart" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
+    talk: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M21 3L3 10.5l7 3 3 7z"/><path d="M10 13.5L21 3"/></svg>',
+    save: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
+    cur: '<svg viewBox="0 0 24 24"><path d="M4 3l16 7-7 2-3 7z" fill="var(--bd)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+  };
+
+  /* ---------- the eight faces ---------- */
+  function wish(words, extra) {
+    return '<div class="f wish"><div class="artbox">' + WISH + '<div class="ttl"><small>Greetings from</small><b>somewhere?</b></div>' + extra + '</div>' +
+      '<div class="write"><div class="stampbox"><i></i></div>' + PM + '<div class="dear">Dear GitAway,</div><p class="sent">' +
+      words.map(function (w, i) { return (w[0] === '~' ? w.slice(1) : '<span class="w" style="--i:' + i + '">' + w + '</span>'); }).join(' ') + '<span class="caret"></span></p>' +
+      '<div class="go">Show me every way ' + I.arrow + '</div></div></div>';
+  }
+  var DAYS = [['Fri', 11], ['Sat', 12], ['Sun', 13], ['Mon', 14], ['Tue', 15]];
+  var ROWS = [['San Diego', '5 nights', [2410, 2290, 2180, 2240, 2350], 'sun'], ['Big Bear', '5 nights', [2620, 2480, 2390, 2440, 2710], 'snow'], ['Coast + snow', '2 + 3 nights', [2260, 2110, 1940, 2050, 2380], 'mix']];
+  function matrix() {
+    var h = '<div class="f mx"><header><b>Coast to snow, for 4</b><span>Each square: flights + stays, taxes in<br>Sample prices</span></header><div class="g"><span></span>', n = 0;
+    DAYS.forEach(function (d, i) { h += '<span class="h c' + (i + 1) + '">' + d[0] + '<b>Dec ' + d[1] + '</b></span>'; });
+    ROWS.forEach(function (r, ri) {
+      h += '<span class="pl">' + r[0] + '<small>' + r[1] + '</small></span>';
+      r[2].forEach(function (p, i) { var pick = ri === 2 && i === 2; h += '<span class="sq c' + (i + 1) + (pick ? ' pick' : '') + (p > 2600 ? ' over' : '') + '" style="--i:' + (n++) + '">' + I[r[3]] + '$' + p.toLocaleString('en-US') + (pick ? '<small>Our pick</small><i class="tap"></i>' : '') + '</span>'; });
+    });
+    return h + '</div></div>';
+  }
+  function square() {
+    var C = ['#4338CA', '#FFB547', '#0F766E', '#C92A5E', '#0369A1', '#8B2FC9', '#FFB547', '#4338CA', '#0F766E', '#C92A5E'];
+    var conf = C.map(function (c, i) { var a = i / C.length * Math.PI * 2; return '<i style="--c:' + c + ';--x:' + Math.round(Math.cos(a) * 110) + 'px;--y:' + Math.round(Math.sin(a) * 70 - 40) + 'px"></i>'; }).join('');
+    return '<div class="f sqr"><div class="artbox">' + ART + '<div class="ttl"><small>Sun Dec 13 · 5 nights · 4 of us</small><b>Coast + snow</b></div></div><div class="body">' +
+      '<div class="row" style="--i:0"><span class="ic" style="background:#DBEFFA">' + I.plane + '</span><span><b>Flights to San Diego</b><small>4 seats, there and back</small></span><span class="p">$612</span></div>' +
+      '<div class="row" style="--i:1"><span class="ic" style="background:#F1E3FA">' + I.bed + '</span><span><b>Hotel by the cove</b><small>2 nights · coast</small></span><span class="p">$544</span></div>' +
+      '<div class="row" style="--i:2"><span class="ic" style="background:#F1E3FA">' + I.bed + '</span><span><b>Lodge in the pines</b><small>3 nights · snow</small></span><span class="p">$784</span></div>' +
+      '<div class="tot"><span>Whole trip, for 4</span><b>$1,940</b></div>' +
+      '<div class="book"><span class="b1">Book this trip</span><span class="b2">' + I.check + 'Booked</span><span class="confetti">' + conf + '</span></div><div class="fine">Sample prices</div></div></div>';
+  }
+  function cal() {
+    var B = function (cls, c, n, t, hh, bg, bd, body, i, far) { return '<div class="blk ' + cls + (far ? ' far' : '') + '" style="--c:' + c + ';--n:' + n + ';--t:' + t + '%;--hh:' + hh + '%;--bg:' + bg + ';--bd:' + bd + (i != null ? ';--i:' + i : '') + '">' + body + '</div>'; };
+    var by = function (who) { return '<small>' + who + '</small>'; };
+    var days = ['Sun <b>13</b>', 'Mon <b>14</b>', 'Tue <b>15</b>', 'Wed <b>16</b>', 'Thu <b>17</b>'];
+    return '<div class="f cal"><header><b>Coast to snow · Dec 13–18</b><span class="who"><i class="av" style="--i:0;background:#FBE1EA;color:#7E1538">M</i><i class="av" style="--i:1;background:#DBEFFA;color:#034769">S</i><i class="av" style="--i:2;background:#D9F2EF;color:#0B4D48">A</i><i class="av" style="--i:3;background:#E4E3FB;color:#2A2185">P</i></span><span class="creator">+ Maya\'s guide</span></header>' +
+      '<div class="days">' + days.map(function (d, i) { return '<span' + (i > 2 ? ' class="far"' : '') + '>' + d + '</span>'; }).join('') + '</div><div class="grid">' +
+      B('lock', 0, 1, 3, 17, '#DBEFFA', '#0369A1', 'Land SAN 10:40' + '<small>' + I.lock + 'Booked</small>') +
+      B('lock', 0, 2, 84, 12, '#F1E3FA', '#8B2FC9', 'Hotel by the cove') +
+      B('lock', 2, 3, 84, 12, '#F1E3FA', '#8B2FC9', 'Lodge in the pines') +
+      B('plan guide', 1, 1, 4, 27, '', '#4338CA', '<em>Maya\'s guide</em>La Jolla Cove at 9, before the crowds', 0) +
+      B('plan', 0, 1, 52, 26, '#FBE1EA', '#C92A5E', 'Tacos at the market' + by('Sam'), 1) +
+      B('plan', 1, 1, 38, 28, '#D9F2EF', '#0F766E', 'Zoo after lunch' + by('Mum'), 2) +
+      B('plan', 2, 1, 6, 24, '#F2F3FA', '#555A73', 'Drive up to Big Bear' + by('Dad'), 3) +
+      B('plan', 2, 1, 38, 26, '#D9F2EF', '#0F766E', 'Sled hill!' + by('Ava, 9'), 4) +
+      B('plan', 3, 1, 12, 26, '#D9F2EF', '#0F766E', 'Lake walk' + by('Mum'), 5, true) +
+      B('plan', 4, 1, 30, 22, '#F2F3FA', '#555A73', 'Drive home' + by('Dad'), 6, true) +
+      '<div class="cur" style="--bd:#C92A5E;--d:600ms;--fx:220%;--fy:30%;--tx:115%;--ty:330%">' + I.cur + '<span>Mum</span></div>' +
+      '<div class="cur" style="--bd:#0369A1;--d:900ms;--fx:-10%;--fy:20%;--tx:30%;--ty:450%">' + I.cur + '<span>Sam</span></div>' +
+      '</div></div>';
+  }
+  function go() {
+    var D = [[I.sun, '71°', 'Coast'], [I.sun, '70°', 'Zoo'], [I.cloud, '52°', 'Drive'], [I.snow, '28°', 'Snow'], [I.snow, '31°', 'Home']];
+    return '<div class="f go"><div class="artbox">' + ART + '<div class="veil"></div><div class="flakes"></div><div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div>' +
+      '<div class="stamp s1">Day 1 · Coast · 71°</div><div class="stamp s2">Day 4 · Snow · 28°</div>' +
+      '<div class="chips">' + D.map(function (d, i) { return '<span style="--i:' + i + '">' + d[0] + d[1] + '<em>&nbsp;' + d[2] + '</em></span>'; }).join('') + '</div></div></div>';
+  }
+  function guide() {
+    var L = [['Day 1', 'Tacos at the market, night one. Go hungry.', ''], ['Day 2', 'The cove at 9, before the crowds. Sea lions, guaranteed.', 'From Maya\'s guide'], ['Day 3', 'Chains in the boot for the drive up, just in case.', '', 'opt'], ['Day 4', 'The sled hill behind the lodge. Ava\'s favourite day.', ''], ['Day 5', 'Pancakes in the village before the drive home.', '', 'opt']];
+    return '<div class="f guide"><div class="artbox">' + ART + '</div><div class="body"><h3>Coast to snow in five days</h3><div class="by">The Patels · 4 of us · December · sample</div><ol>' +
+      L.map(function (l, i) { return '<li style="--i:' + i + '"' + (l[3] ? ' class="opt"' : '') + '><b>' + l[0] + '</b><span><q>' + l[1] + '</q>' + (l[2] ? '<small>' + l[2] + '</small>' : '') + '</span></li>'; }).join('') +
+      '</ol><div class="foot"><span>' + I.lock + 'Prices and bookings stay private</span><span class="pub"><span class="b1">Publish</span><span class="b2">Published</span></span></div></div></div>';
+  }
+  function post() {
+    var H = [['30%', '1.5s', '-20px'], ['48%', '1.8s', '14px'], ['64%', '2.1s', '-8px'], ['40%', '2.5s', '22px']];
+    return '<div class="f post"><header><i>P</i><b>@thepatels</b><span>· on GitAway</span></header><div class="artbox">' + ART + '<div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div></div>' +
+      '<h3>Coast to snow in five days</h3><div class="acts">' + I.heart + I.talk + I.send + '<span class="likes">2,418 likes</span></div><div class="link">gitaway.me/trips/coast-to-snow</div>' +
+      '<div class="float">' + H.map(function (h) { return '<i style="--x:' + h[0] + ';--d:' + h[1] + ';--dx:' + h[2] + '"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></i>'; }).join('') + '</div></div>';
+  }
+  var FACES = [
+    function () { return wish(['Somewhere warm,', 'then snow,', 'for 4 of us,', 'mid-December.'], '<div class="sig">The Patels · San Diego</div>'); },
+    matrix, square, cal, go, guide, post,
+    function () { return wish(['Coast to snow,', 'like the Patels,', 'for 5 of us,', 'in March.'], '<div class="from">' + I.check + 'From the Patels\' guide</div><div class="sig">The Riveras · Austin</div>'); }
+  ];
+  var WORDS = ['Wish', 'Compare', 'Book', 'Plan', 'Go', 'Share', 'Post', 'Pass it on'];
+
+  /* ---------- the ring ---------- */
+  var ring = $('.ring svg'), rr = 440, rh = '<defs><path id="rp" d="M500 60 A440 440 0 1 1 500 940 A440 440 0 1 1 500 60"/></defs><circle class="track" cx="500" cy="500" r="' + (rr + 46) + '"/>';
+  WORDS.forEach(function (w, k) {
+    rh += '<text class="w' + (k ? '' : ' now') + '" dy="20"><textPath href="#rp" startOffset="' + (k * 12.5 + 6.25) + '%" text-anchor="middle">' + w + '</textPath></text>';
+    var a = k * Math.PI / 4; rh += '<circle class="dot" r="7" cx="' + (500 + rr * Math.sin(a)).toFixed(1) + '" cy="' + (500 - rr * Math.cos(a)).toFixed(1) + '"/>';
+  });
+  ring.innerHTML = rh;
+  var ringWords = $$('text', ring);
+
+  /* ---------- the gallery: other families' postcards ---------- */
+  var G = ['linear-gradient(180deg,#BFE0F6 0 55%,#78B8E3 55% 75%,#F4D9A0 75%)', 'linear-gradient(180deg,#D3E6F8 0 45%,#8FA8C8 45% 70%,#F7FAFE 70%)', 'linear-gradient(180deg,#F8DCCB 0 55%,#7BA568 55% 80%,#5F8F54 80%)', 'linear-gradient(180deg,#E0D8F7 0 60%,#3E2C72 60%)', 'linear-gradient(180deg,#D5DEEA 0 40%,#6D7899 40% 85%,#56607F 85%)', 'linear-gradient(180deg,#FDE3CC 0 50%,#E9B98A 50% 72%,#78B8E3 72%)'];
+  var GL = ['Lisbon in 48 hours', 'Tahoe ski week', 'Kyoto in autumn', 'Maui with toddlers', 'New York at New Year', 'Banff by train', 'Mexico City, to eat', 'Iceland ring road', 'Amalfi, slowly', 'Zion and Bryce', 'Paris for four', 'Big Sur drive', 'Austin long weekend', 'Vancouver Island', 'Charleston food trip', 'Oaxaca for Day of the Dead'];
+  var N = GL.length, spin = $('.gal-spin');
+  spin.innerHTML = GL.map(function (l, i) { return '<i style="--g:' + G[(i * 5) % G.length] + '"><b>' + l + '</b></i>'; }).join('');
+  var cards = $$('i', spin).map(function (el, i) { return { el: el, s: i }; }), RAD = 0;
+  function placeCard(c) {
+    var d = c.s, a = d * 2.2 + 0.4, z = 380 - d * 230, x = Math.cos(a) * RAD, y = Math.sin(a) * RAD * 0.62;
+    var op = d < 1 ? 0 : d === 1 ? 0.35 : d > N - 3 ? 0 : Math.min(0.9, (N - 2 - d) / 5);
+    c.el.style.transform = 'translate3d(' + x.toFixed(0) + 'px,' + y.toFixed(0) + 'px,' + z + 'px) rotate(' + ((d % 3) - 1) * 7 + 'deg)';
+    c.el.style.opacity = op;
+  }
+  function sizeGal() { RAD = innerWidth < 760 ? Math.max(170, innerWidth * 0.5) : Math.min(620, innerWidth * 0.36); cards.forEach(placeCard); }
+  function advance(steps) {
+    cards.forEach(function (c) {
+      var was = c.s; c.s = ((c.s - steps) % N + N) % N;
+      if (Math.abs(c.s - was) > N / 2) { c.el.style.transition = 'none'; placeCard(c); getComputedStyle(c.el).transform; c.el.style.transition = ''; }
+      else placeCard(c);
+    });
+  }
+  sizeGal(); addEventListener('resize', sizeGal);
+
+  /* ---------- the beats ---------- */
+  var stage = $('.stage'), pc = $('.pc'), sides = $$('.pc .side'), caps = $$('.cap'), beat = -1, flips = 0, tm = 0;
+  var pager = $('.pager'); pager.innerHTML = WORDS.map(function (w, k) { return '<button type="button" data-k="' + k + '" aria-label="' + w + '"><span>' + w + '</span></button>'; }).join('');
+  var dots = $$('button', pager);
+  function setBeat(k) {
+    if (k === beat) return;
+    if (beat >= 0) { flips += k > beat ? 1 : -1; advance(k - beat); }
+    beat = k;
+    sides[((flips % 2) + 2) % 2].innerHTML = FACES[k]();
+    pc.style.setProperty('--turn', flips * 180 + 'deg');
+    stage.setAttribute('data-beat', k);
+    ring.style.setProperty('--rot', (-22.5 - k * 45) + 'deg');
+    ringWords.forEach(function (t, i) { t.classList.toggle('now', i === k); });
+    caps.forEach(function (c, i) { c.classList.toggle('now', i === k); c.classList.toggle('past', i < k); });
+    dots.forEach(function (d, i) { if (i === k) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+    clearTimeout(tm); sky.setAttribute('data-mood', 'shore');
+    if (k === 4) tm = setTimeout(function () { sky.setAttribute('data-mood', 'snow'); }, still() ? 0 : 2400);
+  }
+  var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) setBeat(+e.target.style.getPropertyValue('--k')); }); }, { rootMargin: '-50% 0px -50% 0px' });
+  $$('.beats i').forEach(function (i) { io.observe(i); });
+  dots.forEach(function (d) { d.addEventListener('click', function () { window.scrollTo({ top: $('#story').offsetTop + (+d.getAttribute('data-k')) * innerHeight, behavior: still() ? 'auto' : 'smooth' }); }); });
+  setBeat(0);
+  window.CV = { setBeat: setBeat };
+})();
+</script>
+</body>
+</html>

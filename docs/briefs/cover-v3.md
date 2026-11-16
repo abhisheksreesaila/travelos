@@ -1,6 +1,6 @@
 # The cover, with a soul (v3)
 
-Status: exploring (founder, 2026-11-16: "show me two or three variations … creative, inventive … a little immersive … not too heavy or filmy")
+Status: direction chosen, B refined (docs/design/cover-v3/postcard.html), waiting on the founder's look before building. Earlier: exploring (founder, 2026-11-16: "show me two or three variations … creative, inventive … a little immersive … not too heavy or filmy")
 
 ## In the founder's words (condensed)
 - "I just want to see the soul of the site; the soul is not booking. Booking, yes, but it's convenience: a revolutionary interface for booking (the matrix)."
@@ -12,3 +12,9 @@ Status: exploring (founder, 2026-11-16: "show me two or three variations … cre
 
 ## My read of the soul
 Travel is light when you do it together, and everything you bring home helps the next person go: discover a shared trip → the matrix makes choosing effortless → your people plan it with you → you go → your trip comes back as a guide for the next family.
+
+## Chosen: B, one postcard (founder, 2026-11-16)
+- "I like the postcard … the most flexible … you can put anything on the postcard."
+- The card changes shape as the trip moves: a wish (the search) → the matrix → the square (book) → the calendar (plan) → the trip itself → the guide (share) → the Instagram post → someone else copies it, and round again.
+- 2D or 3D is fine; bold text keeps circulating as the gallery moves forward.
+- Prototype: docs/design/cover-v3/postcard.html (eight beats, a ring of words that turns one word per beat, other families' postcards drifting nearer each beat, light and dark, a still version with reduced motion or #still).
