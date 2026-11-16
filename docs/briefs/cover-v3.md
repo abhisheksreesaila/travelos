@@ -1,6 +1,6 @@
 # The cover, with a soul (v3)
 
-Status: direction chosen, B refined (docs/design/cover-v3/postcard.html), waiting on the founder's look before building. Earlier: exploring (founder, 2026-11-16: "show me two or three variations … creative, inventive … a little immersive … not too heavy or filmy")
+Status: approved (founder, 2026-11-16: "cover looks good, good fluid movement, I am good"), prototype docs/design/cover-v3/postcard.html as of 55483219 (crossfade, no turning)
 
 ## In the founder's words (condensed)
 - "I just want to see the soul of the site; the soul is not booking. Booking, yes, but it's convenience: a revolutionary interface for booking (the matrix)."
@@ -18,3 +18,8 @@ Travel is light when you do it together, and everything you bring home helps the
 - The card changes shape as the trip moves: a wish (the search) → the matrix → the square (book) → the calendar (plan) → the trip itself → the guide (share) → the Instagram post → someone else copies it, and round again.
 - 2D or 3D is fine; bold text keeps circulating as the gallery moves forward.
 - Prototype: docs/design/cover-v3/postcard.html (eight beats, a ring of words that turns one word per beat, other families' postcards drifting nearer each beat, light and dark, a still version with reduced motion or #still).
+
+## Approved for build (2026-11-16)
+- Build the prototype as it stands: eight beats, the ring of words, the drifting postcards, crossfade between faces (the turning was "a little dizzy").
+- The hero's wish card is a real search (D-761: visitors search without an account): typing on the card and "Show me every way" opens their own ask/matrix.
+- No new claims: the sample family, prices and counts stay labelled samples, as on today's cover.
