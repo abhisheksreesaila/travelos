@@ -153,6 +153,21 @@ def test_plan_has_no_partner_links_in_production_without_a_marker(client, nokeys
 
 # ---- /go ------------------------------------------------------------------------------------------------------------
 
+def test_a_signed_in_click_on_go_writes_one_partner_clicks_row_with_its_subid(client, nokeys):
+    from gitaway import familydb
+    from gitaway import session as ses
+    from tests.test_signin import person
+
+    sign_in(client, "ari")
+    assert client.get(f"/go/hif1?{HI}", follow_redirects=False).status_code == 302
+    with ses.family(person("ari")) as fam:
+        rows = familydb.rows(fam.db, "SELECT * FROM partner_clicks")
+    assert len(rows) == 1
+    row = rows[0]
+    assert (row["offer_id"], row["partner"], row["lane"], row["place"], row["state"]) == ("hif1", "aviasales", "flight", "hi", "clicked")
+    assert re.fullmatch(r"[0-9a-f]{6}_hi_270305_flight", row["sub_id"]), row["sub_id"]
+
+
 def test_go_flight_with_a_marker_goes_to_an_aviasales_search_with_marker_and_subid(client, nokeys, monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
     sign_in(client, "ari")

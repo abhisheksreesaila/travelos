@@ -18,11 +18,11 @@ MEASURE = """(sel) => { const el = document.querySelector(sel); const cs = getCo
   const texts = [...el.querySelectorAll('b, .tm')].map(t => rgb(getComputedStyle(t).color));
   return { bg: cs.backgroundColor, edge: cs.borderLeftColor, edgeW: parseFloat(cs.borderLeftWidth), min: Math.min(...texts.map(ratio)), n: texts.length }; }"""
 
-INK = "rgb(11, 11, 13)"
+TOKEN = {"flight": "flight", "stay": "stay", "car": "ride", "ride": "ride"}      # a locked block's kind -> its v2 token (v2plan.css `.k-*`)
 
 
 def tint(page, name):
-    h = page.evaluate(f"getComputedStyle(document.documentElement).getPropertyValue('--{name}-tint').trim()").lstrip("#")
+    h = page.evaluate(f"getComputedStyle(document.documentElement).getPropertyValue('--{name}-t').trim()").lstrip("#")
     return "rgb(%d, %d, %d)" % tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
@@ -50,6 +50,13 @@ def test_the_phone_today_cards_are_tinted_with_a_lock_and_readable_text(signed_i
     sel = "a.ev.lock"
     page.wait_for_selector(sel)
     got = page.evaluate(MEASURE, sel)
-    assert got["n"] >= 2 and got["bg"] != INK and got["bg"] != "rgba(0, 0, 0, 0)" and got["min"] >= 4.5, got
+    assert got["n"] >= 2 and got["min"] >= 4.5, got
+    blocks = page.evaluate("""() => [...document.querySelectorAll('a.ev.lock')].map(e => { const cs = getComputedStyle(e);
+      return [[...e.classList].find(c => c.startsWith('k-')).slice(2), cs.backgroundColor, parseFloat(cs.boxShadow.match(/([\\d.]+)px 0px 0px 0px/)[1])]; })""")
+    assert blocks
+    for kind, bg, edge_w in blocks:
+        assert kind in TOKEN, f"a locked {kind} block has no token in this test"
+        assert bg == tint(page, TOKEN[kind]), (kind, bg)      # the kind's soft tint, never the ink
+        assert edge_w >= 3, (kind, edge_w)                    # the kind's solid left edge (an inset box-shadow, 0.25rem = 4px)
     assert page.locator(f"{sel} svg.lk").first.count() == 1
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")

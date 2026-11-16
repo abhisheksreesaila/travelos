@@ -13,6 +13,7 @@ MEASURE = """() => [...document.querySelectorAll('.ga-brand-mark, .si-logo')].fi
 })"""
 LOOK = {"light": {"tile": "rgb(11, 11, 13)", "strokes": ["rgb(255, 255, 255)", "rgb(140, 140, 255)", "rgb(211, 140, 255)", "rgb(255, 154, 92)"], "word": "rgb(11, 11, 13)"},
         "dark": {"tile": "rgb(245, 245, 247)", "strokes": ["rgb(11, 11, 13)", "rgb(67, 56, 202)", "rgb(139, 47, 201)", "rgb(194, 65, 12)"], "word": "rgb(245, 245, 247)"}}
+COVER = {"light": "rgb(15, 17, 36)", "dark": "rgb(244, 245, 251)"}      # the cover's wordmark ink (F-266's postcard)
 
 
 def _marks(page):
@@ -58,9 +59,10 @@ def test_the_logo_is_one_mark_and_one_wordmark_on_every_page(browser, base_url, 
     assert first["word"][0].startswith("Geist") and first["word"][1] == "750" and first["word"][4] == "none" and first["word"][5] == want["word"], first["word"]
     for path, marks in found:
         for m in marks:
-            if path == "/":      # the cover draws the same mark larger (36px, a 10px radius) with the postcard's ink: the colours, the font and its weight are the same
-                assert m["tile"][0] == first["tile"][0] and m["strokes"] == first["strokes"], f"{path}: the cover's mark colours differ"
-                assert m["word"][:2] == first["word"][:2], "/: the cover's wordmark is the same Geist 750"
+            if path == "/":      # the cover: the same colours, font and weight, and its own size and ink (F-266, measured on the running cover at both widths)
+                assert m["tile"] == [want["tile"], "36px", "36px", "10px"], f"/: the cover's tile {m['tile']}"
+                assert m["fork"] == ["24px", "24px"] and m["strokes"] == want["strokes"], f"/: the cover's fork {m['fork']}"
+                assert m["word"] == ["Geist, system-ui, sans-serif", "750", "24px", "-0.72px", "none", COVER[mode]], f"/: the cover's wordmark {m['word']}"
             else:
                 assert m["tile"] == first["tile"], f"{path}: the tile differs"
                 assert m["fork"] == first["fork"] and m["strokes"] == first["strokes"], f"{path}: the fork differs"

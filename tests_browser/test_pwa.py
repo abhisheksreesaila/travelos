@@ -46,6 +46,11 @@ def controlled(page, base_url, path="/guides"):
     page.wait_for_function("navigator.serviceWorker.controller !== null")
 
 
+def saved(page, path="/trip/plan"):
+    """Wait until the worker has kept the page (it saves after answering): the cache holds it."""
+    page.wait_for_function("(p) => caches.match(p).then(r => !!r)", arg=path)
+
+
 def goes_offline_ok(page, url):
     try:
         page.goto(url)
@@ -64,7 +69,7 @@ def test_a_booked_trips_day_is_served_offline_and_an_unvisited_page_gets_the_off
     page.wait_for_selector(".cal-top")
     online_text = page.locator("#main").inner_text()
     assert "Los Angeles" in online_text or "LA" in online_text
-    page.wait_for_timeout(500)            # the worker saves the page after answering
+    saved(page)
     ctx.set_offline(True)
     page.goto(f"{base_url}/trip/plan")
     assert page.locator("#main").inner_text() == online_text
@@ -165,7 +170,7 @@ def test_the_installed_apps_start_page_opens_offline_on_the_trip_it_last_showed(
     page.goto(f"{base_url}/trip/plan")
     page.wait_for_selector(".cal-top")
     online = page.locator(".cal-title").inner_text()
-    page.wait_for_timeout(500)            # the worker saves the page after answering
+    saved(page)
     ctx.set_offline(True)
     text = goes_offline_ok(page, f"{base_url}/trip/plan")
     assert text is not None and "You're offline" not in text      # not the offline page
