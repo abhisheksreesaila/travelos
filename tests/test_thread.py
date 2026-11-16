@@ -445,3 +445,38 @@ def test_without_push_keys_and_no_test_sender_nothing_is_sent_or_queued(crew, mo
     say(client, "still works")
     ft.drain()
     assert "still works" in thread(client).text
+
+
+def test_text_is_escaped(client):
+    book(client)
+    ft.post_message(person("ari"), "<script>alert(1)</script>")
+    r = client.get("/trip/plan/thread?key=trip")
+    assert r.headers["content-type"].startswith("application/json")      # the drawer's thread is JSON, never markup the server wrote around someone's words...
+    assert r.json()["items"][0]["text"] == "<script>alert(1)</script>"
+    js = open(__import__("pathlib").Path(__file__).resolve().parent.parent / "assets" / "js" / "v2plan.js", encoding="utf-8").read()
+    assert "b.appendChild(document.createTextNode(i.text))" in js and "innerHTML = i.text" not in js      # ...and the script adds every word as a text node, so it is shown, not run
+
+
+def test_signed_out_gets_nothing(client):
+    assert client.get("/trip/plan/thread?key=trip", follow_redirects=False).status_code == 303      # through sign-in
+    assert client.post("/trip/family/message", data={"text": "hi"}, follow_redirects=False).status_code == 401
+    assert client.post("/trip/talk/message", data={"act": "a1", "text": "hi"}, follow_redirects=False).status_code == 401
+
+
+def test_a_message_names_its_trip_and_a_stale_tab_is_refused(client):
+    from gitaway import session as ses
+    book(client)
+    first = ses.trips(person("ari"))[0].id
+    book(client, f="f2")                                   # a second trip is opened; the old tab still shows the first
+    add(client, id="a1")
+    r = say(client, "into the old trip", trip=first)
+    assert r.status_code == 204                            # it went to the trip the tab was drawn for
+    assert [i for i in ft.items(person("ari")) if i["kind"] == "message"] == []      # not into the one open now
+    ari = person("ari")
+    second = ses.trips(ari)[0].id
+    assert ses.switch_trip(ari, first) and [i["text"] for i in ft.items(ari)] == ["into the old trip"]
+    ses.switch_trip(ari, second)
+    gone = say(client, "nowhere", trip="no-such-trip")
+    assert gone.status_code == 409 and "Reload" in gone.text and "Traceback" not in gone.text
+    plan = client.post("/trip/talk/message", data={"act": "a1", "text": "nowhere", "trip": "no-such-trip"}, headers={"X-Fragment": "1"})
+    assert plan.status_code in (400, 409) and "Traceback" not in plan.text and plan.text      # a plan of a trip the family does not have: refused in a sentence, nothing written

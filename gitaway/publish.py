@@ -1,16 +1,7 @@
-"""Publish a family's trip as a creator page (F-181): photos, a note per day, tips, under the person's own name.
-
-The family keeps a draft per trip (`publications`, gitaway.familydb_publish): which photos, what to say, the cover, the stickers, the title and the
-name shown. Publishing builds a public **snapshot** (gitaway.community, kind "scrapbook") and re-encoded copies of the picked photos
-(`<data folder>/public/<slug>/`); unpublishing deletes both. Publishing again replaces them.
-
-What reaches the public, and only this (the snapshot is built from these fields and has no others):
-  title, creator name and handle, place (the destination's name), stickers, a day-by-day list of the trip's stops (flights as "Flight to LAX", a stay as
-  "a hotel in <area>", a car as an airport or an area; plans by their titles and clock times, never their notes), the creator's day notes and tips,
-  the picked photos (public copies) with the plan title as caption when there is one.
-Never: confirmation numbers, calendar dates, flight numbers, hotel names or street addresses, prices, who is in the family, chat, photo captions,
-the camera's EXIF or position (the public copy is rebuilt from the pixels), the photo's author. The stops come from gitaway.share, which already follows
-F-046 (no dates, no hotel names) and is tested for it; this module adds the creator's own words and photos, which the preview shows exactly.
+"""What is left of publishing a family's trip as a creator page (F-181; the editor retired in F-254): the folder of public photo copies (`<data folder>/public/<slug>/`) and how they are served
+(`public_file`, at /pub/<slug>/<file>), taking a trip's public page down with the trip (`take_down_trip`), whether the open trip is live (`live`), the place keys the creator import and the family
+use (`place_key`, `names_place`, `_check_text`), and `sample_dates`. The rows the editor wrote (`publications`, gitaway.familydb_publish) and the pages and copies it made are still read and still
+deleted; nothing writes new ones. A creator's own guide is gitaway/creatordraft.py, which uses this module's folder and sizes.
 """
 
 import json
@@ -115,28 +106,6 @@ def live(session) -> dict | None:
 def _remove_files(slug) -> None:
     if _SLUG.match(slug or ""):
         shutil.rmtree(root() / slug, ignore_errors=True)
-
-
-def unpublish(session, role="") -> bool:
-    """Take the open trip's public page and its photo copies down. The person who published may; so may an admin of the family. False when nothing is live."""
-    me = ses.current_traveler(session)
-    d = get(session)
-    row = community.get(d["slug"], hidden=True) if me and d and d["slug"] else None      # hidden=True: a page the captain took down can still be deleted by its owner (F-182)
-    if not row or row["kind"] != "scrapbook":
-        return False
-    if row["owner_user"] != me.id and not (role == "admin" and row["owner_family"] == str(session.get("tenant_id") or "")):
-        raise PermissionError("Only the person who published this trip, or a family admin, can take it down.")
-    return _take_down(session, d["slug"], row["owner_user"])
-
-
-def _take_down(session, slug, owner) -> bool:
-    community.unpublish({"user_id": owner}, slug)
-    _remove_files(slug)
-    with ses.family(session) as fam:
-        if fam:
-            with familydb.transaction(fam.db):
-                familydb.run(fam.db, "UPDATE publications SET published_by = '', published_at = '', copies = '{}' WHERE slug = :s", s=slug)
-    return True
 
 
 def take_down_trip(session, trip_id) -> None:

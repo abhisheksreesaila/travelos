@@ -363,3 +363,48 @@ def test_removing_names_the_trip_it_was_drawn_for_like_saving(trip, ari, key):
     assert "err=" not in trip.post("/trip/help/pass/remove", data={"pass_id": p["id"], "trip": tid_, "next": BACK}, follow_redirects=False).headers["location"]
     assert "err=" not in trip.post("/trip/help/flight/remove", data={"flight_id": fid, "trip": tid_, "next": BACK}, follow_redirects=False).headers["location"]
     assert passes.listing(ari) == {} and passes.flights(ari) == []
+
+
+def test_an_editor_sees_the_forms_and_can_add(crew, ari, key):
+    owner, editor, viewer = crew
+    html = booking_page(editor, ari).text.split('id="bk-passes"')[1]
+    assert "Add a pass" in html and 'enctype="multipart/form-data"' in html
+    assert "Add a flight" in editor.get("/trip/booking?sos=1").text      # F-254: a flight is added from Who to call
+    assert add_pass(editor, key, "Editor's pick").status_code == 303 and passes.listing(ari)[key][0]["traveller"] == "Editor's pick"
+
+
+def test_the_booking_page_shows_a_card_per_traveller_with_a_thumbnail_that_opens_the_gate(trip, ari, key):
+    add_pass(trip, key, "Abhi", file=("a.pdf", pdf(), "application/pdf"))
+    add_pass(trip, key, "Kay", seat="21B", file=("b.png", image("png", size=(200, 300)), "image/png"))
+    add_pass(trip, key, "Bhoomija", seat="21C")
+    html = booking_page(trip, ari).text
+    sec = html.split('id="bk-passes"')[1]
+    assert "Passes & documents" in text(html)
+    cards = re.findall(r'<div[^>]*data-pass="([0-9a-f]{32})"', sec)
+    assert len(cards) == 3
+    assert "United 1234" in text(html) and "Sat Oct 17" in text(html) and "2:25 PM" in text(html) and "Terminal 7" in text(html)
+    assert 'src="/trip/passes/%s/thumb"' % cards[0] in sec and "No boarding pass attached yet" in text(sec)
+    link = re.search(r'<a[^>]*data-open-gate="%s"[^>]*>' % cards[0], sec).group(0)
+    assert f"/trip/passes/gate?flight={key.replace(':', '%3A')}#gp-{cards[0]}" in unescape(link) or f"flight={key}" in unescape(link)
+    assert "Open in airline app" not in html
+
+
+def test_without_a_flight_the_booking_page_is_gone_and_who_to_call_offers_to_add_one(trip, ari, key):
+    block = f"fl-{passes.flights(ari)[0]['id'][:12]}"
+    trip.post("/trip/help/flight/remove", data={"flight_id": passes.flights(ari)[0]["id"], "next": BACK})
+    assert passes.flights(ari) == []
+    r = trip.get(f"/trip/booking?block={block}", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/trip/plan"      # the flight's own page is gone with it
+    sos = trip.get("/trip/booking?sos=1").text
+    assert 'id="sos-add-flight"' in sos and "Add a flight" in sos      # the one place a flight is added from now on
+
+
+def test_a_gate_view_of_a_pdf_that_could_not_be_drawn_opens_the_pdf(trip, ari, key, monkeypatch):
+    monkeypatch.setattr(passes, "render_pdf", lambda data: None)
+    add_pass(trip, key, "Abhi", file=("a.pdf", pdf(), "application/pdf"))
+    [p] = passes.listing(ari)[key]
+    assert p["display"] == "" and trip.get(f"/trip/passes/{p['id']}/display").status_code == 404
+    html = trip.get(f"/trip/passes/gate?flight={key}").text
+    assert f'href="/trip/passes/{p["id"]}/file"' in html and "Open the PDF" in html
+    page = booking_page(trip, ari).text
+    assert "pz-pdf" in page and f'/trip/passes/{p["id"]}/thumb' not in page

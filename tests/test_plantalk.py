@@ -1,4 +1,4 @@
-"""F-091: talk on the block. Text, photos and voice notes on a plan or on one part of a park day: the model (what is accepted, where it is kept, the counts), the
+"""F-091: talk on the block. Text on a plan (photos and voice notes retired in F-254) or on one part of a park day: the model (what is accepted, where it is kept, the counts), the
 thread and the push, and the routes (roles, another family's file is not served, Range for iPhone audio). The park day is the captain's Universal + California
 Adventure messages through the canned model answer (no network); the plain plan is the calendar's "Venice Canals stroll"."""
 
@@ -7,14 +7,12 @@ from html import unescape
 
 import pytest
 
-from gitaway import canvas, familydb, familythread as ft, plantalk, session as ses, tripcal as cal, voicenotes
-from tests.photo_files import image
+from gitaway import canvas, familydb, familythread as ft, plantalk, session as ses, tripcal as cal
 from tests.test_canvas import announced, azure  # noqa: F401 - fixtures
 from tests.canvas_samples import added
 from tests.test_members import addr, browser, invite
 from tests.test_signin import person, sign_in, tid
 from tests.test_thread import FakePush, subscribe
-from tests.voice_files import voice
 
 
 @pytest.fixture
@@ -42,37 +40,6 @@ def ids(ari):
 
 
 # ---- the voice files -------------------------------------------------------------------------------------------------------
-
-def test_the_kind_comes_from_the_first_bytes_not_the_name_or_claimed_type():
-    assert [voicenotes.kind_of(voice(k)) for k in ("webm", "mp4", "ogg")] == ["webm", "mp4", "ogg"]
-    for bad in (b"RIFF....WAVEfmt ", b"ID3\x03\x00", b"%PDF-1.7", b"<svg/>", b"MZ\x90\x00", image("jpeg"), image("heic"), b"\x00\x00"):
-        assert voicenotes.kind_of(bad) is None
-    for brand in (b"avif", b"avis", b"qt  "):           # pictures and video in the same box are not voice notes
-        assert voicenotes.kind_of(b"\x00\x00\x00\x1cftyp" + brand + b"\x00" * 20) is None
-
-
-def test_empty_big_wrong_type_and_missing_length_are_refused_with_plain_messages():
-    with pytest.raises(voicenotes.VoiceError, match="empty"):
-        voicenotes.check(b"", 5)
-    with pytest.raises(voicenotes.VoiceError, match="too large") as big:
-        voicenotes.check(voice("webm", voicenotes.MAX_BYTES + 1), 5)
-    assert big.value.status == 413
-    with pytest.raises(voicenotes.VoiceError, match="not a voice note") as wrong:
-        voicenotes.check(image("jpeg"), 5)
-    assert wrong.value.status == 415
-    for secs in ("", None, "abc", 0, -3, "nan"):
-        with pytest.raises(voicenotes.VoiceError, match="no length"):
-            voicenotes.check(voice(), secs)
-    with pytest.raises(voicenotes.VoiceError, match="up to 3 minutes"):
-        voicenotes.check(voice(), 200)
-
-
-def test_three_minutes_is_allowed_and_the_length_is_whole_seconds():
-    assert voicenotes.check(voice(), 180)[1] == 180
-    assert voicenotes.check(voice(), 180.4)[1] == 180
-    assert voicenotes.check(voice("mp4"), 0.4)[1] == 1
-    assert voicenotes.check(voice("ogg"), "42.6")[1] == 43
-
 
 # ---- the model: where things belong ----------------------------------------------------------------------------------------
 

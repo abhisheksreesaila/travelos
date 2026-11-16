@@ -1,22 +1,11 @@
-"""Photos on the plan (F-071): the family adds photos in the app, and each lands on the plan it was taken during.
+"""What is left of the family's photos (F-071; adding, listing and serving them retired in F-254 with the Family tab, the Map tab and the plan chat's camera): the checks and the re-encoding the creator import
+uses for the post's pictures (`kind_of`, `check`, `_open`, `_copies`, `_jpeg`, `_upright`, `DISPLAY_EDGE`, `THUMB_EDGE`), the passes' file check, the free-space guard (`room`), and `purge_trip`, which deletes a
+trip's picture files when the trip is deleted (photos added before F-254 stay in the family database and on the volume until then).
 
-* Who. Every member can add photos, viewers too, and sees them all: a grandparent who may only look at the plans can still share what they saw
-  (like a message in the thread, and for the same reason: it changes no plan). Only the person who added a photo, or a family admin, removes it.
-  POST /trip/photos and /trip/photos/remove are on gitaway.access.OPEN_POSTS on purpose; `remove` checks author-or-admin itself.
-* What is accepted. JPEG, PNG, WebP and HEIC (iPhone), recognised by their first bytes and not by the file name or the type the browser says,
-  at most MAX_BYTES each, at most MAX_PIXELS pixels (a decompression-bomb guard), and at most MAX_FILES in one upload.
-* What is stored. Under `<data folder>/photos/<family>/<trip>/<random id>.<ext>`: the original as it came, a display copy (longest side
-  DISPLAY_EDGE, JPEG) and a thumbnail (THUMB_EDGE). The two copies are re-encoded from the pixels, so they carry no EXIF and no GPS; the
-  taken-at time and the coordinates are kept in the family database (`photos` table) and nowhere else. The original is kept (it holds
-  the camera's EXIF) but is never served. Paths are built from ids made here, never from the file name a person sent.
-  HEIC is read with pillow-heif (conda-forge); a HEIC the decoder cannot open is refused with a message, not stored.
-* When and where. The time is the EXIF DateTimeOriginal (read as the trip's clock when the photo says no offset), else the time it was added.
-  A photo is matched to the plan on that day whose time window contains the minute; if none does and the photo has a position and
-  gitaway.geo (F-068) already knows where the day's plans are, to the nearest of them within NEAR_KM; otherwise it belongs to the day only.
-* Who may see. `get`/`open_file` look the id up in the signed-in person's own family database, so another family's photo is "not found"
-  whatever id or path is tried. The route (gitaway/pages/photos.py) serves the files with `Cache-Control: private`.
-* The thread. An added photo posts a photo card (gitaway.familythread.post_photo) pointing at its thumbnail address; removing the photo
-  removes the card.
+* What is accepted. JPEG, PNG, WebP and HEIC (iPhone), recognised by their first bytes and not by the file name or the type the browser says, at most MAX_BYTES each and MAX_PIXELS pixels (a
+  decompression-bomb guard). HEIC is read with pillow-heif (conda-forge); a HEIC the decoder cannot open is refused with a message.
+* What is stored (by the creator import and the older photos): under `<data folder>/photos/<family>/<trip>/<random id>`, a display copy (longest side DISPLAY_EDGE, JPEG) and a thumbnail (THUMB_EDGE),
+  re-encoded from the pixels, so they carry no EXIF and no GPS. Paths are built from ids made here, never from a file name a person sent.
 """
 
 import io

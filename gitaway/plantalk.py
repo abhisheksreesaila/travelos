@@ -1,12 +1,10 @@
-"""Talk on the block (F-091): messages, photos and voice notes that belong to a plan, or to one part of a park day (Lunch).
+"""Talk on a plan (F-091; photos and voice notes retired in F-254): text messages that belong to a plan, or to one part of a park day (Lunch).
 
-* They are family-thread items (gitaway/familythread.py, the `thread` table), so the Family tab shows them too, labelled with their plan. The
-  payload says where they belong: {"act": "<plan id>", "part": "<part id, or empty for the plan as a whole>"}. A voice note is kind "voice"
-  with {"file", "mime", "secs"} (the audio is under gitaway/voicenotes.py's folder); a photo is kind "photo" with {"url", "photo"} (the photo
-  is also in the family's photos, pinned to the plan: gitaway/photos.py).
+* They are family-thread items (gitaway/familythread.py, the `thread` table), labelled with their plan. The payload says where they belong: {"act": "<plan id>", "part": "<part id, or empty for the plan
+  as a whole>"}. Photo and voice items written before F-254 are still read and shown by the thread; nothing writes new ones.
 * A plan's chat holds what was said on the plan as a whole, and each part's chat only what was said on that part.
-* Everyone in the family may post, viewers too (the routes are on gitaway.access.OPEN_POSTS): it changes no plan. The push is the thread's
-  (names and plan titles only; the same quiet and two-minute rules).
+* Everyone in the family may post, viewers too (POST /trip/talk/message, gitaway/pages/chatwrites.py, is on gitaway.access.OPEN_POSTS): it changes no plan. The push is the thread's (names and plan
+  titles only; the same quiet and two-minute rules).
 """
 
 import json

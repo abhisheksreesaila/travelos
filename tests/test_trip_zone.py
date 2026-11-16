@@ -144,3 +144,28 @@ def trip_text(client, moment, at_utc):
     at_utc(moment)
     return words(client.get("/trip?tab=today").text)
 
+
+
+def open_day(client):
+    """The day the planning page opens on (its `pl-data` JSON `open`): today in the trip's own zone during the trip."""
+    html = client.get("/trip/plan").text
+    return json.loads(unescape(re.search(r'<script[^>]*id="pl-data"[^>]*>(.*?)</script>', html, re.S).group(1)))["open"]
+
+
+def test_a_paris_trip_shows_parisian_today_on_the_plan(client, at_utc):
+    imported(client, PARIS)
+    at_utc(INSTANT)
+    assert open_day(client) == 4      # 8:00 on Tuesday Oct 20 in Paris: day 5 of 5
+
+
+def test_the_same_instant_is_a_day_earlier_for_an_la_trip_and_the_la_plan_is_unchanged(client, at_utc):
+    imported(client)
+    at_utc(INSTANT)
+    assert open_day(client) == 3      # 11 PM on Oct 19 in Los Angeles: day 4 of 5
+    at_utc(datetime(2026, 10, 20, 21, 0, tzinfo=timezone.utc))      # 2:00 PM in Los Angeles
+    assert open_day(client) == 4
+
+
+def test_the_day_follows_the_zone(at_utc):
+    at_utc(INSTANT)
+    assert catalog.today_in("Europe/Paris") == date(2026, 10, 20) and catalog.today_in() == date(2026, 10, 19) == catalog.today()

@@ -377,3 +377,24 @@ def test_it_survives_a_restart_and_is_stored_only_in_the_family_database(client)
     with familydb.using(person()) as db:
         row = familydb.row(db, "SELECT t.source, i.doc FROM trips t JOIN trip_imports i ON i.trip_id = t.id")
     assert row["source"] == "imported" and "ABCDEF" in row["doc"]
+
+
+def test_rides_run_from_the_real_arrival_airport_to_the_hotel_address(client, clock):
+    """The ride model (F-254: the Uber screens retired with the trip page; the offers on the calendar, the leg plan and a scheduled ride are the model's)."""
+    imported(client, no_car())
+    p = person()
+    b = ses.booking(p)
+    t = cal.trip("", b)
+    offers = {o.id: o for o in cal.ride_offers(p, b, t)}
+    assert set(offers) == {"ro-arrive", "ro-depart"}
+    assert offers["ro-arrive"].day == 0 and offers["ro-arrive"].start == 9 * 60 + 32 + 30  # landing + the curb time
+    assert offers["ro-arrive"].title == "Schedule an Uber · LAX → The Example Hotel Santa Monica"
+    leg = rides.leg_plan("arrive", cal.flight_of(b), cal.stay_for(b, "arrive"), cal.trip_of(b))
+    est = next(e for e in rides.provider().estimates(leg) if e.key == "x")
+    assert "UberX" in est.name if hasattr(est, "name") else True
+    ride = rides.schedule_ride(p, rides.ScheduleRequest(leg, rides.validate_guest(GUEST["first"], GUEST["last"], GUEST["phone"]), est.product_id, getattr(est, "fare_id", ""), rides.next_ride_id(p), rides.booking_key(b)))
+    assert rides.list_rides(p)[0].id == ride.id
+    assert (ride.leg, ride.airport, ride.pickup_time.strftime("%Y-%m-%d %H:%M"), ride.party) == ("arrive", "LAX", "2026-10-16 10:02", 4)
+    assert ride.plan.dropoff.address == "123 Ocean Ave, Santa Monica, CA 90401" and ride.plan.pickup.area == "LAX"
+    left = {o.id for o in cal.ride_offers(p, ses.booking(p), cal.trip("", ses.booking(p)))}
+    assert "ro-arrive" not in left and "ro-depart" in left      # the arrival is scheduled; the departure is still offered
