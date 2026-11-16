@@ -54,6 +54,7 @@ def test_on_the_laptop_the_credit_line_is_one_link_and_still_no_sideways_scroll(
     credit = page.locator(LINK)
     assert credit.inner_text().strip() == CREDIT
     assert credit.get_attribute("href") == weather.CREDIT_URL
+    assert credit.bounding_box()["height"] >= 48      # v2plan.css gives it min-height 3rem at every width
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
 
 
