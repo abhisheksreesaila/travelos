@@ -125,8 +125,8 @@ def sheet(v, found, ua, back, gone=""):
         return _demo_flight(v, item, can_edit)
     pills, title, body = (_hotel(v, kind, item, index, ua, can_edit, back) if kind in ("checkin", "checkout") else _car(v, kind, item, ua, can_edit, back) if kind in ("pickup", "dropoff")
                           else _ticket(v, item, ua) if kind == "ticket" else _flight(v, index, item, can_edit, back))
-    from gitaway.pages import bookedwhere
-    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body]
+    from gitaway.pages import bookedwhere, staycancel
+    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body, *([staycancel.panel(v, item, back)] if kind in ("checkin", "checkout") else [])]
 
 
 def sos(v, ua, back=""):

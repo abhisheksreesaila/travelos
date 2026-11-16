@@ -369,6 +369,16 @@ def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_i
 
 # ---- the payment form's path (F-274, D-842) ----------------------------------------------------------------------------------
 
+def mark_cancelled(session, trip_id: str, booking_id: str) -> None:
+    """The cancelled stay stays on the family's trip but says so ("Cancelled on LiteAPI"), so the plan does not count a stay that is gone. Cancelling again changes nothing."""
+    from gitaway import importer, tripimport as ti
+    plan = importer.plan_of(session, trip_id) if trip_id else None
+    if plan is None or not any(h.confirmation == booking_id and not h.booked_on.startswith("Cancelled") for h in plan.hotels):
+        return
+    hotels = tuple(replace(h, booked_on="Cancelled on " + (h.booked_on.replace("Booked on ", "") or "LiteAPI")) if h.confirmation == booking_id else h for h in plan.hotels)
+    importer.save(session, replace(plan, hotels=hotels), replace=trip_id)
+
+
 def purge(db) -> None:
     """Drop what nobody paid for after PURGE_UNPAID days and blank every lead guest's name and email after PURGE_GUEST days (the booking id and amounts stay: they are the record)."""
     from datetime import datetime, timedelta, timezone
