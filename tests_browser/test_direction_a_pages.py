@@ -9,9 +9,9 @@ from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.look import audit
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
-SIGNED_OUT = (("landing", "/"), ("sign-in", "/signin"), ("creators", "/creators"), ("guides", "/guides"), ("make a guide", "/guides/make"), ("plan for me", "/plan-for-me"))
-SIGNED_IN = (("ask", "/plan/ask"), ("matrix", "/plan/matrix"), ("plan", f"/plan?to=la&{TRIP}"), ("trip canvas", "/trip/canvas?day=1"), ("family chat", "/trip/family"), ("family", "/family"),
-             ("trip ask", "/trip/ask"), ("book", "/trip/book"))
+# Direction A's pages that are left (F-254, F-262, F-266): the v2 pages are audited by their own tests (cover, guides, matrix, tripview, planv2, v2 top bar), and the old canvas, family chat, Ask and /plan are retired.
+SIGNED_OUT = (("sign-in", "/signin"), ("creators", "/creators"), ("make a guide", "/guides/make"), ("plan for me", "/plan-for-me"))
+SIGNED_IN = (("family", "/family"), ("import", "/trips/import"))
 TABLET = {"width": 900, "height": 1000}      # between the phone and the laptop layouts (the tablet keeps the old header; 12px root)
 OWNED_ELSEWHERE = {}      # (the signed-out landing was F-206's to finish; since the merge the cover meets the whole audit)
 
@@ -23,19 +23,10 @@ def context(browser, viewport, mode):
     return ctx
 
 
-def published(ctx, base_url):
-    """Sign Ari in with the imported LA trip and a plan, publish it, and return the creator trip's address."""
+def sign_in(ctx, base_url):
+    """Sign Ari in with the imported LA trip (the publish editor and its #pb-view link retired in F-254)."""
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "save"}, max_redirects=0)
     ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE}, max_redirects=0)
-    ctx.request.post(f"{base_url}/trip/plans", form={"id": "a1", "day": "1", "start": "10:00", "title": "Rope drop at the park", "kind": "fun"}, max_redirects=0)
-    ctx.request.post(f"{base_url}/trip/publish/save", form={"title": "Our Disneyland week", "name": "Ari Rivera", "tip": "Bring a poncho for the water rides."}, max_redirects=0)
-    ctx.request.post(f"{base_url}/trip/publish", form={"names_ok": "1"}, max_redirects=0)
-    page = ctx.new_page()
-    page.goto(f"{base_url}/trip/publish?live=1")
-    href = page.get_attribute("#pb-view", "href")
-    page.close()
-    assert href and href.startswith("/trips/"), "the trip was published"
-    return href
 
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
@@ -43,9 +34,9 @@ def published(ctx, base_url):
 def test_every_main_page_reads_fits_and_is_easy_to_tap(browser, base_url, viewport, mode):
     signed_in, signed_out = context(browser, viewport, mode), context(browser, viewport, mode)
     try:
-        trip = published(signed_in, base_url)
+        sign_in(signed_in, base_url)
         problems = []
-        for ctx, (name, path) in [(signed_out, p) for p in (*SIGNED_OUT, ("creator trip", trip))] + [(signed_in, p) for p in SIGNED_IN]:
+        for ctx, (name, path) in [(signed_out, p) for p in SIGNED_OUT] + [(signed_in, p) for p in SIGNED_IN]:
             page = ctx.new_page()
             page.goto(base_url + path, wait_until="networkidle")
             seen = audit(page)
@@ -68,8 +59,8 @@ def test_every_main_page_reads_fits_and_is_easy_to_tap(browser, base_url, viewpo
 def test_the_early_preview_label_opens_its_line_and_esc_closes_it(browser, base_url, viewport):
     signed_in, signed_out = context(browser, viewport, "light"), context(browser, viewport, "light")
     try:
-        published(signed_in, base_url)
-        for ctx, path in ((signed_out, "/creators"), (signed_out, "/signin?next=%2Fstart"), (signed_out, f"/plan?to=la&{TRIP}"), (signed_in, "/trip/canvas?day=1"), (signed_in, "/trip/family")):
+        sign_in(signed_in, base_url)
+        for ctx, path in ((signed_out, "/creators"), (signed_out, "/signin?next=%2Fstart"), (signed_out, "/plan-for-me"), (signed_in, "/family"), (signed_in, "/trips/import")):
             page = ctx.new_page()
             page.goto(base_url + path, wait_until="networkidle")
             label = page.locator(".ga-preview-sum:visible")
