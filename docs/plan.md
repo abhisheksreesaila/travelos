@@ -1703,7 +1703,7 @@ Brief: docs/briefs/live-booking.md (approved). Risk: high (money, personal data)
 5. "Have a code?": a LiteAPI voucher code repriced through prebook; the discount shows only in the checkout;
 6. a booked refundable stay can be cancelled from the booking page through LiteAPI's cancel, and says what comes back.
 Anyone signed in may book (founder's choice); booking budgets and per-person limits (D-510..D-513) stay. `ACC_CREDIT_CARD` is never sent with a live key (a test proves it); the old D-480 refusal becomes "live: only TRANSACTION_ID". The sandbox flow runs the same SDK path so it can be tested end to end. Checks: unit tests with recorded sandbox answers (prebook with SDK, book with transaction id, voucher, cancel), a browser test of the sheet with a stubbed payment script, one real sandbox booking and cancel recorded as fixtures, docs/ship/live-prices.md extended for booking.
-## F-275 The matrix v3 design, built [todo]
+## F-275 The matrix v3 design, built [done]
 Design: docs/design/matrix-v3 (founder: "that's the order": after real hotel booking). The obvious sentence card with suggestion chips, the wide grid with clean nights bands, the opened square leading with the hotel (real gallery from `/data/hotel`, reviews and sentiment from `/data/reviews`, amenities, rooms with photos), the flights accordion, the minimized side chips; phone and laptop, light and dark.
 ## F-276 Flights booked here too [todo]
 Brief: docs/briefs/live-booking.md item 2. LiteAPI flight prebook and booking with the same payment form, after F-274 and F-275.

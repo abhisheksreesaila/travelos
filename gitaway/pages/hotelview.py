@@ -10,7 +10,10 @@ Everything from LiteAPI is a guest's or a hotel's own text: it is escaped (FastH
 reading of the reviews and says so. Nothing here is invented: no reviews off a real hotel's answer, none at all on the showcase.
 """
 
+import hashlib
+import hmac
 import json
+import secrets
 
 from fasthtml.common import Button, Details, Div, H4, Img, Li, P, Small, Span, Summary, Ul, to_xml
 from starlette.responses import JSONResponse
@@ -21,6 +24,8 @@ from gitaway.icons import icon
 PATH = "/plan/matrix/hotel"
 OWN = "The hotel’s own photos"
 AI_NOTE = "Summary written by AI from the guest reviews"
+AI_NOTE_LOW = "summary written by AI from the guest reviews"
+_KEY = secrets.token_bytes(32)      # signs the hotel ids this process drew into squares: the route answers only those, so a made-up id spends nobody's allowance
 MOSAIC = 5                # photos in the mosaic; the rest wait behind "See all"
 PHOTOS_MAX = 40           # photos kept in the fragment (a hotel can have a hundred)
 FACILITIES_SHOWN = 8
@@ -30,6 +35,17 @@ SAMPLE_SLIDES = (("lobby-front-desk.jpg", "Hotel lobby"), ("room-bed-lamp.jpg", 
 TYPES = {"couple": "Couple", "extended_group": "Group", "solo_traveller": "Solo", "family_with_children": "Family", "friends": "Friends", "business": "Business"}
 COUNTRIES = {"us": "United States", "au": "Australia", "ca": "Canada", "gb": "United Kingdom", "de": "Germany", "fr": "France", "br": "Brazil", "mx": "Mexico", "nl": "Netherlands", "es": "Spain",
              "it": "Italy", "ie": "Ireland", "nz": "New Zealand", "jp": "Japan", "in": "India", "se": "Sweden", "ch": "Switzerland", "ae": "United Arab Emirates", "sg": "Singapore", "cn": "China"}
+
+
+def token(hotel_id: str) -> str:
+    """The hotel's id signed for the slot that asks for its page ("lp1b8e6.3fa9..."): only this process makes it, so only a hotel a square really showed can be asked for."""
+    return f"{hotel_id}.{hmac.new(_KEY, hotel_id.encode(), hashlib.sha256).hexdigest()[:24]}"
+
+
+def unsign(tok: str) -> str:
+    """The hotel id inside a token, or "" when it is not one this process signed."""
+    hotel_id, _, sig = str(tok or "").partition(".")
+    return hotel_id if hotel_id and hmac.compare_digest(token(hotel_id), f"{hotel_id}.{sig}") else ""
 
 
 def rating_word(score) -> str:
@@ -86,33 +102,42 @@ def _rating(h, rv):
     count = rv.total if rv and rv.total else h.review_count
     pros = Ul(*[Li(icon("check", 15, 2.4), t) for t in rv.pros[:4]], cls="dr-pros") if rv and rv.pros else ""
     cons = Ul(*[Li(icon("flag", 15, 2.2), t) for t in rv.cons[:4]], cls="dr-cons") if rv and rv.cons else ""
-    return Div(Div(Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews" + (f" · {AI_NOTE.lower()}" if pros or cons else "")), cls="dr-rt"), cls="dr-rate"),
+    return Div(Div(Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews" + (f" · {AI_NOTE_LOW}" if pros or cons else "")), cls="dr-rt"), cls="dr-rate"),
                Div(pros, cons, cls="dr-pc") if pros or cons else "", cls="dr-rating")
 
 
 def _categories(rv):
     if not rv or not rv.categories:
         return ""
-    return Div(H4(f"What guests say · {AI_NOTE.lower()}", cls="dr-sub"),
+    return Div(H4(f"What guests say · {AI_NOTE_LOW}", cls="dr-sub"),
                Div(*[Div(Div(Span(c.name), Span(score_text(c.rating), cls="num"), cls="dr-ch"),
                          Div(Span(style=f"width:{max(0, min(100, round((c.rating or 0) * 10)))}%"), cls="dr-bar", role="img", aria_label=f"{c.name} {score_text(c.rating)} out of 10"),
                          P(c.description) if c.description else "", cls="dr-cat") for c in rv.categories], cls="dr-cats"), cls="dr-sent")
+
+
+def _wordy(r) -> bool:
+    return bool(r.headline or r.pros or r.cons)
 
 
 def _review(r):
     meta = " · ".join(x for x in (TYPES.get(r.type, r.type.replace("_", " ").capitalize()) if r.type else "", COUNTRIES.get(r.country.lower(), r.country.upper()) if r.country else "", r.date) if x)
     return Div(Div(Span((r.name or "G")[:1].upper(), cls="dr-av", aria_hidden="true"), Div(Span(r.name or "A guest", cls="dr-rn"), Small(meta)), Span(f"{score_text(r.score)}/10" if r.score is not None else "", cls="dr-rs num"), cls="dr-rh"),
                H4(r.headline, cls="dr-rhead") if r.headline else "",
-               P(icon("check", 15, 2.4), r.pros, cls="dr-rp") if r.pros else "", P(icon("flag", 15, 2.2), r.cons, cls="dr-rc") if r.cons else "",
-               P("Left a score, no words.", cls="dr-rnone") if not (r.headline or r.pros or r.cons) else "", cls="dr-rev")
+               P(icon("check", 15, 2.4), r.pros, cls="dr-rp") if r.pros else "", P(icon("flag", 15, 2.2), r.cons, cls="dr-rc") if r.cons else "", cls="dr-rev")
 
 
 def _reviews(rv):
+    """Only reviews with words are cards; the scores that came without any are counted once, never a card of their own."""
     if not rv or not rv.items:
         return ""
-    shown, rest = rv.items[:REVIEWS_SHOWN], rv.items[REVIEWS_SHOWN:]
+    wordy = [r for r in rv.items if _wordy(r)]
+    bare = len(rv.items) - len(wordy)
+    shown, rest = wordy[:REVIEWS_SHOWN], wordy[REVIEWS_SHOWN:]
+    note = P(f"Plus {bare} score{'' if bare == 1 else 's'} without words.", cls="dr-fine") if bare else ""
+    if not wordy:
+        return Div(H4("Reviews", cls="dr-sub"), P(f"{bare} score{'' if bare == 1 else 's'}, no words.", cls="dr-fine"), cls="dr-reviews")
     return Div(H4(f"Newest of {rv.total:,} reviews" if rv.total else "Newest reviews", cls="dr-sub"), Div(*[_review(r) for r in shown], cls="dr-revs"),
-               Details(Summary("Read more reviews"), Div(*[_review(r) for r in rest], cls="dr-revs"), cls="dr-more") if rest else "", cls="dr-reviews")
+               Details(Summary("Read more reviews"), Div(*[_review(r) for r in rest], cls="dr-revs"), cls="dr-more") if rest else "", note, cls="dr-reviews")
 
 
 def _rooms(h):
@@ -151,7 +176,8 @@ def register(app):
     @app.get(PATH)
     def hotel_fragment(request, session, id: str = ""):
         from gitaway.pages import tripmatrix as mx
-        el = fragment(id, mx._who(request, session))
+        hotel_id = unsign(id)
+        el = fragment(hotel_id, mx._who(request, session)) if hotel_id else None      # an id we did not draw is nothing: no call, no budget spent
         if el is None:
             return JSONResponse({"html": ""}, headers={"Cache-Control": "no-store"})
         return JSONResponse({"html": to_xml(el)}, headers={"Cache-Control": "no-store"})

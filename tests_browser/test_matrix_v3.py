@@ -1,6 +1,7 @@
 """F-275 in a real browser (docs/design/matrix-v3, D-860..): the sentence's suggestion chips, the side widgets folded into chips that open into cards, and the opened square's rich hotel
 (the recorded Hilton answer, tests/fixtures/liteapi_hotel): the photo mosaic and its lightbox, the reviews as text, the room photos. Shots: F275_SHOTS=1 for docs/report/f275-*.png."""
 import os
+import re
 from dataclasses import replace
 from pathlib import Path
 
@@ -122,3 +123,85 @@ def test_a_room_you_can_choose_wears_the_hotels_photo_of_it_when_the_names_match
         const slot = document.querySelector('#mx-drawer .dr-rich'); slot.dataset.state = 'idle'; slot.innerHTML = ''; }""")
     page.evaluate("document.querySelector('#mx-drawer .dr-alts, .dr-rooms') && document.querySelector('#mx-drawer .dr-opt').click()")
     expect(page.locator("#mx-drawer .dr-rthumb")).to_have_count(1)
+
+
+# ---- the live check's fixes (2026-11-16) ------------------------------------------------------------------------------------------------------------------------
+
+def _big_photos(page):
+    """Every hotel photo is a real-sized 3000 x 2000 picture, as the live ones are (the first live check drew one photo 1400px tall)."""
+    from io import BytesIO
+
+    from PIL import Image
+    buf = BytesIO()
+    Image.new("RGB", (3000, 2000), (90, 120, 160)).save(buf, "JPEG")
+    jpeg = buf.getvalue()
+    for host in ("https://static.cupid.travel/**", "https://www.hilton.com/**"):
+        page.route(host, lambda route: route.fulfill(status=200, content_type="image/jpeg", body=jpeg))
+
+
+@pytest.mark.parametrize("viewport, cap", [(DESKTOP, 26 * 16), (PHONE, 16 * 16)], ids=["1440", "390"])
+def test_the_photo_mosaic_is_a_capped_block_whatever_size_the_photos_are(matrix, hilton, viewport, cap):  # noqa: F811
+    page = matrix(viewport)
+    _big_photos(page)
+    page.wait_for_selector(".mx-sq.is-ok")
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq.is-ok").nth(1).click()
+    expect(page.locator("#mx-drawer .dr-mos")).to_be_visible()
+    page.locator("#mx-drawer .dr-mos").scroll_into_view_if_needed()
+    page.wait_for_function("() => [...document.querySelectorAll('#mx-drawer .dr-mos img')].filter(i => i.offsetParent).every(i => i.complete && i.naturalWidth === 3000)")      # the big pictures really arrived
+    got = page.evaluate("""() => { const m = document.querySelector('#mx-drawer .dr-mos').getBoundingClientRect(), d = document.querySelector('#mx-drawer .dr').getBoundingClientRect();
+        return {h: m.height, w: m.width, dw: d.width, tiles: [...document.querySelectorAll('#mx-drawer .dr-mos .dr-ph:not([hidden])')].map(e => [e.getBoundingClientRect().width, e.getBoundingClientRect().height])}; }""")
+    assert 150 <= got["h"] <= cap + 1, got
+    assert len(got["tiles"]) == 5 or viewport is PHONE and len(got["tiles"]) >= 3, got
+    assert all(h <= got["h"] and w <= got["w"] for w, h in got["tiles"]), got
+    shot(page, f"mosaic-{viewport['width']}")
+
+
+def test_nothing_in_the_opened_square_runs_past_its_right_edge_but_the_strips_that_scroll(matrix, hilton):  # noqa: F811
+    page = matrix(DESKTOP)
+    _big_photos(page)
+    page.wait_for_selector(".mx-sq.is-ok")
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq.is-ok").nth(1).click()
+    expect(page.locator("#mx-drawer .dr-rooms-or-none, #mx-drawer .dr-hrooms")).to_be_visible()
+    page.wait_for_timeout(600)
+    out = page.evaluate("""() => { const dr = document.querySelector('#mx-drawer .dr'), edge = dr.getBoundingClientRect().right, scrollers = '.dr-hrooms, .dr-alts, .dr-track, .dr-seg, .dr-revs-x';
+        return [...dr.querySelectorAll('*')].filter(e => !e.closest(scrollers) && !e.closest('[hidden]') && e.getClientRects().length && e.getBoundingClientRect().right > edge + 1)
+          .map(e => e.className + ' ' + Math.round(e.getBoundingClientRect().right - edge)); }""")
+    assert out == [], out
+    strip = page.evaluate("() => { const s = document.querySelector('#mx-drawer .dr-hrooms'), r = s.getBoundingClientRect(), d = document.querySelector('#mx-drawer .dr').getBoundingClientRect(); return [s.scrollWidth >= s.clientWidth, r.right <= d.right + 1, getComputedStyle(s).overflowX]; }")
+    assert strip == [strip[0], True, "auto"] and strip[0] is not None, strip      # the rooms sit in their own strip, which scrolls sideways when they are more than fit
+    cats = page.evaluate("() => { const c = [...document.querySelectorAll('#mx-drawer .dr-cat')].map(e => Math.round(e.getBoundingClientRect().top)); return [...new Set(c)].length; }")
+    assert cats >= 2      # the sentiment categories wrap into a grid, not one clipped row
+
+
+def test_reviews_without_words_are_one_line_not_cards(matrix, hilton):  # noqa: F811
+    page = matrix(DESKTOP)
+    page.wait_for_selector(".mx-sq.is-ok")
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq.is-ok").nth(1).click()
+    expect(page.locator("#mx-drawer .dr-reviews")).to_be_visible()
+    assert page.locator("#mx-drawer .dr-rnone").count() == 0
+    expect(page.locator("#mx-drawer .dr-reviews")).to_contain_text(re.compile(r"Plus \d+ scores? without words\."))
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_every_square_caption_reads_4_5_to_1_on_its_own_square_in_every_state(matrix, scheme):  # noqa: F811
+    page = matrix(DESKTOP, scheme=scheme)
+    page.wait_for_selector(".mx-sq.is-ok")
+    page.locator(".mx-lane[data-lane='sandiego'] .mx-sq.is-low").first.click()      # the cheapest start, opened: blue with a "Cheapest" caption
+    page.wait_for_selector(".mx-sq.is-open")
+    page.wait_for_timeout(700)
+    rows = page.evaluate("""() => {
+      const ctx = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+      const rgba = c => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+      const over = (top, under) => top[3] >= 1 ? top : [0, 1, 2].map(i => top[i] * top[3] + under[i] * (1 - top[3])).concat([1]);
+      const bg = el => { const chain = []; for (let e = el; e; e = e.parentElement) chain.push(rgba(getComputedStyle(e).backgroundColor)); let c = rgba(getComputedStyle(document.documentElement).backgroundColor); if (c[3] < 1) c = [255, 255, 255, 1];
+        return chain.reverse().reduce((acc, x) => over(x, acc), c); };
+      const lum = c => { const v = c.slice(0, 3).map(x => x / 255).map(x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const out = [];
+      document.querySelectorAll('.mx-sq.is-ok').forEach(sq => { const a = getComputedStyle(sq, '::after'); if (!a.content || a.content === 'none' || a.content === '""' || a.content === 'normal') return;
+        const fg = over(rgba(a.color), bg(sq)), b = bg(sq), l1 = lum(fg), l2 = lum(b);
+        out.push([sq.className.replace('mx-sq ', ''), a.content, ((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)).toFixed(2)]); });
+      return out; }""")
+    assert rows, "no caption was drawn"
+    assert any("is-open" in c for c, _, _ in rows), rows      # the opened (blue) square is among them
+    low = [r for r in rows if float(r[2]) < 4.5]
+    assert low == [], low
