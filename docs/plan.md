@@ -1680,7 +1680,7 @@ From D-771: with Book disabled ("Booking opens soon"), the saved state's link sa
 ## F-271 A motion test for the v2 sheets [todo]
 From D-781: the retired pages' motion tests went with F-254; nothing now samples the frames of a v2 sheet (the matrix's Book sheet, the planning drawer, the guide sheet) opening from what was tapped and folding back, or the laptop's calm fade. Add tests_browser coverage in the style of the old test_motion (frames sampled, tokens only).
 
-## F-272 One look: every page in the v2 language [todo]
+## F-272 One look: every page in the v2 language [done]
 Founder, 2026-11-16 morning: "yes please make all pages consistent" (the overnight report noted the sign-in page still wears Direction A's purple). Every page a person can reach moves to the approved v2 language (docs/briefs/booking-v2.md, `layout.page(v2=True)`, `quiet=True` for reading and form pages, v2 tokens, Newsreader + Inter, near-opaque cards, `.v2-glass` only over the sky, press-in buttons, the v2 top bar `v2.top`), light and dark, phone and laptop, 48px targets, 4.5:1. No new features and no change to what a page does or says, except words that only described the old look.
 - Sign-in (`pages/signin.py`, `assets/css/signin.css`): the cover's calm sky and paper look instead of the purple half; one clear Continue with Google; the dev sign-in kept local only.
 - Family and members, admin, privacy and terms, the report page, passes, trips, the offline and not-found pages, placeholders (`pages/family.py`, `admin.py`, `legal.py`, `report.py`, `passes.py`, `trips.py`, `pwa.py`, `placeholders.py`); the Direction A top bar (`topbar.py`) goes once nothing uses it.

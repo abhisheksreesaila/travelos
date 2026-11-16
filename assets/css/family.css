@@ -68,7 +68,8 @@
   .fam-col-people .fam-list { overflow-y: auto; padding: 0.25rem; margin: -0.25rem; }
   #fam-members { max-height: 18rem; }
   #fam-pending { max-height: 14rem; }
-  .fam-member { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "av who meta act"; }
+  .fam-member { grid-template-columns: auto minmax(13rem, 1fr) auto; grid-template-areas: "av who meta" "act act act"; }      /* F-272: one row squeezed the name and email to 135px in the two-column page; the actions take their own row */
+  .fam-member .fam-actions { justify-content: flex-end; }
   .fam-member .fam-actions { flex-wrap: nowrap; }
   .fam-link { flex: 1 1 10rem; }
 }
