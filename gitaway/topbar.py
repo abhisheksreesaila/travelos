@@ -55,9 +55,8 @@ def _me(who, new=0, admin=False):
 
 
 def _admin_notice(session):
-    """(reports not yet read, is the captain): the count shows to an admin only, and (0, False) for everyone else."""
-    from gitaway.pages import admin  # here, not at the top: that module draws pages with the shell, which draws this bar
-    return (admin.new_reports(session), True) if admin.is_admin(session) else (0, False)
+    from gitaway import v2  # the one place that counts the reports (v2.admin_notice)
+    return v2.admin_notice(session)
 
 
 def bar(path=None):

@@ -202,13 +202,13 @@ def gate_page(session, f, ps):
     n = len(ps)
     dots = [Button(type="button", aria_label=p["traveller"], aria_current="true" if i == 0 else "false", data_dot=str(i), cls="gp-dot") for i, p in enumerate(ps)]
     return (Title("GitAway · Boarding passes"),
-            *styles(*HEAD),
+            *styles(Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), *HEAD),
             Div(Div(Span(icon("sun", 18, 2.4), "Brightness up", cls="gp-bright"), A(icon("x", 22, 2.6), href=_today(session), cls="gp-close", id="gp-close", aria_label="Close"), cls="gp-top"),
                 Div(*[_slide(p, f, i, n) for i, p in enumerate(ps)], cls="gp-track", id="gp-track", tabindex="0", aria_label="Boarding passes, swipe for the next person"),
                 Div(Button(icon("chev-left", 22, 2.6), type="button", id="gp-prev", cls="gp-round", aria_label="Previous person"), Div(*dots, cls="gp-dots", id="gp-dots") if n > 1 else "",
                     Button(icon("chev-right", 22, 2.6), type="button", id="gp-next", cls="gp-round", aria_label="Next person"), cls="gp-pager", hidden=n < 2),
                 Span(f"1 of {n} · swipe for the next person" if n > 1 else "", cls="gp-count", id="gp-count", aria_live="polite"),
-                cls="gp", id="gp", data_count=str(n), data_screen="gate"),
+                cls="gp v2", id="gp", data_count=str(n), data_screen="gate"),
             Script(src="/assets/js/passes.js", defer=True))
 
 

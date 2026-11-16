@@ -250,8 +250,8 @@ def reading(title: str, *content, wide: bool = False, foot: bool = True, current
     return page(title, Div(*content, cls="pg is-wide" if wide else "pg"), *((pg_foot(),) if foot else ()), current=current, v2="pgs", quiet=True, **kw)
 
 
-def notice(title: str, *body, status: int = 200, current: str = "", head=()):
+def notice(title: str, *body, status: int = 200, current: str = "", head=(), **kw):
     """A short page with one message and a way on (a 404, a refusal, the offline page, a stand-in): the title, the words and the buttons in one card. `status` makes it the response's code."""
     from fasthtml.core import FtResponse
-    out = reading(title, Div(*body, cls="pg-card pg-notice"), current=current, head=head)
+    out = reading(title, Div(*body, cls="pg-card pg-notice"), current=current, head=head, **kw)
     return out if status == 200 else FtResponse(out, status_code=status)

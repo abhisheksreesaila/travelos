@@ -358,4 +358,4 @@ def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bo
     yes (F-194) is "noindex, nofollow" (one robots tag, which covers the noindex)."""
     head = (*HEAD, Link(rel="stylesheet", href="/assets/css/scrapbook.css"), Link(rel="stylesheet", href="/assets/css/planforme.css")) if trip.real else HEAD
     return page(trip.title, itinerary_body(trip, loading, saved, forked, blog), theme=resolve_theme(theme, trip), head=(*head, Meta(name="robots", content="noindex, nofollow")) if waiting else head,
-                description=trip.lede, image=trip.polaroids[0].src if trip.polaroids else "", og_type="article", noindex=noindex and not waiting)
+                description=trip.lede, image=trip.polaroids[0].src if trip.polaroids else "", og_type="article", noindex=noindex and not waiting, v2="pgs", quiet=True)

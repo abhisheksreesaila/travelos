@@ -18,7 +18,7 @@ from starlette.responses import RedirectResponse
 
 from gitaway import affiliate, catalog, importer, partners, reports, session as ses, showcase
 from gitaway.icons import icon
-from gitaway.layout import page, styles
+from gitaway.layout import notice, styles
 from gitaway.partners import log, places, registry, statistics, travelpayouts
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/partners.css"),)
@@ -187,7 +187,7 @@ def register(app):
         try:
             log.book(session, click, offer, trip, pt)
         except importer.SaveError as e:
-            return page("Not booked", Div(H2("We couldn't add that to your trip"), P(str(e)), A("Back to my plan", href=showcase.planning_path(), cls="btn btn-ink"), cls="pt-card"), head=HEAD)
+            return notice("Not booked", H2("We couldn't add that to your trip"), P(str(e)), A("Back to my plan", href=showcase.planning_path(), cls="btn btn-primary"), head=HEAD)
         return RedirectResponse(f"/sandbox/{pt.key}/{click}/done", status_code=303)
 
     @app.get("/sandbox/{partner}/{click}/done")
