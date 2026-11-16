@@ -251,7 +251,9 @@
   .g .gh-side { position: static; }
   .g .gh-grid { grid-template-columns: minmax(0, 1fr); }
   .g .gpage, .g .gpage.has-detail { padding: 0 1rem 2.5rem; grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .g .g-head { grid-template-columns: 1fr; padding: 0.75rem 0.75rem 1rem; gap: 0.75rem; border-radius: 1.625rem; }
+  .g .g-head { grid-template-columns: minmax(0, 1fr); padding: 0.75rem 0.75rem 1rem; gap: 0.75rem; border-radius: 1.625rem; }
+  .g .g-head .smp { white-space: normal; }      /* the sample pill wraps on a phone instead of widening the card past the screen */
+  .g .g-head .smp .long2 { display: none; }
   .g .g-art { width: 100%; height: 10.625rem; }
   .g .g-hmain h1 { font-size: 2rem; }
   .g .g-act { grid-template-columns: 1fr; }
