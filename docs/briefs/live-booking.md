@@ -19,7 +19,12 @@ Status: draft (phase 2 of docs/briefs/live-liteapi.md; founder's answers 2026-11
 3. **The price charged matches the public price the square shows.**
    - GitAway's margin is set so the charge equals the shown price.
    - Every price is checked again at prebook, and any change is said before paying.
-4. **After booking.**
+4. **A promo code at checkout** ("Have a code?", founder 2026-11-16: "we get 10% off … a closed group … is there a way I can have a promo code").
+   - It uses LiteAPI's own vouchers: a code with a percent off, a cap, a number of uses, and optionally tied to a guest. It is created in LiteAPI (dashboard or `POST /vouchers`) and passed as `voucherCode` on the hotel or flight prebook (docs.liteapi.travel/docs/vouchers-api-guide).
+   - The discounted total shows only in the checkout, after a valid code, so the public squares keep the public price.
+   - The discount comes out of GitAway's margin. A 10% code on a margin of about 13% still leaves a little.
+   - First code: one for the founder (for example 10% off, a few uses).
+5. **After booking.**
    - A confirmation page with LiteAPI's booking ids.
    - The trip joins the calendar (as today's sandbox flow does).
    - Cancel in-app where the rate allows, through LiteAPI's cancel.
