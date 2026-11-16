@@ -10,7 +10,7 @@
 .rp-form label { display: grid; gap: 0.25rem; }
 .rp-lab { font-weight: 650; font-size: 1rem; color: var(--ink); }
 .rp-hint { font-size: max(var(--text-min), 0.9375rem); line-height: 1.4; color: var(--ink-2); }
-.rp-input { width: 100%; box-sizing: border-box; }
+.rp-input { width: 100%; box-sizing: border-box; min-height: var(--target); }      /* F-272: a phone target is 48px (the creators settings field was 30px tall at 390) */
 .rp-text { min-height: 6.5rem; resize: vertical; }
 .rp-actions { display: flex; flex-wrap: wrap; gap: 0.625rem; }
 .rp-error { margin: 0; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--food-t); color: var(--food-i); font-weight: 620; }
