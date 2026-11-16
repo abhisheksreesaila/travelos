@@ -240,7 +240,9 @@ def register(app):
         if not is_admin(session) or not reports.same_site(request):
             return showcase.not_found()
         form = await request.form()
-        await run_in_threadpool(bookingjobs.resolve, str(form.get("family") or ""), str(form.get("token") or ""))
+        family, token = str(form.get("family") or ""), str(form.get("token") or "")
+        done = await run_in_threadpool(bookingjobs.resolve, family, token)
+        logger.info("payment resolved by the captain: %s token %s… family %s… (%s)", (session or {}).get("email", "?"), token[:6], family[:6], "done" if done else "no change")   # F-274 audit: who resolved which row and when (the log has the time)
         return RedirectResponse("/admin", status_code=303)
 
     @app.get("/admin")
