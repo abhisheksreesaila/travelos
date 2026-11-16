@@ -387,9 +387,28 @@ def mark_cancelled(session, trip_id: str, booking_id: str) -> None:
     importer.save(session, replace(plan, hotels=hotels), replace=trip_id)
 
 
-def stuck(db, before: str) -> list:
-    """The payments left `paying` (the guest was sent to the card form) since before `before` (an ISO time): paid, perhaps, and not booked."""
-    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'paying' AND updated_at < :t ORDER BY updated_at", t=before)
+def stuck(db, before: str, due: str = "") -> list:
+    """The payments left `paying` (the guest was sent to the card form) since before `before` (an ISO time): paid, perhaps, and not booked. `due`: only those the worker may try now
+    (no back-off pending at that time)."""
+    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'paying' AND updated_at < :t AND (:d = '' OR next_try_at IS NULL OR next_try_at = '' OR next_try_at <= :d) "
+                             "ORDER BY updated_at", t=before, d=due)
+
+
+def give_up(db, token: str) -> None:
+    """LiteAPI says this form was never paid (or its hold is gone) and the hour is past: mark it `unpaid` and drop the guest at once; the purge deletes the row."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET status = 'unpaid', guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now "
+                         "WHERE id = :i AND status = 'paying'", i=token, now=familydb.now())
+
+
+def back_off(db, token: str, at, base) -> None:
+    """Another try later: attempts + 1 and next_try_at after `base` x 2^attempts, at most a day."""
+    from datetime import timedelta
+    pay = payment(db, token) or {}
+    n = pay.get("attempts") or 0
+    wait = min(base * (2 ** min(n, 20)), timedelta(days=1))
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET attempts = :n, next_try_at = :t WHERE id = :i", n=n + 1, t=(at + wait).isoformat(timespec="seconds"), i=token)
 
 
 def _misses_today() -> int:
@@ -424,6 +443,7 @@ def purge(db) -> None:
     from datetime import datetime, timedelta, timezone
     at = datetime.now(timezone.utc)
     with familydb.transaction(db):
+        familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'unpaid'")
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
         familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
@@ -454,7 +474,7 @@ def pay_start(db, token: str, user_id: str, guest: liteapi.Guest, trip_id: str) 
                             m=guest.remarks, t=trip_id, i=token, u=user_id, now=familydb.now()) == 1
 
 
-def finish(db, family: str, token: str, user_id: str) -> Result:
+def finish(db, family: str, token: str, user_id: str, budget: str = "") -> Result:
     """After the payment form: book the stay with the transaction id saved at prebook, once (a second call, or a reload of the return page, finds the stored booking). Nothing is
     booked unless the guest was saved (the form was opened); LiteAPI refuses a transaction that was not paid (HTTP 400, code 2014) and then nothing is stored and the row waits
     for another try. The guest's name and email are blanked once it is booked."""
@@ -470,9 +490,10 @@ def finish(db, family: str, token: str, user_id: str) -> Result:
         if errors:
             return Result(liteapi.FAILED)
         guest = replace(guest, phone=pay["guest_phone"] or "", remarks=pay["guest_remarks"] or "")
-        got = liteapi.book(pay["prebook_id"], guest, ref, family, transaction_id=pay["transaction_id"])
+        spender = budget or family      # the worker spends its own allowance ("job:<family>"), the reference stays the family's
+        got = liteapi.book(pay["prebook_id"], guest, ref, spender, transaction_id=pay["transaction_id"])
         if got.status == liteapi.DUPLICATE:
-            got = liteapi.booking_for(ref, family)
+            got = liteapi.booking_for(ref, spender)
         if not got.ok:
             return Result(got.status)
         booking = got.items[0]

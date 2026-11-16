@@ -165,7 +165,7 @@ def test_a_payment_liteapi_has_not_got_books_nothing_and_the_row_waits_for_anoth
     prep = prepared(live)
     pay(db, user, prep)
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay(book="book_unpaid.json"))
-    assert mb.finish(db, "fam", prep.token, user).status == liteapi.FAILED
+    assert mb.finish(db, "fam", prep.token, user).status == liteapi.NOT_PAID
     kept = mb.payment(db, prep.token)
     assert (kept["status"], kept["guest_email"], familydb.rows(db, "SELECT * FROM matrix_bookings")) == ("paying", "test.traveler@example.com", [])
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay())

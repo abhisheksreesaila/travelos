@@ -20,6 +20,8 @@ from gitaway import familydb, liteapi, matrixbook as mb, members
 
 log = logging.getLogger("gitaway.bookingjobs")
 STUCK_AFTER = timedelta(minutes=10)
+GIVE_UP_AFTER = timedelta(seconds=mb.HOLD) + timedelta(hours=1)      # a form older than the hold and an hour that LiteAPI says is unpaid or gone is given up on (D-851)
+BACKOFF_BASE = timedelta(minutes=10)      # 10, 20, 40 minutes ... at most a day between two tries of one payment
 PURGE_EVERY = timedelta(days=1)
 _state = {"purged": None}
 _thread = None
@@ -57,10 +59,16 @@ def stuck_count(now=None) -> int:
     return n
 
 
-def _finish_one(db, tenant_id, row) -> bool:
-    got = mb.finish(db, tenant_id, row["id"], row["user_id"])
+def _finish_one(db, tenant_id, row, now) -> bool:
+    got = mb.finish(db, tenant_id, row["id"], row["user_id"], budget="job:" + tenant_id)
     if not got.ok:
-        log.warning("booking jobs: a paid stay is still not booked (%s)", got.status)
+        age = now - datetime.fromisoformat(row["updated_at"])
+        gone = got.status in (liteapi.NOT_PAID, liteapi.GONE) and age >= GIVE_UP_AFTER
+        log.warning("booking jobs: stay %s of family %s is not booked (%s)%s", row["id"][:6], tenant_id[:6], got.status, ", given up: nobody paid" if gone else "")
+        if gone:
+            mb.give_up(db, row["id"])
+        else:
+            mb.back_off(db, row["id"], now, BACKOFF_BASE)
         return False
     try:      # best effort: the stay joins the trip as when the guest comes back to the return page
         mb.add_to_trip({"tenant_id": tenant_id, "user_id": row["user_id"], "email": ""}, got.done[0].trip_id, got.done)
@@ -82,8 +90,8 @@ def run_once(now=None) -> int:
             continue
         try:
             if liteapi.mode() != "off":
-                for row in mb.stuck(db, cut):
-                    booked += _finish_one(db, tid, row)
+                for row in mb.stuck(db, cut, now.isoformat(timespec="seconds")):
+                    booked += _finish_one(db, tid, row, now)
             if purge:
                 mb.purge(db)
         except Exception as e:  # noqa: BLE001 - one family's trouble never stops the rest
