@@ -11,7 +11,7 @@ from gitaway.icons import icon
 
 log = logging.getLogger(__name__)
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2page.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))

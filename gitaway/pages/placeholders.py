@@ -1,8 +1,8 @@
 """Friendly placeholders for screens that later tickets build, so no nav link is a dead end."""
 
-from fasthtml.common import A, Div, H1, P, Section
+from fasthtml.common import A, H1, P
 
-from gitaway.layout import page
+from gitaway.layout import notice
 
 # path -> (nav path it lights up, title, promise, ticket that replaces it)
 PLACEHOLDERS = {
@@ -10,14 +10,7 @@ PLACEHOLDERS = {
 
 
 def soon(title, promise, current=""):
-    return page(
-        title,
-        Section(
-            Div(H1(title), P(promise), A("Back to the start", href="/", cls="btn btn-primary")),
-            cls="ga-soon ga-wrap",
-        ),
-        current=current,
-    )
+    return notice(title, H1(title), P(promise), A("Back to the start", href="/", cls="btn btn-primary"), current=current)
 
 
 def _route(app, path, current, title, promise):

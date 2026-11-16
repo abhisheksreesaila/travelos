@@ -9,7 +9,7 @@ import os
 
 from fasthtml.common import A, Div, H1, H2, Li, Link, P, Section, Strong, Ul
 
-from gitaway.layout import page
+from gitaway.layout import reading
 from gitaway import ai, planforme as pfm
 from gitaway.planforme import PROMISE
 
@@ -69,10 +69,10 @@ def _doc(title, lead, sections):
     body = []
     for heading, *blocks in sections:
         body.append(Section(H2(heading), *blocks, cls="lg-sec"))
-    return page(title, Div(
+    return reading(title, Div(
         H1(title), P(f"Effective {EFFECTIVE}", cls="lg-date", id="legal-date"), P(NOT_LAWYER, cls="lg-note"), P(lead, cls="lg-lead"), *body,
         P(A("Terms", href="/terms") if title == "Privacy policy" else A("Privacy policy", href="/privacy"), " · ", A("Back to GitAway", href="/"), cls="lg-more"),
-        cls="lg-doc ga-wrap"), head=HEAD)
+        cls="pg-card lg-doc"), head=HEAD)
 
 
 def privacy():

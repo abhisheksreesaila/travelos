@@ -11,11 +11,11 @@ import hashlib
 import json
 from pathlib import Path
 
-from fasthtml.common import A, Div, H1, P, Section
+from fasthtml.common import A, H1, P
 from starlette.responses import Response
 
 from gitaway import assetver, session as ses, showcase
-from gitaway.layout import PAPER, page
+from gitaway.layout import PAPER, notice
 
 SW_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "sw.js"
 PRECACHED_ASSETS = ("/assets/css/tokens.css", "/assets/css/base.css", "/assets/js/pwa.js", "/assets/js/page_moves.js")
@@ -64,10 +64,5 @@ def register(app):
     @app.get("/offline")
     def offline():
         ses.as_signed_out()  # this page is cached for everyone: no name, no cache key
-        return page(
-            "Offline",
-            Section(
-                Div(H1("You're offline"), P("This page isn't saved on your phone yet. Pages you opened recently still work offline; the rest will load once you're back online."), A("Back to your trip", href="/", cls="btn btn-primary")),
-                cls="ga-soon ga-wrap",
-            ),
-        )
+        return notice("Offline", H1("You're offline"), P("This page isn't saved on your phone yet. Pages you opened recently still work offline; the rest will load once you're back online."),
+                      A("Back to your trip", href="/", cls="btn btn-primary"))

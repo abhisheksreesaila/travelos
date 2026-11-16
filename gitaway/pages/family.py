@@ -24,7 +24,7 @@ from starlette.responses import RedirectResponse, Response
 
 from gitaway import around, familydb, members, phones, pickers, session as ses
 from gitaway.icons import icon
-from gitaway.layout import avatar, page
+from gitaway.layout import avatar, reading
 from gitaway.pages import morning as morning_ui, passkeys as passkeys_ui
 
 log = logging.getLogger("gitaway.family")
@@ -147,14 +147,14 @@ def family_page(request, session, error="", status=200, email="", role="editor",
                      note, aria_labelledby="fam-members-h", cls="fam-sec fam-people")
     # F-146: on a laptop the page is two columns (people and invitations on the left, my own settings on the right); the wrappers are display: contents
     # below 1020px and `order` keeps the phone's single column in the order it always had.
-    out = page("Your family", Div(
-        Div(H1("Your family"), Span("Who is on the trip.", cls="ga-h-two"),
+    out = reading("Your family", Div(
+        Div(H1("Your family"),
             Div(P(f"Signed in as {user['email']}.", id="fam-who"), P(f"Role: {my_role}.", id="fam-role"), P(f"{members.family_label(tid)} · family space {tid}", id="fam-tenant", cls="fam-small"), cls="fam-ident"),
             cls="fam-head"),
         Div(people, alone, waiting, invite_form, cls="fam-col fam-col-people"),
         Div(switcher, _phone_section(session, phone_error, phone_typed), _food_section(session, my_role in ("admin", "editor")), _morning_section(session), passkeys_ui.family_section(request, session), cls="fam-col fam-col-me"),
         cls="fam",
-    ), head=HEAD)
+    ), wide=True, head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
 
 
@@ -165,7 +165,7 @@ def _morning_section(session):
 
 
 def _join_page(title, *body, status=200):
-    out = page(title, Div(H1(title), *body, cls="fam fam-join", id="join"), head=HEAD)
+    out = reading(title, Div(H1(title), *body, cls="fam-join", id="join"), head=HEAD)
     return out if status == 200 else Response(to_xml(out), status_code=status, media_type="text/html")
 
 

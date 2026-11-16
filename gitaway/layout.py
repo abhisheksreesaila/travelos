@@ -236,3 +236,22 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
         *styles(*head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
         Div(site_header(current, nav=nav), join_note(), Main(*content, id="main"), *((site_footer(footer_links),) if footer else ()), data_theme=theme, cls="ga-page"),
     )
+
+
+def pg_foot():
+    """The foot of a v2 reading page (F-272, D-800): Privacy and Terms, which the v2 top bar does not carry. The sentence under it is the site footer's, as it was."""
+    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="pg-foot-nav", aria_label="Legal"),
+                  Span("Sample data only: no real bookings or payments." if showcase.on() else _footer_line(), cls="pg-fine"), cls="pg-foot")
+
+
+def reading(title: str, *content, wide: bool = False, foot: bool = True, current: str = "", **kw):
+    """A reading or form page in design language v2 (F-272, D-800): the quiet sky, the v2 top bar, one column (`.pg`, 46rem; `wide` 90rem for a page with two columns) and a foot with
+    Privacy and Terms. Its stylesheet is assets/css/v2page.css (in v2.HEAD): near-opaque cards, v2 buttons and fields for the Direction A classes `.btn`, `.tag` and plain inputs inside it."""
+    return page(title, Div(*content, cls="pg is-wide" if wide else "pg"), *((pg_foot(),) if foot else ()), current=current, v2="pgs", quiet=True, **kw)
+
+
+def notice(title: str, *body, status: int = 200, current: str = "", head=()):
+    """A short page with one message and a way on (a 404, a refusal, the offline page, a stand-in): the title, the words and the buttons in one card. `status` makes it the response's code."""
+    from fasthtml.core import FtResponse
+    out = reading(title, Div(*body, cls="pg-card pg-notice"), current=current, head=head)
+    return out if status == 200 else FtResponse(out, status_code=status)

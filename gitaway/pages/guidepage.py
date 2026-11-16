@@ -12,12 +12,12 @@ POST /guides/add                      Add to my plan: stops of a guide (`k` = "d
 
 from datetime import datetime, timezone
 
-from fasthtml.common import A, Div, H1, Meta, P, Section
+from fasthtml.common import A, H1, Meta, P
 from fasthtml.core import FtResponse
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
 from gitaway import access, community, creatordraft as cd, forks as forks_model, guide as gd, guideplan, moods, seo, session as ses, sharecard, showcase, tripcal, tripshare
-from gitaway.layout import page
+from gitaway.layout import notice, page
 from gitaway.pages import guideview
 
 
@@ -58,8 +58,7 @@ def owner_page(session, d, error=""):
 
 
 def _gone():
-    return FtResponse(page("Not found", Section(Div(H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Make a guide", href="/guides/make", cls="btn btn-primary"), cls="ga-wrap"), cls="ga-soon ga-wrap")),
-                      status_code=404)
+    return notice("Not found", H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Make a guide", href="/guides/make", cls="btn btn-primary"), status=404)
 
 
 def register(app):
