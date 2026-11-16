@@ -40,4 +40,42 @@ class MatrixBooking:
     created_at: str
 
 
-MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id"), (MatrixBooking, "matrix_bookings", "id")]
+class MatrixPayment:
+    """A stay prebooked for LiteAPI's payment form (F-274, D-842): saved the moment the prebook answers, because LiteAPI cannot give the `prebookId` and `transactionId` back later.
+    The card is never ours (LiteAPI's form takes it, Nuitée is the merchant): this row holds the ids, the amounts and the lead guest only for as long as the booking needs him or her
+    (`guest_*` are blanked once the booking is made, or after 7 days)."""
+    id: str                 # the sheet's token, the idempotency key's base (`matrixbook.reference`)
+    user_id: str = ""
+    trip_id: str = ""
+    place: str = ""
+    hotel: str = ""
+    room: str = ""
+    checkin: str = ""
+    checkout: str = ""
+    prebook_id: str = ""
+    transaction_id: str = ""
+    charge_cents: int = 0   # what the card is charged for the stay (the voucher's discount taken off)
+    due_at_stay_cents: int = 0
+    refundable: int = 0
+    voucher_code: str = ""
+    discount_cents: int = 0
+    status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked
+    booking_id: str = ""
+    guest_first: str = ""
+    guest_last: str = ""
+    guest_email: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class MatrixCancel:
+    """A LiteAPI booking cancelled from the booking page (F-274): what LiteAPI said came back. One row a booking."""
+    booking_id: str
+    user_id: str = ""
+    status: str = ""        # CANCELLED or CANCELLED_WITH_CHARGES
+    refund_cents: int = 0
+    fee_cents: int = 0
+    cancelled_at: str = ""
+
+
+MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id"), (MatrixBooking, "matrix_bookings", "id"), (MatrixPayment, "matrix_payments", "id"), (MatrixCancel, "matrix_cancels", "booking_id")]
