@@ -63,7 +63,7 @@ def price_like_the_square(real, client, extra=0):
     panel = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["drawer"]
     shown = int(re.search(r'data-c="(\d+)"', re.search(r'<button[^>]*data-room="0"[^>]*>', panel).group(0)).group(1)) / 100
     doc = json.loads(real.prebook[1])
-    doc["data"]["price"] = round(shown - 120 + extra, 2)
+    doc["data"]["price"] = doc["data"]["sellingPriceToUser"] = round(shown - 120 + extra, 2)
     real.prebook = (200, json.dumps(doc).encode())
     return shown
 

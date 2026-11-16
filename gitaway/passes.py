@@ -37,6 +37,8 @@ MIME = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp", "heic": "
 # Every refusal, by key: the routes redirect with the key and the page shows the sentence, so a link can never put its own words on the page.
 ERRORS = {
     "stale": "This trip changed. Reload the page.",
+    "cancel": "LiteAPI could not cancel that just now. Nothing changed. Try again in a minute.",
+    "cancel_tick": "Tick the box to say you mean to cancel this stay.",
     "flight_name": "Give the airline and the flight number, like UA 1234.",
     "flight_route": "Use two different three-letter airport codes, like LAX and SFO.",
     "flight_date": "Pick the date the flight leaves.",

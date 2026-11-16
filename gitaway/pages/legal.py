@@ -26,6 +26,12 @@ def _liteapi_words() -> str:
                          "and it books in LiteAPI's sandbox: nothing is charged and no card is used. The form starts with a made-up guest, so you never have to type "
                          "your own. GitAway keeps nothing of that name or email: only LiteAPI's booking id, the hotel and the dates. LiteAPI keeps its own record of "
                          "the test booking under its own rules.")
+    if mb.mode() == mb.LIVE:
+        return search + (" Book is a real booking (F-274): it sends LiteAPI the lead guest's first name, last name and email that you typed, and a voucher code if you give one, so the hotel "
+                         "can hold the room. You pay on LiteAPI's own payment form (Nuitée, our booking partner, is the seller and the merchant of record, and its card processor takes the card): "
+                         "your card number goes to that form and never to GitAway, which never sees or keeps a card. GitAway keeps LiteAPI's booking id and payment reference, the hotel, the "
+                         "dates and the price, and holds the guest's name and email only until the booking is made (and in any case for at most seven days). LiteAPI keeps its own record of "
+                         "the booking under its own rules.")
     if mb.mode() == mb.SOON:
         return search + " Booking through LiteAPI opens soon; until then nothing is booked or charged here, and no name, email or card is sent."
     return search + " Book plays a sample booking: nothing is sent to LiteAPI, booked or charged."

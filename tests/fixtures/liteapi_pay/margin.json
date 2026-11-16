@@ -1,0 +1,182 @@
+{
+ "None": [
+  {
+   "hotelId": "lp369ef",
+   "retail": 340.1,
+   "ssp": 393.08,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp31b7b",
+   "retail": 427.7,
+   "ssp": 491.86,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp280e6",
+   "retail": 346.36,
+   "ssp": 398.32,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp4f293",
+   "retail": 390.59,
+   "ssp": 449.18,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp3f338",
+   "retail": 457.46,
+   "ssp": 526.08,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp1f5cb",
+   "retail": 902.1,
+   "ssp": 1037.41,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp1fa70",
+   "retail": 427.7,
+   "ssp": 491.85,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp1fa71",
+   "retail": 439,
+   "ssp": 504.85,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp40614",
+   "retail": 957.11,
+   "ssp": 1100.68,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp3e850",
+   "retail": 510.33,
+   "ssp": 586.88,
+   "commission": [
+    0
+   ]
+  },
+  {
+   "hotelId": "lp1dd47",
+   "retail": 529.5,
+   "ssp": 608.91,
+   "commission": [
+    0
+   ]
+  }
+ ],
+ "16": [
+  {
+   "hotelId": "lp369ef",
+   "retail": 394.48,
+   "ssp": 394.48,
+   "commission": [
+    54.38
+   ]
+  },
+  {
+   "hotelId": "lp31b7b",
+   "retail": 496.08,
+   "ssp": 496.08,
+   "commission": [
+    68.38
+   ]
+  },
+  {
+   "hotelId": "lp280e6",
+   "retail": 401.74,
+   "ssp": 401.74,
+   "commission": [
+    55.38
+   ]
+  },
+  {
+   "hotelId": "lp4f293",
+   "retail": 453.04,
+   "ssp": 453.04,
+   "commission": [
+    62.45
+   ]
+  },
+  {
+   "hotelId": "lp3f338",
+   "retail": 530.6,
+   "ssp": 530.6,
+   "commission": [
+    73.14
+   ]
+  },
+  {
+   "hotelId": "lp1f5cb",
+   "retail": 1046.34,
+   "ssp": 1046.33,
+   "commission": [
+    144.23
+   ]
+  },
+  {
+   "hotelId": "lp1fa70",
+   "retail": 496.08,
+   "ssp": 496.08,
+   "commission": [
+    68.38
+   ]
+  },
+  {
+   "hotelId": "lp1fa71",
+   "retail": 509.19,
+   "ssp": 509.19,
+   "commission": [
+    70.19
+   ]
+  },
+  {
+   "hotelId": "lp40614",
+   "retail": 1110.15,
+   "ssp": 1110.15,
+   "commission": [
+    153.04
+   ]
+  },
+  {
+   "hotelId": "lp3e850",
+   "retail": 591.93,
+   "ssp": 591.92,
+   "commission": [
+    81.59
+   ]
+  },
+  {
+   "hotelId": "lp1dd47",
+   "retail": 614.16,
+   "ssp": 614.16,
+   "commission": [
+    84.65
+   ]
+  }
+ ]
+}

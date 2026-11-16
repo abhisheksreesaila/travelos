@@ -95,17 +95,29 @@ def test_the_squares_total_is_the_flight_and_the_public_price_the_stay_shows(liv
 
 @pytest.mark.parametrize("showcase_on, key, production, want", [
     ("1", "", False, mb.SANDBOX), ("1", LIVE, True, mb.STAND_IN), ("0", KEY, False, mb.SANDBOX), ("0", KEY, True, mb.SANDBOX),
-    ("0", LIVE, False, mb.STAND_IN), ("0", LIVE, True, mb.SOON)])
-def test_book_is_the_sandbox_the_stand_in_or_opens_soon_by_the_key_and_where_it_runs(monkeypatch, showcase_on, key, production, want):
+    ("0", LIVE, False, mb.STAND_IN), ("0", LIVE, True, mb.LIVE)])
+def test_book_is_the_sandbox_the_stand_in_or_real_by_the_key_and_where_it_runs(monkeypatch, showcase_on, key, production, want):
+    """F-274 (D-841): a live key in production books for real; the SOON of F-267 is now only the switch below."""
     monkeypatch.setenv("GITAWAY_SHOWCASE", showcase_on)
     monkeypatch.setenv("LITEAPI_KEY", key)
+    monkeypatch.setattr(auth, "production", lambda: production)
+    monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
+    assert mb.mode() == want
+
+
+@pytest.mark.parametrize("production, flag, want", [(True, "0", mb.SOON), (True, "1", mb.LIVE), (False, "1", mb.LIVE), (False, "0", mb.STAND_IN), (False, "", mb.STAND_IN)])
+def test_gitaway_live_booking_switches_real_booking_off_in_production_and_on_elsewhere(monkeypatch, production, flag, want):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", flag)
     monkeypatch.setattr(auth, "production", lambda: production)
     assert mb.mode() == want
 
 
-def test_in_production_book_is_disabled_and_says_booking_opens_soon_and_nothing_is_booked(live, client, monkeypatch):
+def test_switched_off_in_production_book_is_disabled_and_says_booking_opens_soon_and_nothing_is_booked(live, client, monkeypatch):
     sign_in(client)
     monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")      # the switch: production books for real unless this says 0
     drawer = client.get(TILE).json()["drawer"]
     words = text(drawer)
     assert "Booking opens soon" in words and "Sandbox booking" not in words and "Sample booking" not in words
@@ -161,7 +173,10 @@ def test_the_about_card_says_the_prices_are_live_from_liteapi_with_where_the_tim
     monkeypatch.setattr(auth, "production", lambda: True)
     html = client.get(MATRIX).text
     about = text(html.split('class="mx-tk mx-about"')[1].split("mx-about-foot")[0])
-    assert "live from LiteAPI" in about and "Booking opens soon" in about and "sandbox" not in about.lower() and 'id="mx-age"' in html
+    assert "live from LiteAPI" in about and "Sold by Nuitée through LiteAPI" in about and "never sees your card" in about and "sandbox" not in about.lower() and 'id="mx-age"' in html
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")      # the switch
+    assert "Booking opens soon" in text(client.get(MATRIX).text.split('class="mx-tk mx-about"')[1].split("mx-about-foot")[0])
+    monkeypatch.delenv("GITAWAY_LIVE_BOOKING")
     monkeypatch.setattr(auth, "production", lambda: False)
     about = text(client.get(MATRIX).text.split('class="mx-tk mx-about"')[1].split("mx-about-foot")[0])
     assert "live from LiteAPI" in about and "A stay booked here is a sample booking: nothing is booked or charged." in about
@@ -190,11 +205,18 @@ def save_next(client):
     return r.json()
 
 
-def test_plan_this_trip_after_save_f269_when_booking_opens_soon(live, client, monkeypatch):
+def test_plan_this_trip_after_save_f269_when_booking_is_switched_off(live, client, monkeypatch):
     sign_in(client)
     monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")
     j = save_next(client)
     assert j["saved"] == "Saved to your trip." and j["trip"] == "/trip/plan" and j["next"] == "Plan this trip"
+
+
+def test_open_the_trip_after_save_when_booking_is_real(live, client, monkeypatch):
+    sign_in(client)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    assert save_next(client)["next"] == "Open the trip"
 
 
 def test_plan_this_trip_after_save_f269_in_the_stand_in(live, client, monkeypatch):

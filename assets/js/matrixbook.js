@@ -8,8 +8,13 @@
 //   3. Booking plays out step by step (holding the room, paying with the test card, booking, putting the trip together) while the real POST to /plan/matrix/book/confirm runs: each step takes a
 //      few frames of a spinner at the pace of the --v2-step token, the booking step waits for the real answer, and a mistake or a refusal opens the question it is in with the typed words kept.
 //      Then the stamped pass settles in (its confetti is CSS, none under reduced motion) and "Plan this trip" is a plain link to the trip.
+// With LiteAPI's payment form (F-274, D-842: a live key, or the sandbox with the form) the review's Continue sends the guest and the answer is LiteAPI's card form in the sheet: this script
+// adds LiteAPI's own script from the one address below (nothing else of another site is ever loaded), hands it the form's `secretKey` and the return address, and drops the key from the
+// page. The card is typed into LiteAPI's frame, never into a field of ours; the browser comes back to /plan/matrix/book/return, which books. "Have a code?" asks the server to prebook the
+// stay again with the code (a JSON answer), and only then does the checkout show the discount.
 // A viewer is told in a word (the server answers 403 before anything is asked of LiteAPI); a signed-out person is sent to sign in (the redirect is followed).
 (function () {
+  var PAY_SDK = 'https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1';      // LiteAPI's payment form: the one script of another site GitAway loads (D-844)
   var sheet = null, scrim = null, origin = null;
   var M = function () { return window.GA && GA.motion; };
   var X = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -169,7 +174,76 @@
   }
   function mark(run, i, state) { var li = run.querySelectorAll('li')[i]; if (li) li.dataset.state = state; }
 
+  function pay(form) {      // the guest goes to the server, and LiteAPI's payment form comes back (no staged progress: nothing is booked until the card has paid)
+    var button = form.querySelector('button[type=submit]');
+    button.disabled = true;
+    button.classList.add('is-busy');
+    button.setAttribute('aria-busy', 'true');
+    post(form).then(function (got) {
+      if (!sheet || got.gone) return;
+      button.classList.remove('is-busy');
+      button.removeAttribute('aria-busy');
+      button.disabled = false;
+      ready(form);
+      if (got.refused) return swap('<div class="mxb" data-at="room"><div class="mxb-problem"><p class="mxb-note is-warn" role="alert">Only an editor in your family can book.</p></div></div>');
+      if (got.failed) return say(form, 'We could not reach the payment step just now. Nothing was charged. Try again.');
+      swap(got.html);
+    });
+  }
+
+  function mountPay(scope) {
+    var el = scope.querySelector('[data-pay-root]'), wait = scope.querySelector('[data-pay-wait]');
+    if (!el) return;
+    var fail = function () { if (wait) { wait.textContent = 'LiteAPI’s payment form did not load. Nothing was charged. Close this and press Book again.'; wait.classList.add('is-err'); } };
+    var back, key = el.dataset.key === 'live' ? 'live' : 'sandbox', secret = el.dataset.secret;
+    try { back = new URL(el.dataset.return, location.href); } catch (e) { return fail(); }
+    if (back.pathname !== '/plan/matrix/book/return' || !secret) return fail();
+    el.removeAttribute('data-secret');      // the key is only for the form: it does not stay in the page
+    var start = function () {
+      try {
+        new window.LiteAPIPayment({ publicKey: key, secretKey: secret, targetElement: '#mxb-pay-el', returnUrl: back.href, appearance: { theme: 'flat' }, options: { business: { name: 'GitAway' } } }).handlePayment();
+        if (wait) wait.hidden = true;
+      } catch (e) { fail(); }
+    };
+    if (window.LiteAPIPayment) return start();
+    var tag = document.createElement('script');
+    tag.src = PAY_SDK;
+    tag.async = true;
+    tag.onload = start;
+    tag.onerror = fail;
+    document.head.appendChild(tag);
+  }
+
+  function apply(form) {      // "Have a code?": the server prebooks the stay again with the code; the new token and the totals come back as JSON
+    var input = form.querySelector('[data-code]'), msg = form.querySelector('[data-code-msg]'), btn = form.querySelector('[data-apply]'), data = new URLSearchParams();
+    Array.prototype.forEach.call(form.querySelectorAll('input[type=hidden]'), function (h) { if (h.name !== 'req' && h.name !== 'arrive') data.append(h.name, h.value); });      // the square, the picks and the room's token: no guest words
+    data.set('code', input.value.trim());
+    var say = function (words, bad) { msg.textContent = words; msg.classList.toggle('is-err', !!bad); };
+    btn.disabled = true;
+    say('Checking the code…');
+    fetch(form.dataset.codeUrl, { method: 'POST', body: data, headers: { 'X-Matrix': '1' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (got) {
+        if (!got.ok) return say(got.j.error || 'The code could not be checked just now.', true);
+        var j = got.j, set = function (k, text) { Array.prototype.forEach.call(form.querySelectorAll('[data-sum="' + k + '"]'), function (el) { el.textContent = text; }); };
+        field(form, 'token').value = j.token;
+        set('stay', j.stay);
+        set('total', j.total);
+        set('go', j.go);
+        set('code', 'Code ' + j.code);
+        set('discount', j.discount ? '−' + j.discount : '');
+        var off = form.querySelector('.mxb-off');
+        if (off) off.hidden = !j.discount;
+        var moved = form.querySelector('[data-moved]');
+        if (moved) moved.innerHTML = j.moved;
+        say(j.said);
+      })
+      .catch(function () { say('The code could not be checked just now.', true); })
+      .then(function () { btn.disabled = false; });
+  }
+
   function step(form) {
+    if (form.dataset.pay) return pay(form);
     var names = (form.dataset.stages || '').split('|').filter(Boolean), run = stagesEl(names), button = form.querySelector('button[type=submit]');
     var p = pace(), asked = post(form);      // the real call starts now; the steps below take their time beside it
     button.disabled = true;
@@ -218,6 +292,7 @@
     sheet.scrollTop = 0;
     fold(fresh.querySelector('.mxb-f'));
     if (M()) (M().reduced() ? M().fade(fresh) : M().settle(fresh, { y: 12 }));
+    mountPay(fresh);
     var focus = fresh.querySelector('[aria-invalid="true"]') || fresh.querySelector('.mxb-pane.is-on input:not([type=hidden])') || fresh.querySelector('a.mxb-plan');
     if (focus) focus.focus({ preventScroll: true });
   }
@@ -226,10 +301,11 @@
     if (!sheet || !e.target.closest) return;
     var f = e.target.closest('.mxb-f');
     if (!f || !sheet.contains(f)) return;
-    var t = e.target.closest('[data-cont], [data-back], [data-go], [data-req], [data-arr]');
+    var t = e.target.closest('[data-cont], [data-back], [data-go], [data-req], [data-arr], [data-apply]');
     if (!t) return;
     var at = parseInt(f.dataset.step, 10) || 0;
-    if (t.matches('[data-cont]')) { e.preventDefault(); next(f); }
+    if (t.matches('[data-apply]')) { e.preventDefault(); apply(f); }
+    else if (t.matches('[data-cont]')) { e.preventDefault(); next(f); }
     else if (t.matches('[data-back]')) { e.preventDefault(); go(f, at - 1, -1); }
     else if (t.matches('[data-go]')) { e.preventDefault(); go(f, parseInt(t.dataset.go, 10), -1); }
     else if (t.matches('[data-req]')) {
@@ -254,5 +330,6 @@
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && sheet) { e.stopImmediatePropagation(); close(); }
+    if (e.key === 'Enter' && sheet && e.target.matches && e.target.matches('[data-code]')) { e.preventDefault(); e.stopImmediatePropagation(); apply(e.target.closest('.mxb-f')); }      // Enter in the code field applies it, it does not book
   }, true);
 })();

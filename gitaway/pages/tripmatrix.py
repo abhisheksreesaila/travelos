@@ -59,7 +59,8 @@ def fine_p(sample: bool):
     if sample:
         return P(SAMPLE_FINE, cls="mx-foot-n")
     if liteapi.mode() == "live":
-        what = mb.SOON_WORDS + "." if mb.mode() == mb.SOON else "A stay booked here is a sample booking: nothing is booked or charged."
+        what = {mb.SOON: mb.SOON_WORDS + ".", mb.LIVE: mb.LIVE_WORDS + ", on LiteAPI’s own secure form: GitAway never sees your card."}.get(
+            mb.mode(), "A stay booked here is a sample booking: nothing is booked or charged.")
         return P("Prices are live from LiteAPI, checked ", Span("when each square is asked", id="mx-age", data_live="1"), f". They change until booked. {what}", cls="mx-foot-n")
     return P(FINE, cls="mx-foot-n")
 MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers.",
@@ -584,5 +585,5 @@ def register(app):
         except importer.SaveError as e:
             return square_page(s, lane_, w_, sq, asked_sq, str(e), can_save=False)
         if request.headers.get("x-matrix") == "1":
-            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/plan", "next": "Open the trip" if mb.mode() == mb.SANDBOX and not sq.sample else "Plan this trip"})      # F-269: with nothing to book yet, planning is the next step
+            return JSONResponse({"saved": "Saved to your trip.", "trip": "/trip/plan", "next": "Open the trip" if mb.mode() in (mb.SANDBOX, mb.LIVE) and not sq.sample else "Plan this trip"})      # F-269: with nothing to book yet, planning is the next step
         return RedirectResponse(back + "&saved=1", status_code=303)
