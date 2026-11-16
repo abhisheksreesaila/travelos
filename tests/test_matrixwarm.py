@@ -2,6 +2,7 @@
 asked square, the asked start day for every place, the asked place on every day); workers search them through liteapi's gate, so a tile asked for a moment
 later joins the search in flight or reads its answer. A plain GET of the page (a crawler, a link preview) starts nothing; a family over its budget queues
 nothing. The tests run the queue themselves (conftest)."""
+from tests.test_signin import sign_in
 import json
 import time
 from datetime import date
@@ -63,7 +64,11 @@ def test_the_script_asks_for_the_head_start_and_it_is_queued_once(real, client):
 
 
 def test_nothing_is_queued_on_the_showcase_or_for_a_family_over_its_budget(real, client, monkeypatch):
-    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)
+    monkeypatch.setattr(liteapi, "PER_VISITOR_A_DAY", 0)      # F-265: signed out, the visitor's own allowance is the budget
+    assert client.post(WARM).json()["queued"] == 0 and matrixwarm.pending() == []
+    monkeypatch.setattr(liteapi, "PER_VISITOR_A_DAY", 60)
+    sign_in(client)
+    monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 0)      # signed in, the family's
     assert client.post(WARM).json()["queued"] == 0 and matrixwarm.pending() == []
     monkeypatch.setattr(liteapi, "PER_FAMILY_A_DAY", 150)
     assert client.post(WARM.replace("home=SFO&", "home=&")).status_code == 400          # a search the page could not draw starts nothing
