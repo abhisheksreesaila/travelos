@@ -43,7 +43,7 @@ class MatrixBooking:
 class MatrixPayment:
     """A stay prebooked for LiteAPI's payment form (F-274, D-842): saved the moment the prebook answers, because LiteAPI cannot give the `prebookId` and `transactionId` back later.
     The card is never ours (LiteAPI's form takes it, Nuitée is the merchant): this row holds the ids, the amounts and the lead guest only for as long as the booking needs him or her
-    (`guest_*` are blanked once the booking is made, or after 7 days)."""
+    (`guest_*`, the name, email, mobile number and requests, are blanked once the booking is made, or after 7 days)."""
     id: str                 # the sheet's token, the idempotency key's base (`matrixbook.reference`)
     user_id: str = ""
     trip_id: str = ""
@@ -64,6 +64,8 @@ class MatrixPayment:
     guest_first: str = ""
     guest_last: str = ""
     guest_email: str = ""
+    guest_phone: str = ""
+    guest_remarks: str = ""
     created_at: str = ""
     updated_at: str = ""
 

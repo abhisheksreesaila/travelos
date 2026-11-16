@@ -12,7 +12,7 @@ from tests.test_signin import person, sign_in
 
 DAYS = [("San Diego", date(2026, 12, 16), date(2026, 12, 19))]      # the recorded prebooks' nights
 PART = tm.StayPart("San Diego", 3, "Margaritaville Hotel San Diego Gaslamp Quarter", "Standard Room, 2 Queen Beds", "room only", False, 12000, "", "", 46010, "offer-1")
-GUEST = liteapi.Guest("Test", "Traveler", "test.traveler@example.com")
+GUEST = liteapi.Guest("Test", "Traveler", "test.traveler@example.com", "+1 415 555 0100", "Quiet room; High floor. Arriving in the evening.")
 PREBOOK_ID, TRANSACTION = "nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP"
 
 
@@ -122,9 +122,11 @@ def test_after_payment_the_stay_is_booked_with_the_transaction_id_and_the_guest_
     assert res.ok and (res.done[0].booking_id, res.done[0].hotel, res.done[0].checkin, res.done[0].total_cents, res.done[0].sample) == ("uuJxfM0--", "Margaritaville Hotel San Diego Gaslamp Quarter", "2026-12-16", 46010, False)
     book = [b for u, _, b, _ in live.asked if u.endswith("/rates/book")]
     assert len(book) == 1 and book[0]["payment"] == {"method": "TRANSACTION_ID", "transactionId": TRANSACTION} and book[0]["prebookId"] == PREBOOK_ID
+    person = {"firstName": "Test", "lastName": "Traveler", "email": "test.traveler@example.com", "phone": "+1 415 555 0100"}
+    assert book[0]["holder"] == person and book[0]["guests"] == [{"occupancyNumber": 1, **person, "remarks": "Quiet room; High floor. Arriving in the evening."}]
     assert book[0]["clientReference"] == mb.reference("fam", prep.token, 0)
     after = mb.payment(db, prep.token)
-    assert (after["status"], after["booking_id"], after["guest_first"], after["guest_last"], after["guest_email"]) == ("booked", "uuJxfM0--", "", "", "")
+    assert (after["status"], after["booking_id"], after["guest_first"], after["guest_last"], after["guest_email"], after["guest_phone"], after["guest_remarks"]) == ("booked", "uuJxfM0--", "", "", "", "", "")
     assert after["prebook_id"] == PREBOOK_ID and after["transaction_id"] == TRANSACTION      # the record stays: the ids are what support asks for
     stored = familydb.rows(db, "SELECT * FROM matrix_bookings")
     assert [(r["booking_id"], r["total_cents"], r["due_at_stay_cents"], r["trip_id"], r["sample"]) for r in stored] == [("uuJxfM0--", 46010, 12000, "trip-1", 0)]
@@ -256,3 +258,12 @@ def test_a_cancel_liteapi_refuses_is_said_and_keeps_nothing(live, family, monkey
     done = booked(db, user, live)
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay(cancel="cancel_unknown.json"))
     assert mb.cancel(db, "fam", done.booking_id, user) == (liteapi.FAILED, None) and mb.cancelled(db, done.booking_id) is None
+
+
+def test_the_mobile_number_and_the_requests_go_with_a_real_booking_as_words_from_the_fixed_list():
+    guest = liteapi.Guest("A", "B", "a@b.co")
+    ex, errors = mb.clean_extras("+1 415 555 0100", "High floor|Quiet room|<script>", "Evening")
+    got = mb.with_extras(guest, ex)
+    assert errors == {} and (got.phone, got.remarks) == ("+1 415 555 0100", "High floor; Quiet room. Arriving in the evening.")
+    assert mb.with_extras(guest, mb.Extras("+1 415 555 0100")).remarks == "" and mb.with_extras(guest, mb.Extras("+1 415 555 0100", (), "Morning")).remarks == "Arriving in the morning."
+    assert mb.with_extras(guest, mb.Extras("+1 415 555 0100", ("Crib in the room",))).remarks == "Crib in the room."

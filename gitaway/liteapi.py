@@ -857,6 +857,8 @@ class Guest:
     first: str
     last: str
     email: str
+    phone: str = ""          # a real booking sends the lead guest's mobile number too (LiteAPI's book marks the holder's phone required); the sandbox's card booking sends none
+    remarks: str = ""        # what was asked of the hotel ("Quiet room. Arriving in the evening."), the guest's own picks from a fixed list
 
 
 @dataclass(frozen=True)
@@ -1042,9 +1044,9 @@ def book(prebook_id: str, guest: Guest, reference: str, family: str = "", transa
     """Book the prebooked room for `guest`. With a `transaction_id` (the payment form's, paid) the payment is `TRANSACTION_ID`; without one, and only with a sandbox key, it is the
     sandbox key's own test card (`ACC_CREDIT_CARD`: nothing is charged). A live key never sends the card method. `reference` is the idempotency key: the same one twice is
     DUPLICATE, never a second booking. An Answer of one Booking."""
-    person = {"firstName": guest.first, "lastName": guest.last, "email": guest.email}
+    person = {"firstName": guest.first, "lastName": guest.last, "email": guest.email, **({"phone": guest.phone} if guest.phone else {})}
     pay = {"method": "TRANSACTION_ID", "transactionId": str(transaction_id)} if transaction_id else {"method": "ACC_CREDIT_CARD"}
-    body = {"prebookId": str(prebook_id), "clientReference": str(reference), "holder": person, "guests": [{"occupancyNumber": 1, **person}], "payment": pay}
+    body = {"prebookId": str(prebook_id), "clientReference": str(reference), "holder": person, "guests": [{"occupancyNumber": 1, **person, **({"remarks": guest.remarks} if guest.remarks else {})}], "payment": pay}
     return _order("book", "/rates/book", body, BOOK_TIMEOUT, family, read_booking, gone=(410,))
 
 

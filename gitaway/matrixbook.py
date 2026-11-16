@@ -22,7 +22,7 @@ import re
 import secrets
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 from sqlalchemy.exc import IntegrityError
@@ -209,6 +209,13 @@ def clean_extras(phone, requests, arrive):
     return Extras(p, tuple(r for r in REQUESTS if r in picked), arrive if arrive in ARRIVALS else ""), errors
 
 
+def with_extras(guest: liteapi.Guest, extras: Extras) -> liteapi.Guest:
+    """The lead guest with the mobile number and the requests the checkout asked, for a real booking (the card sandbox booking sends the name and email only): the requests are words
+    of the fixed list, so a remark is never typed text."""
+    asks = "; ".join(extras.requests) + (f". Arriving in the {extras.arrive.lower()}." if extras.arrive else "")
+    return replace(guest, phone=extras.phone, remarks=asks.strip(". ")[:200] + ("." if asks.strip(". ") else ""))
+
+
 # ---- prebooking ------------------------------------------------------------------------------------------------------
 
 def _sample_prebook(part, a: date, b: date) -> liteapi.Prebook:
@@ -349,7 +356,7 @@ def purge(db) -> None:
     at = datetime.now(timezone.utc)
     with familydb.transaction(db):
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
-        familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '' WHERE created_at < :t AND guest_email != ''",
+        familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
 
 
@@ -370,12 +377,12 @@ def payment(db, token: str) -> dict | None:
 
 
 def pay_start(db, token: str, user_id: str, guest: liteapi.Guest, trip_id: str) -> bool:
-    """The guest filled in the form and the payment form is about to open: keep the lead guest (the booking after the payment needs the name and email, and the page is left for the
-    form's own) and the trip. Only the person who prebooked, and only before it is booked. False: nothing to pay for."""
+    """The guest filled in the form and the payment form is about to open: keep the lead guest (the booking after the payment needs the name, email, mobile number and requests, and
+    the page is left for the form's own) and the trip. Only the person who prebooked, and only before it is booked. False: nothing to pay for."""
     with familydb.transaction(db):
-        return familydb.run(db, "UPDATE matrix_payments SET guest_first = :f, guest_last = :l, guest_email = :e, trip_id = :t, status = 'paying', updated_at = :now "
-                                "WHERE id = :i AND user_id = :u AND status IN ('prebooked', 'paying')", f=guest.first, l=guest.last, e=guest.email, t=trip_id, i=token, u=user_id,
-                            now=familydb.now()) == 1
+        return familydb.run(db, "UPDATE matrix_payments SET guest_first = :f, guest_last = :l, guest_email = :e, guest_phone = :p, guest_remarks = :m, trip_id = :t, status = 'paying', "
+                                "updated_at = :now WHERE id = :i AND user_id = :u AND status IN ('prebooked', 'paying')", f=guest.first, l=guest.last, e=guest.email, p=guest.phone,
+                            m=guest.remarks, t=trip_id, i=token, u=user_id, now=familydb.now()) == 1
 
 
 def finish(db, family: str, token: str, user_id: str) -> Result:
@@ -393,6 +400,7 @@ def finish(db, family: str, token: str, user_id: str) -> Result:
         guest, errors = clean_guest(pay["guest_first"], pay["guest_last"], pay["guest_email"])
         if errors:
             return Result(liteapi.FAILED)
+        guest = replace(guest, phone=pay["guest_phone"] or "", remarks=pay["guest_remarks"] or "")
         got = liteapi.book(pay["prebook_id"], guest, ref, family, transaction_id=pay["transaction_id"])
         if got.status == liteapi.DUPLICATE:
             got = liteapi.booking_for(ref, family)
@@ -408,7 +416,7 @@ def finish(db, family: str, token: str, user_id: str) -> Result:
             pass
         mine = familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)
     with familydb.transaction(db):
-        familydb.run(db, "UPDATE matrix_payments SET status = 'booked', booking_id = :b, guest_first = '', guest_last = '', guest_email = '', updated_at = :now WHERE id = :i",
+        familydb.run(db, "UPDATE matrix_payments SET status = 'booked', booking_id = :b, guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now WHERE id = :i",
                      b=mine[0]["booking_id"], i=token, now=familydb.now())
     return Result(liteapi.OK, (_stored(mine[0]),), 0)
 
