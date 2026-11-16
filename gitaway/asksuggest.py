@@ -141,7 +141,7 @@ def search(text, home) -> tuple:
         from gitaway.pages.tripmatrix import MISSING      # here, not at the top: the page imports this module's neighbours
         return "", " ".join(MISSING[x] for x in ask.unread)
     form = {"to": place.name, "home": catalog.clean_home(said.group(1)) if said else home, "d": ask.depart.isoformat(), "n": (ask.return_ - ask.depart).days, "a": ask.adults,
-            "k": ",".join(map(str, ask.kid_ages)), "b": ask.budget_cents // 100 if ask.budget_cents else "", "x": "" if ask.flex is None else ask.flex}
+            "k": ",".join(map(str, ask.kid_ages)), "b": ask.budget_cents // 100 if ask.budget_cents else "", "x": "" if ask.flex is None else str(ask.flex)}      # a string: "exactly" is 0, which v2sentence.address would read as absent
     return v2sentence.address(form)
 
 

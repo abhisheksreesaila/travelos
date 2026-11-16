@@ -129,3 +129,17 @@ def test_place_only_f268_a_place_with_no_dates_gets_the_default_window(monkeypat
     to, _ = asksuggest.search("San Diego, Dec 12 to 16", "SFO")      # dates said are kept
     assert parse_qs(urlsplit(to).query)["d"] == ["2026-12-12"]
     assert asksuggest.search("Narnia", "SFO") == ("", "We don't know that place yet.")      # never a guessed place
+
+
+def test_place_only_f268_the_flex_said_is_kept_including_exactly(monkeypatch):
+    monkeypatch.setattr(asksuggest.catalog, "today", lambda: date(2026, 11, 15))
+    for said, x in (("exactly", "0"), ("give or take 3 days", "3")):
+        to, problem = asksuggest.search(f"San Diego, Dec 12 to 16, {said}", "SFO")
+        assert problem == "" and parse_qs(urlsplit(to).query)["x"] == [x], said
+
+
+def test_place_only_f268_off_the_showcase_still_asks_where_you_fly_from(monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
+    monkeypatch.setattr(asksuggest.catalog, "today", lambda: date(2026, 11, 15))
+    to, problem = asksuggest.search("San Diego", "")
+    assert to == "" and "fly from" in problem      # never a guessed home airport
