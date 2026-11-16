@@ -103,6 +103,7 @@ html.cv-root { background: var(--sky-3); }
   :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 380; }
   :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 520; --h: 440; }
   :is(.stage[data-beat="4"] .pc, .side[data-k="4"]) { --w: 520; --h: 340; }
+  :is(.stage[data-beat="0"] .pc, .side[data-k="0"], .stage[data-beat="7"] .pc, .side[data-k="7"]) { --w: 520; --h: 400; }
 }
 /* a still holds each moment's last frame at once */
 html:not(.cv-film) .cv3 :is(*, *::before, *::after) { animation-duration: var(--cvt-1) !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: var(--cvt-1) !important; transition-delay: 0s !important; }
@@ -145,6 +146,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   .cv-film .rig { position: absolute; left: var(--cx); top: var(--cy); width: 0; height: 0; transform-style: preserve-3d; }
   .cv-film .bob { position: absolute; transform-style: preserve-3d; }
   .cv-film .stage[data-beat="0"] .bob { animation: bob 6s ease-in-out infinite alternate; }
+  .cv-film .bob:is(:hover, :focus-within) { animation-play-state: paused; }      /* a card being typed in or aimed at holds still */
   @keyframes bob { from { transform: translateY(-0.375rem) rotateX(3deg) rotateZ(-1.2deg); } to { transform: translateY(0.375rem) rotateX(-2deg) rotateZ(1deg); } }
   .cv-film .pc { position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); translate: -50% -50%; border-radius: calc(16 * var(--u)); overflow: hidden; background: var(--pc-paper); box-shadow: var(--sh3);
     transition: width var(--cvt-900) var(--spring-soft), height var(--cvt-900) var(--spring-soft), border-radius var(--cvt-900) var(--v2-ease); }
@@ -195,6 +197,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 /* ============ the faces (all drawn on paper; the type has floors so a phone can read it) ============ */
 .f { position: absolute; inset: 0; color: var(--pc-ink); font: 500 max(0.6875rem, calc(14 * var(--u)))/1.3 var(--f-ui); }
 .f svg.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.f em { color: var(--pc-ink-2); }
 .f .artbox { position: relative; overflow: hidden; border-radius: calc(9 * var(--u)); }
 .f .ttl { position: absolute; left: calc(18 * var(--u)); top: calc(16 * var(--u)); text-shadow: 0 1px 0 rgb(255 255 255 / .6); }
 .f .ttl small { display: block; font: 700 max(0.6875rem, calc(11 * var(--u)))/1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #29406A; }
@@ -216,10 +219,10 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .wish .write { position: relative; padding: calc(70 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u)) 0; display: flex; flex-direction: column; margin: 0; }
 .wish .write::before { content: ""; position: absolute; left: calc(-8 * var(--u)); top: calc(14 * var(--u)); bottom: calc(14 * var(--u)); border-left: 0.0938rem solid rgb(19 32 58 / .14); }
 .wish .dear { font: italic 500 max(0.75rem, calc(16 * var(--u)))/1 var(--f-display); color: var(--pc-ink-2); }
-.wish .sent { margin: calc(8 * var(--u)) 0 0; font: italic 500 max(0.9375rem, calc(24 * var(--u)))/1.32 var(--f-display); color: var(--pc-ink); }
+.wish .sent { margin: calc(8 * var(--u)) 0 0; font: italic 500 max(var(--text-min), calc(24 * var(--u)))/1.32 var(--f-display); color: var(--pc-ink); }
 .wish .sent-box { position: relative; flex: 1; min-height: calc(96 * var(--u)); margin-top: calc(8 * var(--u)); }
 .wish .sent-box .sent { position: absolute; inset: 0; margin: 0; pointer-events: none; }
-.wish .sent-in { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: 0; padding: 0; background: transparent; color: var(--pc-pen); font: italic 500 max(0.9375rem, calc(24 * var(--u)))/1.32 var(--f-display); caret-color: var(--pc-brand); }
+.wish .sent-in { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: 0; padding: 0; background: transparent; color: var(--pc-pen); font: italic 500 max(var(--text-min), calc(24 * var(--u)))/1.32 var(--f-display); caret-color: var(--pc-brand); }
 .wish .sent-in::placeholder { color: transparent; }
 .wish .sent-in:focus::placeholder { color: var(--pc-ink-2); opacity: 1; }
 .wish .sent-in:is(:focus, :not(:placeholder-shown)) ~ .sent { opacity: 0; }
@@ -227,7 +230,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .wish .w { display: inline-block; color: var(--pc-pen); border-bottom: 0.125rem dotted color-mix(in srgb, #4338CA 70%, transparent); animation: wipe var(--cvt-520) var(--v2-ease) both; animation-delay: calc(var(--cvt-500) + var(--i) * var(--cvt-380)); }
 .wish .caret { display: inline-block; width: 0.125rem; height: .95em; vertical-align: -.12em; margin-left: 0.125rem; background: var(--pc-brand); animation: blink 1s steps(1) infinite var(--cvt-2200), fade var(--cvt-1) var(--cvt-2000) both; }
 @keyframes blink { 50% { opacity: 0; } }
-.wish .go { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: calc(6 * var(--u)); min-height: 3rem; padding: calc(10 * var(--u)) calc(16 * var(--u)); border: 0; border-radius: 99rem; background: var(--pc-brand); color: var(--pc-on-brand); font: 650 max(0.75rem, calc(14 * var(--u)))/1 var(--f-ui); box-shadow: 0 0.5rem 1.125rem -0.625rem #4338CA; cursor: pointer;
+.wish .go { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: calc(6 * var(--u)); min-height: 3rem; padding: calc(10 * var(--u)) calc(16 * var(--u)); border: 0; border-radius: 99rem; background: var(--pc-brand); color: var(--pc-on-brand); font: 650 max(var(--text-min), calc(14 * var(--u)))/1.15 var(--f-ui); box-shadow: 0 0.5rem 1.125rem -0.625rem #4338CA; cursor: pointer; text-align: left;
   animation: pop var(--cvt-600) var(--spring) both var(--cvt-2100), press var(--cvt-420) var(--v2-ease) var(--cvt-3100); }
 .wish .go svg { width: 1.1em; height: 1.1em; }
 .wish .pm { right: calc(52 * var(--u)); top: calc(16 * var(--u)); }
@@ -249,7 +252,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .mx .sq { position: relative; display: grid; place-content: center; justify-items: center; gap: calc(3 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--pc-white); box-shadow: 0 1px 0.125rem rgb(20 20 60 / .08), inset 0 0 0 1px rgb(19 32 58 / .08);
   font: 700 max(0.6875rem, calc(15 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; animation: pop var(--cvt-520) var(--spring) both; animation-delay: calc(var(--cvt-450) + var(--i) * var(--cv-stag)); }
 .mx .sq svg { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
-.mx .sq.over { color: #6B7089; background: #F4F2EC; }
+.mx .sq.over { color: #5A5F78; background: #F4F2EC; }
 .mx .sq.pick { animation: pop var(--cvt-520) var(--spring) both calc(var(--cvt-450) + var(--i) * var(--cv-stag)), lit var(--cvt-700) var(--v2-ease) forwards var(--cvt-1500); }
 .mx .sq.pick small { padding: calc(3 * var(--u)) calc(7 * var(--u)); border-radius: 99rem; background: var(--pc-white); color: var(--pc-pen); font: 700 max(0.6875rem, calc(11 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop var(--cvt-500) var(--spring) both var(--cvt-1900); }
 @keyframes lit { to { background: #4338CA; color: var(--pc-white); box-shadow: 0 0 0 calc(4 * var(--u)) rgb(67 56 202 / .22), 0 0.875rem 1.5rem -0.625rem #4338CA; scale: 1.08; } }
@@ -386,7 +389,10 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   .cv-top { padding: max(0.625rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); gap: 0.5rem; }
   .cv-nav { display: none; }
   .cv-tag { margin-right: auto; }
+  .cv-top .ga-preview { position: static; }      /* the line hangs from the bar's left edge, so it stays on the screen */
+  .cv-top .ga-preview-pop { left: 1rem; }
   .cv-top .btn.sm { padding: 0 1rem; white-space: nowrap; }
+  .cv-top .ga-brand { min-width: 3rem; justify-content: center; }
   /* fewer columns on the card */
   .mx .g { grid-template-columns: 1.2fr repeat(3, 1fr); }
   .mx .c4, .mx .c5 { display: none; }

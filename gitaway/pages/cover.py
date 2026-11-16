@@ -264,7 +264,7 @@ def _caps():
             extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), Span(NotStr(DOWN), "Follow the postcard", cls="hint"), cls="acts cv-ctas"), P(DISCLOSURE, cls="note"))
         if k == 7:
             extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), A("Browse guides", href="/guides", cls="btn soft"), cls="acts cv-ctas"),)
-        caps.append(Article(lab, tag(head, " ", Em(soft)), P(text), *extra, cls="cap now" if k == 0 else "cap", data_k=str(k)))
+        caps.append(Article(lab, tag(head, " ", Em(soft)), P(text), *extra, cls="cap now" if k == 0 else "cap", data_k=str(k), style=f"--k:{k}"))
     return Div(*caps, cls="caps")
 
 
