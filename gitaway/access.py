@@ -33,7 +33,7 @@ OPEN_POSTS = (
     "/trip/talk/message",   # talk on a plan (F-091): a message on a plan or part, from any member (viewers too: it changes no plan)
     "/trip/family/message",   # a message in the family thread (F-070): every member, viewers too (a viewer cannot change a plan, so never causes a change card)
     "/report",   # reporting a public trip or creator (F-185): anyone, signed out too; it changes no plan
-    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
+    "/admin/takedown", "/admin/restore", "/admin/approve", "/admin/seen", "/admin/payments/resolve", "/admin/draft", "/admin/link", "/admin/revoke", "/creators/settings",   # the captain's take down and restore, and F-188's drafts for creators (/claim/ is a creator claiming their own post; the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS, F-185) and my own affiliate marker (F-184)
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
     "/admin/plan-for-me/edit", "/admin/plan-for-me/send",   # the captain's founder check of a built plan (F-197): the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS
     "/plan/ask",   # the search before the matrix (F-241): a viewer may search; the route stores the interests only for an editor or admin

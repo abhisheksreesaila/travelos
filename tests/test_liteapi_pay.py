@@ -123,9 +123,9 @@ def test_a_book_after_the_payment_form_pays_with_the_transaction_id(live):
                                 "payment": {"method": "TRANSACTION_ID", "transactionId": "tr_cts_j_DBi8RkjWF1hJDzmsryP"}}
 
 
-def test_a_book_of_a_payment_never_made_is_refused_and_says_failed(live, monkeypatch):
+def test_a_book_of_a_payment_never_made_is_refused_and_says_not_paid(live, monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", Pay(book="book_unpaid.json"))
-    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_x").status == liteapi.FAILED
+    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_x").status == liteapi.NOT_PAID
 
 
 def test_a_live_key_can_never_send_the_sandbox_card(live):
@@ -138,7 +138,8 @@ def test_a_live_key_can_never_send_the_sandbox_card(live):
 
 def test_no_live_call_can_carry_the_card_method_whatever_is_asked_of_order(live):
     for body in ({"payment": {"method": "ACC_CREDIT_CARD"}}, {"payment": {"method": "TRANSACTION_ID"}}, {"payment": {"method": "WALLET", "transactionId": "t"}},
-                 {"usePaymentSdk": False}, {"payment": "ACC_CREDIT_CARD"}):
+                 {"usePaymentSdk": False}, {"payment": "ACC_CREDIT_CARD"},
+                 {"usePaymentSdk": True, "payment": {"method": "ACC_CREDIT_CARD"}}, {"usePaymentSdk": True, "payment": {"method": "TRANSACTION_ID", "transactionId": "t"}}):
         assert liteapi._order("x", "/rates/book", body, 5, "fam", liteapi.read_booking).status == liteapi.OFF, body
     assert live.asked == []
 
@@ -190,12 +191,16 @@ def test_cancelling_a_booking_liteapi_does_not_know_is_failed_and_the_id_cannot_
     assert f.asked[0][0] == CANCEL + "..%2F..%2Frates%2Fbook%3Fx%3D1"
 
 
-def test_a_cancel_is_a_booking_call_counted_and_refused_where_booking_is_off(monkeypatch):
+def test_switched_off_a_paid_guest_is_still_booked_and_cancelled_but_nothing_new_is_prebooked(monkeypatch):
+    """The kill switch (GITAWAY_LIVE_BOOKING=0) stops new prebooks; a TRANSACTION_ID book and a cancel go on (the money is taken), the sandbox's card never does (D-848)."""
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
-    monkeypatch.setattr(auth, "production", lambda: False)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")
     f = Pay()
     monkeypatch.setattr(liteapi, "TRANSPORT", f)
-    assert liteapi.cancel("b", "fam").status == liteapi.OFF and f.asked == []
+    assert liteapi.prebook("o", "fam", sdk=True).status == liteapi.OFF and liteapi.book("p", GUEST, "r", "fam").status == liteapi.OFF and f.asked == []
+    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_1").ok and liteapi.cancel("b", "fam").ok
+    assert [a[2]["payment"]["method"] for a in f.asked if a[2]] == ["TRANSACTION_ID"]
 
 
 # ---- the margin ------------------------------------------------------------------------------------------------------------

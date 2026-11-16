@@ -1,0 +1,13 @@
+{
+ "status": 200,
+ "body": {
+  "data": {
+   "bookingId": "7EBqw775l",
+   "cancellation_fee": 148.88,
+   "currency": "USD",
+   "refund_amount": 371.78,
+   "status": "CANCELLED_WITH_CHARGES"
+  },
+  "sandbox": true
+ }
+}

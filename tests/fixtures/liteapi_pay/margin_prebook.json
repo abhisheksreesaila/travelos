@@ -1,0 +1,53 @@
+{
+ "margin": 16,
+ "rows": [
+  {
+   "hotelId": "lp369ef",
+   "shown": 394.48,
+   "retail": 394.48,
+   "prebook_price": 394.48,
+   "pays": 394.48,
+   "prebook_status": 200
+  },
+  {
+   "hotelId": "lp31b7b",
+   "shown": 496.08,
+   "retail": 496.08,
+   "prebook_price": 496.08,
+   "pays": 496.08,
+   "prebook_status": 200
+  },
+  {
+   "hotelId": "lp280e6",
+   "shown": 401.74,
+   "retail": 401.74,
+   "prebook_price": 401.74,
+   "pays": 401.74,
+   "prebook_status": 200
+  },
+  {
+   "hotelId": "lp4f293",
+   "shown": 452.76,
+   "retail": 452.76,
+   "prebook_price": 452.76,
+   "pays": 452.76,
+   "prebook_status": 200
+  },
+  {
+   "hotelId": "lp3f338",
+   "shown": 530.6,
+   "retail": 530.6,
+   "prebook_price": 530.6,
+   "pays": 530.6,
+   "prebook_status": 200
+  },
+  {
+   "hotelId": "lp1f5cb",
+   "shown": 1046.33,
+   "retail": 1046.34,
+   "prebook_price": 1046.34,
+   "pays": 1046.34,
+   "prebook_status": 200
+  }
+ ]
+}

@@ -17,6 +17,7 @@ charged". A guest's name and email are personal data: validated here, sent to Li
 """
 
 import hashlib
+import logging
 import os
 import re
 import secrets
@@ -30,12 +31,14 @@ from sqlalchemy.exc import IntegrityError
 from gitaway import auth, catalog, familydb, liteapi, showcase
 
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
+log = logging.getLogger(__name__)
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
 SOON_WORDS = "Booking opens soon"
 LIVE_WORDS = "Sold by Nuitée through LiteAPI. Your card is charged when you pay"
 SANDBOX, STAND_IN, SOON, LIVE = "sandbox", "stand-in", "soon", "live"
 MANY = "many"                   # a square of several stays is not booked in one go with the payment form (one payment, one stay)
 PURGE_UNPAID, PURGE_GUEST = 1, 7      # days: an unpaid prebook row is dropped after one, a lead guest's name and email are blanked after seven
+CODE_MISSES_A_DAY = 30          # wrong codes the whole site answers in a day before "Have a code?" is off until tomorrow (L1: codes cannot be guessed freely)
 TOLERANCE_CENTS = 100           # a room's final price within a dollar of the square's is "the price shown" (a live margin lands within a cent; this is for rounding, not for a moved price)
 _CODE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$")
 HOLD = 15 * 60                  # seconds a prebooked room is kept for the guest form
@@ -115,7 +118,7 @@ class Prep:
     @property
     def changed(self) -> bool:
         """The room's price (or terms) moved from what the square showed, so the person is told before booking."""
-        return any(r.prebook.changed or abs(r.prebook.cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS for r in self.rows)
+        return any(r.prebook.changed or abs(r.prebook.charge_cents + r.prebook.discount_cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS for r in self.rows)
 
     @property
     def words(self) -> str:
@@ -384,11 +387,83 @@ def mark_cancelled(session, trip_id: str, booking_id: str) -> None:
     importer.save(session, replace(plan, hotels=hotels), replace=trip_id)
 
 
+def stuck(db, before: str, due: str = "") -> list:
+    """The payments left `paying` (the guest was sent to the card form) since before `before` (an ISO time): paid, perhaps, and not booked. `due`: only those the worker may try now
+    (no back-off pending at that time)."""
+    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status IN ('paying', 'needs_help') AND updated_at < :t AND (:d = '' OR next_try_at IS NULL OR next_try_at = '' OR next_try_at <= :d) "
+                             "ORDER BY COALESCE(attempts, 0), updated_at DESC", t=before, d=due)      # the fewest tries and the freshest first: a likely paid row before the abandoned ones
+
+
+def needs_help(db, token: str) -> None:
+    """Past the hour and LiteAPI has not said "not paid" (a hold gone, an outage, anything else): the guest may have paid. Keep the row whole, count and list it on /admin; the worker
+    still tries it, slowly. Only the captain's `resolve` ends it."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET status = 'needs_help' WHERE id = :i AND status = 'paying'", i=token)
+
+
+def resolve(db, token: str) -> bool:
+    """The captain dealt with a `needs_help` row (refunded it, or booked it by hand): blank the guest and mark it `resolved`; the purge deletes it."""
+    with familydb.transaction(db):
+        return familydb.run(db, "UPDATE matrix_payments SET status = 'resolved', guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now "
+                                "WHERE id = :i AND status = 'needs_help'", i=token, now=familydb.now()) == 1
+
+
+def wait_until(db, token: str, at: str) -> None:
+    """Leave the row alone until `at` (an ISO time) without counting a try: our own limit was spent, which says nothing about LiteAPI or the payment."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET next_try_at = :t WHERE id = :i", t=at, i=token)
+
+
+def give_up(db, token: str) -> None:
+    """LiteAPI itself says this form was never paid (code 2014) and the hour is past: mark it `unpaid` and drop the guest at once; the purge deletes the row."""
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET status = 'unpaid', guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now "
+                         "WHERE id = :i AND status IN ('paying', 'needs_help')", i=token, now=familydb.now())
+
+
+def back_off(db, token: str, at, base) -> None:
+    """Another try later: attempts + 1 and next_try_at after `base` x 2^attempts, at most a day."""
+    from datetime import timedelta
+    pay = payment(db, token) or {}
+    n = pay.get("attempts") or 0
+    wait = min(base * (2 ** min(n, 20)), timedelta(days=1))
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_payments SET attempts = :n, next_try_at = :t WHERE id = :i", n=n + 1, t=(at + wait).isoformat(timespec="seconds"), i=token)
+
+
+def _misses_today() -> int:
+    from datetime import timedelta
+
+    from sqlalchemy import text
+
+    from gitaway import community
+    with community.connect() as db:
+        return db.conn.execute(text("SELECT COUNT(*) FROM book_presses WHERE person = 'code-miss' AND at > :t"), {"t": (liteapi.now() - timedelta(days=1)).isoformat()}).scalar()
+
+
+def codes_open() -> bool:
+    """Is "Have a code?" on? It goes off for the rest of the day (24 hours) once the whole site has been told CODE_MISSES_A_DAY wrong codes."""
+    return _misses_today() < CODE_MISSES_A_DAY
+
+
+def code_missed() -> None:
+    """Count one wrong code (site-wide, in community.db with the presses: no one is named) and log once when that turns codes off."""
+    from sqlalchemy import text
+
+    from gitaway import community
+    with community.connect() as db:
+        db.conn.execute(text("INSERT INTO book_presses (person, at) VALUES ('code-miss', :t)"), {"t": liteapi.now().isoformat()})
+        db.conn.commit()
+    if _misses_today() == CODE_MISSES_A_DAY:
+        log.warning("booking codes are off for today: %s wrong codes were tried", CODE_MISSES_A_DAY)
+
+
 def purge(db) -> None:
     """Drop what nobody paid for after PURGE_UNPAID days and blank every lead guest's name and email after PURGE_GUEST days (the booking id and amounts stay: they are the record)."""
     from datetime import datetime, timedelta, timezone
     at = datetime.now(timezone.utc)
     with familydb.transaction(db):
+        familydb.run(db, "DELETE FROM matrix_payments WHERE status IN ('unpaid', 'resolved')")
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
         familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
@@ -419,7 +494,7 @@ def pay_start(db, token: str, user_id: str, guest: liteapi.Guest, trip_id: str) 
                             m=guest.remarks, t=trip_id, i=token, u=user_id, now=familydb.now()) == 1
 
 
-def finish(db, family: str, token: str, user_id: str) -> Result:
+def finish(db, family: str, token: str, user_id: str, budget: str = "") -> Result:
     """After the payment form: book the stay with the transaction id saved at prebook, once (a second call, or a reload of the return page, finds the stored booking). Nothing is
     booked unless the guest was saved (the form was opened); LiteAPI refuses a transaction that was not paid (HTTP 400, code 2014) and then nothing is stored and the row waits
     for another try. The guest's name and email are blanked once it is booked."""
@@ -429,15 +504,16 @@ def finish(db, family: str, token: str, user_id: str) -> Result:
     ref = reference(family, token, 0)
     mine = familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)
     if not mine:
-        if pay["status"] != "paying":
+        if pay["status"] not in ("paying", "needs_help"):
             return Result(liteapi.FAILED)
         guest, errors = clean_guest(pay["guest_first"], pay["guest_last"], pay["guest_email"])
         if errors:
             return Result(liteapi.FAILED)
         guest = replace(guest, phone=pay["guest_phone"] or "", remarks=pay["guest_remarks"] or "")
-        got = liteapi.book(pay["prebook_id"], guest, ref, family, transaction_id=pay["transaction_id"])
+        spender = budget or family      # the worker spends its own allowance ("job:<family>"), the reference stays the family's
+        got = liteapi.book(pay["prebook_id"], guest, ref, spender, transaction_id=pay["transaction_id"])
         if got.status == liteapi.DUPLICATE:
-            got = liteapi.booking_for(ref, family)
+            got = liteapi.booking_for(ref, spender)
         if not got.ok:
             return Result(got.status)
         booking = got.items[0]

@@ -51,6 +51,11 @@ The founder books their own stay here after a deploy. Money moves: Nuitée charg
 3. Railway needs `GITAWAY_PUBLIC_URL=https://gitaway.me` (the card form returns the browser to it). `LITEAPI_KEY` is already the live key (the "Live prices" steps above).
 4. `pixi run test`, `pixi run test-browser` and the security auditor's pass are green. Note the current deployment id for rollback (`railway deployment list --service web`).
 
+## Also before (review fixes, D-848..D-850)
+- **Ask Nuitée (LiteAPI) when the card is captured**: at the payment form, or when the book is made. A guest who paid and was never booked may be holding money. The booking worker retries such a stay every minute from 10 minutes on, and /admin shows "Paid, not booked (10+ min)": if it is not 0, look at it the same day.
+- **Make live codes strong**: at least 10 random characters, with a usage limit, a budget and a maximum discount (`maximum_discount_amount`), so a code cannot be guessed or run away. The site stops answering codes for the day after 30 wrong ones (the log says "booking codes are off for today").
+- The matrix sends a report-only Content-Security-Policy (`gitaway/csp.py`): open DevTools on the booking sheet during the first booking and note anything the console says it would block; nothing is blocked.
+
 ## Deploy and the first booking
 1. `railway up --service web --detach`. Check `/healthz`, a matrix square's price, and that the about-prices card says "Sold by Nuitée through LiteAPI ... GitAway never sees your card".
 2. Sign in on gitaway.me. Open a square, press Book, answer the questions (your real name, email and mobile number), and read the review: the total must be the square's (there is no "The price moved" line; if there is, the margin did not make the charge equal the shown price: stop and tell the builder the two numbers).

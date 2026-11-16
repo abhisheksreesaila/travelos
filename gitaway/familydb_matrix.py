@@ -60,7 +60,9 @@ class MatrixPayment:
     voucher_code: str = ""
     discount_cents: int = 0
     policy: str = ""        # the refund policy as it was shown before paying (matrixbook.policy_words)
-    status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked
+    status: str = "prebooked"   # prebooked, then paying (the guest is saved and the form is shown), then booked; or unpaid (LiteAPI said the form was never paid: given up, deleted by the purge);
+    # or needs_help (paid perhaps, not booked after the hour: kept, listed on /admin, still retried) and resolved (the captain dealt with it: deleted by the purge).
+    # `attempts` and `next_try_at` (the worker's back-off) are NOT here: migrations/family/004_payment_backoff.sql adds them, so fresh and older databases both get them (D-851)
     booking_id: str = ""
     guest_first: str = ""
     guest_last: str = ""

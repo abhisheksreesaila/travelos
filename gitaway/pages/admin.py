@@ -21,7 +21,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, 
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
+from gitaway import affiliate, bookingjobs, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import reading
 from gitaway.pages import creatorclaim as claims
@@ -194,7 +194,8 @@ def admin_page(drafted=()):
              ("Plain links, no commission (7 days)", " · ".join(f"{lane} {n}" for lane, n in sorted(plain.items())) or "none", "ad-plain"),
              ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
              ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"),
-             ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"))     # F-220: the key's kind, never the key
+             ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"),     # F-220: the key's kind, never the key
+             ("Paid, not booked (10+ min)", str(bookingjobs.stuck_count()), "ad-stuck"))     # F-274: a guest paid in LiteAPI's form and the stay is not booked yet: the worker keeps trying (D-848)
     fresh = sum(1 for r in rep if not r["seen"])
     return reading("Admin", Div(
         Div(H1("Admin", cls="ad-title"),
@@ -205,6 +206,7 @@ def admin_page(drafted=()):
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             Section(H2("Plan it for me orders"), P("Refunds are yours, by hand in Stripe: a failed order that was paid, and a payment that paid an order twice or one that is gone, say Refund due.", cls="ad-meta"),
                     Ul(*[_owed(p) for p in owed], *[_order(o) for o in orders], cls="ad-list", id="ad-orders") if orders or owed else P("No orders yet.", cls="ad-meta", id="ad-no-orders"), cls="ad-sec"),
+            _needs_a_look(),
             claims.section(drafted),
             Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),
                     Ul(*[_waiting(w) for w in waiting], cls="ad-list", id="ad-waiting"), cls="ad-sec", id="ad-waiting-sec") if waiting else "",
@@ -220,7 +222,29 @@ def admin_page(drafted=()):
             cls="ad-card"), id="admin", cls="ad-stage"), wide=True, head=HEAD)
 
 
+def _needs_a_look():
+    """F-274 (D-852): the stays a guest may have paid for that the booking worker could not book after an hour and LiteAPI did not say were unpaid. Kept whole until the captain resolves each
+    (refunded in LiteAPI's dashboard, or booked by hand). Listed by token prefix, when, LiteAPI's transaction id and our booking reference: the ids to look it up with."""
+    rows = bookingjobs.needing_help()
+    if not rows:
+        return ""
+    return Section(H2("Needs a look"), P("A guest may have paid and the stay is not booked. Find the payment in LiteAPI with the transaction id or the reference, refund or book it, then press Resolved.", cls="ad-meta"),
+                   Ul(*[Li(Div(Span(f"{r['token'][:6]} · {r['created_at'][:16].replace('T', ' ')}", cls="ad-reason"), Span(f"Transaction {r['transaction_id']}", cls="ad-meta"), Span(f"Reference {r['reference']}", cls="ad-meta")),
+                            Form(Input(type="hidden", name="family", value=r["family"]), Input(type="hidden", name="token", value=r["token"]), Button("Resolved", type="submit", cls="btn btn-sm"),
+                                 action="/admin/payments/resolve", method="post", cls="ad-inline")) for r in rows], cls="ad-list", id="ad-needs-help"), cls="ad-sec", id="ad-needs-help-sec")
+
+
 def register(app):
+    @app.post("/admin/payments/resolve")
+    async def admin_resolve_payment(request, session):
+        if not is_admin(session) or not reports.same_site(request):
+            return showcase.not_found()
+        form = await request.form()
+        family, token = str(form.get("family") or ""), str(form.get("token") or "")
+        done = await run_in_threadpool(bookingjobs.resolve, family, token)
+        logger.info("payment resolved by the captain: %s token %s… family %s… (%s)", (session or {}).get("email", "?"), token[:6], family[:6], "done" if done else "no change")   # F-274 audit: who resolved which row and when (the log has the time)
+        return RedirectResponse("/admin", status_code=303)
+
     @app.get("/admin")
     def admin(session):
         return admin_page() if is_admin(session) else showcase.not_found()

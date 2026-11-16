@@ -52,6 +52,7 @@ GONE, DUPLICATE, BAD_CODE = "gone", "duplicate", "bad code"      # a prebook or 
 MARGIN = 16.0                            # percent put on the net rate of every live stay search (F-274, D-840): the sandbox showed the retail rate and `suggestedSellingPrice` equal to the cent at 16
 PAYMENT_SDK = "https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"      # LiteAPI's payment form script, the one script of another site GitAway loads, from the booking sheet only (D-841)
 PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
+NOT_PAID = "not paid"      # a TRANSACTION_ID book LiteAPI refuses because the payment was never made (HTTP 400, code 2014): not "LiteAPI is down" (F-274, D-851)
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
@@ -61,6 +62,8 @@ PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together
 PER_VISITOR_A_DAY = 60                   # uncached searches one signed-out visitor may make in a day (F-265, D-764): about three full matrices; a visitor is `stats.searcher`'s "v:" code
 VISITOR = "v:"
 A_DAY = 2000                             # and the whole site
+JOB_BOOK_A_DAY = 60      # and the worker's own cap for the whole site: its calls are counted apart from the interactive 200 (D-852)
+PER_JOB_BOOK_A_DAY = 6      # the booking worker's own allowance a family a day (key "job:<family>"): it never spends the family's interactive one (D-851)
 PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY = 20, 200      # booking calls (prebook, book, lookup) have their own daily budgets, so booking never spends a family's searches nor the reverse (F-233 review)
 STAY_TIMEOUT, FLIGHT_TIMEOUT = 30, 40    # seconds: the sandbox took 2 to 17 s for stays and up to 16 s for flights; on 2026-11-12 evening stays took up to 33 s
 STAY_ASK = 10                            # seconds LiteAPI is asked to answer a stay search in (its `timeout`; the sandbox does not always keep it)
@@ -458,6 +461,8 @@ def _day() -> str:
 
 def _per(family: str, per: int, book: bool) -> int:
     """A visitor's own allowance, else the family's budget (a booking call is a signed-in family's, never a visitor's)."""
+    if book and family.startswith("job:"):
+        return PER_JOB_BOOK_A_DAY
     return PER_VISITOR_A_DAY if family.startswith(VISITOR) and not book else per
 
 
@@ -469,13 +474,21 @@ def visitor_over(family: str) -> bool:
         return db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM liteapi_searches WHERE day = :d AND family = :f"), {"d": _day(), "f": family}).scalar() >= PER_VISITOR_A_DAY
 
 
+def _site(book: bool, who: str, total: int) -> tuple:
+    """(an SQL condition, the cap) for the site-wide count of a booking call: the worker's calls ("job:...") are counted and capped apart from everyone else's (D-852)."""
+    if not book:
+        return "", total
+    return (" AND family LIKE 'job:%'", JOB_BOOK_A_DAY) if who.startswith("job:") else (" AND family NOT LIKE 'job:%'", total)
+
+
 def _spend(family: str, book: bool = False) -> bool:
     """Count one uncached call for `family` today, if neither its budget nor the site's is spent. `book`: a booking call, counted in its own table against its own budgets."""
     day, who = _day(), family or "guest"
     table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
+    where, total = _site(book, who, total)
     with _LOCK, community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d{where}"), {"d": day}).scalar()
         if mine >= _per(who, per, book) or everyone >= total:
             return False
         if who.startswith(VISITOR) and not book:      # a visitor's code is good for the day it was made: yesterday's are gone
@@ -489,9 +502,10 @@ def can_search(family: str, book: bool = False) -> bool:
     """Whether `family` (and the site) still has calls left today: background work asks before it starts (F-229). `book`: the booking budgets."""
     day, who = _day(), family or "guest"
     table, per, total = ("liteapi_bookings", PER_FAMILY_BOOK_A_DAY, BOOK_A_DAY) if book else ("liteapi_searches", PER_FAMILY_A_DAY, A_DAY)
+    where, total = _site(book, who, total)
     with community.connect() as db:
         mine = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d AND family = :f"), {"d": day, "f": who}).scalar()
-        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d"), {"d": day}).scalar()
+        everyone = db.conn.execute(text(f"SELECT COALESCE(SUM(n), 0) FROM {table} WHERE day = :d{where}"), {"d": day}).scalar()
     return mine < _per(who, per, book) and everyone < total
 
 
@@ -1114,16 +1128,21 @@ _BOOK_TURN = threading.BoundedSemaphore(1)      # one booking call in flight on 
 
 
 def _allowed(body: dict | None) -> bool:
-    """Which calls this key may make (D-480, reopened in D-840): a sandbox key all of them; a live key only where real booking is on (`real_booking`), and then never with the
-    sandbox's own card: a book pays with TRANSACTION_ID alone and a prebook asks for the payment form (an ACC_CREDIT_CARD book would charge the LiteAPI account's own card)."""
+    """Which calls this key may make (D-480, reopened in D-840 and D-848): a sandbox key all of them; a live key a prebook only where real booking is on (`real_booking`) and only
+    for the payment form (`usePaymentSdk: true`); and, because the money is already taken once a guest has paid, a book with a TRANSACTION_ID, a cancel and a lookup whatever the
+    switch says, so switching booking off strands nobody who paid. Never the sandbox's own card: an ACC_CREDIT_CARD book would charge the LiteAPI account's own card."""
     m = mode()
     if m == "sandbox":
         return True
-    if m != "live" or not real_booking():
+    if m != "live":
         return False
     body = body or {}
-    pay = body.get("payment")
-    return (pay is None or (isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId")))) and body.get("usePaymentSdk", True) is True
+    if "usePaymentSdk" in body:      # a prebook: new business, only where booking is on, and never with a payment of its own in it
+        return body["usePaymentSdk"] is True and "payment" not in body and real_booking()
+    if "payment" in body:           # a book: only what a paid form's transaction can finish
+        pay = body["payment"]
+        return isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId"))
+    return not body                 # a cancel or a lookup: no body
 
 
 def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "") -> Answer:
@@ -1163,6 +1182,8 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
             log.warning("LiteAPI %s not done (HTTP %s, code %s)", what, status, code)
             if code == 4002 and (body or {}).get("voucherCode"):      # LiteAPI's 4002 for a voucher it does not accept: said as that, not as a room taken
                 return Answer(BAD_CODE, (), at)
+            if code == 2014:      # "payment not completed": the guest never paid, which is not LiteAPI being down
+                return Answer(NOT_PAID, (), at)
             return Answer(GONE if status in gone or code in (2001, 4002) else DUPLICATE if code == 4005 else FAILED, (), at)
     finally:
         _BOOK_TURN.release()

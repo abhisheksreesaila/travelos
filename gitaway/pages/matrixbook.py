@@ -46,6 +46,7 @@ STAGES = {"sandbox": ("Holding your room", "Paying with the test card", "Booking
           "sample": ("Holding your room", "Paying with the sample card", "Confirming your sample stay", "Putting the trip together")}
 STAGES_FORM = ("Holding your room", "Opening LiteAPI’s secure payment form")
 CONFETTI = 64
+CODES_OFF = "Codes are off for today. Book without one."
 NEEDS_PHONE = "Add a mobile number: the booking needs one."
 PAID_BUT = ("Your payment may have gone through, but we could not confirm the booking just now. Do not pay again. Reload this page in a minute to try once more; "
             "if it still does not confirm, write to LiteAPI with the payment reference below.")
@@ -176,6 +177,8 @@ def _policy(prep: mb.Prep):
 
 def _code_box(prep: mb.Prep):
     """"Have a code?": a LiteAPI voucher code, checked by LiteAPI (the script asks POST /plan/matrix/book/code; without it the field is a note that the code needs the script)."""
+    if not mb.codes_open():      # too many wrong codes today: the box is off until tomorrow (L1)
+        return ""
     return Div(Label("Have a code?", fr="mxb-code", cls="mxb-l"),
                Div(Input(id="mxb-code", type="text", autocomplete="off", autocapitalize="none", spellcheck="false", maxlength="32", value=prep.voucher, data_code="1"),
                    Button("Apply", type="button", cls="mxb-b2 mxb-apply", data_apply="1"), cls="mxb-codebox-r"),
@@ -478,9 +481,14 @@ def register(app):
         if held is None or not _same_offers(sq, held):
             return refuse(STALE, 409)
         voucher, bad = mb.code_shape(code)
+        if voucher and not mb.codes_open():
+            return refuse(CODES_OFF, 403)
         if bad:
+            mb.code_missed()
             return refuse(bad, 422)
         prep = _prepare(s, lane_, w_, sq, family, voucher)
+        if prep.status == liteapi.BAD_CODE:
+            mb.code_missed()
         if not prep.ok:
             return refuse(mb.SAID.get(prep.status, mb.SAID[liteapi.FAILED]), 422 if prep.status == liteapi.BAD_CODE else 502)
         mb.hold(family, prep, _square_of(s, lane_, w_, pk))
@@ -499,7 +507,7 @@ def register(app):
     def book_return(request, session, token: str = ""):
         """Where LiteAPI's payment form sends the browser after paying (D-842): the stay is booked once with the transaction id saved at prebook (a reload finds the stored booking), added to
         the trip, and the pass is drawn. LiteAPI refuses a transaction that was not paid, so nothing is trusted from the address but the token, which is this person's own row."""
-        if not mb.pays_by_form() or not _TOKEN.match(token):
+        if not _TOKEN.match(token):      # no check that booking is switched on: a guest who paid is finished whatever the switch says (D-848)
             return RedirectResponse("/plan/ask", status_code=303)
         me = ses.current_traveler(session)
         if not me:
@@ -512,6 +520,8 @@ def register(app):
                 return RedirectResponse(ses.signin_href(f"{RETURN}?token={token}"), status_code=303)
             res = mb.finish(fam.db, family, token, me.id)
             pay = mb.payment(fam.db, token)
+        if pay and pay.get("user_id") != me.id:      # another person's row is nothing of ours to describe (L2)
+            pay = None
         if not res.ok:
             kept = f" Payment reference: {pay['transaction_id']}." if pay and pay.get("transaction_id") and pay.get("status") == "paying" else ""
             paying = bool(pay and pay.get("status") == "paying")
