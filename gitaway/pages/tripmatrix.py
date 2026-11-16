@@ -415,7 +415,11 @@ def warm(s: State, family="") -> int:
     if showcase.on():
         return 0
     lanes, windows = lanes_of(s), windows_of(s)
-    first = [(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows))]
+    if liteapi.mode() == "live":      # F-273: a live key's gate takes the whole first view at once, the head start's squares first
+        ranks, cell = tm.rank(lanes, windows), {tm.key(x.key, w.key): (x, w) for x in lanes for w in windows}
+        first = [(*cell[k], i) for k, i in sorted(ranks.items(), key=lambda kv: kv[1]) if k in cell]
+    else:
+        first = [(x, w, i) for i, (x, w) in enumerate(tm.head_start(lanes, windows))]
     todo = [(x, w, i) for x, w, i in first if gridsource.square(x, w, s.adults, s.kid_ages, s.home, family, peek=True) is None]
     return matrixwarm.warm(todo, s.adults, s.kid_ages, s.home, family)
 

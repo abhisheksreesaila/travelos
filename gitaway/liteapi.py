@@ -14,7 +14,7 @@ never a silent empty list. Answers are kept in the process (stays STAY_KEEP, fli
 counts against the daily budgets (PER_FAMILY_A_DAY, A_DAY), which are counted in the community database so a restart does not reset them. `TRANSPORT` is the one function
 that touches the network; tests replace it. A failure is one WARNING line with no key in it.
 
-Every call goes through one gate (F-229, D-445): at most AT_ONCE in flight across the site (the sandbox answered 429 when a page sent more), and a search
+Every call goes through one gate (F-229, D-445): at most `at_once()` in flight (AT_ONCE = 3 for a sandbox key; AT_ONCE_LIVE = 32 for a live key, F-273) across the site (the sandbox answered 429 when a page sent more), and a search
 already in flight is joined, never asked twice: the second asker waits for the first one's Answer, and no second search is counted. A call carries a
 `rank` (its square's place in the page's order, 0 the asked square): when a place at the gate comes free the lowest rank waiting goes, and a joiner lends
 its rank to the search it joined. A family over its budget is told OVER before it waits; a call waits at most `wait` seconds (TILE_WAIT for a request,
@@ -63,7 +63,8 @@ STAY_ASK = 10                            # seconds LiteAPI is asked to answer a 
 HOTEL_LIMIT = 30
 MAX_BYTES = 32 * 1024 * 1024             # a round trip's answer was 9 MB (386 journeys, 1,647 offers)
 MAX_CENTS = 10_000_000
-AT_ONCE = 3                              # calls in flight across the site (F-229): the sandbox answered 429 to a page's 6
+AT_ONCE = 3                              # calls in flight across the site (F-229): the sandbox (5 requests a second) answered 429 to a page's 6
+AT_ONCE_LIVE = 32                        # F-273, D-830: a live key (250 requests a second) lets a whole matrix's searches start together (5x5: about 30)
 GATE_WAIT = 60                           # seconds a background call (the head start's few workers) waits for its turn at the gate; then BUSY, never kept
 TILE_WAIT = 12                           # and a request's call (a tile: a request thread), so the server's thread pool is never held long
 MAX_WAITING = 12                         # calls waiting at the gate at most; one more is BUSY at once
@@ -175,6 +176,11 @@ def mode() -> str:
     return "off" if not k else ("sandbox" if k.startswith("sand_") else "live")
 
 
+def at_once() -> int:
+    """The gate's places for the key in use, read at each call (F-273): a live key's rate allows a whole matrix at once, a sandbox key (or none) keeps 3."""
+    return AT_ONCE_LIVE if mode() == "live" else AT_ONCE
+
+
 class _Lines:
     """A streamed answer's lines as they arrive. `cut()` shuts the socket down from another thread (the reader closes it), so a line that hangs ends."""
 
@@ -233,7 +239,7 @@ def clear() -> None:
     with _LOCK:
         _CACHE.clear()
         _FLYING.clear()
-    _TURNS = _Turns(AT_ONCE)
+    _TURNS = _Turns(at_once)
 
 
 # --- reading
@@ -644,10 +650,14 @@ class _Flight:
 
 
 class _Turns:
-    """The gate's AT_ONCE places. A waiting call goes in rank order (lowest first), then by arrival; its rank is read each time a place comes free."""
+    """The gate's places (`places()` is read each time: it depends on the key, F-273). A waiting call goes in rank order (lowest first), then by arrival; its rank is read each time a place comes free."""
 
     def __init__(self, places):
-        self.free, self.waiting, self.cond, self.seq = places, [], threading.Condition(), 0
+        self.places, self.used, self.waiting, self.cond, self.seq = places, 0, [], threading.Condition(), 0
+
+    @property
+    def free(self) -> int:
+        return self.places() - self.used
 
     def take(self, rank_of, timeout) -> bool:
         with self.cond:
@@ -660,7 +670,7 @@ class _Turns:
             try:
                 while True:
                     if self.free > 0 and min(self.waiting, key=lambda w: (w[1](), w[0])) is me:
-                        self.free -= 1
+                        self.used += 1
                         return True
                     left = end - time.monotonic()
                     if left <= 0:
@@ -672,7 +682,7 @@ class _Turns:
 
     def give(self) -> None:
         with self.cond:
-            self.free += 1
+            self.used -= 1
             self.cond.notify_all()
 
     def nudge(self) -> None:
@@ -680,7 +690,7 @@ class _Turns:
             self.cond.notify_all()
 
 
-_TURNS = _Turns(AT_ONCE)
+_TURNS = _Turns(at_once)
 
 
 class _Gate:

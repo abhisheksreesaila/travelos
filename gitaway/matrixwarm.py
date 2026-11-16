@@ -19,6 +19,7 @@ import threading
 from gitaway import gridsource, liteapi
 
 WORKERS = 3                  # squares searched at once; their calls share liteapi's gate (AT_ONCE)
+WORKERS_LIVE = 32            # F-273: with a live key every square of the first view starts together (liteapi.AT_ONCE_LIVE places)
 QUEUE_MAX = 64
 ASYNC = True
 _Q: queue.Queue = queue.Queue(QUEUE_MAX)
@@ -81,7 +82,7 @@ def _work() -> None:
 def _start() -> None:
     with _lock:
         _threads[:] = [t for t in _threads if t.is_alive()]
-        while len(_threads) < WORKERS:
+        while len(_threads) < (WORKERS_LIVE if liteapi.mode() == "live" else WORKERS):
             t = threading.Thread(target=_work, daemon=True, name=f"matrix-warm-{len(_threads)}")
             t.start()
             _threads.append(t)
