@@ -1,4 +1,4 @@
-Status: exploring (founder, 2026-11-16, after using the live matrix: "You can prototype this if you want to, just to get clarity")
+Status: built (F-275, founder approved the prototype direction 2026-11-16; live check on the Tahoe search)
 
 # The matrix, made obvious and rich (v3)
 
