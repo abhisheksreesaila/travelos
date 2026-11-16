@@ -1,0 +1,302 @@
+{
+ "hotelId": "lp1b8e6",
+ "name": "Hilton Los Angeles Airport",
+ "address": "5711 West Century Boulevard",
+ "rating": 7.6,
+ "reviewCount": 6263,
+ "starRating": 4,
+ "description": "<p><strong>Convenient Airport Shuttle Service</strong><br>Benefit from the free 24-hour shuttle service to Los Angeles International Airport, ensuring a stress-free start or end to your trip.</p><p><strong>Diverse Dining Options</strong><br>Indulge in a variety of culinary experiences with 4 food venues to choose from, including American cuisine at The Caf\u00e9 and northern Italian dishes at Andiamo.</p><p><strong>Relaxing Amenities</strong><br>Unwind in the spacious outdoor pool and whirlpool, or enjoy a drink at Landings Bar. The modern rooms with cable TV and the on-site fitness center cater to all your needs.</p><p>Book your stay at Hilton Los Angeles Airport for a memorable and comfortable experience.</p>",
+ "images": [
+  {
+   "url": "https://static.cupid.travel/hotels/490862436.jpg",
+   "caption": "hotel building"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862440.jpg",
+   "caption": "lobby"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/572758051.jpg",
+   "caption": "hotel building"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862456.jpg",
+   "caption": "fitness center"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862458.jpg",
+   "caption": "desk & workspace"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862473.jpg",
+   "caption": "view from hotel room"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862503.jpg",
+   "caption": "banquet hall"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862515.jpg",
+   "caption": "meeting room"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/603068255.jpg",
+   "caption": "living area"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/490862476.jpg",
+   "caption": "living area"
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/28915-65113ef7.jpg",
+   "caption": ""
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/28915-e25cb3fd.jpg",
+   "caption": ""
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/28915-03321a83.jpg",
+   "caption": ""
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/28915-5405fc33.jpg",
+   "caption": ""
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/28915-4450f9a7.jpg",
+   "caption": ""
+  },
+  {
+   "url": "https://static.cupid.travel/hotels/538412361.jpg",
+   "caption": "entrance"
+  }
+ ],
+ "imageCount": 112,
+ "facilities": [
+  "Fitness facilities",
+  "WiFi available",
+  "Parking",
+  "Non-smoking rooms",
+  "Air conditioning",
+  "Fitness center",
+  "Swimming pool",
+  "24-hour front desk",
+  "Restaurant",
+  "Business center",
+  "Heating",
+  "Family rooms",
+  "Garden",
+  "Pets allowed",
+  "Lift / Elevator",
+  "Laundry",
+  "Luggage storage",
+  "Express check-in/check-out",
+  "Airport shuttle",
+  "Safety deposit box",
+  "Bar",
+  "Fax/photocopying",
+  "Tour desk",
+  "Facilities for disabled guests"
+ ],
+ "facilityCount": 78,
+ "rooms": [
+  {
+   "name": "2 Double Beds",
+   "size": null,
+   "beds": [
+    "Double bed"
+   ],
+   "photos": [
+    "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/3043765/laxahhh-rooms-suite-k1tru1-big-011.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675"
+   ]
+  },
+  {
+   "name": "2 Double Hearing Accessible Room",
+   "size": 30,
+   "beds": [
+    "Double bed"
+   ],
+   "photos": [
+    "https://www.hilton.com/im/en/LAXAHHH/17346533/hilton-lax-double-runway-view-blue-sky.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901909.jpg?k=c1d8411338c87178a8412acb9e0c8a87bf2a09c2d7b83bf7734a28a999517d26&o=&a=2002366",
+    "https://q-xx.bstatic.com/xdata/images/hotel/max500/926901910.jpg?k=5cb3e1078416023e5bfd247ffc939a7bcb9bb115f77a31965c430b60a4def665&o=&a=2002366"
+   ]
+  },
+  {
+   "name": "1 King Bed",
+   "size": null,
+   "beds": [
+    "King bed"
+   ],
+   "photos": [
+    "https://www.hilton.com/im/en/LAXAHHH/15526730/standard-king.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/19144369/desk-rooms-guestroom-d1-01.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/18418825/hilton-lax-standard-bathroom-copy.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675"
+   ]
+  },
+  {
+   "name": "1 King Bed Corner Room",
+   "size": null,
+   "beds": [
+    "King bed"
+   ],
+   "photos": [
+    "https://www.hilton.com/im/en/LAXAHHH/26938353/k1k-king-corner-room-1.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/26938348/k1k-king-corner-room-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675",
+    "https://www.hilton.com/im/en/LAXAHHH/26938357/k1k-king-corner-bath-2.jpg?impolicy=crop&cw=5000&ch=2812&gravity=NorthWest&xposition=0&yposition=0&rw=1200&rh=675"
+   ]
+  }
+ ],
+ "checkin": {
+  "checkin_start": "04:00 PM",
+  "checkin_end": "11:00 PM",
+  "checkout": "12:00 PM",
+  "instructions": [],
+  "special_instructions": ""
+ },
+ "sentiment": {
+  "categories": [
+   {
+    "name": "Cleanliness",
+    "rating": 8,
+    "description": "Overall reviewers frequently noted clean and well-maintained rooms and public areas; isolated severe cleanliness failures were reported in one review but are not the norm."
+   },
+   {
+    "name": "Service",
+    "rating": 8,
+    "description": "Staff repeatedly described as helpful, friendly and professional with reliable shuttle staff; a few reports cite a combative manager and shuttle delays which temper the score."
+   },
+   {
+    "name": "Location",
+    "rating": 8.6,
+    "description": "Strong positive sentiment for airport proximity and convenience (easy shuttle access, close to car rental companies); location is a clear strength."
+   },
+   {
+    "name": "Room Quality",
+    "rating": 7.2,
+    "description": "Mixed feedback: many praise large, comfortable and quiet rooms, but several complaints about small 4-star rooms, cramped bathrooms, weak shower flow, and some reports of damaged linens/fixtures."
+   },
+   {
+    "name": "Amenities",
+    "rating": 7.6,
+    "description": "Amenities like free airport shuttle and 24hr fitness center are praised; however shuttle wait times, occasional lack of small in-room items (water kettle) and pricey on-site outlets reduce the score."
+   },
+   {
+    "name": "Value for Money",
+    "rating": 6.5,
+    "description": "Frequent comments that the hotel is pricey (extra taxes, expensive breakfast, parking fees) and that cost-benefit is not ideal for a 4-star property."
+   },
+   {
+    "name": "Food and Beverage",
+    "rating": 6.9,
+    "description": "Breakfast is described as good/tasty by several guests, but multiple mentions of high prices for breakfast, bar and lobby store lower the sentiment."
+   },
+   {
+    "name": "Overall Experience",
+    "rating": 8,
+    "description": "Most guests describe a calm, convenient and generally positive stay with willingness to return; isolated severe negative incidents affect some experiences but do not dominate overall sentiment."
+   }
+  ],
+  "pros": [
+   "Convenient airport location",
+   "Free/reliable airport shuttle (mostly praised)",
+   "Clean rooms and well-maintained property",
+   "Friendly and helpful staff",
+   "Spacious/quiet rooms noted by many",
+   "Good breakfast (but pricey)",
+   "24-hour fitness center"
+  ],
+  "cons": [
+   "Pricey (breakfast, taxes, parking, lobby shop)",
+   "Shuttle delays / long waits reported",
+   "Inconsistent room quality (small bathrooms, occasional broken fixtures or poor linen)",
+   "No in-room water bottle or kettle mentioned",
+   "Some guests expected better value for a 4-star property"
+  ]
+ },
+ "reviews": [
+  {
+   "name": "Maria",
+   "date": "2026-11-14T00:00:00Z",
+   "averageScore": 8,
+   "type": "extended_group",
+   "country": "au",
+   "headline": "Excellent airport shuttle service and facilities",
+   "pros": "Clean and inviting",
+   "cons": "Breakfast was not included, if more than one room is booked I suggest to include breakfast"
+  },
+  {
+   "name": "Raymond",
+   "date": "2026-11-14T00:00:00Z",
+   "averageScore": 10,
+   "type": "couple",
+   "country": "au",
+   "headline": "",
+   "pros": "Staff and facilities",
+   "cons": "Not much"
+  },
+  {
+   "name": "Manuela",
+   "date": "2026-11-14T00:00:00Z",
+   "averageScore": 9,
+   "type": "couple",
+   "country": "br",
+   "headline": "",
+   "pros": "",
+   "cons": ""
+  },
+  {
+   "name": "Ute",
+   "date": "2026-11-13T00:00:00Z",
+   "averageScore": 3,
+   "type": "couple",
+   "country": "de",
+   "headline": "Transfer dauert ewig",
+   "pros": "Wenig",
+   "cons": "Preise an der Bar teuer, Personal unfreundlich, Transfer dauert ewig"
+  },
+  {
+   "name": "Eunki",
+   "date": "2026-11-13T00:00:00Z",
+   "averageScore": 9,
+   "type": "couple",
+   "country": "kr",
+   "headline": "",
+   "pros": "\uce5c\uc808\ud558\uace0 \ud2b9\ud788 \ubcf4\uc548\uc694\uc6d0\ub4e4\uc774 \uce5c\uc808\ud569\ub2c8\ub2e4",
+   "cons": "\uc5c6\uc2b5\ub2c8\ub2e4"
+  },
+  {
+   "name": "diego",
+   "date": "2026-11-13T00:00:00Z",
+   "averageScore": 9,
+   "type": "couple",
+   "country": "co",
+   "headline": "Buen lugar para estar de paso",
+   "pros": "",
+   "cons": ""
+  },
+  {
+   "name": "David",
+   "date": "2026-11-13T00:00:00Z",
+   "averageScore": 8,
+   "type": "couple",
+   "country": "us",
+   "headline": "",
+   "pros": "",
+   "cons": ""
+  },
+  {
+   "name": "Rebecca Elphick",
+   "date": "2026-11-13T00:00:00Z",
+   "averageScore": 8,
+   "type": "extended_group",
+   "country": "au",
+   "headline": "Comfy beds, great staff, great restaurant!",
+   "pros": "Reception staff were amazing! He upgraded for me so my son could see the aeroplanes at the airport! (Thank you so much!) \nBeds were comfy, and decent size rooms! \nWe had dinner at the Landings Bar & Grill. What a fabulous meal it was! Highly recommend!",
+   "cons": "Nothing!"
+  }
+ ]
+}
