@@ -748,7 +748,7 @@ def test_every_word_on_the_translucent_card_is_4_5_to_1_on_what_is_really_painte
     low = []
     for w in words:
         box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
-        if box[2] > shot.width or box[3] > shot.height:
+        if box[2] > shot.width or box[3] > shot.height or box[0] < 0 or box[1] < 0:      # a chip the row has scrolled out of view is not painted (F-277: the row is a scroller)
             continue
         px = sorted(shot.crop(box).getdata(), key=lum)
         bg = px[len(px) // 2]
@@ -791,7 +791,7 @@ def test_every_word_on_the_frosted_glass_rail_is_4_5_to_1_on_what_is_really_pain
     low = []
     for w in words:
         box = (int(w["x"]), int(w["y"]), int(w["x"] + w["w"]), int(w["y"] + w["h"]))
-        if box[2] > shot.width or box[3] > shot.height:
+        if box[2] > shot.width or box[3] > shot.height or box[0] < 0 or box[1] < 0:      # a chip the row has scrolled out of view is not painted (F-277: the row is a scroller)
             continue
         px = sorted(shot.crop(box).getdata(), key=lum)
         bg = px[len(px) // 2]

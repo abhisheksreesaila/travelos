@@ -213,14 +213,16 @@ def test_the_sheet_refuses_what_it_does_not_know_and_a_viewer_is_told_why_there_
 
 def test_booking_rail_lists_the_places_guides_labelled_sample_and_each_opens_its_sheet(client):
     sign_in(client)
-    html = client.get("/plan/matrix/rail?" + MATRIX_LA + "&lane=losangeles&w=2026-12-12").json()["html"]
+    chips = client.get("/plan/matrix/rail?" + MATRIX_LA + "&lane=losangeles&w=2026-12-12").json()["html"]
+    assert "<span>1 guide for Los Angeles</span>" in chips and "Sun, tacos" not in chips      # the chip's words only (F-277: the card comes when it is tapped)
+    html = client.get("/plan/matrix/rail?" + MATRIX_LA + "&lane=losangeles&w=2026-12-12&wg=guides").json()["card"]
     assert "Guides for Los Angeles" in html and "Sun, tacos &amp; tide pools" in html and ">Sample<" in html and "5 days" in html
     href = unescape(re.search(r'data-sheet="([^"]+)"', html).group(1))
     q = parse_qs(urlsplit(href).query)
     assert urlsplit(href).path == "/guides/sheet" and (q["slug"], q["ctx"], q["lane"], q["w"], q["to"], q["d"]) == (["sun-tacos-and-tide-pools"], ["book"], ["losangeles"], ["2026-12-12"], ["Los Angeles"], ["2026-12-12"])
     assert re.search(r'<a [^>]*href="/guides\?q=Los%20Angeles"[^>]*>All Los Angeles guides</a>', html)
     oc = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()["html"]
-    assert "Guides for" not in oc      # no guide of Orange County: no card, not an empty one
+    assert 'data-wg="guides"' not in oc      # no guide of Orange County: no chip, not an empty one
 
 
 def test_planning_rail_lists_the_trips_guides_and_off_the_showcase_with_none_published_nothing(client, monkeypatch):

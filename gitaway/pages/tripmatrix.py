@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
-from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
+from fasthtml.common import A, Aside, B, Br, Details, Div, H1, H2, Header, Link, Nav, NotStr, P, Script, Section, Span, Summary, to_xml
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
@@ -46,7 +46,8 @@ NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip a
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead
 BUDGETS = (2_000, 2_500, 3_000, 4_000, 5_000)
 SAMPLE = "Sample prices"
-HINT = "Tap any word to change it"
+HINT = "Change any word"      # an instruction under the title, not a tag (F-279)
+SEARCH = "Your search"
 CHEAPEST_FOUND = "The cheapest flight found; more fares were still coming in."
 ESTIMATES = "“About” prices are estimates from what is known. Exact prices when you let go."
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
@@ -389,9 +390,9 @@ def hero_el(spec, problems=()):
     """The sentence on top of the results: its form (hidden fields, posted by the script when a word changes), the sentence, and what is wrong in words when a search cannot run."""
     err = P(" ".join(problems), cls="v2-error", id="v2-error", role="alert") if problems else ""
     sug = v2sentence.suggestions(spec)
-    head = Div(Span("Your trip", cls="v2-ql"), Span(icon("spark", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
+    head = Div(Span(icon("search", 20, 2.4), cls="v2-qic", aria_hidden="true"), H2(SEARCH, cls="v2-qtitle", id="v2-qtitle"), Span(icon("pencil", 16, 2.2), HINT, cls="v2-hint"), cls="v2-qhead")
     tries = Nav(Span("Try", cls="v2-ql"), *[A(icon("plus", 16, 2.4), label, href=to, cls="v2-sug") for label, to in sug], cls="v2-sugs", aria_label="Suggested changes") if sug else ""
-    return Div(Div(head, v2sentence.form_el(spec, v2sentence.sentence(spec), err), tries, cls="v2-qcard"), import_el(), cls="v2-hero")
+    return Div(Section(head, Div(v2sentence.form_el(spec, v2sentence.sentence(spec), err), cls="v2-qfield"), tries, cls="v2-qcard", aria_labelledby="v2-qtitle"), import_el(), cls="v2-hero")
 
 
 def matrix_page(s: State, family="", typed="", problems=(), picked=()):
@@ -533,8 +534,8 @@ def register(app):
         return JSONResponse({"known": {k: square_json(*cell[k], sq) for k, sq in known.items()}}, headers={"Cache-Control": "no-store"})
 
     @app.get(RAIL)
-    def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
-        """The widget rail for one lane and start day (F-251): what is real about the place, drawn as the prototype's frosted cards. Squares are only read from what is already known
+    def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = "", wg: str = ""):
+        """The widget rail for one lane and start day (F-251): what is real about the place, as chips (F-277: `wg=` is one chip's card, asked when it is tapped). Squares are only read from what is already known
         (a cheaper airport needs two answers): nothing is searched here. A plain `def`: a drive can wait on the router for a moment, but only for a signed-in person
         (L-1): a stranger is shown the drives already kept, so the open page cannot spend the router's budget."""
         s = state(to, home, d, r, a, k, x, nb, b)
@@ -544,9 +545,11 @@ def register(app):
         lane_, w_ = pick(lanes, windows, lane, w)
         family = _family(session)
         known = lambda ln, win: gridsource.square(ln, win, s.adults, s.kid_ages, s.home, family, peek=True)      # noqa: E731
-        return JSONResponse({"html": v2rail.html(s, lane_, w_, sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session)),
-                                                 guides=gd.for_place(session, lane_.places[0].name)), "lane": lane_.key},
-                            headers={"Cache-Control": "no-store"})
+        kw = dict(sq=known(lane_, w_), lanes=lanes, known=known, picked=interests.get(session), look_up=bool(ses.current_traveler(session)), guides=gd.for_place(session, lane_.places[0].name))
+        if wg:      # one chip was tapped (F-277, D-870): its card is built now, and only now
+            card = v2rail.card_html(wg, s, lane_, w_, **kw)
+            return JSONResponse({"error": "No such widget."} if card is None else {"card": card, "lane": lane_.key}, status_code=404 if card is None else 200, headers={"Cache-Control": "no-store"})
+        return JSONResponse({"html": v2rail.html(s, lane_, w_, **kw), "lane": lane_.key}, headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)
     def trip_matrix_warm(request, session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):

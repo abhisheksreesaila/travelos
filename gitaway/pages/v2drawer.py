@@ -17,7 +17,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span, Sup
 
-from gitaway import catalog, matrixbook as mb, tripmatrix as tm, weather
+from gitaway import catalog, matrixbook as mb, reviewtrend, tripmatrix as tm, weather
 from gitaway.icons import icon
 from gitaway.pages.skystrip import weather_for
 
@@ -112,7 +112,7 @@ def _alt_btn(sq, st: tm.StayPart, place, j: int, on: bool, base: int):
                   type="button", cls="dr-alt", role="radio", aria_checked="true" if on else "false", data_hotel=str(j), data_c=str(st.cents), data_name=st.name)
 
 
-def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int):
+def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int, ptype: str = ""):
     shown = alts[0]
     hotels = [_hotel(sq, st, place, i, j, j == 0) for j, st in enumerate(alts)]
     room_lists = [Div(*[_room_btn(r, k, rooms_of(st)[0], k == 0) for k, r in enumerate(rooms_of(st))], cls="dr-rooms", role="radiogroup", aria_label=f"Rooms at {st.name}", data_for=str(j), hidden=j != 0)
@@ -120,7 +120,7 @@ def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int):
     nights = shown.nights
     sub = Div(f"Rooms for {party} · {nights} night{'s' if nights != 1 else ''}", cls="dr-sub")
     from gitaway.pages import hotelview
-    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), hidden=j != 0,
+    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), data_pt=ptype, hidden=j != 0,
                  role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
     return Div(Div(*hotels, cls="dr-hl"),
                Div(sub, *room_lists,
@@ -224,7 +224,7 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
                    cls="dr is-quiet", data_open=tm.key(lane.key, w.key))
     alts_by_stay = _alts(sq)
     multi = len(sq.stays) > 1
-    stay_panes = [_stay_pane(sq, i, lane.places[min(i, len(lane.places) - 1)], alts, i == 0, s.travelers) for i, alts in enumerate(alts_by_stay)]
+    stay_panes = [_stay_pane(sq, i, lane.places[min(i, len(lane.places) - 1)], alts, i == 0, s.travelers, reviewtrend.party_type(s.adults, s.kid_ages)) for i, alts in enumerate(alts_by_stay)]
     tabs = Div(*[Button(f"{lane.places[min(i, len(lane.places) - 1)].name} · {alts[0].nights} night{'s' if alts[0].nights != 1 else ''}", type="button", aria_pressed="true" if i == 0 else "false", data_tab=str(i))
                  for i, alts in enumerate(alts_by_stay)], cls="dr-seg") if multi else ""
     flights = sq.flights if len(sq.flights) > 1 else (sq.flight,)

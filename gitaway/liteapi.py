@@ -908,6 +908,7 @@ class Review:
     headline: str
     pros: str
     cons: str
+    source: str = ""   # where LiteAPI says the review is from ("nuitee"); "" when it names none
 
 
 @dataclass(frozen=True)
@@ -973,7 +974,7 @@ def read_reviews(answer) -> HotelReviews | None:
     if not isinstance(answer, dict):
         return None
     items = tuple(Review(_str(r.get("name")), _str(r.get("date"))[:10], _num(r.get("averageScore")), _str(r.get("type")), _str(r.get("country")), _str(r.get("headline")),
-                         _str(r.get("pros")), _str(r.get("cons"))) for r in answer.get("data") or () if isinstance(r, dict))
+                         _str(r.get("pros")), _str(r.get("cons")), _str(r.get("source") or answer.get("source"))) for r in answer.get("data") or () if isinstance(r, dict))
     sa = answer.get("sentimentAnalysis") if isinstance(answer.get("sentimentAnalysis"), dict) else {}
     cats = tuple(Category(_str(c.get("name")), _num(c.get("rating")), _str(c.get("description"))) for c in sa.get("categories") or () if isinstance(c, dict) and c.get("name"))
     return HotelReviews(items, cats, tuple(_str(x) for x in sa.get("pros") or () if _str(x)), tuple(_str(x) for x in sa.get("cons") or () if _str(x)), int(_num(answer.get("total")) or 0))
@@ -1003,12 +1004,12 @@ def hotel(hotel_id: str, family: str = "") -> HotelDetails | None:
     return _data_call("hotel", "/data/hotel?hotelId={id}", hotel_id, family, read_hotel)
 
 
-REVIEWS_SHOWN = 8
+REVIEWS_ASKED = 100
 
 
 def reviews(hotel_id: str, family: str = "") -> HotelReviews | None:
-    """The newest reviews and LiteAPI's sentiment summary (F-275)."""
-    return _data_call("reviews", f"/data/reviews?hotelId={{id}}&limit={REVIEWS_SHOWN}&getSentiment=true", hotel_id, family, read_reviews)
+    """The newest REVIEWS_ASKED reviews and LiteAPI's sentiment summary (F-275, F-278): one call, kept a day, from which gitaway/reviewtrend.py draws the strip and the cards."""
+    return _data_call("reviews", f"/data/reviews?hotelId={{id}}&limit={REVIEWS_ASKED}&getSentiment=true", hotel_id, family, read_reviews)
 
 
 def about(hotel_id: str, family: str = "") -> str:

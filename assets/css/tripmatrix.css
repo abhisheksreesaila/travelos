@@ -204,13 +204,19 @@
 /* ---------- F-275 (D-860..D-865): the matrix v3, docs/design/matrix-v3 ---------- */
 
 /* the sentence on its own opaque card, its words buttons you can see, a hint and suggestions under it: people who book are not used to a sentence that is a form */
-.v2.is-results .v2-hero { display: block; justify-items: stretch; padding: 0.875rem 0 1rem; }
-.v2-qcard { width: 100%; box-sizing: border-box; --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem 1.75rem 1.25rem; border-radius: var(--r-xl); background: var(--card-solid);
-  box-shadow: var(--sh3), 0 0 0 1px var(--line); text-align: left; }
-.v2-qhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.625rem; margin-bottom: 0.5rem; }
+.v2.is-results .v2-hero { display: block; justify-items: stretch; padding: 0.875rem 0 1.5rem; }
+/* F-279 (D-872): the sentence is a search, so it is a card of its own: a title with a search icon, a brand-tinted outline and a deeper shadow that set it apart from the results, the words in a
+   field-like area, the Try chips in a footer band of the card. The card's padding is two variables so the band can run to its edges. */
+.v2-qcard { --qx: 1.75rem; --qb: 1.375rem; width: 100%; box-sizing: border-box; --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem var(--qx) var(--qb); border-radius: var(--r-xl); background: var(--card-solid);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--flight) 42%, var(--card-solid)), var(--sh3), 0 1.5rem 2.75rem -1.25rem rgb(var(--shadow-c) / .32); text-align: left; }
+.v2-qhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin-bottom: 0.875rem; }
+.v2-qic { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.75rem; background: var(--flight); color: var(--on); }
+.v2-qic svg { width: 1.25rem; height: 1.25rem; }
+.v2-qtitle { margin: 0; color: var(--ink); font: 700 1.25rem/1.2 var(--f-ui); letter-spacing: -0.01em; }
 .v2-ql { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.v2-hint { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.75rem; border-radius: 62.4375rem; background: var(--w-bg); color: var(--word); font: 620 1rem/1 var(--f-ui); }
+.v2-hint { display: inline-flex; align-items: center; gap: 0.375rem; margin-left: auto; color: var(--word); font: 620 1rem/1.2 var(--f-ui); }
 .v2-hint svg { width: 1rem; height: 1rem; }
+.v2-qfield { padding: 0.5rem 1rem; border-radius: 1.25rem; background: color-mix(in srgb, var(--flight) 5%, var(--card-2)); box-shadow: inset 0 0 0 1.5px var(--line-2), inset 0 0.125rem 0.375rem -0.125rem rgb(var(--shadow-c) / .14); }
 .v2.is-results .v2-qcard .v2-sent { max-width: none; font-size: clamp(1.4rem, 2vw, 2.0625rem); line-height: 1.7; text-wrap: pretty; letter-spacing: -0.012em; color: var(--ink-2); }
 .v2-qcard .v2-w { padding: 0.02em 0.3em 0.02em 0.42em; margin: 0 0.04em; border-radius: 0.5em; text-decoration: none; background: var(--w-bg); box-shadow: inset 0 -0.125rem 0 var(--w-line); color: var(--word); }
 .v2-qcard .v2-w::after { content: ""; display: inline-block; width: 0.3em; height: 0.3em; margin-left: 0.3em; border-right: 0.09em solid currentColor; border-bottom: 0.09em solid currentColor; rotate: 45deg; translate: 0 -0.14em; opacity: .75;
@@ -218,17 +224,18 @@
 .v2-qcard .v2-w:hover { background: color-mix(in srgb, var(--flight) 20%, var(--card-solid)); box-shadow: inset 0 -0.125rem 0 var(--word); }
 .v2-qcard .v2-w[aria-expanded="true"] { background: var(--word); color: var(--card-solid); box-shadow: none; }
 .v2-qcard .v2-w[aria-expanded="true"]::after { rotate: 225deg; translate: 0 0.1em; }
-.v2-sugs { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.875rem; padding-top: 0.875rem; border-top: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.v2-sugs { display: flex; align-items: center; gap: 0.5rem; margin: 1rem calc(var(--qx) * -1) calc(var(--qb) * -1); padding: 0.75rem var(--qx); border-top: 1px solid var(--line); border-radius: 0 0 var(--r-xl) var(--r-xl); background: color-mix(in srgb, var(--flight) 7%, var(--card-2)); overflow-x: auto; scrollbar-width: none; }
 .v2-sugs::-webkit-scrollbar { display: none; }
 .v2-sugs > * { flex: none; }
 .v2-sug { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.875rem 0 0.75rem; border: 1px dashed var(--line-2); border-radius: 62.4375rem; color: var(--ink); text-decoration: none; font: 580 1rem/1 var(--f-ui); }
 .v2-sug svg { width: 1rem; height: 1rem; color: var(--word); }
 .v2-sug:hover { background: var(--card-2); border-style: solid; color: var(--ink); }
 @media (max-width: 719px) {
-  .v2-qcard { padding: 1.125rem 1rem 0.875rem; border-radius: 1.625rem; }
+  .v2-qcard { --qx: 1rem; --qb: 0.75rem; padding: 1.125rem var(--qx) var(--qb); border-radius: 1.625rem; }
+  .v2-qfield { padding: 0.375rem 0.625rem; border-radius: 1rem; }
+  .v2-hint { margin-left: 0; flex-basis: 100%; }
   .v2.is-results .v2-qcard .v2-sent { font-size: 1.3rem; line-height: 1.55; }
   .v2-qcard .v2-w { display: inline-block; box-sizing: border-box; min-height: var(--target); margin-block: 0.1rem; padding-block: 0.6rem 0.4rem; line-height: 1.2; max-width: 100%; }
-  .v2-sugs { margin-inline: -1rem; padding-inline: 1rem; }
 }
 
 /* go wide on a laptop (founder: use the full screen): the stage, the top bar and the grid take up to 1680px; the columns share what is there */

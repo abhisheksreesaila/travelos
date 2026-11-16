@@ -8,28 +8,63 @@
   if (!rail || !raw) return;
   var data = JSON.parse(raw.textContent), kept = {}, want = '', last = null, shown = '';      // shown: the server's own words for what is on the rail now
 
-  function address(d) {
+  function address(d, wg) {
     var u = new URL(data.rail, location.href);
     u.searchParams.set('lane', d.lane);
     u.searchParams.set('w', d.w);
     if (data.returns && d.n && data.returns[d.n]) u.searchParams.set('r', data.returns[d.n]);      // the nights on the slider
+    if (wg) u.searchParams.set('wg', wg);
     return u.pathname + u.search;
   }
 
-  function openIds() { return Array.prototype.map.call(rail.querySelectorAll('.wg:not([hidden])'), function (c) { return c.id; }); }
-  function toggle(id, on) {      // a chip opens its card (F-275, D-862): the card arrives on the rail's spring (CSS), a tap on the chip or the card's x folds it back
-    var card = document.getElementById(id), chip = rail.querySelector('.wchip[data-wg="' + id.replace('wg-', '') + '"]');
-    if (!card || !chip) return;
-    if (on === undefined) on = card.hidden;
-    card.hidden = !on;
+  // The extra-info row (F-277, D-870): the server sends chips only. A chip fetches its card when it is tapped, never before, so an untapped chip costs nothing; what was fetched is kept for the
+  // place (tapping again is instant) and what you opened follows the rail to another place of the same kind. The first tap ends the nudge for good (localStorage, if the browser lets us).
+  var USED = 'ga-rail-used', cards = {};
+  function used() { try { return !!localStorage.getItem(USED); } catch (e) { return false; } }
+  function nudge() { rail.classList.toggle('is-nudge', !used()); }
+  function spent() { try { localStorage.setItem(USED, '1'); } catch (e) { /* private window: the nudge comes back next visit, harmless */ } rail.classList.remove('is-nudge'); }
+  function chipOf(name) { return rail.querySelector('.wchip[data-wg="' + name + '"]'); }
+  function tray() { return rail.querySelector('.rl-cards'); }
+  function openNames() { return Array.prototype.map.call(rail.querySelectorAll('.wchip[aria-expanded="true"]'), function (c) { return c.dataset.wg; }); }
+
+  function put(name, html) {      // the card is in the tray (replacing an older one of the same widget), shown while its chip is open
+    var old = document.getElementById('wg-' + name), chip = chipOf(name);
+    if (old) old.remove();
+    tray().insertAdjacentHTML('beforeend', html);
+    var card = document.getElementById('wg-' + name);
+    card.hidden = !(chip && chip.getAttribute('aria-expanded') === 'true');
+    if (chip) chip.removeAttribute('aria-busy');
+  }
+
+  function load(name, d, fresh) {
+    var id = address(d, name), chip = chipOf(name);
+    if (!chip) return;
+    if (cards[id] && !fresh) { put(name, cards[id]); return; }
+    chip.setAttribute('aria-busy', 'true');
+    fetch(id, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) {
+        cards[id] = j.card;
+        if (last && address(last, name) === id) put(name, j.card);      // an answer for a place you have left is kept, not shown
+      })
+      .catch(function () { chip.removeAttribute('aria-busy'); chip.setAttribute('aria-expanded', 'false'); });
+  }
+
+  function toggle(name, on) {
+    var chip = chipOf(name), card = document.getElementById('wg-' + name);
+    if (!chip) return;
+    if (on === undefined) on = chip.getAttribute('aria-expanded') !== 'true';
     chip.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (card) card.hidden = !on;
+    else if (on && last) load(name, last);
   }
 
   function show(html, id) {
-    var was = openIds();      // what you opened stays open when the rail follows another place of the same kind
+    var was = openNames();      // what you opened stays open when the rail follows another place of the same kind
     shown = html;
     rail.innerHTML = html;
-    was.forEach(function (w) { if (document.getElementById(w)) toggle(w, true); });
+    nudge();
+    was.forEach(function (n) { var c = chipOf(n); if (c && last) { c.setAttribute('aria-expanded', 'true'); load(n, last); } });
     rail.dataset.id = id;
     rail.classList.remove('is-swap');
     void rail.offsetWidth;      // restart the arrival
@@ -46,7 +81,10 @@
       .then(function (j) {
         kept[id] = j.html;
         if (want === id && (rail.dataset.id !== id || d.fresh)) {
-          if (rail.dataset.id === id && shown === j.html) return;      // the same widgets again: leave them be (compared with what the server sent last, not the page's rewritten markup, which never matched)
+          if (rail.dataset.id === id && shown === j.html) {      // the same chips again: leave them be, but what is open may have changed (a cheaper airport needs two answers): ask it again
+            openNames().forEach(function (n) { load(n, d, true); });
+            return;
+          }
           show(j.html, id);
         }
       })
@@ -54,11 +92,11 @@
   }
 
   document.addEventListener('mx:follow', function (e) { ask(e.detail); });
-  document.addEventListener('mx:settled', function () { if (last) { kept = {}; ask({ lane: last.lane, w: last.w, n: last.n, fresh: true }); } });
+  document.addEventListener('mx:settled', function () { if (last) { kept = {}; cards = {}; ask({ lane: last.lane, w: last.w, n: last.n, fresh: true }); } });
   rail.addEventListener('click', function (e) {
     var chip = e.target.closest('.wchip[data-wg]'), shut = e.target.closest('[data-wg-close]');
-    if (chip) { toggle('wg-' + chip.dataset.wg); return; }
-    if (shut) { toggle('wg-' + shut.dataset.wgClose, false); var c = rail.querySelector('.wchip[data-wg="' + shut.dataset.wgClose + '"]'); if (c) c.focus(); return; }
+    if (chip) { spent(); toggle(chip.dataset.wg); return; }
+    if (shut) { toggle(shut.dataset.wgClose, false); var c = chipOf(shut.dataset.wgClose); if (c) c.focus(); return; }
     var more = e.target.closest('[data-more]');
     if (more) {
       var list = more.previousElementSibling, open = more.dataset.open !== '1';

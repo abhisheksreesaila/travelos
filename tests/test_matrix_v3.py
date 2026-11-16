@@ -21,7 +21,7 @@ def page_html(client, url=MATRIX):
 
 def test_the_sentence_says_to_tap_a_word_and_every_word_is_a_picker_button(client):
     html = page_html(client)
-    assert "Tap any word to change it" in html
+    assert '<span class="v2-hint"' in html and "Change any word" in html and "Tap any word to change it" not in html
     words = re.findall(r'<span role="button" tabindex="0" data-k="(\w+)" aria-haspopup="dialog" aria-expanded="false" aria-label="([^"]+)" class="v2-w">', html)
     assert [k for k, _ in words] == list(v2sentence.WORD_KEYS)
     assert dict(words)["nights"] == "How many nights: 4 nights"
@@ -31,6 +31,16 @@ def test_the_sentence_sits_on_its_own_opaque_card_with_the_suggestions_in_it(cli
     html = page_html(client)
     card = html.split('class="v2-qcard"', 1)[1].split('class="mx-results"', 1)[0]
     assert 'class="v2-sent"' in card and 'class="v2-sug"' in card and "Try" in card
+
+
+def test_the_sentence_is_a_search_card_of_its_own_with_a_title_a_field_and_a_footer_band(client):
+    """F-279: a distinct section named by its own heading, the words in a field, the Try chips in the card's footer band, the instruction an instruction."""
+    html = page_html(client)
+    card = re.search(r'<section aria-labelledby="v2-qtitle" class="v2-qcard">(.*?)</section>', html, re.S).group(1)
+    assert re.search(r'<h2 id="v2-qtitle" class="v2-qtitle">Your search</h2>', card) and 'class="v2-qic"' in card
+    assert card.index('class="v2-qfield"') < card.index('class="v2-sent"') < card.index('class="v2-sugs"')      # the field holds the sentence; the band comes last
+    assert re.search(r'<span class="v2-hint">(?:<svg.*?</svg>)?Change any word</span>', card, re.S)
+    assert html.count('class="v2-qcard"') == 1 and "Your trip" not in card
 
 
 # ---- the suggestion chips -----------------------------------------------------------------------------------------------------------------------------------
@@ -138,6 +148,13 @@ def test_the_route_answers_the_fragment_and_nothing_for_a_hotel_it_does_not_have
     assert client.get("/plan/matrix/hotel?id=../x").json() == {"html": ""}
 
 
+def test_the_route_orders_the_reviews_for_the_party_type_it_is_given_and_ignores_a_made_up_one(real, client, monkeypatch):
+    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(reviews=(FIX / "reviews100.json").read_bytes()))
+    ask = lambda pt: client.get(f"/plan/matrix/hotel?id={hotelview.token(ID)}&pt={pt}").json()["html"]      # noqa: E731
+    assert "What guests wrote, families first" in ask("family_with_children") and "Families with children: 7.8 on average" in ask("family_with_children")
+    assert "What guests wrote</h4>" in ask("nonsense") and "first</h4>" not in ask("nonsense")
+
+
 def test_an_id_the_server_did_not_draw_is_nothing_and_spends_nobodys_allowance(real, client, monkeypatch):
     f = HotelFake()
     monkeypatch.setattr(liteapi, "TRANSPORT", f)
@@ -157,6 +174,7 @@ def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_ma
     assert sq.ok and sq.stays[0].hotel_id
     html = hotelview.to_xml(v2drawer.drawer(s, lane, w, sq))
     assert f'data-hid="{hotelview.token(sq.stays[0].hotel_id)}"' in html and 'data-state="idle"' in html
+    assert 'data-pt="family_with_children"' in html      # two adults and two kids: the reviews put families first (F-278)
     assert not [u for u in real.asked if "/data/" in u[0]]      # nothing asked for the hotel's photos until the script asks
 
 
@@ -181,14 +199,15 @@ def test_a_flight_that_lands_the_next_day_says_plus_one_in_its_row_and_in_its_su
 
 # ---- the nights band and the rail ---------------------------------------------------------------------------------------------------------------------------
 
-def test_the_rail_is_a_row_of_chips_each_opening_a_card_that_starts_hidden(sample, client):
+def test_the_rail_is_a_row_of_chips_each_asking_for_its_card_when_tapped(sample, client):
     html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["html"])
-    chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="(wg-\d)" data-wg="\d" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
-    names = [c for _, c in chips]
-    assert "San Diego 66° · Sunny" in names and "Where you will be" in names and "About San Diego" in names
+    chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="wg-(\w+)" data-wg="(\w+)" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
+    names = [c for _, _, c in chips]
+    assert "Weather" in names and "Where you will be" in names and "About San Diego" in names      # the labels cost nothing: no temperature, no minutes until tapped
     assert any(c.startswith("Uber") and c.endswith("sample") for c in names)
-    for wid, _ in chips:
-        assert re.search(rf'<section[^>]*id="{wid}"[^>]*hidden', html) or re.search(rf'<section[^>]*hidden[^>]*id="{wid}"', html), wid
+    assert all(a == b for a, b, _ in chips) and 'id="wg-' not in html      # no card is drawn with the row
+    got = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12&wg=about").json()["card"]
+    assert 'id="wg-about"' in got and "About San Diego" in got
 
 
 # ---- the sky line: never a zero count -----------------------------------------------------------------------------------------------------------------------
