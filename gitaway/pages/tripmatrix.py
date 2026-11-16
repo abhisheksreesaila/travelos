@@ -27,7 +27,7 @@ from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
+from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, stats, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, v2rail, weather_ui
@@ -469,6 +469,11 @@ def _family(session):
     return (session or {}).get("tenant_id", "")
 
 
+def _who(request, session):
+    """Whose searches a request spends (F-265, D-762): the signed-in family's, else the signed-out visitor's own allowance (a salted daily code, no cookie)."""
+    return _family(session) or stats.searcher(request)
+
+
 def register(app):
     @app.get("/start")
     def start(request):
@@ -486,11 +491,11 @@ def register(app):
         return matrix_page(s, _family(session), picked=interests.get(session))
 
     @app.get(TILE)
-    def trip_matrix_tile(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
+    def trip_matrix_tile(request, session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
             return JSONResponse({"error": " ".join(s.problems)}, status_code=400)
-        lane_, w_, sq, asked_sq = _square_of(s, lane, w, _family(session))
+        lane_, w_, sq, asked_sq = _square_of(s, lane, w, _who(request, session))
         if lane_ is None:
             return JSONResponse({"error": "No such square."}, status_code=404)
         return JSONResponse({**square_json(lane_, w_, sq), "age": age_words(sq.fetched), "drawer": to_xml(panel(s, lane_, w_, sq, asked_sq))},
@@ -524,19 +529,19 @@ def register(app):
                             headers={"Cache-Control": "no-store"})
 
     @app.post(WARM)
-    def trip_matrix_warm(session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
+    def trip_matrix_warm(request, session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = state(to, home, d, r, a, k, x, nb, b)
         if s.problems or not windows_of(s):
             return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
-        return JSONResponse({"queued": warm(s, _family(session))}, headers={"Cache-Control": "no-store"})
+        return JSONResponse({"queued": warm(s, _who(request, session))}, headers={"Cache-Control": "no-store"})
 
     @app.get(SQUARE)
-    def trip_matrix_square(session, lane: str = "", w: str = "", saved: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "",
+    def trip_matrix_square(request, session, lane: str = "", w: str = "", saved: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "",
                            nb: str = "", b: str = ""):
         s = state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
             return RedirectResponse(href(s), status_code=303)
-        lane_, w_, sq, asked_sq = _square_of(s, lane, w, _family(session))
+        lane_, w_, sq, asked_sq = _square_of(s, lane, w, _who(request, session))
         if lane_ is None:
             return RedirectResponse(href(s), status_code=303)
         note = "Saved to your trip." if saved == "1" else ""

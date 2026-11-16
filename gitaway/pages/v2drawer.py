@@ -13,8 +13,9 @@ sample square's rooms are made-up and the square says Sample prices; the weather
 
 import re
 from datetime import date
+from urllib.parse import quote
 
-from fasthtml.common import Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span
+from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span
 
 from gitaway import catalog, tripmatrix as tm, weather
 from gitaway.icons import icon
@@ -193,7 +194,8 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     head_art = mx._arts(lane, "dr-hart")
     if sq is None or not sq.ok:
         note = "Searching this square…" if sq is None else tm.SAID[sq.status]
-        return Div(Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), cls="dr-ti"), close, cls="dr-head"), Div(P(note, cls="dr-note", role="status"), cls="dr-quiet"),
+        way = A("Sign in to keep comparing", href="/signin?next=" + quote(mx.href(s), safe=""), cls="btn") if sq is not None and sq.status == tm.LIMIT else ""      # F-265: the way on
+        return Div(Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), cls="dr-ti"), close, cls="dr-head"), Div(P(note, cls="dr-note", role="status"), way, cls="dr-quiet"),
                    cls="dr is-quiet", data_open=tm.key(lane.key, w.key))
     alts_by_stay = _alts(sq)
     multi = len(sq.stays) > 1

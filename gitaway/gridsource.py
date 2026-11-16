@@ -256,7 +256,7 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0, wait=
             answers = [f.result() for f in [pool.submit(ask) for ask in asks]]
     fetched = min((a.fetched for a in answers if a.fetched), default=None)
     if any(a.status == liteapi.OVER for a in answers):
-        return tm.Square(lane.key, w.key, tm.OVER, fetched=fetched)
+        return tm.Square(lane.key, w.key, tm.LIMIT if liteapi.visitor_over(family) else tm.OVER, fetched=fetched)
     if any(a.status == liteapi.BUSY for a in answers):      # no turn at the gate in time: said, never kept, asked again by the page
         return tm.Square(lane.key, w.key, tm.BUSY, fetched=fetched)
     if not all(a.ok for a in answers):

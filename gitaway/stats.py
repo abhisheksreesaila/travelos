@@ -9,6 +9,7 @@ Partner clicks come from `via_clicks` (gitaway.affiliate), which records the cre
 """
 
 import hashlib
+import ipaddress
 import re
 import secrets
 from datetime import date, datetime, timedelta, timezone
@@ -55,6 +56,22 @@ def _reader(request, day: str) -> str:
     """A short code for this reader today: a hash of today's salt, their address and browser. Not stored with either."""
     ip = reports.client_ip(request)
     return hashlib.sha256(_salt_of(day) + f"{ip}|{request.headers.get('user-agent', '')}".encode()).hexdigest()[:20]
+
+
+def _network(ip: str) -> str:
+    """The address as a limit sees it: an IPv4 address as it is, an IPv6 one as its /64 network (one customer's whole network, so hopping addresses inside it is no new visitor)."""
+    try:
+        a = ipaddress.ip_address(ip.split("%")[0])
+    except ValueError:
+        return ip[:64]
+    return str(ipaddress.ip_network(f"{a}/64", strict=False)) if a.version == 6 else str(a)
+
+
+def searcher(request) -> str:
+    """A signed-out visitor for the daily search allowance (F-265, D-762): "v:" and a short hash of today's salt and their network address, nothing else (not the browser, which a
+    script can change at will). Not a cookie, and what is kept is only this code and a count: the salt is the readers' one, gone at midnight and on every restart."""
+    day = _today().isoformat()
+    return "v:" + hashlib.sha256(_salt_of(day) + f"search|{_network(reports.client_ip(request))}".encode()).hexdigest()[:20]
 
 
 def _once(db, request, slug: str, kind: str, day: str) -> bool:
