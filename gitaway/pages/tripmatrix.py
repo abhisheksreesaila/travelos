@@ -199,9 +199,10 @@ def age_words(fetched) -> str:
 
 def vs_words(diff, asked_name, combo) -> str:
     """The panel's chip beside a nearby square's total. assets/js/tripmatrix.js `vs` says the same words."""
+    alone = " alone" if combo else ""
     if diff < 0:
-        return f"{tm.dollars(-diff)} less than {asked_name}"
-    return f"the same as {asked_name}" if diff == 0 else f"+{tm.dollars(diff)} vs {asked_name}{' alone' if combo else ''}"
+        return f"{tm.dollars(-diff)} less than {asked_name}{alone}"
+    return f"the same as {asked_name}{alone}" if diff == 0 else f"{tm.dollars(diff)} more than {asked_name}{alone}"
 
 
 def _art(place, cls="mx-art"):
@@ -290,7 +291,7 @@ def fact_el(s: State):
 
 
 def find_el():
-    """The pick bar (the prototype's "Our pick"): the find, drawn by assets/js/tripmatrix.js `drawFind` when the squares say one (a nearby trip that beats or nearly matches the
+    """The pick bar (the prototype's "Our pick"): the find, drawn by assets/js/tripmatrix.js `drawFind` when the squares say one (a nearby trip that costs less than or the same as the
     asked place); a skeleton of it while squares are still coming in, nothing when there is none."""
     return A(Span(cls="mx-pk-art", aria_hidden="true"), Span(Span(cls="mx-pk-h"), Span(cls="mx-pk-s"), cls="mx-pk-t"), Span("Our pick", cls="mx-pk-badge"), Span(cls="mx-pk-p num"),
              Span("Open", icon("arrow-right", 18, 2.2), cls="mx-pk-open"), href="#", cls="mx-find is-empty", id="mx-find", aria_live="polite", data_open="")

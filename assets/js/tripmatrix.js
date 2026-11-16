@@ -91,7 +91,7 @@
     });
     if (!best) return null;
     var x = best.lane, d = best.diff;
-    var said = d < 0 ? money(-d) + ' less than ' + a.n : d === 0 ? 'the same as ' + a.n : money(d) + ' more than ' + a.n + (x.c ? ' alone' : '');
+    var said = (d < 0 ? money(-d) + ' less than ' : 'the same as ') + a.n + (x.c ? ' alone' : '');      // never a dearer one (D-860)
     return { key: key(x.k, best.w.k), lane: x.k, w: best.w.k, name: x.n, said: said, words: x.n + ', ' + said, when: best.w.when };
   }
   function less(a, b) { for (var i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] < b[i]; } return false; }
@@ -117,7 +117,7 @@
     var mine = known[k], base = known[key(a.k, p[1])];
     if (!x || x.a || !mine || !base || mine.s !== 'ok' || base.s !== 'ok') return '';
     var d = mine.c - base.c;      // pages/tripmatrix.py `vs_words`
-    return d < 0 ? money(-d) + ' less than ' + a.n : d === 0 ? 'the same as ' + a.n : '+' + money(d) + ' vs ' + a.n + (x.c ? ' alone' : '');
+    return (d < 0 ? money(-d) + ' less than ' : d === 0 ? 'the same as ' : money(d) + ' more than ') + a.n + (x.c ? ' alone' : '');
   }
 
   // ---- drawing what is known ----
