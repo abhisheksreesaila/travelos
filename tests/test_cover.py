@@ -83,7 +83,7 @@ def test_submitting_a_wish_lands_on_the_visitors_own_matrix(client):
     assert r.status_code == 303 and r.headers["location"].startswith("/plan/matrix?to=San+Diego&") and "&a=2" in r.headers["location"]
     assert client.get(r.headers["location"]).status_code == 200      # their own matrix opens for a visitor
     r = client.post("/plan/ask", data={"q": "San Diego"}, follow_redirects=False)      # a place with no time: the ask answers in its own words, with the box filled
-    assert r.status_code == 200 and "Say when, like" in r.text and 'value="San Diego"' in r.text or "San Diego</textarea>" in r.text
+    assert r.status_code == 200 and "Say when, like" in r.text and ('value="San Diego"' in r.text or "San Diego</textarea>" in r.text)
     r = client.post("/plan/ask", data={"q": "Nowhere Land"}, follow_redirects=False)
     assert r.status_code == 200 and "We don&#x27;t know that place yet." in r.text or "We don't know that place yet." in r.text
 
