@@ -182,7 +182,7 @@
 .dr-ph > img { width: 100%; height: 100%; object-fit: cover; display: block; transition: scale var(--v2-quick) var(--v2-ease); }
 .dr-ph:hover > img { scale: 1.03; }
 .dr-pcap { position: absolute; left: 0.5rem; bottom: 0.5rem; max-width: calc(100% - 1rem); padding: 0.25rem 0.5rem; border-radius: 62.4375rem; background: color-mix(in srgb, var(--ink) 72%, transparent); color: var(--card-solid);
-  font: 600 max(var(--label-min), 0.8125rem)/1.1 var(--f-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  font: 600 max(var(--label-min), 0.8125rem)/1.1 var(--f-ui); overflow-wrap: anywhere; }
 .dr-all { position: absolute; right: 0.625rem; bottom: 0.625rem; display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.5rem; padding: 0 0.875rem; border-radius: 62.4375rem; background: var(--card-solid); color: var(--ink);
   font: 650 1rem/1 var(--f-ui); box-shadow: var(--sh2); pointer-events: none; }
 .dr-own { display: inline-block; margin-top: 0.5rem; color: var(--ink-2); font: 600 1rem/1.2 var(--f-ui); }
