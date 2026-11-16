@@ -43,14 +43,13 @@ def test_paste_preview_save_and_see_it_on_its_days(signed_in, base_url, viewport
     expect(page.locator("#ti-hotel")).to_contain_text("123 Ocean Ave, Santa Monica")
     no_sideways_scroll(page)
     page.click("#ti-save")
-    page.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
-    expect(page.locator("#ck-week")).to_be_visible()
-    page.goto(f"{base_url}/trip/canvas?day=0")
-    expect(page.locator('a[href*="booked=b-out"]').first).to_contain_text("Alaska Airlines AS 1234")
-    expect(page.locator('a[href*="booked=b-in"]').first).to_be_attached()
+    page.wait_for_url("**/trip/plan*")      # the trip's home: the v2 calendar (F-252; M5 triage: the cockpit and canvas are retired)
+    expect(page.locator(".cal-top")).to_be_visible()
+    expect(page.locator('a.ev.lock[href*="block=b-out"]').first).to_contain_text("Alaska Airlines AS 1234")      # the booked lines are locked blocks that open their booking
+    expect(page.locator('a.ev.lock[href*="block=b-in"]').first).to_be_attached()
     no_sideways_scroll(page)
-    page.goto(f"{base_url}/trip/canvas?day=0&booked=b-out")
-    expect(page.locator("#cz")).to_contain_text("ABCDEF")
+    page.goto(f"{base_url}/trip/booking?block=b-out")
+    expect(page.locator("#main")).to_contain_text("ABCDEF")
 
 
 def test_a_mistake_shows_a_friendly_line_specific_error_and_keeps_the_text(signed_in, base_url):
@@ -70,9 +69,8 @@ def test_late_events_fit_inside_the_grid(signed_in, base_url):
     page.fill("#ti-text", late)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/trip/cockpit*")
-    page.goto(f"{base_url}/trip/canvas?day=4")
-    expect(page.locator('a[href*="booked=b-back"]').first).to_be_attached()     # the flight at 11:50 PM is a line on the last day
+    page.wait_for_url("**/trip/plan*")
+    expect(page.locator('a.ev.lock[href*="block=b-back"]').first).to_be_attached()     # the flight at 11:50 PM is a block on the last day
     no_sideways_scroll(page)
 
 
@@ -146,13 +144,8 @@ def test_import_a_booked_trip_is_a_visible_button_where_trips_start(signed_in, b
     page.fill("#ti-text", TEMPLATE)
     page.click("#ti-preview")
     page.click("#ti-save")
-    page.wait_for_url("**/trip/cockpit*")
+    page.wait_for_url("**/trip/plan*")      # M5 triage: the old top bar's trip menu is retired (F-255); the v2 bar has no trip picker
     no_sideways_scroll(page)
-    if viewport["width"] >= 1020:        # the top bar's trip menu offers the next import
-        page.click(".ga-tb-picker summary")
-        page.click('.ga-tb-pop-trip a[href="/trips/import"]')
-        page.wait_for_url("**/trips/import")
-        expect(page.locator("#ti-text")).to_be_visible()
 
 
 def test_rename_a_placeholder_kid_in_the_builder_and_see_it_in_the_preview(signed_in, base_url):
