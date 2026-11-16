@@ -971,16 +971,21 @@ _BOOK_TURN = threading.BoundedSemaphore(1)      # one booking call in flight on 
 
 
 def _allowed(body: dict | None) -> bool:
-    """Which calls this key may make (D-480, reopened in D-840): a sandbox key all of them; a live key only where real booking is on (`real_booking`), and then never with the
-    sandbox's own card: a book pays with TRANSACTION_ID alone and a prebook asks for the payment form (an ACC_CREDIT_CARD book would charge the LiteAPI account's own card)."""
+    """Which calls this key may make (D-480, reopened in D-840 and D-848): a sandbox key all of them; a live key a prebook only where real booking is on (`real_booking`) and only
+    for the payment form (`usePaymentSdk: true`); and, because the money is already taken once a guest has paid, a book with a TRANSACTION_ID, a cancel and a lookup whatever the
+    switch says, so switching booking off strands nobody who paid. Never the sandbox's own card: an ACC_CREDIT_CARD book would charge the LiteAPI account's own card."""
     m = mode()
     if m == "sandbox":
         return True
-    if m != "live" or not real_booking():
+    if m != "live":
         return False
     body = body or {}
-    pay = body.get("payment")
-    return (pay is None or (isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId")))) and body.get("usePaymentSdk", True) is True
+    if "usePaymentSdk" in body:      # a prebook: new business, only where booking is on
+        return body["usePaymentSdk"] is True and real_booking()
+    if "payment" in body:           # a book: only what a paid form's transaction can finish
+        pay = body["payment"]
+        return isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId"))
+    return not body                 # a cancel or a lookup: no body
 
 
 def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "") -> Answer:

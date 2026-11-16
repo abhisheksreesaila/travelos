@@ -160,8 +160,9 @@ def _no_matrix_warm(monkeypatch):
 def _no_plan_worker():
     """A test that starts the app (a live server) starts the Plan it for me worker with it (planforme.start in on_startup), and it would go on building the paid orders of every later test
     before the test looks at them. Stop it before each test; a test that wants the worker calls `planforme.start` itself and stops it (F-193)."""
-    from gitaway import planforme
+    from gitaway import bookingjobs, planforme
     planforme.stop()
+    bookingjobs.stop()      # F-274: the booking worker finishes paid stays and purges; a test that wants it calls `bookingjobs.run_once`
 
 
 @pytest.fixture(autouse=True)

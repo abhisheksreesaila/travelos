@@ -18,4 +18,7 @@ Recorded through the real payment form in a real browser (2026-11-16, the sandbo
 - `book_transaction_id.json`: the TRANSACTION_ID book after the card paid (`paymentStatus: succeeded`, the voucher in it). Its account `feed` and `userId` are scrubbed.
 - `cancel_refundable.json`: that booking's cancel: CANCELLED, refund_amount 520.66 (the undiscounted price: the card paid 468.60), fee 0.
 
+**Hand-shaped, not recorded:** `cancel_partial.json` (CANCELLED_WITH_CHARGES with both a `cancellation_fee` of 148.88 and a `refund_amount` of 371.78: the shape the docs allow for a cancel in the first paid step of the refundable stay above; the sandbox never gave one).
+`margin_prebook.json` is recorded (`scripts/probe_liteapi_margin.py`, sandbox, 2026-11-16): a search with `margin: 16`, then a prebook of each of 6 offers: `shown` (the public price), `retail`, `prebook_price` and `pays`.
+
 **Not recorded:** an invoice, 3-D Secure, a card that is declined.

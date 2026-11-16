@@ -13,7 +13,7 @@ from fasthtml.common import Beforeware, FastHTML, Response, serve
 from fh_saas.utils_auth import create_auth_beforeware
 from fh_saas.utils_log import configure_logging
 
-from gitaway import access, accesslog, auth, draftjobs, expedia, familydb, hostdb, morning, omxqua, passkeys, planforme, session, showcase
+from gitaway import access, accesslog, auth, bookingjobs, csp, draftjobs, expedia, familydb, hostdb, morning, omxqua, passkeys, planforme, session, showcase
 from gitaway.layout import HEAD
 from gitaway.pages import register_all
 from gitaway.pages.family import PRIVATE
@@ -165,6 +165,8 @@ class SecurityHeaders:
                 headers = list(message.get("headers", []))
                 have = {k.lower() for k, _ in headers}
                 add = [(b"content-security-policy", b"frame-ancestors 'none'"), (b"referrer-policy", b"same-origin"), (b"x-content-type-options", b"nosniff")]
+                if csp.applies(scope["path"]):      # F-274 (D-849): what a script policy would allow on the matrix and its booking sheet, reported by the browser, enforced by nothing
+                    add.append((csp.HEADER.encode(), csp.POLICY.encode()))
                 if auth.production():
                     add.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
                 message = {**message, "headers": headers + [(k, v) for k, v in add if k not in have]}
@@ -184,7 +186,7 @@ def make_app():
     # F-207: htmx=False, surreal=False keep only FastHTML's charset and viewport tags. Its defaults loaded htmx, fasthtml-js, surreal and
     # css-scope-inline from jsDelivr (two from a moving @main branch, no integrity hash) on every page, and GitAway uses none of them.
     app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(BodyLimit), Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
-                   htmx=False, surreal=False, htmlkw={"lang": "en", "data-mode": "light"}, exception_handlers={404: _not_found}, on_startup=[morning.start, draftjobs.start, planforme.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+                   htmx=False, surreal=False, htmlkw={"lang": "en", "data-mode": "light"}, exception_handlers={404: _not_found}, on_startup=[morning.start, draftjobs.start, planforme.start, bookingjobs.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 
