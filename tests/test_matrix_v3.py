@@ -69,3 +69,116 @@ def test_a_budget_already_said_offers_any_budget_and_no_chip_is_the_current_sent
     assert "Any budget" in chips and not [k for k in chips if k.startswith("Under")]
     assert parse_qs(urlsplit(chips["Any budget"]).query).get("b") is None
     assert page.href(page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2", "", "2000")) not in chips.values()
+
+
+# ---- the hotel's page inside the opened square ----------------------------------------------------------------------------------------------------------------
+
+import json as _json
+from pathlib import Path as _Path
+
+import pytest
+
+from gitaway import liteapi
+from gitaway.pages import hotelview
+from tests.test_liteapi_hotel import FIX, Fake as HotelFake, ID, KEY
+from tests.test_tripmatrix_page import real, sample  # noqa: F401 (fixtures)
+
+
+@pytest.fixture
+def hilton(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    f = HotelFake()
+    monkeypatch.setattr(liteapi, "TRANSPORT", f)
+    return f
+
+
+def test_the_fragment_has_the_photos_labelled_the_hotels_own_with_a_see_all_over_the_last(hilton):
+    html = hotelview.to_xml(hotelview.fragment(ID))
+    assert "The hotel’s own photos" in html and "See all 16 photos" in html
+    assert html.count("data-lb=") == 16 and html.count("<img") >= 5      # every photo is in the page for the lightbox, only the mosaic's five load
+    assert 'data-cap="Lobby"' in html and 'src="https://static.cupid.travel/hotels/490862440.jpg"' in html
+
+
+def test_the_fragment_says_the_rating_the_ai_summary_and_what_guests_say_by_category(hilton):
+    html = hotelview.to_xml(hotelview.fragment(ID))
+    assert '<span class="dr-score num">7.6</span>' in html and "Good" in html and "6,263 reviews" in html
+    assert "summary written by ai from the guest reviews" in html
+    assert "Cleanliness" in html and 'aria-label="Cleanliness 8 out of 10"' in html and "Overall reviewers frequently noted clean" in html
+    assert "Maria" in html and "Group · Australia · 2026-11-14" in html and "8/10" in html and "Left a score, no words." in html
+
+
+def test_the_hotels_facilities_check_in_and_rooms_with_their_photos_are_there(hilton):
+    html = hotelview.to_xml(hotelview.fragment(ID))
+    assert "Fitness facilities" in html and "All 24 amenities" in html and "Check-in from 04:00 PM" in html and "Check-out by 12:00 PM" in html
+    assert "Rooms at this hotel" in html and "2 Double Hearing Accessible Room" in html and "Double bed · 30 m² · Sleeps 4" in html
+    photos = _json.loads(unescape(re.search(r'class="dr-roomphotos"[^>]*>(.*?)</span>', html, re.S).group(1)))
+    assert photos["2 double beds"].startswith("https://www.hilton.com/")
+
+
+def test_a_review_is_text_never_markup(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    doc = _json.loads((FIX / "reviews.json").read_text())
+    doc["data"][0].update(name="<script>alert(1)</script>", headline="<img src=x onerror=alert(2)>", pros="<b>great</b>", cons="a & b")
+    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(reviews=_json.dumps(doc).encode()))
+    html = hotelview.to_xml(hotelview.fragment("lpx1"))
+    assert "<script>" not in html and "<img src=x" not in html and "<b>great</b>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html and "&lt;img src=x onerror=alert(2)&gt;" in html and "a &amp; b" in html
+
+
+def test_the_route_answers_the_fragment_and_nothing_for_a_hotel_it_does_not_have(real, client, monkeypatch):
+    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake())
+    got = client.get(f"/plan/matrix/hotel?id={ID}").json()["html"]
+    assert "7.6" in got and "The hotel’s own photos" in got
+    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(status=404))
+    assert client.get("/plan/matrix/hotel?id=lpnone").json() == {"html": ""}
+    assert client.get("/plan/matrix/hotel?id=../x").json() == {"html": ""}
+
+
+def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_made_by_drawing_it(real, client):
+    from gitaway import gridsource
+    from gitaway.pages import v2drawer
+    s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    lane, w = page.lanes_of(s)[0], page.windows_of(s)[2]
+    sq = gridsource.square(lane, w, s.adults, s.kid_ages, s.home, "")
+    assert sq.ok and sq.stays[0].hotel_id
+    html = hotelview.to_xml(v2drawer.drawer(s, lane, w, sq))
+    assert f'data-hid="{sq.stays[0].hotel_id}"' in html and 'data-state="idle"' in html
+    assert not [u for u in real.asked if "/data/" in u[0]]      # nothing asked for the hotel's photos until the script asks
+
+
+def test_the_showcase_shows_sample_photos_said_to_be_samples_and_never_a_review(sample, client):
+    j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["drawer"]
+    assert "Sample photo · Hotel lobby" in j and "/assets/photos/lobby-front-desk.jpg" in j
+    assert "dr-rich" not in j and "dr-rev" not in j and j.index("Sample photo") < j.index("Illustration")      # the place's own drawing stays, labelled an illustration, after them
+
+
+# ---- flights: the +1 ----------------------------------------------------------------------------------------------------------------------------------------
+
+def test_a_flight_that_lands_the_next_day_says_plus_one_in_its_row_and_in_its_summary():
+    from gitaway import tripmatrix as tm
+    from gitaway.pages import v2drawer
+    leg = "Sat, Dec 19 · SFO 11:30 PM → LAX 12:45 AM next day · Nonstop"
+    row = hotelview.to_xml(v2drawer._leg("Out", "Sat, Dec 19", leg, "Alaska"))
+    assert 'class="dr-p1"' in row and ">+1</sup>" in row and "12:45 AM" in row and "Nonstop" in row
+    f = tm.FlightPart("Alaska", leg, "Wed, Dec 23 · LAX 6:40 PM → SFO 8:05 PM · Nonstop", 0, 50_000)
+    assert v2drawer._flight_times(f) == "11:30 PM out · 6:40 PM back"
+    assert v2drawer._plus(v2drawer.times(leg)) == "SFO 11:30 PM → LAX 12:45 AM +1"
+
+
+# ---- the nights band and the rail ---------------------------------------------------------------------------------------------------------------------------
+
+def test_the_nights_band_draws_no_label_that_could_float_across_a_neighbouring_row():
+    css = (_Path(__file__).parent.parent / "assets" / "css" / "tripmatrix.css").read_text()
+    tail = css.split("F-275", 1)[1]
+    assert ".mx-band::after { content: none; }" in tail and ".mx-lane.is-lit .mx-band::after { content: none; }" in tail
+    assert "top: -0.75rem" not in tail      # the pick mark sits inside its square now
+
+
+def test_the_rail_is_a_row_of_chips_each_opening_a_card_that_starts_hidden(sample, client):
+    html = unescape(client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["html"])
+    chips = re.findall(r'<button type="button" aria-expanded="false" aria-controls="(wg-\d)" data-wg="\d" class="wchip v2-glass">.*?<span>([^<]+)</span></button>', html, re.S)
+    names = [c for _, c in chips]
+    assert "San Diego 66° · Sunny" in names and "Where you will be" in names and "About San Diego" in names
+    assert any(c.startswith("Uber") and c.endswith("sample") for c in names)
+    for wid, _ in chips:
+        assert re.search(rf'<section[^>]*id="{wid}"[^>]*hidden', html) or re.search(rf'<section[^>]*hidden[^>]*id="{wid}"', html), wid
