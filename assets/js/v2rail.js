@@ -16,9 +16,20 @@
     return u.pathname + u.search;
   }
 
+  function openIds() { return Array.prototype.map.call(rail.querySelectorAll('.wg:not([hidden])'), function (c) { return c.id; }); }
+  function toggle(id, on) {      // a chip opens its card (F-275, D-862): the card arrives on the rail's spring (CSS), a tap on the chip or the card's x folds it back
+    var card = document.getElementById(id), chip = rail.querySelector('.wchip[data-wg="' + id.replace('wg-', '') + '"]');
+    if (!card || !chip) return;
+    if (on === undefined) on = card.hidden;
+    card.hidden = !on;
+    chip.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+
   function show(html, id) {
+    var was = openIds();      // what you opened stays open when the rail follows another place of the same kind
     shown = html;
     rail.innerHTML = html;
+    was.forEach(function (w) { if (document.getElementById(w)) toggle(w, true); });
     rail.dataset.id = id;
     rail.classList.remove('is-swap');
     void rail.offsetWidth;      // restart the arrival
@@ -45,6 +56,9 @@
   document.addEventListener('mx:follow', function (e) { ask(e.detail); });
   document.addEventListener('mx:settled', function () { if (last) { kept = {}; ask({ lane: last.lane, w: last.w, n: last.n, fresh: true }); } });
   rail.addEventListener('click', function (e) {
+    var chip = e.target.closest('.wchip[data-wg]'), shut = e.target.closest('[data-wg-close]');
+    if (chip) { toggle('wg-' + chip.dataset.wg); return; }
+    if (shut) { toggle('wg-' + shut.dataset.wgClose, false); var c = rail.querySelector('.wchip[data-wg="' + shut.dataset.wgClose + '"]'); if (c) c.focus(); return; }
     var more = e.target.closest('[data-more]');
     if (more) {
       var list = more.previousElementSibling, open = more.dataset.open !== '1';

@@ -92,6 +92,7 @@ class StayPart:
     offer_id: str = ""    # LiteAPI's offer for this room, verbatim and never shown (F-233: what a booking prebooks); "" for a sample
     address: str = ""     # the hotel's street address from the source, or "" (F-242: the opened square and the pass show it)
     rooms: tuple = ()     # F-251: the hotel's rooms the source gave (the shown room first, at most liteapi.MAX_ROOMS), each a RoomPart; one or none means there is no choice
+    hotel_id: str = ""    # F-275: LiteAPI's id of the hotel (for its photos and reviews, asked when the square is opened); "" for a sample
 
 
 @dataclass(frozen=True)

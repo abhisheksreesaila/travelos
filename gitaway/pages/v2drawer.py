@@ -15,7 +15,7 @@ import re
 from datetime import date
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span
+from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span, Sup
 
 from gitaway import catalog, matrixbook as mb, tripmatrix as tm, weather
 from gitaway.icons import icon
@@ -58,10 +58,13 @@ def _alts(sq: tm.Square) -> tuple:
     return sq.stay_alts or tuple((st,) for st in sq.stays)
 
 
-def _stay_media(st: tm.StayPart, place):
-    """The gallery's slides for a hotel: its own photo when the source gave one, then the place's drawing, each labelled for what it is."""
-    from gitaway.pages import tripmatrix as mx
+def _stay_media(st: tm.StayPart, place, sample=False):
+    """The gallery's slides for a hotel: its own photo when the source gave one, then the place's drawing, each labelled for what it is. A sample hotel (the showcase) has none of its own:
+    generic hotel pictures, each captioned a sample (F-275, assets/photos/CREDITS.md)."""
+    from gitaway.pages import hotelview, tripmatrix as mx
     slides = []
+    if sample:
+        slides = [Div(Img(src=url, alt=cap, loading="lazy"), Span(cap, cls="dr-cap"), cls="dr-slide") for url, cap in hotelview.sample_slides()]
     if st.photo:
         slides.append(Div(Img(src=st.photo, alt=f"{st.name}, the hotel’s own photo", loading="lazy", referrerpolicy="no-referrer"), Span(PHOTO, cls="dr-cap"), cls="dr-slide"))
     slides.append(Div(mx._art(place, "dr-art"), Span(ILLUSTRATION, cls="dr-cap"), cls="dr-slide"))
@@ -87,7 +90,7 @@ def _hotel(sq, st: tm.StayPart, place, i: int, j: int, on: bool):
         feats.append(Span(icon("plane", 15, 2), f"{sq.drive} min from the airport", cls="dr-feat"))
     meta = [Span(icon("star", 15, 2), st.rating.split(" · ")[0], cls="dr-star") if st.rating else "", Span(st.rating.split(" · ", 1)[1]) if " · " in st.rating else "",
             Span("· " + st.address) if st.address else ""]
-    return Div(_gallery(_stay_media(st, place)), H3(st.name, cls="dr-hname"), P(*[m for m in meta if m != ""], cls="dr-hmeta") if st.rating or st.address else "",
+    return Div(_gallery(_stay_media(st, place, sq.sample)), H3(st.name, cls="dr-hname"), P(*[m for m in meta if m != ""], cls="dr-hmeta") if st.rating or st.address else "",
                Div(*feats, cls="dr-feats") if feats else "", cls="dr-hotel", data_hotel_i=str(j), data_name=st.name, hidden=not on)
 
 
@@ -116,10 +119,12 @@ def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int):
                   for j, st in enumerate(alts)]
     nights = shown.nights
     sub = Div(f"Rooms for {party} · {nights} night{'s' if nights != 1 else ''}", cls="dr-sub")
+    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=st.hotel_id, hidden=j != 0,
+                 role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
     return Div(Div(*hotels, cls="dr-hl"),
                Div(sub, *room_lists,
                    Div(f"Other stays in {place.name}", cls="dr-sub") if len(alts) > 1 else "",
-                   Div(*[_alt_btn(sq, st, place, j, j == 0, shown.cents) for j, st in enumerate(alts)], cls="dr-alts", role="radiogroup", aria_label="Other stays") if len(alts) > 1 else "", cls="dr-hr"),
+                   Div(*[_alt_btn(sq, st, place, j, j == 0, shown.cents) for j, st in enumerate(alts)], cls="dr-alts", role="radiogroup", aria_label="Other stays") if len(alts) > 1 else "", cls="dr-hr"), *slots,
                cls="dr-stay-grid dr-sp", data_stay_i=str(i), hidden=not active)
 
 
@@ -129,7 +134,8 @@ def _leg(label: str, day: str, words: str, airline: str, fallback=""):
         return Div(Span(f"{label} · {day}" if day else label, cls="dr-lbl"), Span(words, cls="dr-car"), cls="dr-leg")
     stops = m["stops"] or ""
     return Div(Span(f"{label} · {m['day'] or day}", cls="dr-lbl"), Span(m["dt"], Small(m["o"]), cls="dr-tm num"),
-               Span(icon("plane", 20, 2), Span(stops), cls="dr-ln"), Span(m["at"] + (" +1" if m["next"] else ""), Small(m["d"]), cls="dr-tm r num"), Span(airline, cls="dr-car"), cls="dr-leg")
+               Span(Span(cls="dr-dot"), Span(cls="dr-rule"), icon("plane", 18, 2), Span(stops or "Nonstop", cls="dr-stops"), cls="dr-ln"),
+               Span(m["at"], Sup("+1", cls="dr-p1", title="Arrives the next day", aria_label="plus one day") if m["next"] else "", Small(m["d"]), cls="dr-tm r num"), Span(airline, cls="dr-car"), cls="dr-leg")
 
 
 def _flight_view(f: tm.FlightPart, k: int, o: tm.Window, on: bool):
@@ -137,6 +143,11 @@ def _flight_view(f: tm.FlightPart, k: int, o: tm.Window, on: bool):
     back = _leg("Back", _day(o.return_), f.back, f.airline) if f.back else ""
     more = P("The cheapest flight found; more fares were still coming in.", cls="dr-fine") if not f.complete else ""
     return Div(out, back, more, cls="dr-flt", data_flt_i=str(k), hidden=not on)
+
+
+def _plus(words: str) -> str:
+    """The way flights say a next-day landing in a line of words: "9:32 AM +1" (the leg's own rows draw it as a small raised +1)."""
+    return words.replace(" next day", " +1")
 
 
 def _clock(words: str, first=True) -> str:
@@ -147,12 +158,12 @@ def _clock(words: str, first=True) -> str:
 
 def _flight_btn(f: tm.FlightPart, k: int, base: int, on: bool):
     out, back = times(f.out), times(f.back)
-    head = f"{_clock(out)} → {_clock(out, False)}" if " → " in out else out
-    tail = f"back {_clock(back)} · " if " → " in back else ""
+    head = _plus(f"{_clock(out)} → {_clock(out, False)}") if " → " in out else out
+    tail = _plus(f"back {_clock(back)} · ") if " → " in back else ""
     return Button(Span(cls="dr-rad"), Span(Span(head, cls="dr-t num"), Small(f"{tail}{f.airline} · {stops_words(f.stops).lower()}"), cls="dr-tx"),
                   Span("Chosen" if on else signed(f.cents - base), cls="dr-d num" + (" is-minus" if f.cents < base and not on else ""), data_d="1"), type="button", cls="dr-opt", role="radio",
                   aria_checked="true" if on else "false", data_fl=str(k), data_c=str(f.cents), data_al=f.airline, data_stops=stops_words(f.stops).lower(),
-                  data_times=f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else ""))
+                  data_times=_plus(f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "")))
 
 
 def _why(s, lane, w, sq, asked_sq):
@@ -232,4 +243,4 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
 
 def _flight_times(f: tm.FlightPart) -> str:
     out, back = times(f.out), times(f.back)
-    return f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "") if " → " in out else out
+    return _plus(f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "") if " → " in out else out)

@@ -52,7 +52,7 @@
     qa(dr, '.dr-sp').forEach(function (p, i) {
       p.hidden = i !== s.tab;
       qa(p, '.dr-hotel').forEach(function (h) { h.hidden = parseInt(h.dataset.hotelI, 10) !== s.hotel[i]; });
-      qa(p, '.dr-rooms').forEach(function (l) { l.hidden = parseInt(l.dataset.for, 10) !== s.hotel[i]; });
+      qa(p, '.dr-rooms, .dr-rich').forEach(function (l) { l.hidden = parseInt(l.dataset.for, 10) !== s.hotel[i]; });
       var now = cents(roomOf(dr, i));
       qa(p, '.dr-rooms:not([hidden]) .dr-opt').forEach(function (b) { mark(b, parseInt(b.dataset.room, 10) === s.room[i], cents(b) - now); });
       qa(p, '.dr-alt').forEach(function (b) { mark(b, parseInt(b.dataset.hotel, 10) === s.hotel[i], cents(b) - now); });
@@ -83,7 +83,79 @@
     else qa(dr, '[data-slot="total"], [data-mirror="total"]').forEach(function (e) { e.textContent = dollars(t); });
     dr.dataset.total = String(t);
     (what || []).forEach(function (sel) { qa(dr, sel).forEach(fade); });
+    loadRich(dr);
   }
+
+  // ---- the hotel's own photos, words and reviews (F-275, D-860): asked when the hotel is shown, never for a square nobody opened; kept for the next time ----
+  var richKept = {};
+  function loadRich(dr) {
+    qa(dr, '.dr-sp:not([hidden]) .dr-rich:not([hidden])[data-state="idle"]').forEach(function (slot) {
+      var id = slot.dataset.hid;
+      if (!id) return;
+      slot.dataset.state = 'loading';
+      (richKept[id] = richKept[id] || fetch('/plan/matrix/hotel?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { return j.html || ''; }))
+        .then(function (html) {
+          if (!html) { slot.dataset.state = 'none'; slot.hidden = true; return; }
+          slot.innerHTML = html;
+          slot.dataset.state = 'done';
+          var hotel = q(slot.closest('.dr-sp'), '.dr-hotel[data-hotel-i="' + slot.dataset.for + '"]');
+          if (hotel) hotel.classList.add('has-rich');      // its mosaic replaces the one-photo gallery
+          roomThumbs(slot);
+          fade(slot);
+        })
+        .catch(function () { delete richKept[id]; slot.dataset.state = 'none'; slot.hidden = true; });      // nothing came: the hotel is what the search gave, as before
+    });
+  }
+  function roomThumbs(slot) {      // a room you can choose wears the hotel's photo of it when the offer and the hotel call it the same
+    var holder = q(slot, '.dr-roomphotos'), map = {};
+    try { map = holder ? JSON.parse(holder.textContent) : {}; } catch (e) { map = {}; }
+    qa(slot.closest('.dr-sp'), '.dr-rooms[data-for="' + slot.dataset.for + '"] .dr-opt').forEach(function (b) {
+      var url = map[(b.dataset.roomname || '').toLowerCase()];
+      if (!url || q(b, '.dr-rthumb')) return;
+      var img = document.createElement('img');
+      img.className = 'dr-rthumb'; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.src = url;
+      b.insertBefore(img, q(b, '.dr-tx'));
+    });
+  }
+
+  // ---- the lightbox: every photo of the hotel, one at a time (arrows, a swipe, Esc) ----
+  var lb = null, lbPhotos = [], lbAt = 0, lbFrom = null;
+  function lbShow(i) {
+    lbAt = (i + lbPhotos.length) % lbPhotos.length;
+    var p = lbPhotos[lbAt];
+    q(lb, 'img').src = p.src; q(lb, 'img').alt = p.cap || 'Hotel photo';
+    q(lb, 'figcaption').textContent = p.cap || '';
+    q(lb, '.dr-lb-c').textContent = (lbAt + 1) + ' of ' + lbPhotos.length;
+  }
+  function lbMake() {
+    lb = document.createElement('dialog');
+    lb.className = 'dr-lb';
+    lb.setAttribute('aria-label', 'Photos of the hotel');
+    lb.innerHTML = '<button type="button" class="dr-lb-x" aria-label="Close photos">✕</button><button type="button" class="dr-lb-n l" data-go="-1" aria-label="Previous photo">‹</button>' +
+      '<figure><img alt=""><figcaption></figcaption></figure><button type="button" class="dr-lb-n r" data-go="1" aria-label="Next photo">›</button><p class="dr-lb-c" aria-live="polite"></p>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', function (e) {
+      if (e.target === lb || e.target.closest('.dr-lb-x')) { lb.close(); return; }
+      var go = e.target.closest('[data-go]');
+      if (go) lbShow(lbAt + parseInt(go.dataset.go, 10));
+    });
+    lb.addEventListener('close', function () { if (lbFrom && lbFrom.isConnected) lbFrom.focus({ preventScroll: true }); });
+    lb.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft') lbShow(lbAt - 1); else if (e.key === 'ArrowRight') lbShow(lbAt + 1); });
+    var x0 = null;
+    lb.addEventListener('pointerdown', function (e) { x0 = e.clientX; });
+    lb.addEventListener('pointerup', function (e) { if (x0 !== null && Math.abs(e.clientX - x0) > 48) lbShow(lbAt + (e.clientX < x0 ? 1 : -1)); x0 = null; });
+  }
+  document.addEventListener('click', function (e) {
+    var ph = e.target.closest && e.target.closest('.dr-photos [data-lb]');
+    if (!ph) return;
+    var all = qa(ph.closest('.dr-photos'), '[data-lb]');
+    lbPhotos = all.map(function (b) { return { src: b.dataset.src, cap: b.dataset.cap }; });
+    if (!lb) lbMake();
+    lbFrom = ph;
+    lbShow(all.indexOf(ph));
+    if (!lb.open) lb.showModal();
+  });
   function moneyOf(c) { var d = Math.floor(c / 100), r = c % 100; return '$' + (r === 0 ? d.toLocaleString('en-US') : (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }
   function set(dr, k, text) { qa(dr, '[data-m="' + k + '"]').forEach(function (e) { e.textContent = text; }); }
   function mark(b, on, diff) {
