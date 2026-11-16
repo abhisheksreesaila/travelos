@@ -19,8 +19,6 @@ def trip_field():
     t = session.open_trip_id()
     return Input(type="hidden", name="trip", value=t) if t else ""
 
-FONTS = "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap"   # the hand (traveler notes); Geist, the face of everything else, is served from /assets/fonts (tokens.css)
-
 PAPER = "#F2F2F5"  # --paper / --ground in light mode (Direction A's canvas, F-200): the manifest's colours
 DARK = "#000000"   # the canvas in dark mode
 THEME_COLORS = {"sunset": PAPER, "pacific": PAPER}  # each theme's --ground, for the browser chrome (Direction A gives both themes the same canvas)
@@ -71,9 +69,6 @@ HEAD = (
     Meta(name="apple-mobile-web-app-status-bar-style", content="default"),
     Meta(name="apple-mobile-web-app-title", content="GitAway"),
     Script(src="/assets/js/pwa.js", defer=True),
-    Link(rel="preconnect", href="https://fonts.googleapis.com"),
-    Link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
-    Link(rel="stylesheet", href=FONTS),
 )
 
 def styles(*extra, theme="sunset"):
