@@ -172,12 +172,19 @@ class SecurityHeaders:
         await self.app(scope, receive, send_with)
 
 
+def _not_found(req, exc):
+    """Unknown addresses get the v2 "Nothing here" page (F-272); a missing file under /assets/ or an /api/ path gets a plain 404, not 4.7 KB of HTML."""
+    if req.url.path.startswith(("/assets/", "/api/")):
+        return Response("Not found", status_code=404, media_type="text/plain")
+    return showcase.not_found()
+
+
 def make_app():
     auth.check_production_settings()
     # F-207: htmx=False, surreal=False keep only FastHTML's charset and viewport tags. Its defaults loaded htmx, fasthtml-js, surreal and
     # css-scope-inline from jsDelivr (two from a moving @main branch, no integrity hash) on every page, and GitAway uses none of them.
     app = FastHTML(before=[Beforeware(access.guard, skip=_OPEN), auth_before, Beforeware(session.bind, skip=_OPEN), Beforeware(showcase.guard, skip=_OPEN), omxqua.before], hdrs=HEAD, title="GitAway", middleware=[Middleware(BodyLimit), Middleware(SecurityHeaders), Middleware(OneAddress),Middleware(NoStoreWhenSignedIn), Middleware(familydb.RequestScope)],
-                   htmx=False, surreal=False, htmlkw={"lang": "en", "data-mode": "light"}, exception_handlers={404: lambda req, exc: showcase.not_found()}, on_startup=[morning.start, draftjobs.start, planforme.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
+                   htmx=False, surreal=False, htmlkw={"lang": "en", "data-mode": "light"}, exception_handlers={404: _not_found}, on_startup=[morning.start, draftjobs.start, planforme.start], secret_key=os.getenv("GITAWAY_SECRET_KEY") or None, key_fname=str(ROOT / ".sesskey"),
                    **auth.session_options())
     app.static_route_exts(prefix="/assets/", static_path=str(ROOT / "assets"))
 

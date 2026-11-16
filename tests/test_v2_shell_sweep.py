@@ -35,6 +35,8 @@ def test_every_page_wears_the_v2_shell(client, signed_in):
         seen += 1
         if not v2_shell(r.text) and path not in PENDING_F272:
             wrong.append(f"{path} ({r.status_code})")
+        elif path not in OWN_SHELL and 'class="v2-top"' not in r.text and "v2-top" not in r.text:
+            wrong.append(f"{path} ({r.status_code}, no v2 top bar)")
     assert seen >= 12
     assert not wrong, f"pages still in Direction A: {wrong}"
 
@@ -51,3 +53,12 @@ def test_a_quiet_page_ends_with_privacy_and_terms_except_where_it_has_its_own_fo
         html = client.get(path).text
         assert html.count('class="pg-foot"') + html.count("cb-foot") == 1 and 'href="/privacy"' in html and 'href="/terms"' in html, path
     assert 'class="pg-foot"' not in client.get("/plan/matrix").text
+
+
+def test_an_unknown_page_is_the_v2_nothing_here_but_a_missing_asset_is_a_plain_404(client):
+    page = client.get("/no-such-page")
+    assert page.status_code == 404 and "Nothing here" in page.text and v2_shell(page.text)
+    for path in ("/assets/css/no-such.css", "/api/nope"):
+        r = client.get(path)
+        assert r.status_code == 404 and r.headers["content-type"].startswith("text/plain") and len(r.content) < 100, path
+    assert client.get("/healthz").status_code == 200

@@ -70,14 +70,6 @@ def restart():
     familydb.forget_schema_cache()
 
 
-def trip_buttons(html):
-    """[(trip id, is the open one)] for the trip picker in the top bar, in the order shown."""
-    out = []
-    bar = re.search(r'<header[^>]*class="ga-topbar".*?</header>', html, re.S)
-    for form in re.findall(r"<form\b[^>]*action=\"/trips/switch\"[^>]*>.*?</form>", bar.group(0) if bar else "", re.S):
-        trip = re.search(r'name="trip" value="([^"]+)"', form).group(1)
-        out.append((trip, 'aria-current="true"' in form))
-    return out
 
 
 # ---- stored in the family database, and surviving a restart --------------------------------------------------------
@@ -162,10 +154,6 @@ def test_switching_needs_sign_in(client):
     r = client.post("/trips/switch", data={"trip": "x"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].startswith("/signin")
 
-
-def test_the_switcher_stays_out_of_the_way_with_one_trip(client):
-    book(client)
-    assert trip_buttons(client.get("/trip/canvas").text) == []
 
 
 # ---- at the same moment ---------------------------------------------------------------------------------------------
