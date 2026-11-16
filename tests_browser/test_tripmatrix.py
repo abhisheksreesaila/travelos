@@ -352,8 +352,8 @@ def test_while_the_first_squares_load_a_fact_floats_in_and_leaves_once_they_land
         assert page.errors == []
 
 
-def test_the_script_starts_the_head_start_once_and_asks_three_tiles_at_a_time(matrix, base_url, browser):
-    """F-229 review: the head start comes from the script (one POST), never from drawing the page; the gate does the limiting, so 3 tiles at a time."""
+def test_the_script_starts_the_head_start_once_and_asks_every_tile_in_view_at_once(matrix, base_url, browser):
+    """F-229 review: the head start comes from the script (one POST), never from drawing the page; the gate does the limiting, so every tile in view at once."""
     ctx = browser.new_context(viewport=DESKTOP, reduced_motion="reduce")
     page = ctx.new_page()
     posts = []
@@ -364,7 +364,7 @@ def test_the_script_starts_the_head_start_once_and_asks_three_tiles_at_a_time(ma
     assert posts == ["POST"]
     ctx.close()
     src = Path(__file__).resolve().parent.parent.joinpath("assets/js/tripmatrix.js").read_text()
-    assert re.search(r"MAX_AT_ONCE = 3\b", src)
+    assert re.search(r"MAX_AT_ONCE = 32\b", src)
 
 
 def test_a_busy_square_is_asked_again_and_lands(matrix, stand, monkeypatch):

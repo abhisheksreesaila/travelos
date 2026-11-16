@@ -1,5 +1,5 @@
 // The trip matrix (F-222). The page works as plain links (every square is a link to its own page); this adds four things on top.
-//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (3: the server's gate keeps LiteAPI to 3 calls at once, F-229),
+//   1. Loading like map tiles: only the squares in view (and a margin) are asked for, at most MAX_AT_ONCE at a time (32, F-273: a live key's gate takes a whole matrix at once; a sandbox key's gate keeps LiteAPI to 3 calls at once and the rest wait there, F-229),
 //      after one POST to data.warm that starts the first squares' searches on the server (never from drawing the page, so a crawler starts none); a square
 //      the server was too busy for ("busy") is asked again after BUSY_MS; the asked square first, then the nearest days and
 //      the likeliest places (gitaway/tripmatrix.py `order`); a square scrolled past before its turn is never asked for. A waiting square is a skeleton, never a number.
@@ -22,7 +22,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
-  var MAX_AT_ONCE = 3, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', COMMIT_MS = 220, again = 0, committing = 0, looking = false, settling = false;
+  var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', COMMIT_MS = 220, again = 0, committing = 0, looking = false, settling = false;
   var N = data.nights, stores = {}, known, drawers, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
   var sliding = false, touched = false, commitTimer = 0, bandAt = {};
   function store(n) { return stores[n] || (stores[n] = { known: {}, drawers: {}, asked: {}, tries: {} }); }

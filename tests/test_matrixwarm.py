@@ -116,3 +116,12 @@ def test_the_tile_and_the_head_start_ask_with_the_squares_rank(real, client, mon
     s = [(k, r) for k, r, peek in seen if not peek]
     lanes, windows = tm.lanes(SD), tm.windows(date(2026, 12, 12), date(2026, 12, 16), 2, date(2026, 9, 30))
     assert s == [("orangecounty+sandiego|2026-12-14", tm.rank(lanes, windows)["orangecounty+sandiego|2026-12-14"])] and s[0][1] >= len(HEAD)
+
+
+def test_a_live_key_queues_every_square_of_the_view_and_searches_them_together(real, client, monkeypatch):
+    """F-273: with a live key the head start is all the squares (asked ones first) and enough workers start them together; a sandbox key keeps the short list."""
+    monkeypatch.setenv("LITEAPI_KEY", "live_test-key-not-real")
+    r = client.post(WARM)
+    squares = matrixwarm.pending()
+    assert r.json()["queued"] == len(squares) > len(HEAD) and squares[:len(HEAD)] == HEAD and len(set(squares)) == len(squares)
+    assert matrixwarm.WORKERS_LIVE >= len(squares)

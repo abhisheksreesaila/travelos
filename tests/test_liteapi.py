@@ -542,6 +542,18 @@ def test_at_most_three_calls_are_in_flight_site_wide(monkeypatch):
     assert all(g.ok for g in got[:8])
 
 
+def test_a_live_key_has_a_place_for_a_whole_matrix_at_once(monkeypatch):
+    """F-273: a production key allows 250 a second, so ~30 searches (a 5x5 matrix) are in flight together; the key is read at each call."""
+    monkeypatch.setenv("LITEAPI_KEY", "live_test-key-not-real")
+    slow = Slow(0.5)
+    monkeypatch.setattr(liteapi, "TRANSPORT", slow)
+    got = together(*[lambda d=d: stays(checkin=IN + timedelta(days=d), checkout=OUT + timedelta(days=d)) for d in range(30)])
+    assert liteapi.mode() == "live" and liteapi.at_once() == liteapi.AT_ONCE_LIVE == 32
+    assert slow.most == 30 and slow.calls == 30 and all(g.ok for g in got)
+    monkeypatch.setenv("LITEAPI_KEY", KEY)      # the same process, a sandbox key: back to 3
+    assert liteapi.at_once() == 3
+
+
 def test_the_same_search_in_flight_is_joined_not_asked_twice(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", KEY)
     slow = Slow(0.3)
