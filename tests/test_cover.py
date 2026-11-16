@@ -34,7 +34,7 @@ def _opens(html, cls):
 
 
 def _caps(html):
-    return re.findall(r'<article data-k="(\d)" class="cap[^"]*">(.*?)</article>', html, re.S)
+    return re.findall(r'<article data-k="(\d)" class="cap[^"]*"[^>]*>(.*?)</article>', html, re.S)
 
 
 def test_a_stranger_gets_eight_beats_one_line_each_in_order(client):
