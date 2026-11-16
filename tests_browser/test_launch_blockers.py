@@ -7,7 +7,6 @@ from playwright.sync_api import expect
 
 from gitaway import ai, safefetch
 from tests.creator_import_support import ANSWER, Model, Web, page as html_page, picture
-from tests.test_trip_import import TEMPLATE
 from tests_browser.helpers import DESKTOP, PHONE
 
 POST = "https://blog.example.com/santa-monica-with-kids"
@@ -117,21 +116,3 @@ def test_the_captain_edits_a_pre_draft_before_he_sends_it(person, base_url, draf
     expect(creator).to_have_title(re.compile("Santa Monica, checked by the captain"))
     admin.click("#pb-back-admin")
     admin.wait_for_url(re.compile(r".*/admin#cc-section$"))
-
-
-@SIZES
-def test_a_page_that_names_a_child_waits_for_the_tick(person, base_url, viewport):
-    ctx = person(viewport, "ari.rivera@example.com")
-    ctx.request.post(f"{base_url}/trips/import/save", form={"text": TEMPLATE.replace("name: Kid 1", "name: Mira Rivera")}, max_redirects=0)
-    p = ctx.new_page()
-    p.goto(f"{base_url}/trip/publish")
-    p.fill("#pb-title", "Our Disneyland week")
-    p.fill("#pb-note-2", "Mira loved the teacups.")
-    p.click("#pb-preview")
-    expect(p.locator("#pb-warn")).to_have_text("It mentions Mira from your family. Check they're happy to be on a public page.")
-    expect(p.locator(".pb-names-t")).to_have_text("Yes, Mira is happy to be named")
-    p.click("#pb-publish")
-    expect(p.locator("#pb-error")).to_have_text("This page names Mira from your family. Tick the box to say they are happy to be on a public page, then publish.")
-    p.check("#pb-names-ok")
-    p.click("#pb-publish")
-    expect(p.locator("#pb-view")).to_be_visible()

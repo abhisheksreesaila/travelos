@@ -168,7 +168,7 @@ RUN_SW = """async (source) => {
   new Function("self", "caches", "fetch", source)(self_, {}, () => {});
   const wait = [];
   const event = (extra) => Object.assign({ waitUntil: (p) => wait.push(p) }, extra);
-  await handlers.push(event({ data: { json: () => ({ title: "Today in Los Angeles", body: "9:00 AM Beach", url: "/trip" }) } }));
+  await handlers.push(event({ data: { json: () => ({ title: "Today in Los Angeles", body: "9:00 AM Beach", url: "/trip/plan" }) } }));
   await Promise.all(wait.splice(0));
   await handlers.push(event({ data: { json: () => { throw new Error("not json"); } } }));
   await Promise.all(wait.splice(0));
@@ -197,10 +197,10 @@ def test_the_service_worker_shows_the_push_and_a_tap_opens_the_today_view(browse
     finally:
         page.close()
     first, second, third = out["shown"]
-    assert first["title"] == "Today in Los Angeles" and first["options"]["body"] == "9:00 AM Beach" and first["options"]["data"]["url"] == "/trip"
+    assert first["title"] == "Today in Los Angeles" and first["options"]["body"] == "9:00 AM Beach" and first["options"]["data"]["url"] == "/trip/plan"
     assert first["options"]["icon"] == "/assets/icons/icon-192.png" and first["options"]["tag"] == "morning-plan"
     assert second["title"] == "GitAway"                       # a payload that is not JSON still shows something (iOS needs every push shown)
-    assert third["options"]["data"]["url"] == "/trip"          # a link to another site is never followed
-    assert out["opened"] == [base_url + "/trip"]               # no window open: open one on the Today view
-    assert out["closed"] == 2 and out["focused"] == ["focus", base_url + "/trip", "focus", base_url + "/trip"]   # even a foreign address in the data lands on Today
+    assert third["options"]["data"]["url"] == "/trip/plan"          # a link to another site is never followed
+    assert out["opened"] == [base_url + "/trip/plan"]               # no window open: open one on the Today view
+    assert out["closed"] == 2 and out["focused"] == ["focus", base_url + "/trip/plan", "focus", base_url + "/trip/plan"]   # even a foreign address in the data lands on Today
     assert True   # a window is open: focus it and take it to Today
