@@ -112,15 +112,15 @@ def test_remove_deletes_the_passkey_and_it_can_no_longer_sign_in(phone, site):
     assert page.evaluate("localStorage.getItem('ga-faceid-on')") is None
 
 
-def test_no_face_id_card_on_help_or_the_day_the_family_page_is_where_it_lives(phone, site):
+def test_no_face_id_card_on_the_plan_or_the_ask_the_family_page_is_where_it_lives(phone, site):
     """F-093: the Home Screen card (with "Not now") that F-092 put on Help is gone; Face ID is on the family page ("This phone", add_from_family above)."""
     page, ctx = phone(init=STANDALONE)
     ctx.request.post(f"{site}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    page.goto(f"{site}/trip/help")
-    expect(page.locator("#hp-sos")).to_be_visible()      # Help is drawn
+    page.goto(f"{site}/trip/plan")      # M5 triage: Help and the day canvas are retired (F-254); the plan calendar and the ask are where the card could have shown
+    expect(page.locator(".cal-top")).to_be_visible()
     expect(page.locator("#pk-card")).to_have_count(0)
-    page.goto(f"{site}/trip/canvas?day=0")
-    expect(page.locator(".cz-view")).to_be_visible()
+    page.goto(f"{site}/plan/ask")
+    expect(page.locator("#v2-q")).to_be_visible()
     expect(page.locator("#pk-card")).to_have_count(0)
 
 

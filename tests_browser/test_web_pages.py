@@ -64,7 +64,7 @@ def join_as(contexts, base_url, owner_page, email, role="editor"):
     other.click("#join-signin")
     other.fill("#si-email", email)
     other.click("#si-dev-form button[type=submit]")
-    other.wait_for_url("**/trip/cockpit*")      # the trip's home (F-201)
+    other.wait_for_url("**/trip/plan*")      # the trip's home (F-252; /trip/cockpit redirects there)
     return other
 
 
@@ -75,7 +75,7 @@ def test_each_page_has_the_top_bar_white_cards_and_the_trip_type_and_fits_1440_b
     ctx, page = ari
     page.goto(f"{base_url}{path}")
     expect(page.locator(".ga-topbar")).to_be_visible()
-    expect(page.locator(".ga-tb-nav")).to_contain_text("Family")
+    expect(page.locator(".ga-tb-nav a")).to_have_text(["Book", "Plan", "Guides"])      # M5 triage: the bar is Book · Plan · Guides (F-255); Family members is in the avatar's menu
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and 13 <= style[1] <= 15 and style[2] == "1px", style      # F-158: the calm skin's white card with a hairline edge, radius 14
@@ -187,7 +187,7 @@ def test_change_role_remove_leave_and_switch_family(ari, contexts, base_url):
 
 # ---- /trip/details: every button ---------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("button,url", [("#ti-cal", "**/trip/cockpit*"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
+@pytest.mark.parametrize("button,url", [("#ti-cal", "**/trip/plan*"), ("#ti-edit-trip", "**/trips/build/edit?trip=*"), ("#ti-correct", "**/trips/import"), ("#ti-delete", "**/trip/delete?trip=*")])
 def test_every_trip_details_button_lands_where_it_says(ari, base_url, button, url):
     ctx, page = ari
     page.goto(f"{base_url}/trip/details")
@@ -195,15 +195,15 @@ def test_every_trip_details_button_lands_where_it_says(ari, base_url, button, ur
     page.wait_for_url(url)
 
 
-# ---- the way in: the matrix and the cockpit ----------------------------------------------------------------------------
+# ---- the way in: the matrix and the plan page ----------------------------------------------------------------------------
 
-def test_the_matrix_offers_the_import_and_the_cockpit_offers_another_trip(ari, base_url):
+def test_the_matrix_offers_the_import_and_the_plan_page_offers_another_trip(ari, base_url):
     ctx, page = ari
     page.goto(f"{base_url}/plan/matrix")
     page.click("#mx-import")      # F-231: Already booked? Bring your trip in
     page.wait_for_url("**/trips/import")
-    page.goto(f"{base_url}/trip/cockpit")
-    page.click("#ck-plan-another")
+    page.goto(f"{base_url}/trip/plan")      # M5 triage: the cockpit's "Plan another trip" is retired (F-254); the bar's Book is the way to another
+    page.get_by_role("link", name="Book", exact=True).first.click()
     page.wait_for_url("**/plan/ask")
     expect(page.locator("#ak-import")).to_be_visible()
 

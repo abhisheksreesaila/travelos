@@ -1,4 +1,5 @@
-"""F-059: booked items in a real browser: a soft tint per kind (never the ink), readable text (WCAG AA), a quiet lock, on the phone Today view."""
+"""F-059: booked items in a real browser: a soft tint per kind (never the ink), readable text (WCAG AA), a quiet lock, on the phone.
+M5 triage: the phone Today view is retired (F-254); the same blocks are the locked blocks of the planning calendar (`a.ev.lock`, F-252)."""
 from pathlib import Path
 
 import pytest
@@ -9,12 +10,12 @@ TEMPLATE = (Path(__file__).resolve().parent.parent / "docs" / "trip-template.md"
 
 # The block's own background and left edge, and the lowest WCAG contrast between it and any of its text.
 MEASURE = """(sel) => { const el = document.querySelector(sel); const cs = getComputedStyle(el);
-  const rgb = c => c.match(/[\\d.]+/g).map(Number);
+  const rgb = c => { const n = c.match(/[\\d.]+/g).map(Number); return c.startsWith('color(') ? n.slice(0, 3).map(v => v * 255) : n; };      // a color-mix() comes back as color(srgb 0.9 0.9 1)
   const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
   const L = c => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
   const bg = rgb(cs.backgroundColor);
   const ratio = fg => { const a = L(bg) + 0.05, b = L(fg) + 0.05; return Math.max(a, b) / Math.min(a, b); };
-  const texts = [...el.querySelectorAll('.tp-what, .tp-sub, .tp-label')].map(t => rgb(getComputedStyle(t).color));
+  const texts = [...el.querySelectorAll('b, .tm')].map(t => rgb(getComputedStyle(t).color));
   return { bg: cs.backgroundColor, edge: cs.borderLeftColor, edgeW: parseFloat(cs.borderLeftWidth), min: Math.min(...texts.map(ratio)), n: texts.length }; }"""
 
 INK = "rgb(11, 11, 13)"
@@ -45,10 +46,10 @@ def signed_in(browser, base_url):
 
 def test_the_phone_today_cards_are_tinted_with_a_lock_and_readable_text(signed_in, base_url):
     page = signed_in(PHONE)
-    page.goto(f"{base_url}/trip?day=0")
-    sel = ".tp-card.tp-flight"
+    page.goto(f"{base_url}/trip/plan")
+    sel = "a.ev.lock"
     page.wait_for_selector(sel)
     got = page.evaluate(MEASURE, sel)
-    assert got["bg"] != INK and got["bg"] == tint(page, "sky") and got["edgeW"] >= 3 and got["min"] >= 4.5
-    assert page.locator(f"{sel} .tp-lock svg").count() == 1
+    assert got["n"] >= 2 and got["bg"] != INK and got["bg"] != "rgba(0, 0, 0, 0)" and got["min"] >= 4.5, got
+    assert page.locator(f"{sel} svg.lk").first.count() == 1
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")

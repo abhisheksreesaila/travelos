@@ -37,11 +37,11 @@ def _everywhere(browser, base_url, viewport, mode="light"):
         page.goto(base_url + path)
         found.append((path, _marks(page)))
 
-    for path in ("/", "/signin", "/plan/matrix", "/guides", "/privacy"):
+    for path in ("/", "/signin", "/privacy", "/terms"):
         look(path)
     ctx.request.post(f"{base_url}/signin", form={"email": "ari.rivera@example.com", "next": "/", "intent": "pay"}, max_redirects=0)
     ctx.request.post(f"{base_url}/_test/pay", form={"f": "f1", "h": "h1", "c": "c1"}, max_redirects=0)
-    for path in (f"/plan?to=hi&{TRIP}", "/creators", _creator(page, base_url), "/partners", "/trip/canvas?day=1", "/trip", "/family", "/trip/ask"):
+    for path in ("/creators", _creator(page, base_url), "/family", "/trip/details", "/trips/import"):      # M5 triage: /plan, /partners, the canvas, /trip and /trip/ask are retired (F-254); the v2 pages draw their own mark
         look(path)
     ctx.close()
     return found
@@ -53,12 +53,16 @@ def test_the_logo_is_one_mark_and_one_wordmark_on_every_page(browser, base_url, 
     found = _everywhere(browser, base_url, viewport, mode)
     seen = [m for _, marks in found for m in marks]
     assert len(seen) >= 8, f"the logo shows on most pages: {[(p, len(m)) for p, m in found]}"
-    first, want = seen[0], LOOK[mode]
+    first, want = next(m for p, marks in found if p != "/" for m in marks[:1]), LOOK[mode]      # M5 triage: the cover's postcard (F-266) is the one page whose wordmark takes its own size and ink; its tile, fork and text are held to the same rule below
     assert first["tile"][0] == want["tile"] and first["strokes"] == want["strokes"], first      # the ink (or white) tile, the fork's line and its three kind-coloured nodes
     assert first["word"][0].startswith("Geist") and first["word"][1] == "750" and first["word"][4] == "none" and first["word"][5] == want["word"], first["word"]
     for path, marks in found:
         for m in marks:
-            assert m["tile"] == first["tile"], f"{path}: the tile differs"
-            assert m["fork"] == first["fork"] and m["strokes"] == first["strokes"], f"{path}: the fork differs"
-            assert m["word"] == first["word"], f"{path}: the wordmark differs"
+            if path == "/":      # the cover draws the same mark larger (36px, a 10px radius) with the postcard's ink: the colours, the font and its weight are the same
+                assert m["tile"][0] == first["tile"][0] and m["strokes"] == first["strokes"], f"{path}: the cover's mark colours differ"
+                assert m["word"][:2] == first["word"][:2], "/: the cover's wordmark is the same Geist 750"
+            else:
+                assert m["tile"] == first["tile"], f"{path}: the tile differs"
+                assert m["fork"] == first["fork"] and m["strokes"] == first["strokes"], f"{path}: the fork differs"
+                assert m["word"] == first["word"], f"{path}: the wordmark differs"
             assert m["text"] == "GitAway", path

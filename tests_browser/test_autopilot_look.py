@@ -12,8 +12,8 @@ def _creator(page, base_url):
     return next(h for h in hrefs if h.rsplit("/", 1)[-1] not in ("draft", "finish", "done"))
 
 
-def _pages(page, base_url):
-    yield f"/plan?to=hi&{TRIP}"
+def _pages(page, base_url, *extra):
+    yield from extra          # M5 triage: /plan (the booking lanes) is retired (F-254); the way in, /plan/ask, is a v2 page (glass allowed, so only the touch check visits it)
     yield "/creators"
     yield _creator(page, base_url)
 
@@ -44,7 +44,7 @@ def test_m5_omxqua_on_phone_and_laptop(browser, base_url):
 def test_m5_phone_touch_targets_and_no_sideways_scroll(browser, base_url):
     ctx = browser.new_context(viewport=PHONE, has_touch=True, is_mobile=True)
     page = ctx.new_page()
-    for path in list(_pages(page, base_url)):
+    for path in list(_pages(page, base_url, "/plan/ask")):
         page.goto(base_url + path)
         wide = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
         assert wide <= 1, f"{path}: sideways scroll {wide}px"
@@ -55,29 +55,10 @@ def test_m5_phone_touch_targets_and_no_sideways_scroll(browser, base_url):
     ctx.close()
 
 
-def test_m5_plan_lanes_swipe_on_phone_and_sit_side_by_side_on_laptop(browser, base_url):
-    ctx = browser.new_context(viewport=PHONE, has_touch=True, is_mobile=True)
-    page = ctx.new_page()
-    page.goto(f"{base_url}/plan?to=sd&{TRIP}")
-    snap = page.evaluate("() => [...document.querySelectorAll('*')].some(e => getComputedStyle(e).scrollSnapType.includes('x'))")
-    assert snap, "phone lanes swipe sideways with scroll-snap"
-    ctx.close()
-    ctx = browser.new_context(viewport=DESKTOP)
-    page = ctx.new_page()
-    page.goto(f"{base_url}/plan?to=sd&{TRIP}")
-    tops = page.evaluate("""() => [...document.querySelectorAll('a[href^="/go/"]')].slice(0, 200)
-        .map(a => a.closest('section, [data-lane], .lane, .pane')).filter(Boolean)
-        .filter((v, i, arr) => arr.indexOf(v) === i).map(e => Math.round(e.getBoundingClientRect().top))""")
-    assert len(tops) >= 3 and len(set(tops[:3])) == 1, f"three lanes side by side at 1440px: {tops}"
-    ctx.close()
-
-
 def test_m5_sandbox_and_partners_in_omxqua(browser, base_url):
     ctx = browser.new_context(viewport=PHONE, has_touch=True, is_mobile=True)
     page = ctx.new_page()
-    page.goto(f"{base_url}/plan?to=nyc&{TRIP}")
-    href = page.get_attribute("a[href^='/go/']", "href")
-    page.goto(base_url + href)
+    page.goto(f"{base_url}/go/hif1?to=hi&{TRIP}")      # an offer's link (the lanes that listed them are retired); with no partner connected it lands in the stand-in checkout
     assert re.search(r"/sandbox/", page.url)
     look = _omxqua(page)
     assert look["fam"] and look["tok"] and not look["blur"]

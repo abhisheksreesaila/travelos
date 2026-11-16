@@ -77,7 +77,7 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     assert overflow(page) <= 1
     shot(page, f"magic-{viewport['width']}")
     page.click("#readyEdit")
-    expect(page.locator("h1")).to_have_text("The details of your book")
+    expect(page.locator("h1")).to_have_text("The details of your guide")
     assert overflow(page) <= 1
     if viewport is PHONE:
         assert not too_small(page, "main button:not(.sr-only):not(.v2-sr), main .btn, main input:not([type=hidden]):not(.sr-only):not(.v2-sr), main select, main textarea, main summary")
@@ -115,12 +115,12 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     p = stranger.new_page()
     p.goto(base_url + href)
     expect(p.locator("h1")).to_contain_text("Three easy days in Santa Monica")
-    expect(p.locator("#day-2 .stop-title", has_text="Pacific Park")).to_be_visible()
+    p.get_by_role("button", name="Day 2").click()      # M5 triage (F-262): the public trip is a guide, days in a strip, stops as cards, the source a tile
+    expect(p.locator(".g-nm", has_text="Pacific Park")).to_be_visible()
     expect(p.get_by_text("From the blog")).to_be_visible()
-    link = p.locator(".source-card .src-link")
+    link = p.get_by_role("link", name=re.compile("Read the original post"))
     expect(link).to_have_attribute("href", POST + "?utm_source=gitaway")
-    expect(link).to_have_text("Read the original post")
-    img = p.locator(".polaroid img").first
+    img = p.locator("img[alt=\"A photo from Maya's post\"]").first
     img.scroll_into_view_if_needed()
     assert img.evaluate("i => i.complete && i.naturalWidth > 0")        # the public copy of the picked picture loads
     assert overflow(p) <= 1
@@ -139,7 +139,7 @@ def test_the_magic_import_shows_everything_at_once_with_reduced_motion(setup, br
     expect(page.locator("#ready")).to_be_visible()      # reduced motion: the days and stops are all there at once, nothing waits on an animation
     assert page.locator("#days .dayb").count() == 2
     page.click("#readyEdit")
-    expect(page.locator("h1")).to_have_text("The details of your book")
+    expect(page.locator("h1")).to_have_text("The details of your guide")
     ctx.close()
 
 
@@ -153,7 +153,7 @@ def test_not_switched_on_yet_is_friendly_and_the_text_editor_still_works(browser
     expect(page.locator("#ci-off")).to_have_text("Drafting from a link is not switched on yet. You can still paste your text and write the trip yourself.")
     page.fill("#ci-text", "Day 1 Santa Monica Pier. Day 2 Venice Canals.")
     page.click("#ci-manual")
-    expect(page.locator("h1")).to_have_text("The details of your book")
+    expect(page.locator("h1")).to_have_text("The details of your guide")
     expect(page.locator("#ci-pasted")).to_contain_text("Day 1 Santa Monica Pier")
     page.fill("#ci-title", "My two days")
     page.fill("input[name=d0s0_name]", "Santa Monica Pier")
