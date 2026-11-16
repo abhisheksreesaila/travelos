@@ -60,11 +60,13 @@ def test_a_booked_trips_day_is_served_offline_and_an_unvisited_page_gets_the_off
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/trip/canvas?day=0")
+    page.goto(f"{base_url}/trip/plan")      # M5 triage: the canvas is retired (F-254); the trip's day is the v2 calendar
+    page.wait_for_selector(".cal-top")
     online_text = page.locator("#main").inner_text()
     assert "Los Angeles" in online_text or "LA" in online_text
+    page.wait_for_timeout(500)            # the worker saves the page after answering
     ctx.set_offline(True)
-    page.goto(f"{base_url}/trip/canvas?day=0")
+    page.goto(f"{base_url}/trip/plan")
     assert page.locator("#main").inner_text() == online_text
     page.goto(f"{base_url}/never-visited")
     assert "offline" in page.locator("body").inner_text().lower()
@@ -124,12 +126,12 @@ def test_signing_out_leaves_no_private_page_offline(ctxs, base_url):
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/trip/canvas?day=0")
+    page.goto(f"{base_url}/trip/plan")
     assert page.evaluate(PAGE_CACHES)
     page.evaluate("fetch('/signout', {method: 'POST'}).then(r => r.status)")
     assert page.evaluate("caches.keys().then(k => k.length)") == 0
     ctx.set_offline(True)
-    text = goes_offline_ok(page, f"{base_url}/trip/canvas?day=0")
+    text = goes_offline_ok(page, f"{base_url}/trip/plan")
     assert text is None or "Ari" not in text and "Los Angeles" not in text
 
 
@@ -139,7 +141,7 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/trip/canvas?day=0")
+    page.goto(f"{base_url}/trip/plan")
     ari_caches = page.evaluate(PAGE_CACHES)
     assert len(ari_caches) == 1
     sign_in(ctx, base_url, "sam")
@@ -148,23 +150,23 @@ def test_a_different_person_never_sees_the_previous_persons_saved_pages(ctxs, ba
     sam_caches = page.evaluate(PAGE_CACHES)
     assert len(sam_caches) == 1 and sam_caches != ari_caches
     ctx.set_offline(True)
-    page.goto(f"{base_url}/trip/canvas?day=0")  # Sam never opened it: the offline page, not Ari's trip
+    page.goto(f"{base_url}/trip/plan")  # Sam never opened it: the offline page, not Ari's trip
     body = page.locator("body").inner_text().lower()
     assert "offline" in body
 
 
 def test_the_installed_apps_start_page_opens_offline_on_the_trip_it_last_showed(ctxs, base_url):
-    """F-092, F-201: /trip (the manifest's start_url) redirects to the trip's home, the cockpit; the worker keeps that page under /trip too, so an offline start is not the offline page."""
+    """F-092, F-254: /trip/plan is the manifest's start_url (no redirect, so the worker keeps it under its own address); an offline start is the calendar, not the offline page."""
     ctx = ctxs()
     sign_in(ctx, base_url)
     book_trip(ctx, base_url)
     page = ctx.new_page()
     controlled(page, base_url)
-    page.goto(f"{base_url}/trip")
-    page.wait_for_selector("#ck-week")
-    online = page.locator(".ck-head-phone .ck-title").inner_text()
+    page.goto(f"{base_url}/trip/plan")
+    page.wait_for_selector(".cal-top")
+    online = page.locator(".cal-title").inner_text()
     page.wait_for_timeout(500)            # the worker saves the page after answering
     ctx.set_offline(True)
-    text = goes_offline_ok(page, f"{base_url}/trip")
+    text = goes_offline_ok(page, f"{base_url}/trip/plan")
     assert text is not None and "You're offline" not in text      # not the offline page
-    assert page.locator(".ck-head-phone .ck-title").inner_text() == online and page.locator("#ck-week .ck-stub").count() == 5
+    assert page.locator(".cal-title").inner_text() == online
