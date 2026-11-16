@@ -39,7 +39,7 @@ CONFETTI = 64
 
 def _head(s, lane, w, sample: bool, booked: bool = False):
     return Div(Div(Span("Booked" if booked else "Book my trip", cls="mxb-k0"), H2(f"Book {lane.name}", cls="mxb-h"), P(f"{tm.when(w)} · {w.nights} nights · {mx.party_words(s)}", cls="mxb-sub"), cls="mxb-top"),
-               P(icon("shield", 16, 2.4), mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED, cls="mxb-sandbox" + (" is-booked" if booked else ""), role="status" if booked else "note"), cls="mxb-head")
+               P(icon("shield", 16, 2.4), mb.words(sample), cls="mxb-sandbox" + (" is-booked" if booked else ""), role="status" if booked else "note"), cls="mxb-head")
 
 
 def _stay_row(row: mb.Row):
@@ -237,7 +237,7 @@ def _read(s, lane_key, w_key, family, pk):
 
 def _prepare(s, lane, w, sq, family):
     dates = [(p.name, a, b) for p, a, b in tm.stays_for(lane, w)]
-    prep = mb.prepare(sq.stays, dates, family, sample=sq.sample)
+    prep = mb.prepare(sq.stays, dates, family, sample=mb.stands_in(sq.sample))
     if prep.status == liteapi.GONE:
         liteapi.forget_stays()      # the kept rooms are stale: the matrix asks again
     return prep
@@ -257,21 +257,21 @@ def _same_offers(sq, prep) -> bool:
 def _first_step(request, session, s, lane, w, sq, pk, note=""):
     family = _family(session)
     if not sq.ok or not sq.stays:
-        return _answer(request, s, lane, w, sheet(s, lane, w, problem=tm.SAID.get(sq.status, "That square has no stay to book."), sample=sq.sample))
+        return _answer(request, s, lane, w, sheet(s, lane, w, problem=tm.SAID.get(sq.status, "That square has no stay to book."), sample=mb.stands_in(sq.sample)))
     prep = _prepare(s, lane, w, sq, family)
     if not prep.ok:
-        return _answer(request, s, lane, w, sheet(s, lane, w, problem=mb.SAID.get(prep.status, mb.SAID[liteapi.FAILED]), sample=sq.sample))
+        return _answer(request, s, lane, w, sheet(s, lane, w, problem=mb.SAID.get(prep.status, mb.SAID[liteapi.FAILED]), sample=mb.stands_in(sq.sample)))
     mb.hold(family, prep, _square_of(s, lane, w, pk))
     return _answer(request, s, lane, w, sheet(s, lane, w, sq=sq, prep=prep, pk=pk, note=note))
 
 
-def _slowed(request, s, lane_key, w_key):
-    """Too many presses: the sheet says so (429) from the address alone, with no search and no call."""
+def _slowed(request, s, lane_key, w_key, problem=SLOW_DOWN, status=429):
+    """A press the sheet refuses (too many presses: 429; booking not open yet: 403) from the address alone, with no search and no call."""
     lane = tm.lane(s.place, lane_key, s.nearby)
     w = tm.window(s.depart, s.return_, s.flex, catalog.today(), w_key)
     if lane is None or w is None:
         return RedirectResponse(mx.href(s), status_code=303)
-    return _answer(request, s, lane, w, sheet(s, lane, w, problem=SLOW_DOWN, sample=showcase.on()), 429)
+    return _answer(request, s, lane, w, sheet(s, lane, w, problem=problem, sample=mb.stands_in(showcase.on())), status)
 
 
 def _signed_out(s, lane_key, w_key):
@@ -285,6 +285,8 @@ def register(app):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
             return RedirectResponse(mx.href(s), status_code=303)
+        if mb.mode() == mb.SOON:      # a live key in production: the button is disabled, and a forged post is told so and books nothing (F-267, D-767)
+            return _slowed(request, s, lane, w, mb.SOON_WORDS + ".", 403)
         me = ses.current_traveler(session)
         if not me:
             return _signed_out(s, lane, w)
@@ -302,6 +304,8 @@ def register(app):
         s = mx.state(to, home, d, r, a, k, x, nb, b)
         if s.problems:
             return RedirectResponse(mx.href(s), status_code=303)
+        if mb.mode() == mb.SOON:      # a live key in production: the button is disabled, and a forged post is told so and books nothing (F-267, D-767)
+            return _slowed(request, s, lane, w, mb.SOON_WORDS + ".", 403)
         me = ses.current_traveler(session)
         if not me:
             return _signed_out(s, lane, w)
@@ -316,7 +320,7 @@ def register(app):
         if prep is not None and not _same_offers(sq, prep):      # the square was read again and the same picks now name other rooms: never save one hotel while booking another
             prep = None
         if prep is None:      # restarted, kept too long, another family's or another square's (or another choice's) token: nothing is asked of LiteAPI
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=sq.sample))
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=mb.stands_in(sq.sample)))
         guest, errors = mb.clean_guest(first, last, email)
         extras, more = mb.clean_extras(phone, req, arrive)
         errors = {**errors, **more, **({} if agree == "on" else {"agree": TICK})}      # the required tick is the server's rule too, not only the page's

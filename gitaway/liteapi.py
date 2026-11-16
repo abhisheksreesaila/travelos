@@ -269,7 +269,14 @@ def _board(rate) -> str:
 def _room_of(rt, rate) -> Room:
     fees = (rate.get("retailRate") or {}).get("taxesAndFees") or ()
     due = sum(_cents(f.get("amount")) or 0 for f in fees if isinstance(f, dict) and f.get("included") is False and f.get("currency") == "USD")
-    return Room(str(rate.get("name") or ""), _board(rate), (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", _usd(rt.get("offerRetailRate")), due, rt["offerId"])
+    return Room(str(rate.get("name") or ""), _board(rate), (rate.get("cancellationPolicies") or {}).get("refundableTag") == "RFN", _shown(rt), due, rt["offerId"])
+
+
+def _shown(rt) -> int | None:
+    """The price a room shows (F-267, D-766). With a live key, LiteAPI's public selling price (`suggestedSellingPrice`: about 15% over the retail rate, the price the big sites
+    show, so never under the hotel's own); when a rate has none, or none we can read, the retail rate (`offerRetailRate`), and nothing more said. A sandbox key shows the retail rate."""
+    public = _usd(rt.get("suggestedSellingPrice")) if mode() == "live" else None
+    return public if public is not None else _usd(rt.get("offerRetailRate"))
 
 
 def read_stays(answer, fetched: datetime) -> tuple:

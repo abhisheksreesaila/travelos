@@ -42,6 +42,7 @@ prod = { features = [], solve-group = "default" }
 
 [tasks]
 dev = "python main.py"
+dev-live = "set -a; . ~/.config/gitaway/liteapi-live.env; set +a; GITAWAY_SHOWCASE=0 GITAWAY_DEV_LOGIN=1 python main.py"  # live LiteAPI prices on this machine (F-267): the shell reads the key from its private file, never printed; Book plays the sample stand-in
 vapid-keys = "python scripts/vapid_keys.py"  # makes the push keys for the morning plan and writes them to .env (F-066)
 forget-person = "python scripts/forget_person.py"  # delete a person's (or family's) data by hand; a dry run unless --yes (F-076)
 ai-report = "python scripts/ai_report.py"  # what the AI did: calls, time and tokens per job and per day, no content (F-079)

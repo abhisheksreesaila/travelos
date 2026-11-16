@@ -17,7 +17,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span
 
-from gitaway import catalog, tripmatrix as tm, weather
+from gitaway import catalog, matrixbook as mb, tripmatrix as tm, weather
 from gitaway.icons import icon
 from gitaway.pages.skystrip import weather_for
 
@@ -182,8 +182,7 @@ def _mini_stay(names, room, price):
 
 
 def _foot_words(sq):
-    from gitaway.pages import tripmatrix as mx
-    return mx.BOOK_SAMPLE if sq.sample else mx.BOOK_WORDS
+    return mb.words(sq.sample) + "."
 
 
 def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
@@ -218,12 +217,13 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     picks = [Input(type="hidden", name="fl", value="0", data_pick="fl"), Input(type="hidden", name="st", value=",".join("0" for _ in sq.stays), data_pick="st"),
              Input(type="hidden", name="rm", value=",".join("0" for _ in sq.stays), data_pick="rm")]
     total = tm.dollars(sq.cents)
-    book = (Form(*hidden, *picks, Button(Span("Book my trip"), Span(total, cls="num", data_mirror="total"), Span(cls="dr-spin"), type="submit", cls="dr-book"), method="post", action=mx.BOOK, cls="mx-book-f dr-book-f")
-            if can_save else "")
+    soon = mb.mode() == mb.SOON and not sq.sample      # F-267: a live key in production: Book waits, and Save this trip leads
+    book = ("" if not can_save else Button(mb.SOON_WORDS, type="button", disabled=True, cls="dr-book-soon") if soon else
+            Form(*hidden, *picks, Button(Span("Book my trip"), Span(total, cls="num", data_mirror="total"), Span(cls="dr-spin"), type="submit", cls="dr-book"), method="post", action=mx.BOOK, cls="mx-book-f dr-book-f"))
     save = ("" if not can_save else P(saved, cls="mx-saved", role="status") if saved else
-            Form(*hidden, *picks, Button(icon("plus", 16, 2.4), "Save to trip", type="submit", cls="dr-save"), method="post", action=mx.SAVE, cls="mx-save-f"))
+            Form(*hidden, *picks, Button(icon("plus", 16, 2.4), "Save this trip" if soon else "Save to trip", type="submit", cls="dr-save" + (" is-lead" if soon else "")), method="post", action=mx.SAVE, cls="mx-save-f"))
     why = _why(s, lane, w, sq, asked_sq)
-    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot")
+    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot")
     head = Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), why, cls="dr-ti"),
                Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head")
     out = Div(head, Div(stay, fly, cls="dr-panels", data_open="stay"), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))

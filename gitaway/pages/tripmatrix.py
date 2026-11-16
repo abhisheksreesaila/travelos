@@ -27,7 +27,7 @@ from fasthtml.common import A, Aside, B, Br, Details, Div, H1, Header, Link, Nav
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixwarm, moods, placeart, placefacts, session as ses, showcase, stats, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
+from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixbook as mb, matrixwarm, moods, placeart, placefacts, session as ses, showcase, stats, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, v2rail, weather_ui
@@ -51,7 +51,17 @@ ESTIMATES = "“About” prices are estimates from what is known. Exact prices w
 SLOW = "Flights take a few seconds to search. Each square fills in as its answer lands."
 FINE = "Prices are a preview from LiteAPI and change until booked. A stay booked here is a sandbox booking: nothing is charged."
 SAMPLE_FINE = "Sample prices from GitAway's made-up catalog, moved by the day of the week. A stay booked here is a sample booking: nothing is booked or charged."
-BOOK_WORDS, BOOK_SAMPLE = "Sandbox booking: nothing is charged.", "Sample booking: nothing is booked or charged."      # gitaway/matrixbook.py says the same
+
+
+def fine_p(sample: bool):
+    """The fine print under the prices, for the key the site runs with (F-267, D-768): the showcase's made-up catalog; a live key's prices said to be live from LiteAPI, with where the
+    time they were checked goes (the script writes it into #mx-age as squares land) and what Book is; the sandbox's words as they were."""
+    if sample:
+        return P(SAMPLE_FINE, cls="mx-foot-n")
+    if liteapi.mode() == "live":
+        what = mb.SOON_WORDS + "." if mb.mode() == mb.SOON else "A stay booked here is a sample booking: nothing is booked or charged."
+        return P("Prices are live from LiteAPI, checked ", Span("when each square is asked", id="mx-age", data_live="1"), f". They change until booked. {what}", cls="mx-foot-n")
+    return P(FINE, cls="mx-foot-n")
 MISSING = {"place": "Say where to, like “to San Diego”.", "dates": "Say when, like “Dec 12 to 16”.", "party": f"GitAway plans for up to {catalog.MAX_TRAVELERS} travelers.",
            "flex": f"Say give or take 0 to {tm.MAX_FLEX} days, like “give or take 2 days”.", "home": "Say where you fly from, like “from SFO”.",
            "airport": "GitAway does not know that place’s airport yet. Try a place like San Diego, Lake Tahoe or Orlando."}
@@ -322,7 +332,7 @@ def about_el(s: State, skies, sample: bool):
     notes = list(dict.fromkeys(text_href for tw in skies.values() for text_href in weather.notes(tw)))
     return Details(Summary(icon("info", 18, 2.2), Span("About these prices"), cls="mx-about-btn"),
                    Div(P(f"Under each start day: the flight and the stay for {s.travelers}, all in. The ringed band is your {nights_words(s.nights)}; tap a start to move it.", cls="mx-legend-n"),
-                       P(SAMPLE_FINE if sample else FINE, cls="mx-foot-n"),
+                       fine_p(sample),
                        Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
                        Div(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="mx-about-nav", aria_label="Legal"), mode_switch("about"), cls="mx-about-foot"), cls="mx-pop mx-pop-about"),
                    cls="mx-tk mx-about", data_pop="about")
@@ -431,7 +441,7 @@ def _square_of(s, lane_key, w_key, family="", peek=False):
 def square_page(s: State, lane, w, sq, asked_sq, saved="", can_save=True):
     body = Div(A(icon("chev-left", 18, 2.4), "Back to the matrix", href=href(s), cls="btn mx-back"),
                H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="dr-wrap dr-alone"),
-               Div(P(SAMPLE_FINE if sq is not None and sq.sample else FINE, cls="mx-foot-n"), cls="mx-foot"), cls="mx mx-one")
+               Div(fine_p(sq is not None and sq.sample), cls="mx-foot"), cls="mx mx-one")
     return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True, mood=moods.choose(s.place, s.depart, s.return_))
 
 

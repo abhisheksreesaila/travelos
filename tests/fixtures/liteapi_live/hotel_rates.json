@@ -1,0 +1,238 @@
+{
+ "data": [
+  {
+   "hotelId": "lpIslandPalms",
+   "roomTypes": [
+    {
+     "roomTypeId": "GUZTKLJSGIZTOMRXPRHFERSOPQZDAMRWGEYTCMRQGU2DQ7BSPRJDCMJVGBBDSOJVJYYFKMJRPQ2TSNRZGQ",
+     "offerId": "LIVE-OFFER-lpIslandPalms",
+     "supplier": "nuitee",
+     "supplierId": 2,
+     "rates": [
+      {
+       "rateId": "LIVE-RATE-lpIslandPalms",
+       "occupancyNumber": 1,
+       "name": "Standard Room, 2 Queen Beds",
+       "maxOccupancy": 4,
+       "adultCount": 2,
+       "childCount": 2,
+       "childrenAges": [
+        7,
+        10
+       ],
+       "boardType": "RO",
+       "boardName": "Room Only",
+       "remarks": "",
+       "priceType": "commission",
+       "commission": [
+        {
+         "amount": 0,
+         "currency": "USD"
+        }
+       ],
+       "retailRate": {
+        "total": [
+         {
+          "amount": 337.31,
+          "currency": "USD"
+         }
+        ],
+        "suggestedSellingPrice": [
+         {
+          "amount": 387.91,
+          "currency": "USD",
+          "source": ""
+         }
+        ],
+        "initialPrice": [
+         {
+          "amount": 337.31,
+          "currency": "USD"
+         }
+        ],
+        "taxesAndFees": [
+         {
+          "included": true,
+          "description": "TAX",
+          "amount": 70.79,
+          "currency": "USD"
+         }
+        ]
+       },
+       "cancellationPolicies": {
+        "cancelPolicyInfos": [],
+        "hotelRemarks": [],
+        "refundableTag": "RFN"
+       },
+       "paymentTypes": [
+        "NUITEE_PAY"
+       ],
+       "providerCommission": {
+        "amount": 0,
+        "currency": ""
+       },
+       "perks": [],
+       "promotions": null
+      }
+     ],
+     "offerRetailRate": {
+      "amount": 337.31,
+      "currency": "USD"
+     },
+     "suggestedSellingPrice": {
+      "amount": 387.91,
+      "currency": "USD",
+      "source": ""
+     },
+     "offerInitialPrice": {
+      "amount": 337.31,
+      "currency": "USD"
+     },
+     "priceType": "commission",
+     "rateType": "standard",
+     "paymentTypes": [
+      "NUITEE_PAY"
+     ],
+     "paymentSchedule": "now"
+    }
+   ],
+   "et": 10800
+  },
+  {
+   "hotelId": "lpMargaritaville",
+   "roomTypes": [
+    {
+     "roomTypeId": "GEZDONRNGE3DIMBXGB6E4USGJZ6DEMBSGYYTCMJRGA2TINT4GF6FEMJRGUYHYNRQHA4DC",
+     "offerId": "LIVE-OFFER-lpMargaritaville",
+     "supplier": "nuitee",
+     "supplierId": 2,
+     "rates": [
+      {
+       "rateId": "LIVE-RATE-lpMargaritaville",
+       "occupancyNumber": 1,
+       "name": "2 queen beds, nonsmoking",
+       "maxOccupancy": 4,
+       "adultCount": 2,
+       "childCount": 2,
+       "childrenAges": [
+        7,
+        10
+       ],
+       "boardType": "RO",
+       "boardName": "Room Only",
+       "remarks": "",
+       "priceType": "commission",
+       "commission": [
+        {
+         "amount": -0.01,
+         "currency": "USD"
+        }
+       ],
+       "retailRate": {
+        "total": [
+         {
+          "amount": 361.69,
+          "currency": "USD"
+         }
+        ],
+        "suggestedSellingPrice": [
+         {
+          "amount": 415.94,
+          "currency": "USD",
+          "source": ""
+         }
+        ],
+        "initialPrice": [
+         {
+          "amount": 361.69,
+          "currency": "USD"
+         }
+        ],
+        "taxesAndFees": [
+         {
+          "included": true,
+          "description": "tax",
+          "amount": 78.08,
+          "currency": "USD"
+         },
+         {
+          "included": false,
+          "description": "Resort fee",
+          "amount": 120.0,
+          "currency": "USD"
+         }
+        ]
+       },
+       "cancellationPolicies": {
+        "cancelPolicyInfos": [],
+        "hotelRemarks": [],
+        "refundableTag": "NRFN"
+       },
+       "paymentTypes": [
+        "NUITEE_PAY"
+       ],
+       "providerCommission": {
+        "amount": 0,
+        "currency": ""
+       },
+       "perks": [],
+       "promotions": null
+      }
+     ],
+     "offerRetailRate": {
+      "amount": 361.69,
+      "currency": "USD"
+     },
+     "suggestedSellingPrice": {
+      "amount": 415.94,
+      "currency": "USD",
+      "source": ""
+     },
+     "offerInitialPrice": {
+      "amount": 361.69,
+      "currency": "USD"
+     },
+     "priceType": "commission",
+     "rateType": "standard",
+     "paymentTypes": [
+      "NUITEE_PAY"
+     ],
+     "paymentSchedule": "now"
+    }
+   ],
+   "et": 10800
+  }
+ ],
+ "guestLevel": 0,
+ "sandbox": false,
+ "hotels": [
+  {
+   "id": "lpIslandPalms",
+   "name": "Best Western PLUS Island Palms Hotel & Marina",
+   "main_photo": "https://static.cupid.travel/hotels/48543512.jpg",
+   "thumbnail": "https://static.cupid.travel/hotels/thumbnail/48543512.jpg",
+   "address": "610 Diamond Street",
+   "country_code": "US",
+   "city_name": "San Diego",
+   "latitude": 32.799536,
+   "longitude": -117.257912,
+   "rating": 9.4,
+   "stars": 4,
+   "review_count": 1063
+  },
+  {
+   "id": "lpMargaritaville",
+   "name": "Margaritaville San Diego Resort",
+   "main_photo": "https://static.cupid.travel/hotels/276583610.jpg",
+   "thumbnail": "https://static.cupid.travel/hotels/thumbnail/276583610.jpg",
+   "address": "2303 Shelter Island Drive",
+   "country_code": "US",
+   "city_name": "San Diego",
+   "latitude": 32.717811,
+   "longitude": -117.223734,
+   "rating": 8.8,
+   "stars": 3,
+   "review_count": 2289
+  }
+ ]
+}

@@ -258,7 +258,7 @@
     if (n !== N) return;      // asked for other nights and answered after the slider moved on: kept for when it comes back
     els(k).forEach(function (el) { io.unobserve(el); paint(el, k); settleIn(el); });
     var age = document.getElementById('mx-age');
-    if (age && j.age && age.textContent === 'Preview') age.textContent = 'Preview · ' + j.age;
+    if (age && j.age) age.textContent = j.age;      // F-267: with a live key the about card says when the prices were checked
     remark();
     news_();
     if (opened === k) show(k, null, true);
