@@ -1,103 +1,110 @@
-/* Sign-in in Direction A (F-200, docs/design/reskin a-signin; was the boarding pass under a sky, F-017, F-039, F-052). Loaded after tokens.css and base.css via
-   layout.styles(). The founder found the old page too small: the title is 34px on a phone (42 on a laptop), the words 17 (16), the two buttons 56px, every target 48.
-   Phone: the brand and Cancel on top, the intent, the trip card with B's ticket stub, the buttons. From 1020px: the left half carries the line ("Take a trip.
-   Leave a trail.") over the trip as widgets, the right half the card. Opaque, one shadow scale, light and dark from the tokens. rem only. */
+/* Sign-in in the v2 language (F-272, D-790..D-793; was Direction A's purple half, F-200). The page is the cover's sky: v2's gradient, a sun that becomes a moon in the dark, clouds
+   (gitaway/v2.py bg(), v2.css), Newsreader for the words that are the page's voice and Inter for everything you read and press. The sign-in itself is a near-opaque paper card.
+   Loaded after v2-tokens.css and v2.css. Phone: the slim bar, then the card alone. From 1020px: the cover's line and one small paper postcard of the trip beside the card.
+   Colour: only v2's tokens, which turn with the mode; the postcard is a paper drawing, so it uses the book's paper tokens (--bk-*), which stay paper in both modes. rem only. */
 .si-page { min-height: 100vh; min-height: 100dvh; }
-.si-head { height: auto; min-height: 4.5rem; padding: calc(0.75rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.75rem max(1rem, env(safe-area-inset-left)); gap: 1rem; flex-wrap: nowrap; }
-.si-x { flex: none; width: var(--target); height: var(--target); display: grid; place-items: center; border-radius: 50%; background: var(--paper-2); color: var(--ink); text-decoration: none; }
-.si-x:hover { color: var(--ink); background: color-mix(in srgb, var(--paper-2) 88%, rgb(var(--state))); }
+.si-top { position: relative; }
+.si-x { text-decoration: none; }
 
 .si-wrap { display: block; }
 .si-sky { display: none; }
-.si-pass { padding: 0.5rem max(1rem, env(safe-area-inset-right)) calc(2rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
-.si-card { width: min(34rem, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; color: var(--ink); }
+.si-pass { padding: 1.5rem max(1rem, env(safe-area-inset-right)) calc(2.5rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
+
+/* ---------- the card ---------- */
+.si-card { width: min(34rem, 100%); box-sizing: border-box; margin: 0 auto; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; color: var(--ink);
+  border-radius: var(--r-xl); background: color-mix(in srgb, var(--card-solid) 96%, transparent); box-shadow: var(--sh3), inset 0 0 0 1px var(--line);
+  animation: si-in var(--v2-rail) var(--v2-ease) both; }
+@keyframes si-in { from { opacity: 0; translate: 0 0.75rem; } to { opacity: 1; translate: 0 0; } }
 .si-card p { margin: 0; }
-#si-title { font: 760 var(--t-h1)/1.05 var(--font-display); letter-spacing: -0.04em; color: var(--ink); text-wrap: balance; }
-#si-desc { font-size: var(--t-body); font-weight: 450; line-height: 1.45; color: var(--ink-2); }
+#si-title { margin: 0; font: var(--d-wt) 2.125rem/1.08 var(--f-display); letter-spacing: var(--d-track); color: var(--ink); text-wrap: balance; }
+#si-desc { font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); }
 
-/* the trip being saved: a white card, B's ticket stub (a dashed perforation with two notches in the canvas colour), then the stub's three cells */
-.si-trip { position: relative; padding: 1rem 1rem 0.875rem; border-radius: var(--r-md); background: var(--card); box-shadow: var(--sh1); }
+/* the trip being saved: a tinted block with a ticket stub (a dashed perforation with two notches in the card's own colour), then the stub's three cells */
+.si-trip { position: relative; padding: 1rem 1rem 0.875rem; border-radius: var(--r-md); background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); }
 .si-trip-top { display: flex; align-items: center; gap: 0.875rem; }
-.si-trip-tile { flex: none; width: 2.5rem; height: 2.5rem; border-radius: var(--r-tile); display: grid; place-items: center; background: var(--k-flight); color: var(--k-on); }
+.si-trip-tile { flex: none; width: 2.75rem; height: 2.75rem; border-radius: 0.875rem; display: grid; place-items: center; background: var(--flight-t); color: var(--flight-i); }
 .si-trip-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
-.si-dest { font-weight: 680; font-size: var(--t-body); line-height: 1.25; letter-spacing: -0.015em; overflow-wrap: anywhere; }
-.si-trip-sub { font-size: var(--t-2); color: var(--ink-2); overflow-wrap: anywhere; }
-.si-perf { position: relative; height: 0; margin: 0.875rem -1rem; border-top: 0.125rem dashed var(--hairline-2); }
-.si-perf::before, .si-perf::after { content: ""; position: absolute; top: -0.75rem; width: 1.375rem; height: 1.375rem; border-radius: 50%; background: var(--paper); }
+.si-dest { font: 650 1.0625rem/1.25 var(--f-ui); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.si-trip-sub { font-size: 1rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.si-perf { position: relative; height: 0; margin: 0.875rem -1rem; border-top: 0.125rem dashed var(--line-2); }
+.si-perf::before, .si-perf::after { content: ""; position: absolute; top: -0.75rem; width: 1.375rem; height: 1.375rem; border-radius: 50%; background: color-mix(in srgb, var(--card-solid) 96%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
 .si-perf::before { left: -0.6875rem; } .si-perf::after { right: -0.6875rem; }
-.si-stub { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content; gap: 0.5rem; }
+.si-stub { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 0.5rem 1rem; }
+@media (max-width: 359px) { .si-stub { grid-template-columns: repeat(2, auto); } .si-stub .si-cell:last-child { grid-column: 1 / -1; } }      /* a 320px phone: the third cell takes its own row, no label wraps */
 .si-cell { display: flex; flex-direction: column; gap: 0.1875rem; min-width: 0; }
-.si-k { font-size: var(--t-label); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; color: var(--ink-2); }
-.si-v { font-weight: 650; font-size: var(--t-2); line-height: 1.2; overflow-wrap: anywhere; }
+.si-k { font: 650 max(var(--label-min), 0.8125rem)/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; color: var(--ink-2); }
+.si-v { font: 650 1rem/1.2 var(--f-ui); }
 
-/* the two big buttons: Google is the white pill, Face ID the ink one; the dev sign-in (local only) is ink too */
+/* ---------- the buttons: Google is the one clear action (solid, the cover's call to action); Face ID and the dev sign-in are quieter ---------- */
 .si-buttons { display: flex; flex-direction: column; gap: 0.75rem; }
 .si-buttons:empty { display: none; }
-.si-google, .si-faceid, .si-dev { width: 100%; min-height: 3.5rem; gap: 0.625rem; font-size: var(--t-body); font-weight: 650; }
-.si-google { --btn-bg: var(--card); --btn-fg: var(--ink); }
-.si-g { display: grid; place-items: center; width: 1.625rem; height: 1.625rem; }
-.si-g svg { width: 1.25rem; height: 1.25rem; }
+.v2 .si-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; min-height: 3.5rem; padding: 0 1.5rem; border: 0; border-radius: 62.4375rem; cursor: pointer;
+  background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); font: 650 1.0625rem/1 var(--f-ui); text-decoration: none;
+  transition: scale var(--v2-release) var(--spring), translate var(--v2-quick) var(--v2-ease), background-color var(--v2-quick), box-shadow var(--v2-quick); }
+.v2 .si-btn:focus-visible { border-radius: 62.4375rem; }
+.v2 .si-btn:hover { translate: 0 -1px; color: var(--cta-fg); }
+.v2 .si-btn:active:not(:disabled) { scale: var(--v2-press-scale); transition: scale var(--v2-press) var(--v2-ease); }
+.v2 .si-btn.soft { background: var(--card-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+.v2 .si-btn.soft:hover { color: var(--ink); background: var(--cell-hover); }
+.si-g { flex: none; display: grid; place-items: center; width: 1.875rem; height: 1.875rem; border-radius: 50%; background: var(--on); }      /* Google's own G sits on white (its brand rules), in both modes */
+.si-g svg { width: 1.125rem; height: 1.125rem; }
 .si-faceid-box { display: flex; flex-direction: column; gap: 0.5rem; }
-.si-new { font-size: var(--t-2); line-height: 1.45; color: var(--ink-2); }
-.si-note { font-size: var(--t-2); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
-.si-legal { font-size: var(--t-2); line-height: 1.6; color: var(--ink-2); }
+.si-faceid-box [hidden] { display: none !important; }
+.si-faceid-status { text-align: center; }
+.si-faceid-status.is-ok { color: var(--ink); font-weight: 700; }
+.si-faceid-status.is-bad { color: var(--food-i); font-weight: 700; }
+.si-new, .si-note, .si-legal { font-size: 1rem; line-height: 1.5; color: var(--ink-2); }
 .si-legal a { color: var(--ink); text-decoration: underline; text-underline-offset: 0.1875rem; padding-block: 0.875rem; }      /* inline words in the sentence; the padding gives each a 48px tall hit area */
 
-/* the local dev sign-in (only with GITAWAY_DEV_LOGIN on this machine) */
-.si-dev-box { font-size: var(--t-2); color: var(--ink-2); }
-.si-sum { display: flex; align-items: center; gap: 0.375rem; min-height: var(--target); font-weight: 600; cursor: pointer; list-style: none; }
+/* ---------- the local dev sign-in (only with GITAWAY_DEV_LOGIN on this machine), collapsed ---------- */
+.si-dev-box { color: var(--ink-2); }
+.si-sum { display: flex; align-items: center; gap: 0.375rem; min-height: var(--target); font: 620 1rem/1 var(--f-ui); cursor: pointer; list-style: none; }
 .si-sum::-webkit-details-marker { display: none; }
-.si-sum svg { flex: none; transition: transform var(--motion-quick) var(--ease-out); }
+.si-sum svg { flex: none; transition: transform var(--v2-quick) var(--v2-ease); }
 .si-dev-box[open] .si-sum svg { transform: rotate(90deg); }
 .si-dev-form { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.25rem; }
-.si-field { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.5rem 1rem; border-radius: var(--r-sm); background: var(--card); box-shadow: var(--sh1); }
-.si-field:focus-within { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.si-label { font-size: var(--t-label); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
-.si-field input { min-height: var(--target); border: 0; background: none; color: var(--ink); font: 500 var(--t-body) var(--font-body); min-width: 0; }
-.si-field input:focus-visible { outline: none; }
-.si-field:has([aria-invalid="true"]) { box-shadow: 0 0 0 0.1875rem var(--danger); }
-.si-error { font-size: var(--t-2); font-weight: 650; color: var(--danger-ink); }
-.si-card a:focus-visible, .si-card button:focus-visible, .si-card summary:focus-visible, .si-x:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.si-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.si-label { font: 650 max(var(--label-min), 0.8125rem)/1.2 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.si-field input { box-sizing: border-box; min-height: 3.5rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-sm); background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line-2); color: var(--ink); font: 500 1.0625rem var(--f-ui); min-width: 0; }
+.si-field input:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
+.si-field input[aria-invalid="true"] { box-shadow: inset 0 0 0 0.1875rem var(--food); }
+.si-error { padding: 0.625rem 0.875rem; border-radius: var(--r-sm); background: var(--food-t); color: var(--food-i); font: 620 1rem/1.4 var(--f-ui); }
 
-@media (prefers-reduced-motion: reduce) { .si-sum svg { transition: none; } }
+/* ---------- the welcome moment after a Face ID sign-in (F-074): the whole screen, above the page ---------- */
+.si-welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center;
+  background: linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); color: var(--ink); animation: si-in var(--v2-quick) var(--v2-ease); }
+.si-welcome[hidden] { display: none !important; }
+.sw-brand { display: flex; align-items: center; gap: 0.625rem; font: 560 1.5625rem/1 var(--f-display); letter-spacing: -0.03em; }
+.sw-brand svg { width: 2.125rem; height: 2.125rem; }
+.sw-glyph { display: grid; place-items: center; width: 7rem; height: 7rem; border-radius: 2rem; background: var(--card-solid); box-shadow: var(--sh2); color: var(--ink); }
+.sw-title { margin: 0; font: var(--d-wt) 2rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
+.sw-line { margin: 0; max-width: 22rem; font-weight: 600; }
+.sw-note { margin: 0; font-size: 1rem; color: var(--ink-2); }
 
-/* the laptop: two halves. The left one is a sunset (D-550, the founder: "no contrast between the two sides"): the story's colours, a sun and two clouds,
-   the cover's line in white, the trip's widgets as white postcards tilted on it; the right one the card on the light canvas. */
-.si-sun, .si-cloud { display: none; }
+/* ---------- the laptop: the cover's line and one small postcard beside the card ---------- */
 @media (min-width: 1020px) {
-  .si-page { display: block; }
-  .si-head { position: absolute; z-index: 2; left: 0; right: 0; top: 0; width: auto; max-width: none; padding: 2.5rem 3rem 0 4rem; pointer-events: none; }
-  .si-head > * { pointer-events: auto; }
-  .si-head .ga-brand-row { padding: 0.375rem 0.75rem 0.375rem 0.5rem; margin: -0.375rem 0 0 -0.5rem; border-radius: var(--r-pill); background: var(--card); box-shadow: var(--sh1); }
-  .si-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
-  .si-sky { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 1.5rem; padding: 9rem 4rem 4rem;
-            background: linear-gradient(165deg, var(--k-flight) 0%, var(--k-stay) 52%, var(--k-food) 100%); color: var(--k-on); }
-  .si-sky > :not(.si-sun, .si-cloud) { position: relative; }
-  .si-sun { display: block; position: absolute; z-index: -1; right: -6rem; bottom: -6rem; width: 22rem; height: 22rem; border-radius: 50%; background: var(--k-ride);
-            box-shadow: 0 0 0 2.5rem color-mix(in srgb, var(--k-ride) 22%, transparent), 0 0 0 5.5rem color-mix(in srgb, var(--k-ride) 10%, transparent); }
-  .si-cloud { display: block; position: absolute; z-index: -1; fill: color-mix(in srgb, var(--k-on) 16%, transparent); }
-  .si-cloud.c1 { left: 58%; top: 12%; width: 10rem; } .si-cloud.c2 { left: -2rem; top: 70%; width: 13rem; animation-direction: alternate-reverse; }
-  .si-line { margin: 0; font: 760 clamp(3rem, 4.4vw, 4.5rem)/1 var(--font-display); letter-spacing: -0.05em; text-wrap: balance; max-width: 42rem; }
-  .si-line-two { display: block; color: var(--k-ride); }
-  .si-line-sub { margin: 0; max-width: 34rem; font-size: var(--t-body); font-weight: 520; line-height: 1.5; color: var(--k-on); }
-  .si-widgets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.3333rem; max-width: 43.3333rem; margin-top: 2rem; }
-  .si-w { position: relative; display: flex; flex-direction: column; gap: 0.3333rem; padding: 1.5rem 1.5rem 1.3333rem; border-radius: 1.8333rem; background: var(--card); color: var(--ink);
-          box-shadow: 0 1.5rem 3rem -1rem rgb(var(--shadow-c) / .45); rotate: var(--r, 0deg); transition: rotate var(--motion-desk) var(--motion-ease), translate var(--motion-desk) var(--motion-ease); }      /* the calm desktop (F-156): a short fade-speed settle, no spring */
-  .si-w::before { content: ""; position: absolute; left: 1.5rem; right: 1.5rem; top: 0; height: 0.375rem; border-radius: 0 0 0.375rem 0.375rem; background: var(--kf); }
-  .si-w-route { --r: -2deg; } .si-w-small:nth-child(2) { --r: 2.5deg; } .si-w-small:last-child { --r: -1deg; }
-  @media (hover: hover) and (pointer: fine) { .si-w:hover { rotate: 0deg; translate: 0 -0.5rem; } }
-  .si-w svg { position: absolute; right: 1.5rem; top: 1.5rem; color: var(--kfi); }      /* the kind's ink: dark on a light card, light on a dark one (3:1 and up) */
-  .si-w-route, .si-w-small:nth-child(2) { min-height: 15rem; justify-content: flex-end; }
-  .si-w-small:last-child { grid-column: 1 / -1; min-height: 8rem; justify-content: flex-end; }
-  .si-w-k { position: absolute; left: 1.5rem; top: 1.5rem; font-size: var(--t-label); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
-  .si-w-big { margin: 0; display: flex; align-items: center; gap: 0.5rem; font: 760 3.3333rem/1 var(--font-display); letter-spacing: -0.045em; }
-  .si-w-big svg { position: static; flex: none; }
-  .si-w-sub { margin: 0; font-size: var(--t-2); font-weight: 600; color: var(--ink-2); }
-  .si-stick { margin: 0; font: 720 1.8333rem/1.15 var(--font-display); letter-spacing: -0.025em; overflow-wrap: anywhere; }
-  .si-pass { display: flex; align-items: center; justify-content: center; padding: 8rem 4rem 4rem; }
-  .si-card { width: min(36.6667rem, 100%); gap: 1.6667rem; }
-  #si-title { font-size: var(--t-h1); }
-  .si-google, .si-faceid, .si-dev { min-height: 4.6667rem; }
+  .si-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 3rem; max-width: 90rem; margin: 0 auto; padding: 0 1.75rem; min-height: calc(100vh - 6rem); min-height: calc(100dvh - 6rem); }
+  .si-sky { display: flex; flex-direction: column; gap: 1.5rem; padding-left: 2rem; }
+  .si-line { margin: 0; max-width: 36rem; font: var(--d-wt) clamp(3rem, 4.2vw, 4.25rem)/1.05 var(--f-display); letter-spacing: var(--d-track); text-wrap: balance; color: var(--ink); }
+  .si-line-two { display: block; font-style: italic; font-weight: 480; color: var(--ink-2); }
+  .si-line-sub { margin: 0; max-width: 30rem; font-size: 1.1875rem; line-height: 1.5; color: var(--ink-2); }
+  /* the postcard: paper, not glass (the book's paper tokens stay paper in dark mode) */
+  .si-pc { position: relative; align-self: flex-start; width: min(24rem, 100%); box-sizing: border-box; margin-top: 1rem; padding: 1.375rem 1.5rem 1.25rem; border-radius: 0.75rem; background: var(--bk-paper); color: var(--bk-ink);
+    box-shadow: var(--sh2), inset 0 0 0 1px var(--bk-line); rotate: -2deg; transition: rotate var(--v2-pop) var(--v2-ease), translate var(--v2-pop) var(--v2-ease); }
+  @media (hover: hover) and (pointer: fine) { .si-pc:hover { rotate: 0deg; translate: 0 -0.25rem; } }
+  .si-pc-k { display: block; font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--bk-ink-2); }
+  .si-stamp { position: absolute; right: 1.25rem; top: 1.125rem; width: 2.75rem; height: 3.25rem; border: 0.125rem dashed var(--bk-line); border-radius: 0.25rem; display: grid; place-items: center; }
+  .si-stamp::after { content: ""; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--bk-ride); }
+  .si-pc-route { display: flex; align-items: center; gap: 0.5rem; margin: 1.25rem 0 0.25rem; font: 560 2.75rem/1 var(--f-display); letter-spacing: -0.03em; color: var(--bk-ink); }
+  .si-pc-route svg { flex: none; width: 1.375rem; height: 1.375rem; color: var(--bk-walk); }
+  .si-pc-sub { margin: 0; font: 600 1rem/1.3 var(--f-ui); color: var(--bk-ink-2); }
+  .si-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; padding-top: 0.875rem; border-top: 0.125rem dashed var(--bk-line); }
+  .si-chip { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4375rem 0.75rem; border-radius: 62.4375rem; background: var(--bk-paper-2); color: var(--bk-ink); font: 600 1rem/1.2 var(--f-ui); }
+  .si-chip svg { flex: none; color: var(--kc); }
+  .si-chip.k-stay { --kc: var(--bk-show); } .si-chip.k-food { --kc: var(--bk-food); } .si-chip.k-see { --kc: var(--bk-see); }
+  .si-pass { display: flex; align-items: center; justify-content: center; padding: 1rem 2rem 2rem 0; }
+  .si-card { width: min(34rem, 100%); padding: 2.25rem 2.25rem 2rem; gap: 1.5rem; }
+  #si-title { font-size: 2.75rem; }
 }
-@media (min-width: 1020px) and (prefers-reduced-motion: reduce) { .si-w { transition: none; } }
-.k-flight { --kf: var(--k-flight); --kfi: var(--k-flight-i); } .k-stay { --kf: var(--k-stay); --kfi: var(--k-stay-i); } .k-see { --kf: var(--k-see); --kfi: var(--k-see-i); } .k-food { --kf: var(--k-food); --kfi: var(--k-food-i); }
+@media (min-width: 1020px) and (prefers-reduced-motion: reduce) { .si-pc { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .si-card, .si-welcome { animation: none; } .si-sum svg { transition: none; } }
