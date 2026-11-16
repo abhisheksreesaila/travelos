@@ -1693,3 +1693,17 @@ Founder, 2026-11-16: one person's experience first; "it has to be a little faste
 ## Backlog (founder, 2026-11-16)
 - Shared results between visitors for a few minutes; pre-search popular trips ahead of time (when there are visitors).
 - Memory and resource telemetry on the server (Railway is memory-hungry), and an alternative host to keep bills down once popular.
+
+## F-274 Real hotel booking with LiteAPI's payment form, our margin and a promo code [todo]
+Brief: docs/briefs/live-booking.md (approved). Risk: high (money, personal data): security-and-hardening while building, security-auditor with the reviewer. With a live key, Book on an opened square:
+1. prebooks the stay's offer with `usePaymentSdk: true` (and `voucherCode` when a code was given), saves `prebookId`, `transactionId` and the price at once (LiteAPI cannot return them later), and shows the exact total, the refund policy word for word and "Sold by Nuitée through LiteAPI";
+2. shows LiteAPI's payment form in our sheet (their script and `secretKey`; `publicKey` "live" for a live key, "sandbox" for a sandbox key), never a card field of ours;
+3. on the form's success, books with `payment: {method: "TRANSACTION_ID", transactionId}` and the lead guest, and the stay joins the trip as today;
+4. the price charged equals the public price the square showed: rates and prebook carry the margin that makes it so (find LiteAPI's parameter and value; prove with a sandbox prebook), and a changed price is said before paying;
+5. "Have a code?": a LiteAPI voucher code repriced through prebook; the discount shows only in the checkout;
+6. a booked refundable stay can be cancelled from the booking page through LiteAPI's cancel, and says what comes back.
+Anyone signed in may book (founder's choice); booking budgets and per-person limits (D-510..D-513) stay. `ACC_CREDIT_CARD` is never sent with a live key (a test proves it); the old D-480 refusal becomes "live: only TRANSACTION_ID". The sandbox flow runs the same SDK path so it can be tested end to end. Checks: unit tests with recorded sandbox answers (prebook with SDK, book with transaction id, voucher, cancel), a browser test of the sheet with a stubbed payment script, one real sandbox booking and cancel recorded as fixtures, docs/ship/live-prices.md extended for booking.
+## F-275 The matrix v3 design, built [todo]
+Design: docs/design/matrix-v3 (founder: "that's the order": after real hotel booking). The obvious sentence card with suggestion chips, the wide grid with clean nights bands, the opened square leading with the hotel (real gallery from `/data/hotel`, reviews and sentiment from `/data/reviews`, amenities, rooms with photos), the flights accordion, the minimized side chips; phone and laptop, light and dark.
+## F-276 Flights booked here too [todo]
+Brief: docs/briefs/live-booking.md item 2. LiteAPI flight prebook and booking with the same payment form, after F-274 and F-275.

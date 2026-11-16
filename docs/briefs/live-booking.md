@@ -1,4 +1,4 @@
-Status: draft (phase 2 of docs/briefs/live-liteapi.md; founder's answers 2026-11-16)
+Status: approved (founder, 2026-11-16: "yup that the order"; phase 2 of docs/briefs/live-liteapi.md)
 
 # Real booking on gitaway.me
 
