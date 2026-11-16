@@ -1654,3 +1654,6 @@ Built in D-730..D-739 (docs/decisions.md): `guide.for_place`, `GET /guides/sheet
 
 ## F-264 The design kit for other sites [done]
 Needs: F-261, F-262. Extract the v2 language (tokens, glass card, press, springs, moods, sun/moon, quiet reading sky, sections pill, sheets) into a small reusable kit with a demo page, for the founder's other sites.
+
+## F-265 A fair limit on visitors' searches [todo]
+Needs: D-761. Visitors now search and open the matrix without an account, so anonymous traffic reaches LiteAPI. Before launch: a per-visitor limit on new searches (no cookie or IP stored, the way `stats.py` counts readers), a calm sentence when it is reached ("Sign in to keep comparing"), and cached squares served to everyone. Checks: a visitor past the limit gets the sentence and no LiteAPI call; a signed-in family is not limited by it; tests in both showcase modes.
