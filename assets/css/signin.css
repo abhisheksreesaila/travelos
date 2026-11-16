@@ -3,7 +3,6 @@
    Loaded after v2-tokens.css and v2.css. Phone: the slim bar, then the card alone. From 1020px: the cover's line and one small paper postcard of the trip beside the card.
    Colour: only v2's tokens, which turn with the mode; the postcard is a paper drawing, so it uses the book's paper tokens (--bk-*), which stay paper in both modes. rem only. */
 .si-page { min-height: 100vh; min-height: 100dvh; }
-.si-top { position: relative; }
 .si-x { text-decoration: none; }
 
 .si-wrap { display: block; }
