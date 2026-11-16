@@ -159,9 +159,9 @@ def test_search_glides_the_box_up_shows_the_skeleton_and_lands_on_the_matrix_wit
 
 def test_a_search_that_cannot_run_stays_here_and_says_why(ask):
     page = ask()
-    page.locator(BOX).fill("Dec 12 to 16")      # M5 triage (F-268, D-772): a place alone is not an error any more (the matrix opens on a default window); a wish with no place still is
+    page.locator(BOX).fill("San Diego Dec 12 to 16 give or take 9 days")      # M5 triage (F-268, D-772): a place alone is not an error any more (the matrix opens on a default window); a flex the page cannot read still is
     page.get_by_role("button", name="Search").click()
-    expect(page.locator("#v2-error")).to_have_text("Say where to, like “to San Diego”.")
+    expect(page.locator("#v2-error")).to_have_text("Say give or take 0 to 3 days, like “give or take 2 days”.")
     assert page.url.endswith("/plan/ask")
     assert not page.evaluate("document.querySelector('.v2').classList.contains('is-results')")
     page.locator(BOX).fill("Narnia")
