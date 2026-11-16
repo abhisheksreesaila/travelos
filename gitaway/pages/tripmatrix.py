@@ -373,7 +373,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "returns": {n: (s.depart + timedelta(days=n)).isoformat() for n in by}, "whens": {n: [tm.when(w) for w in ws] for n, ws in by.items()},
             "known": {k: {"c": sq.cents, "s": sq.status, "e": estimate_of(sq), "i": inner(sq), "l": label(*cell[k], sq)}
                       for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK), "rail": href(s, RAIL)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "at_once": liteapi.at_once(), "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK), "rail": href(s, RAIL)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 

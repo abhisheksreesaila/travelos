@@ -6,8 +6,8 @@ squares the family will look at first start searching at once, on worker threads
     run_pending()                                       do every queued square now, on this thread (tests; the workers do it otherwise)
     stop()                                              stop the workers (tests)
 
-What is queued is `tripmatrix.head_start`: the asked square, the asked start day for every place, the asked place on every day. Nothing is queued for a
-family whose daily LiteAPI budget (or the site's) is spent, and a worker asks again before each square. One small pool (WORKERS) and a bounded queue
+What is queued is `tripmatrix.head_start` (the asked square, the asked start day for every place, the asked place on every day) with a sandbox key, and with a live key every square in `tripmatrix.rank` order, head start first, on WORKERS_LIVE workers so they start together (F-273, D-831). Nothing is queued for a
+family whose daily LiteAPI budget (or the site's) is spent, and a worker asks again before each square. One pool (WORKERS, or WORKERS_LIVE with a live key) and a bounded queue
 (QUEUE_MAX, the rest dropped): a tab that keeps reloading cannot start unbounded work, and every real call still goes through liteapi's gate. The queue
 lives in the process: a restart loses a head start, never an answer. `ASYNC` is False in the tests (conftest), which run the queue themselves.
 """

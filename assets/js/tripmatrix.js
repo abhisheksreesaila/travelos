@@ -22,6 +22,7 @@
   if (!root || !raw) return;
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
+  MAX_AT_ONCE = data.at_once || MAX_AT_ONCE;      // F-273 review: the server's gate size for the key the site runs with (32 live, 3 sandbox), so a sandbox page doesn't flood its gate into BUSY retries
   var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', COMMIT_MS = 220, again = 0, committing = 0, looking = false, settling = false;
   var N = data.nights, stores = {}, known, drawers, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
   var sliding = false, touched = false, commitTimer = 0, bandAt = {};
