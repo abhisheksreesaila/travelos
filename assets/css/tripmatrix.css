@@ -204,8 +204,8 @@
 /* ---------- F-275 (D-860..D-865): the matrix v3, docs/design/matrix-v3 ---------- */
 
 /* the sentence on its own opaque card, its words buttons you can see, a hint and suggestions under it: people who book are not used to a sentence that is a form */
-.v2.is-results .v2-hero { display: block; padding: 0.875rem 0 1rem; }
-.v2-qcard { --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem 1.75rem 1.25rem; border-radius: var(--r-xl); background: var(--card-solid);
+.v2.is-results .v2-hero { display: block; justify-items: stretch; padding: 0.875rem 0 1rem; }
+.v2-qcard { width: 100%; box-sizing: border-box; --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem 1.75rem 1.25rem; border-radius: var(--r-xl); background: var(--card-solid);
   box-shadow: var(--sh3), 0 0 0 1px var(--line); text-align: left; }
 .v2-qhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.625rem; margin-bottom: 0.5rem; }
 .v2-ql { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
@@ -227,7 +227,7 @@
 @media (max-width: 719px) {
   .v2-qcard { padding: 1.125rem 1rem 0.875rem; border-radius: 1.625rem; }
   .v2.is-results .v2-qcard .v2-sent { font-size: 1.3rem; line-height: 1.55; }
-  .v2-qcard .v2-w { display: inline-flex; align-items: center; min-height: var(--target); margin-block: 0.1rem; padding-block: 0; }
+  .v2-qcard .v2-w { display: inline-block; box-sizing: border-box; min-height: var(--target); margin-block: 0.1rem; padding-block: 0.6rem 0.4rem; line-height: 1.2; max-width: 100%; }
   .v2-sugs { margin-inline: -1rem; padding-inline: 1rem; }
 }
 
@@ -245,3 +245,6 @@
 .mx-sq.is-find::after, .mx-sq.is-find.is-low::after { position: static; translate: none; margin-top: -0.0625rem; padding: 0.1875rem 0.5rem; box-shadow: none; }
 .mx-sq.is-low:not(.is-find)::after { content: "Cheapest"; color: var(--see-i); font: 700 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; }
 .mx-sq.is-wait::after { content: ""; }
+
+.mx-about .mx-pop { left: auto; right: 0; }      /* the About button is at the card's right end now that the card is wide */
+@media (max-width: 719px) { .mx-about .mx-pop { left: 0.75rem; right: 0.75rem; } }
