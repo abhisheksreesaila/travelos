@@ -1694,7 +1694,7 @@ Founder, 2026-11-16: one person's experience first; "it has to be a little faste
 - Shared results between visitors for a few minutes; pre-search popular trips ahead of time (when there are visitors).
 - Memory and resource telemetry on the server (Railway is memory-hungry), and an alternative host to keep bills down once popular.
 
-## F-274 Real hotel booking with LiteAPI's payment form, our margin and a promo code [todo]
+## F-274 Real hotel booking with LiteAPI's payment form, our margin and a promo code [done]
 Brief: docs/briefs/live-booking.md (approved). Risk: high (money, personal data): security-and-hardening while building, security-auditor with the reviewer. With a live key, Book on an opened square:
 1. prebooks the stay's offer with `usePaymentSdk: true` (and `voucherCode` when a code was given), saves `prebookId`, `transactionId` and the price at once (LiteAPI cannot return them later), and shows the exact total, the refund policy word for word and "Sold by Nuitée through LiteAPI";
 2. shows LiteAPI's payment form in our sheet (their script and `secretKey`; `publicKey` "live" for a live key, "sandbox" for a sandbox key), never a card field of ours;

@@ -9,9 +9,9 @@ A refundable stay's cancel gives the money back, a non-refundable one's charges 
 """
 
 from fasthtml.common import Button, Div, Form, Input, Label, P, Span
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, catalog, familydb, liteapi, matrixbook as mb, session as ses
+from gitaway import access, catalog, familydb, liteapi, matrixbook as mb, reports, session as ses
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui
 
@@ -20,11 +20,17 @@ TICK = "Tick the box to say you mean to cancel this stay."
 
 
 def _came_back(c, paid_cents=None) -> str:
-    """What LiteAPI said about the cancel, in words: the refund (never more than the card paid: with a voucher LiteAPI's refund_amount is the undiscounted price, probed), or the charge."""
+    """What LiteAPI said about the cancel, in words: the refund (never more than the card paid: with a voucher LiteAPI's refund_amount is the undiscounted price, probed) and the fee
+    it charged, each said when it is more than nothing: a fee with a partial refund says both (F-274 review)."""
     refund = c["refund_cents"] if paid_cents is None else min(c["refund_cents"], paid_cents)
-    if c["status"] == "CANCELLED":
-        return f"Cancelled. LiteAPI says {catalog.money(refund)} comes back to the card you paid with." if refund else "Cancelled. Nothing was charged."
-    return f"Cancelled. Nothing comes back: LiteAPI charged {catalog.money(c['fee_cents'])} for cancelling." if c["fee_cents"] else "Cancelled. Nothing comes back."
+    fee = c["fee_cents"]
+    if fee and refund:
+        return f"Cancelled. LiteAPI charged {catalog.money(fee)} for cancelling, and {catalog.money(refund)} comes back to the card you paid with."
+    if fee:
+        return f"Cancelled. Nothing comes back: LiteAPI charged {catalog.money(fee)} for cancelling."
+    if refund:
+        return f"Cancelled. LiteAPI says {catalog.money(refund)} comes back to the card you paid with."
+    return "Cancelled. Nothing was charged." if c["status"] == "CANCELLED" else "Cancelled. Nothing comes back."
 
 
 def panel(v, h, back: str = ""):
@@ -52,7 +58,9 @@ def panel(v, h, back: str = ""):
 
 def register(app):
     @app.post(PATH)
-    def cancel(session, booking: str = "", sure: str = "", next: str = ""):
+    def cancel(request, session, booking: str = "", sure: str = "", next: str = ""):
+        if not reports.same_site(request):      # a cross-site form cancels nothing (L3)
+            return Response("That did not come from GitAway. Open the booking again and press Cancel.", status_code=403)
         me = ses.current_traveler(session)
         back = passes_ui.safe_back(next) or "/trip/plan"
         sep = "&" if "?" in back else "?"

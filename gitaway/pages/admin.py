@@ -21,7 +21,7 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, 
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
+from gitaway import affiliate, bookingjobs, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import reading
 from gitaway.pages import creatorclaim as claims
@@ -194,7 +194,8 @@ def admin_page(drafted=()):
              ("Plain links, no commission (7 days)", " · ".join(f"{lane} {n}" for lane, n in sorted(plain.items())) or "none", "ad-plain"),
              ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
              ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"),
-             ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"))     # F-220: the key's kind, never the key
+             ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"),     # F-220: the key's kind, never the key
+             ("Paid, not booked (10+ min)", str(bookingjobs.stuck_count()), "ad-stuck"))     # F-274: a guest paid in LiteAPI's form and the stay is not booked yet: the worker keeps trying (D-848)
     fresh = sum(1 for r in rep if not r["seen"])
     return reading("Admin", Div(
         Div(H1("Admin", cls="ad-title"),

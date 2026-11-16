@@ -17,6 +17,7 @@ charged". A guest's name and email are personal data: validated here, sent to Li
 """
 
 import hashlib
+import logging
 import os
 import re
 import secrets
@@ -30,12 +31,14 @@ from sqlalchemy.exc import IntegrityError
 from gitaway import auth, catalog, familydb, liteapi, showcase
 
 NOTHING_CHARGED = "Sandbox booking: nothing is charged"
+log = logging.getLogger(__name__)
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
 SOON_WORDS = "Booking opens soon"
 LIVE_WORDS = "Sold by Nuitée through LiteAPI. Your card is charged when you pay"
 SANDBOX, STAND_IN, SOON, LIVE = "sandbox", "stand-in", "soon", "live"
 MANY = "many"                   # a square of several stays is not booked in one go with the payment form (one payment, one stay)
 PURGE_UNPAID, PURGE_GUEST = 1, 7      # days: an unpaid prebook row is dropped after one, a lead guest's name and email are blanked after seven
+CODE_MISSES_A_DAY = 30          # wrong codes the whole site answers in a day before "Have a code?" is off until tomorrow (L1: codes cannot be guessed freely)
 TOLERANCE_CENTS = 100           # a room's final price within a dollar of the square's is "the price shown" (a live margin lands within a cent; this is for rounding, not for a moved price)
 _CODE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$")
 HOLD = 15 * 60                  # seconds a prebooked room is kept for the guest form
@@ -115,7 +118,7 @@ class Prep:
     @property
     def changed(self) -> bool:
         """The room's price (or terms) moved from what the square showed, so the person is told before booking."""
-        return any(r.prebook.changed or abs(r.prebook.cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS for r in self.rows)
+        return any(r.prebook.changed or abs(r.prebook.charge_cents + r.prebook.discount_cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS for r in self.rows)
 
     @property
     def words(self) -> str:
@@ -382,6 +385,38 @@ def mark_cancelled(session, trip_id: str, booking_id: str) -> None:
         return
     hotels = tuple(replace(h, booked_on="Cancelled on " + (h.booked_on.replace("Booked on ", "") or "LiteAPI")) if h.confirmation == booking_id else h for h in plan.hotels)
     importer.save(session, replace(plan, hotels=hotels), replace=trip_id)
+
+
+def stuck(db, before: str) -> list:
+    """The payments left `paying` (the guest was sent to the card form) since before `before` (an ISO time): paid, perhaps, and not booked."""
+    return familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'paying' AND updated_at < :t ORDER BY updated_at", t=before)
+
+
+def _misses_today() -> int:
+    from datetime import timedelta
+
+    from sqlalchemy import text
+
+    from gitaway import community
+    with community.connect() as db:
+        return db.conn.execute(text("SELECT COUNT(*) FROM book_presses WHERE person = 'code-miss' AND at > :t"), {"t": (liteapi.now() - timedelta(days=1)).isoformat()}).scalar()
+
+
+def codes_open() -> bool:
+    """Is "Have a code?" on? It goes off for the rest of the day (24 hours) once the whole site has been told CODE_MISSES_A_DAY wrong codes."""
+    return _misses_today() < CODE_MISSES_A_DAY
+
+
+def code_missed() -> None:
+    """Count one wrong code (site-wide, in community.db with the presses: no one is named) and log once when that turns codes off."""
+    from sqlalchemy import text
+
+    from gitaway import community
+    with community.connect() as db:
+        db.conn.execute(text("INSERT INTO book_presses (person, at) VALUES ('code-miss', :t)"), {"t": liteapi.now().isoformat()})
+        db.conn.commit()
+    if _misses_today() == CODE_MISSES_A_DAY:
+        log.warning("booking codes are off for today: %s wrong codes were tried", CODE_MISSES_A_DAY)
 
 
 def purge(db) -> None:

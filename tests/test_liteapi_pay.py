@@ -190,12 +190,16 @@ def test_cancelling_a_booking_liteapi_does_not_know_is_failed_and_the_id_cannot_
     assert f.asked[0][0] == CANCEL + "..%2F..%2Frates%2Fbook%3Fx%3D1"
 
 
-def test_a_cancel_is_a_booking_call_counted_and_refused_where_booking_is_off(monkeypatch):
+def test_switched_off_a_paid_guest_is_still_booked_and_cancelled_but_nothing_new_is_prebooked(monkeypatch):
+    """The kill switch (GITAWAY_LIVE_BOOKING=0) stops new prebooks; a TRANSACTION_ID book and a cancel go on (the money is taken), the sandbox's card never does (D-848)."""
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
-    monkeypatch.setattr(auth, "production", lambda: False)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")
     f = Pay()
     monkeypatch.setattr(liteapi, "TRANSPORT", f)
-    assert liteapi.cancel("b", "fam").status == liteapi.OFF and f.asked == []
+    assert liteapi.prebook("o", "fam", sdk=True).status == liteapi.OFF and liteapi.book("p", GUEST, "r", "fam").status == liteapi.OFF and f.asked == []
+    assert liteapi.book("p", GUEST, "r", "fam", transaction_id="tr_1").ok and liteapi.cancel("b", "fam").ok
+    assert [a[2]["payment"]["method"] for a in f.asked if a[2]] == ["TRANSACTION_ID"]
 
 
 # ---- the margin ------------------------------------------------------------------------------------------------------------

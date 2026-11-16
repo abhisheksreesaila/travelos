@@ -102,7 +102,7 @@ def test_the_sheet_prebooks_for_the_payment_form_saves_the_ids_and_says_who_sell
     assert "Sold by Nuitée through LiteAPI" in words and "GitAway never sees it" in words and "Non-refundable: if you cancel, nothing comes back." in words
     assert "Have a code?" in words and "Continue · $" in words and "Your card is charged when you pay" in words
     rows = payments()
-    assert len(rows) == 1 and (rows[0]["status"], rows[0]["prebook_id"], rows[0]["transaction_id"], rows[0]["charge_cents"]) == ("prebooked", "nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP", round((real.shown - 120) * 100))
+    assert len(rows) == 1 and (rows[0]["status"], rows[0]["prebook_id"], rows[0]["transaction_id"], rows[0]["charge_cents"]) == ("prebooked", "nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP", 72993)      # the square shows $849.93: $729.93 now and the $120 fee at the hotel
     assert rows[0]["policy"] == "Non-refundable: if you cancel, nothing comes back."
     for secret in ("nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP", SECRET):      # none of LiteAPI's keys is on the questions
         assert secret not in html
@@ -189,7 +189,7 @@ def test_after_the_form_the_stay_is_booked_with_the_transaction_id_and_the_pass_
     assert sent[0]["guests"][0]["remarks"] == "Quiet room. Arriving in the evening." and "ACC_CREDIT_CARD" not in json.dumps(real.asked)
     row = payments()[0]
     assert (row["status"], row["booking_id"], row["guest_email"], row["guest_phone"]) == ("booked", "uuJxfM0--", "", "")
-    assert [(b["booking_id"], b["sample"], b["total_cents"]) for b in stays_booked()] == [("uuJxfM0--", 0, round(real.shown * 100))]
+    assert [(b["booking_id"], b["sample"], b["total_cents"]) for b in stays_booked()] == [("uuJxfM0--", 0, 84993)]
     assert [(h.confirmation, h.booked_on) for h in trip_lodging()] == [("uuJxfM0--", "LiteAPI")]
     assert "anne@example.com" not in r.text and "+1 415" not in r.text                  # the page says no more than the booking holds
 
@@ -258,21 +258,19 @@ def test_a_code_reprices_the_stay_and_only_the_checkout_shows_the_discount(real,
     assert "F274" not in html and re.search(r'<div[^>]*\bhidden\b[^>]*class="mxb-off"|<div[^>]*class="mxb-off"[^>]*\bhidden\b', html)      # the first sheet says nothing of a code: its discount row is hidden
     r = code(client, html)
     j = r.json()
-    discount = round((real.shown - 120) * 0.1 * 100)
     assert r.status_code == 200 and j["code"] == "F274SANDBOX" and j["token"] != token(html)
-    assert j["discount"] == f"${discount / 100:,.2f}" and j["said"] == "Code F274SANDBOX applied." and j["moved"] == ""
+    assert j["discount"] == "$72.99" and j["said"] == "Code F274SANDBOX applied." and j["moved"] == ""
     assert real.calls(PREBOOK)[-1]["voucherCode"] == "F274SANDBOX" and real.calls(PREBOOK)[-1]["usePaymentSdk"] is True
-    assert j["stay"] == f"${(round(real.shown * 100) - discount) / 100:,.2f}" and j["go"] == f"Continue · {j['stay']}"
+    assert j["stay"] == "$776.94" and j["go"] == f"Continue · {j['stay']}"
     new = {r_["id"]: r_ for r_ in payments()}[j["token"]]
-    assert (new["voucher_code"], new["discount_cents"], new["charge_cents"]) == ("F274SANDBOX", discount, round((real.shown - 120) * 100) - discount)
+    assert (new["voucher_code"], new["discount_cents"], new["charge_cents"]) == ("F274SANDBOX", 7299, 65694)
 
 
 def test_the_discounted_stay_is_what_the_card_pays_through_to_the_booking(real, client):
     html = sheet(client)
     j = code(client, html).json()
     r = client.post("/plan/matrix/book/confirm", data={**FORM, "token": j["token"], **GUEST}, headers=FRAG)
-    discount = round((real.shown - 120) * 0.1 * 100)
-    assert f"${(round((real.shown - 120) * 100) - discount) / 100:,.2f}" in text(r.text) and 'data-pay-root="1"' in r.text
+    assert "$656.94" in text(r.text) and 'data-pay-root="1"' in r.text
     client.get(f"/plan/matrix/book/return?token={j['token']}")
     assert real.calls(BOOK)[0]["prebookId"] == "3JH4qYGIc"
 
@@ -306,8 +304,18 @@ def test_switched_off_the_new_routes_do_nothing(real, client, monkeypatch):
     monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")
     n = len(real.asked)
     assert client.post("/plan/matrix/book/code", data={**FORM, "token": "t", "code": "X1"}).status_code == 400
-    assert client.get("/plan/matrix/book/return?token=abcdefgh1234", follow_redirects=False).headers["location"] == "/plan/ask"
+    assert client.get("/plan/matrix/book/return?token=abcdefgh1234").status_code == 404      # nothing to finish: it asks LiteAPI nothing
     assert len(real.asked) == n
+
+
+def test_switched_off_a_guest_who_already_paid_is_still_booked_by_the_return_page(real, client, monkeypatch):
+    """D-848: the switch stops new prebooks; the return page and LiteAPI's TRANSACTION_ID book go on for a row the guest already paid."""
+    html, _ = pay_pane(client)
+    monkeypatch.setattr(auth, "production", lambda: True)
+    monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "0")
+    r = client.get(f"/plan/matrix/book/return?token={token(html)}")
+    assert r.status_code == 200 and "Booking id uuJxfM0--" in re.sub(r"\s+", " ", text(r.text)) and len(real.calls(BOOK)) == 1
+    assert client.post("/plan/matrix/book", data=FORM, headers=FRAG).status_code == 403      # and nothing new is prebooked
 
 
 def test_the_return_address_is_the_sites_own_in_production_never_the_requests_host(monkeypatch):
