@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import expect
 
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_rail
 from tests_browser.look import audit
 from tests_browser.test_planv2 import plan  # noqa: F401 (fixture)
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
@@ -56,6 +56,7 @@ def test_a_guide_opens_over_the_matrix_and_closing_it_returns_exactly_where_you_
     page = matrix(viewport, signed_in=True)
     page.locator(".mx-lane[data-lane='losangeles'] .mx-sq").nth(2).click()      # open a square of Los Angeles: its drawer under the grid, and the rail follows Los Angeles
     expect(page.locator("#mx-drawer .dr-book")).to_be_visible()
+    open_rail(page)
     row = page.locator("#mx-rail .gd-row")
     expect(row).to_have_count(1)
     expect(page.locator("#mx-rail .wg").first.locator(".wg-h")).to_have_text("Guides for Los Angeles")
@@ -89,6 +90,7 @@ def test_a_guide_opens_over_the_matrix_and_closing_it_returns_exactly_where_you_
 def test_booking_sheet_closes_with_its_buttons_and_the_page_behind_never_moved(matrix, stand):  # noqa: F811
     page = matrix(DESKTOP, signed_in=True)
     page.locator(".mx-lane[data-lane='losangeles'] .mx-lead").click()
+    open_rail(page)
     before = where(page)
     page.locator("#mx-rail .gd-row").click()
     expect(page.locator(".gsheet")).to_be_visible()
@@ -105,6 +107,7 @@ def test_booking_sheet_closes_with_its_buttons_and_the_page_behind_never_moved(m
 def test_the_rail_card_and_the_sheet_are_48px_targets_and_read_4_5_to_1(matrix, stand, viewport, scheme):  # noqa: F811
     page = matrix(viewport, signed_in=True, scheme=scheme)
     page.locator(".mx-lane[data-lane='losangeles'] .mx-lead").click()
+    open_rail(page)
     expect(page.locator("#mx-rail .gd-row")).to_have_count(1)
     page.wait_for_timeout(700)
     assert small(page, "#mx-rail") == []
@@ -245,6 +248,7 @@ def test_an_undo_the_server_refuses_says_so_and_leaves_what_was_not_undone_marke
 def test_the_guide_sheet_takes_the_calm_fade_on_a_laptop_and_the_spring_on_a_phone(matrix, stand, viewport):  # noqa: F811
     page = matrix(viewport, signed_in=True, motion=True)
     page.locator(".mx-lane[data-lane='losangeles'] .mx-lead").click()
+    open_rail(page)
     row = page.locator("#mx-rail .gd-row")
     expect(row).to_have_count(1)
     page.evaluate("GA.motion.log.length = 0")

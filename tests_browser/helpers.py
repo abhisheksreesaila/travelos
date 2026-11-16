@@ -26,3 +26,11 @@ SUN_TINT, MINT_TINT, GRAPE_TINT, SKY_TINT, BUBBLE_TINT = "rgb(255, 244, 194)", "
 SUN_INK, MINT_INK, GRAPE_INK, SKY_INK, BUBBLE_INK = "rgb(92, 67, 0)", "rgb(11, 77, 72)", "rgb(90, 23, 133)", "rgb(42, 33, 133)", "rgb(126, 21, 56)"
 # the kinds' solid fills (a plan's coloured edge, a kind's dot): ride yellow, see teal, stay violet, flight indigo, food rose
 SUN_FILL, MINT_FILL, GRAPE_FILL, SKY_FILL, BUBBLE_FILL = "rgb(255, 212, 59)", "rgb(15, 118, 110)", "rgb(139, 47, 201)", "rgb(67, 56, 202)", "rgb(201, 42, 94)"
+
+
+def open_rail(page):
+    """F-275 (D-862): the rail's widgets are chips until tapped. Wait for the chips, then open every closed one so its card shows."""
+    page.wait_for_selector("#mx-rail .wchip[data-wg]")
+    closed = page.locator("#mx-rail .wchip[aria-expanded='false']")
+    while closed.count():
+        closed.first.click()

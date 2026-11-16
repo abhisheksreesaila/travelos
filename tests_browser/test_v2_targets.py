@@ -5,7 +5,7 @@ from io import BytesIO
 import pytest
 from playwright.sync_api import expect
 
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_rail
 from tests_browser.test_matrixbook_sheet import fill, open_square, to_review  # noqa: F401 (fixtures and helpers)
 from tests_browser.test_tripmatrix import WORDS_JS, matrix, stand  # noqa: F401 (fixtures)
 from tests_browser.test_tripview import alt  # noqa: F401 (fixture)
@@ -29,7 +29,8 @@ def small(page, scope):
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
 def test_the_rail_the_drawer_and_the_checkout_controls_are_all_48px_targets(matrix, alt, viewport, scheme):  # noqa: F811
     page = matrix(viewport, signed_in=True, scheme=scheme)
-    expect(page.locator("#mx-rail .wg").first).to_be_visible()
+    open_rail(page)
+    expect(page.locator("#mx-rail .wg:not([hidden])").first).to_be_visible()
     page.wait_for_timeout(700)
     assert small(page, "#mx-rail") == [], "the rail"
     view = open_square(page, viewport)
@@ -79,7 +80,8 @@ def test_every_word_on_the_glass_rail_reads_on_the_painted_pixels(matrix, viewpo
     page.reload()
     page.wait_for_selector("#mx.is-live")
     page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
-    expect(page.locator("#mx-rail .wg").first).to_be_visible()
+    open_rail(page)
+    expect(page.locator("#mx-rail .wg:not([hidden])").first).to_be_visible()
     page.wait_for_timeout(900)
     page.evaluate("() => { const r = document.getElementById('mx-rail'); r.scrollLeft = 0; }")
     words = [w for w in page.evaluate(WORDS_JS.replace("'#mx *'", "'#mx-rail *'").replace("!e.closest('.mx-pop, .mx-isle, .mx-side, .is-off')", "true")) if w["shown"]]

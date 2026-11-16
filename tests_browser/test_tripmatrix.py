@@ -11,7 +11,7 @@ import pytest
 from playwright.sync_api import expect
 
 from gitaway import gridsource, tripmatrix as tm
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_rail
 from tests_browser.look import audit
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "design" / "trip-matrix" / "built"
@@ -517,14 +517,12 @@ def test_going_back_to_nights_already_read_is_instant_and_asks_for_nothing(matri
 
 
 def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the_rest_for_those_nights(matrix, stand):
-    page = matrix({"width": 320, "height": 640})      # (at 390 the last column starts 90px past the edge, inside the 120px margin the page reads ahead by on purpose (MARGIN in tripmatrix.js), so it IS "in view"; at 320 it is not)
+    page = matrix({"width": 320, "height": 1100})      # F-275: as tall as the sentence card and the chips need for the grid to be in view, as it was at 640 before. (at 390 the last column starts 90px past the edge, inside the 120px margin the page reads ahead by on purpose (MARGIN in tripmatrix.js), so it IS "in view"; at 320 it is not)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     page.wait_for_function(WAIT_IDLE)
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 0")
     page.wait_for_function(WAIT_IDLE)
     assert page.evaluate("() => document.querySelector(\".mx-sq[data-sq='sandiego|2026-12-14']\").getBoundingClientRect().left > innerWidth + 120")      # the far column is beyond the margin
-    page.evaluate("document.getElementById('mx-scroll').scrollIntoView({block: 'center'})")      # F-275: the sentence card is taller now; the grid is brought into view, as a person would
-    page.wait_for_function(WAIT_IDLE)
     before = len(stand.asked)
     page.focus("#v2-sent .v2-w[data-k='nights']")      # by keyboard: at 320 the next word wraps over it for a mouse
     page.keyboard.press("Enter")
@@ -533,7 +531,7 @@ def test_letting_go_searches_only_the_squares_in_view_and_scrolling_asks_for_the
     asked = stand.asked[before:]
     assert asked and len(asked) == len(set(asked)) and set(stand.asked_nights[before:]) == {6}      # each once, all for six nights
     assert not any(k.endswith("2026-12-14") for k in asked)                                      # the far column is not in view: not asked for
-    page.evaluate("document.getElementById('mx-scroll').scrollIntoView({block: 'center'}); document.getElementById('mx-scroll').scrollLeft = 9999")
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     page.wait_for_function(WAIT_IDLE)
     page.wait_for_function("() => document.querySelector(\".mx-sq[data-sq='sandiego|2026-12-14']\").classList.contains('is-ok')")
     assert any(k.endswith("2026-12-14") for k in stand.asked[before:]) and set(stand.asked_nights[before:]) == {6}
@@ -777,8 +775,7 @@ def test_every_word_on_the_frosted_glass_rail_is_4_5_to_1_on_what_is_really_pain
     page.wait_for_selector("#mx.is-live")
     page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
     expect(page.locator("#mx-rail .wchip").first).to_be_visible()
-    for chip in page.locator("#mx-rail .wchip").all():      # F-275: a widget is a chip until it is tapped; open them all, the cards and the chips are the glass
-        chip.click()
+    open_rail(page)      # F-275: a widget is a chip until it is tapped; open them all, the cards and the chips are the glass
     expect(page.locator("#mx-rail .wg:not([hidden])").first).to_be_visible()
     page.wait_for_timeout(900)
     assert page.evaluate("getComputedStyle(document.querySelector('#mx-rail .wg:not([hidden])')).backdropFilter").startswith("blur")
