@@ -195,3 +195,43 @@ def test_the_update_bar_and_staged_words_are_48px_and_4_5_to_1(matrix, stand, vi
     assert min(got["update"], got["reset"], got["note"], got["word"]) >= 4.5, got
     assert all(h >= 47.5 for h in got["h"]), got
     shot(page, f"staged-{viewport['width']}-{scheme}")
+
+
+def tiles_for(seen, nights_r):
+    return [u for k, u in seen if k == "tile" and f"r={nights_r}" in u]
+
+
+def test_staged_nights_ask_for_no_tile_even_while_the_pages_own_tiles_are_still_pending(matrix, stand):  # noqa: F811
+    page = matrix(DESKTOP, wait=False)      # the page's own squares are still being asked for
+    seen = watch(page)
+    page.click(WORD % "nights")
+    page.evaluate(SLIDE, 6)
+    page.click("#v2-pop .v2-done")
+    page.wait_for_timeout(1500)      # the in-flight answers have landed and pumped again
+    assert tiles_for(seen, "2026-12-18") == [] and set(stand.asked_nights) <= {4}, (seen, stand.asked_nights)
+
+
+def test_scrolling_the_matrix_while_nights_are_staged_asks_for_nothing(matrix, stand):  # noqa: F811
+    page = matrix({"width": 320, "height": 1100})
+    seen = watch(page)
+    before = len(stand.asked)
+    page.focus("#v2-sent .v2-w[data-k='nights']")
+    page.keyboard.press("Enter")
+    page.evaluate(SLIDE, 6)
+    page.click("#v2-pop .v2-done")
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
+    page.wait_for_timeout(800)
+    page.evaluate("document.getElementById('mx-scroll').scrollLeft = 0; window.scrollTo(0, 400)")
+    page.wait_for_timeout(800)
+    assert [k for k, _ in seen if k in ("tile", "peek")] == [] and len(stand.asked) == before
+
+
+def test_squares_and_the_find_keep_the_searched_trip_while_changes_are_staged(matrix):  # noqa: F811
+    page = matrix(DESKTOP)
+    before = page.eval_on_selector_all(".mx-card a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
+    assert before
+    page.click(WORD % "nights")
+    page.evaluate(SLIDE, 6)
+    page.click("#v2-pop .v2-done")
+    after = page.eval_on_selector_all(".mx-card a[href^='/plan/matrix']", "els => els.map(e => e.getAttribute('href'))")
+    assert after == before and all("r=2026-12-18" not in h for h in after)

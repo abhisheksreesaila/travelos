@@ -301,38 +301,18 @@ def test_a_square_says_its_estimate_inputs_the_flight_and_each_stays_nightly_rat
     s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
     known = page.peek_all(s, page.lanes_of(s), page.windows_of(s))
     sq, combo = known["sandiego|2026-12-12"], known["losangeles+sandiego|2026-12-12"]
-    j = client.get("/plan/matrix/peek?" + MATRIX.split("?")[1]).json()["known"]
-    assert j["sandiego|2026-12-12"]["e"] == [sq.flight.cents, round(sq.stays[0].cents / 4)]
-    assert j["losangeles+sandiego|2026-12-12"]["e"] == [combo.flight.cents, round(combo.stays[0].cents / 2), round(combo.stays[1].cents / 2)]
-    assert j["sandiego|2026-12-12"]["inner"] == f'<span class="mx-v">{tm.dollars(sq.cents)}</span>' and j["sandiego|2026-12-12"]["label"].endswith("for the whole trip")
-
-
-def test_peek_answers_every_square_the_showcase_knows_for_other_nights(sample, client):
-    q = MATRIX.split("?")[1]
-    j = client.get("/plan/matrix/peek?" + q.replace("r=2026-12-16", "r=2026-12-18")).json()["known"]
-    assert sorted(j) == sorted(KEYS)
-    four = client.get("/plan/matrix/peek?" + q).json()["known"]
-    assert j["sandiego|2026-12-12"]["c"] != four["sandiego|2026-12-12"]["c"]        # six nights cost more than four
-    assert j["sandiego|2026-12-12"]["label"].startswith("San Diego, Dec 12 to 18:")
-
-
-def test_off_the_showcase_peek_reads_only_the_cache_and_never_searches(real, client):
-    q = MATRIX.split("?")[1]
-    first = client.get("/plan/matrix/peek?" + q).json()
-    assert first == {"known": {}} and real.asked == []
-    client.get("/plan/matrix/tile?" + q + "&lane=sandiego&w=2026-12-12")
-    asked = len(real.asked)
-    assert asked
-    again = client.get("/plan/matrix/peek?" + q).json()["known"]
-    assert list(again) == ["sandiego|2026-12-12"] and len(real.asked) == asked                      # the answer came from the cache
-    other = client.get("/plan/matrix/peek?" + q.replace("r=2026-12-16", "r=2026-12-18")).json()
-    assert other == {"known": {}} and len(real.asked) == asked                                     # other nights: not known, not searched
-    assert client.get("/plan/matrix/peek?to=Nowhere+Land").status_code == 400
+    tile = lambda lane: client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=" + lane + "&w=2026-12-12").json()      # noqa: E731
+    one, two = tile("sandiego"), tile("losangeles%2Bsandiego")
+    assert one["e"] == [sq.flight.cents, round(sq.stays[0].cents / 4)]
+    assert two["e"] == [combo.flight.cents, round(combo.stays[0].cents / 2), round(combo.stays[1].cents / 2)]
+    assert one["inner"] == f'<span class="mx-v">{tm.dollars(sq.cents)}</span>' and one["label"].endswith("for the whole trip")
 
 
 def test_the_tile_carries_the_estimate_inputs_too(sample, client):
     j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-13").json()
-    assert j["e"] == client.get("/plan/matrix/peek?" + MATRIX.split("?")[1]).json()["known"]["sandiego|2026-12-13"]["e"] and len(j["e"]) == 2
+    s = page.state("San Diego", "SFO", "2026-12-12", "2026-12-16", "2", "7,10", "2")
+    sq = page.peek_all(s, page.lanes_of(s), page.windows_of(s))["sandiego|2026-12-13"]
+    assert j["e"] == [sq.flight.cents, round(sq.stays[0].cents / 4)]
 
 
 # ---- F-238 review: MET Norway's credit beside a forecast --------------------------------------------------------------------
