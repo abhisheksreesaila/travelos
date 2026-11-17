@@ -68,14 +68,15 @@ def card_path(sh) -> str:
     return f"/s/{quote(sh.token, safe='')}/card.png?v={v}"
 
 
-def _button(trip_label="Share to Instagram"):
-    """The cockpit's button (a link to the sheet's own page until share.js turns it into the grow-out sheet)."""
-    return A(icon("share", 18, 2.4), Span(trip_label), href=PATH, cls="sh-open", id="sh-open", aria_haspopup="dialog")
+def _button(trip_label="Share to Instagram", **extra):
+    """The button (a link to the sheet's own page until share.js turns it into the grow-out sheet). `extra`: a row of a More menu adds its menuitem attributes."""
+    return A(icon("share", 18, 2.4), Span(trip_label), href=PATH, cls="sh-open", id="sh-open", aria_haspopup="dialog", **extra)
 
 
-def open_button(role):
-    """What the cockpit draws beside its date chips: the button, for anyone who may change the trip's plans (a viewer cannot make a public link). Styles and script ride the cockpit's HEAD and SCRIPTS."""
-    return _button() if access.can_edit(role) else ""
+def open_button(member_role, **extra):
+    """The button, for anyone who may change the trip's plans (a viewer cannot make a public link). Styles and script ride the page's HEAD and SCRIPTS. On the planner it is a row of the trip's
+    More menu (F-293: pass the menu's `v2.ITEM`), not a button at rest."""
+    return _button(**extra) if access.can_edit(member_role) else ""
 
 
 def _toggle(name, on, label, hint):

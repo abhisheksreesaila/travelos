@@ -114,10 +114,9 @@ def test_on_a_phone_the_pill_floats_at_the_bottom_above_the_safe_area_and_the_av
     page = plan(PHONE)
     box = page.locator(".v2-sections").bounding_box()
     assert box["y"] + box["height"] > 844 - 24 and box["y"] + box["height"] <= 844 - 8
-    for label in ("Book", "My trip", "Guides"):      # nothing covers it: the calendar's own dock rides above the pill, and a tap on each word lands on that link
+    for label in ("Book", "My trip", "Guides"):      # nothing covers it, and a tap on each word lands on that link
         assert page.evaluate("t => { const a = [...document.querySelectorAll('.v2-sections a')].find(a => a.textContent === t), r = a.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === a; }", label), label
-    dock = page.locator(".dock").bounding_box()
-    assert dock["y"] + dock["height"] <= box["y"], (dock, box)
+    assert page.locator(".dock").count() == 0      # F-293 (D-947): the planner's own Together and Save bar is gone (they are rows of its More menu), so nothing stacks above the pill
     me = page.locator(ME).bounding_box()
     assert me["y"] < 80 and me["x"] + me["width"] > 390 - 40
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")

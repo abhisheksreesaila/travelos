@@ -72,6 +72,16 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 .v2-menu a, .v2-menu button { display: flex; align-items: center; width: 100%; min-height: 3rem; padding: 0 0.875rem; border: 0; border-radius: 1.125rem; background: transparent; color: var(--ink); text-align: left; text-decoration: none; font: 560 1rem/1 var(--f-ui); cursor: pointer; box-sizing: border-box; }
 .v2-menu a:hover, .v2-menu button:hover, .v2-menu a:focus-visible, .v2-menu button:focus-visible { background: var(--cell-hover); color: var(--ink); outline-offset: -0.1875rem; }
 .v2-menu form { margin: 0.25rem 0 0; padding-top: 0.25rem; border-top: 1px solid var(--line); }
+/* the More button (F-293, D-946): one small pill for what a screen's secondary actions are; its menu is the account menu's, with an icon in front of each row */
+.v2-more-btn { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 3rem; padding: 0 1rem 0 0.875rem; border: 0; border-radius: 62.4375rem; background: var(--card-solid); box-shadow: var(--sh1); color: var(--ink); font: 620 1rem/1 var(--f-ui); cursor: pointer; }
+.v2-more-btn:hover { box-shadow: var(--sh2); }
+.v2-more-btn.is-round { justify-content: center; width: 3rem; padding: 0; }
+.v2-more-btn + .v2-menu.v2-glass { background: var(--card-solid); }      /* it hangs over the page's own content: opaque, not frosted */
+.v2-more-btn svg { width: 1.25rem; height: 1.25rem; }
+.v2-more-btn .v2-dot { top: 0.25rem; right: 0.25rem; }
+.v2-menu :is(a, button) { gap: 0.75rem; }
+.v2-menu :is(a, button) svg { flex: none; width: 1.25rem; height: 1.25rem; color: var(--ink-2); }
+.v2-menu .sh-open { min-height: 3rem; padding: 0 0.875rem; justify-content: flex-start; background: transparent; box-shadow: none; color: var(--ink); font: 560 1rem/1 var(--f-ui); }
 @media (max-width: 719px) {
   .v2-sections { position: fixed; z-index: 40; left: 50%; translate: -50% 0; bottom: max(0.75rem, env(safe-area-inset-bottom)); max-width: calc(100vw - 1.5rem); }
   .v2-sections.v2-glass { background: var(--card-t); }      /* floating over the page's own content: near-opaque, as a card holding text is */

@@ -18,7 +18,7 @@ import json
 from fasthtml.common import A, Aside, B, Button, Div, H1, H2, Header, Input, Li, Link, NotStr, P, Script, Section, Small, Span, Ul, to_xml
 from starlette.responses import HTMLResponse, JSONResponse
 
-from gitaway import access, guide as gd, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
+from gitaway import access, guide as gd, v2, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booking, today as todaypage, tripshare
@@ -198,14 +198,22 @@ def _avatar(p, big=False):
     return Span(p.initials, cls="av" + (" big" if big else ""), style=f"--c:var(--k-{('flight', 'stay', 'food', 'see', 'tix')[p.slot]})", title=p.name)
 
 
-def _trip_card(v, role):
+def _more(v, role, unread):
+    """The trip's one More menu (F-293, D-946): what is not the calendar waits here. Plan together opens the family's drawer (a dot on the button says a chat is unread), Save plan reads the plan back,
+    Share to Instagram is for editors. Each is where its own script finds it by id."""
+    return v2.more(Button(icon("users", 20, 2.2), Span("Plan together"), Span(str(unread), cls="badge", id="pl-badge", hidden=not unread), type="button", id="pl-together", **v2.ITEM),
+                   Button(icon("check", 20, 2.4), Span("Save plan"), type="button", id="pl-save", **v2.ITEM),
+                   tripshare.open_button(role, **v2.ITEM), ident="pl-more", dot=bool(unread))
+
+
+def _trip_card(v, role, unread=0):
     names = ", ".join(p.name.split()[0] for p in v.people[:6])
     art = Div(NotStr(_art(v.place)), cls="art") if _art(v.place) else ""
     return Section(Div(cls="deco", aria_hidden="true"), art,
                    Div(Span(Span(icon("check", 11, 3.4), cls="chk"), "Booked · planning together", cls="k"), H1(v.title, cls="disp"), P(f"{v.dates} · {v.nights} night{'s' if v.nights != 1 else ''}", cls="meta"), cls="ti"),
                    Div(Span(*[_avatar(p) for p in v.people], cls="stack"), Small_(names), cls="who") if v.people else "",
                    Div(B(v.big, cls="num") if v.big else "", Span(v.small), cls="count" + ("" if v.big else " is-text")),
-                   tripshare.open_button(role) or "", cls="pl-trip rise", aria_label="Your trip")
+                   _more(v, role, unread), cls="pl-trip rise", aria_label="Your trip")
 
 
 def _art(place):
@@ -321,13 +329,8 @@ def plan_page(session, request, arrive=False, day=""):
             "plans": [{"id": e.id, "title": e.title, "day": e.day, "start": e.start, "end": e.end, "when": e.when, "kind": e.kind} for e in v.plans],
             "booked": [{"id": e.id, "title": e.title, "day": e.day, "start": e.start, "end": e.end, "when": e.when, "kind": e.kind, "href": e.href} for e in v.booked],
             "summary": {"plans": len(v.plans), "booked": len(v.booked), "people": len(v.people), "title": v.title, "dates": v.dates}}
-    bar = Div(Span(Span(cls="dot"), "Booked", Span("·", aria_hidden="true"), "now planning", cls="crumb"), Span(cls="sp"),
-              Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), Span("Plan together"), Span(str(unread), cls="badge", id="pl-badge", hidden=not unread), type="button", cls="together", id="pl-together", aria_haspopup="dialog"),
-              Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", id="pl-save"), cls="pl-bar")
-    body = Div(bar, todaypage.card(session, day), _trip_card(v, role),
+    body = Div(todaypage.card(session, day), _trip_card(v, role, unread),
                Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg, gd.for_place(session, v.place)), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
-               Div(Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), "Together", type="button", cls="together", data_together="1"),
-                   Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", data_save="1"), cls="dock v2-glass", id="pl-dock"),
                _drawer(v, request), Div(cls="pl-scrim", id="pl-scrim"), Div(id="pl-pop", cls="pop", role="dialog", hidden=True),
                Div(id="pl-sheet", cls="sheet", role="dialog", aria_modal="true", aria_label="Plan saved", hidden=True),
                Script(NotStr(_safe(data)), type="application/json", id="pl-data"),

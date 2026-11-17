@@ -15,6 +15,8 @@
     if (!frag) frag = fetch('/trip/share', { headers: { 'X-Share': '1' }, credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('share'); return r.text(); });
     return frag;
   }
+  function from() { var m = btn.closest('[data-more]'); return (m && m.querySelector('[aria-haspopup=menu]')) || btn; }      // F-293: in a More menu the sheet grows from, and folds back into, the More button (the row is hidden by then)
+
   btn.addEventListener('pointerdown', function () { get().catch(function () { frag = null; }); }, { passive: true });
 
   btn.addEventListener('click', function (e) {
@@ -35,7 +37,7 @@
     state = { link: wrap.querySelector('.sh-body').dataset.link };
     wire();
     var scrim = wrap.querySelector('.sh-scrim');
-    var grown = reducedQ.matches ? Promise.resolve() : MO.open(box, btn, { scrim: scrim });
+    var grown = reducedQ.matches ? Promise.resolve() : MO.open(box, from(), { scrim: scrim });
     grown.then(settle);
     box.focus({ preventScroll: true });
     prefetch();
@@ -140,8 +142,8 @@
     if (!wrap) return;
     var w = wrap, b = box;
     wrap = null; box = null; blob = null;
-    var done = function () { w.remove(); root.classList.remove('sh-open'); btn.setAttribute('aria-expanded', 'false'); btn.focus({ preventScroll: true }); };
-    if (reducedQ.matches) done(); else MO.close(b, btn, { scrim: w.querySelector('.sh-scrim') }).then(done);
+    var done = function () { w.remove(); root.classList.remove('sh-open'); btn.setAttribute('aria-expanded', 'false'); from().focus({ preventScroll: true }); };
+    if (reducedQ.matches) done(); else MO.close(b, from(), { scrim: w.querySelector('.sh-scrim') }).then(done);
   }
 
   document.addEventListener('keydown', function (e) {

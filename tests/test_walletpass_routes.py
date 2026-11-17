@@ -143,3 +143,13 @@ def test_today_shows_the_stays_wallet_buttons_when_the_credentials_are_set(stay,
     monkeypatch.delenv("APPLE_PASS_TYPE_ID")
     monkeypatch.delenv("GOOGLE_WALLET_ISSUER_ID")
     assert 'id="wp-apple"' not in client.get("/trip/today").text
+
+
+def test_the_booking_page_holds_the_wallet_buttons_in_its_more_menu_not_on_the_page(stay, client):
+    """F-293 (D-949): the pass buttons are secondary, so they wait in the page's More menu; the page itself has the stay, its times, its code and Directions."""
+    href, _ = stay
+    page = client.get(href).text
+    start = page.index('id="bk-more-menu"')
+    end = page.index("</div>", start)
+    assert page.count('id="wp-apple"') == 1 and start < page.index('id="wp-apple"') < end and start < page.index('id="wp-google"') < end
+    assert page[start:end].count('role="menuitem"') == 2 and 'id="wp-btns"' not in page and "Directions" in page

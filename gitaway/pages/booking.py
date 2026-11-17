@@ -13,7 +13,7 @@ from urllib.parse import quote
 from fasthtml.common import A, Div, H1, Link, Main, Span
 from starlette.responses import RedirectResponse
 
-from gitaway import access, phone, session as ses, tripcal as cal
+from gitaway import access, phone, session as ses, tripcal as cal, v2
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booked
@@ -34,8 +34,8 @@ def _view(session):
     return dict(session=session, b=b, t=cal.trip("", b), role=access.request_role())
 
 
-def _page(title, pills, body, session):
-    return page(title, Main(Div(A(icon("chev-left", 16, 2.6), "Back to the plan", href=PLAN, cls="bk-back", id="bk-back"),
+def _page(title, pills, body, session, more=()):
+    return page(title, Main(Div(Div(A(icon("chev-left", 16, 2.6), "Back to the plan", href=PLAN, cls="bk-back", id="bk-back"), v2.more(*more, ident="bk-more", compact=True), cls="bk-top"),
                                 Div(*[Span(x, cls="bk-pill") for x in pills], cls="bk-pills") if pills else "", H1(title, id="bk-title"), *body, cls="bk-page v2-glass", id="bk-page"), cls="bk-wrap"),
                 current="trip", head=HEAD, noindex=True, footer=False, v2=True, quiet=True)
 
@@ -52,4 +52,4 @@ def register(app):
         if found is None:
             return RedirectResponse(PLAN, status_code=303)
         pills, title, body = booked.sheet(v, found, ua, href(block), PLAN)
-        return _page(title, pills, [booked.problem(err), *body], session)
+        return _page(title, pills, [booked.problem(err), *body], session, booked.more_rows(v, found))

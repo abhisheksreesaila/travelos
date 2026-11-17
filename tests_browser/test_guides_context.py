@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import expect
 
-from tests_browser.helpers import DESKTOP, PHONE, open_rail
+from tests_browser.helpers import DESKTOP, PHONE, open_more, open_rail
 from tests_browser.look import audit
 from tests_browser.test_planv2 import plan  # noqa: F401 (fixture)
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
@@ -267,7 +267,7 @@ def test_the_guide_sheet_takes_the_calm_fade_on_a_laptop_and_the_spring_on_a_pho
 
 def test_the_guide_will_not_open_beside_the_planning_drawer(plan, base_url):  # noqa: F811
     page = plan(DESKTOP)
-    page.locator("#pl-together").first.click()      # the drawer sits beside the rail on a laptop: its guides row is still there to press
+    open_more(page, "#pl-together").click()      # F-293: a row of the trip's More menu; the drawer sits beside the rail on a laptop: its guides row is still there to press
     expect(page.locator("#pl-side")).to_be_visible()
     page.locator("#pl-rail .gd-row").dispatch_event("click")
     expect(page.locator(".ga-toast")).to_contain_text("Close this first")

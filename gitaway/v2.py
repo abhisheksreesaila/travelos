@@ -91,6 +91,19 @@ def menu_items(captain: bool, new: int = 0, has_trip: bool = False) -> list:
     return [("family", "Family members", "/family")] + ([("help", "Help · who to call", "/trip/booking?sos=1")] if has_trip else []) + ([("admin", f"Admin ({new} new)" if new else "Admin", "/admin")] if captain else [])
 
 
+ITEM = {"role": "menuitem", "tabindex": "-1"}       # what every row of a More menu carries (assets/js/v2top.js moves through them)
+
+
+def more(*items, ident: str = "more", label: str = "More", dot: bool = False, cls: str = "", compact: bool = False) -> Div:
+    """The one quiet button that holds what most people do not need on a screen (F-293, D-946): a small "More" that opens a menu growing out of it (assets/js/v2top.js, the account menu's
+    script; Escape closes it and focus returns here). `items` are links or buttons made with `**ITEM`; `dot` marks that something inside is waiting (an unread chat); `compact` is a round button of three dots whose word is only for readers (a card's corner). No items, no button."""
+    items = [i for i in items if i != ""]
+    if not items:
+        return ""
+    return Div(Button(icon("more", 20, 2.4), Span(label, cls="sr-only" if compact else ""), Span(cls="v2-dot", id=f"{ident}-dot", hidden=not dot), type="button", cls="v2-more-btn" + (" is-round" if compact else ""), id=ident, aria_haspopup="menu", aria_expanded="false", aria_controls=f"{ident}-menu"),
+               Div(*items, id=f"{ident}-menu", cls="v2-menu v2-glass", role="menu", aria_label=label, hidden=True), cls=("v2-account " + cls).strip(), data_more="1")
+
+
 def top(current: str = "", sample: str = "Sample prices") -> Div:
     """The brand, a label saying the prices are samples (on the showcase), the sections pill (Book, Plan, Guides; on a phone it floats at the bottom), the light/dark button and
     the account: the avatar and its menu for a signed-in person, Sign in for a visitor."""
@@ -105,7 +118,7 @@ def top(current: str = "", sample: str = "Sample prices") -> Div:
                    id="v2-menu", cls="v2-menu v2-glass", role="menu", aria_label="Account", hidden=True)
         news = f", {new} new report{'s' if new != 1 else ''}" if new and captain else ""
         account = Div(Button(Span(traveler.initials), Span(cls="v2-dot") if news else "", type="button", cls="v2-round", id="v2-me", aria_haspopup="menu", aria_expanded="false",
-                             aria_controls="v2-menu", aria_label=f"{traveler.name}: account menu{news}", title=traveler.name), menu, cls="v2-account")
+                             aria_controls="v2-menu", aria_label=f"{traveler.name}: account menu{news}", title=traveler.name), menu, cls="v2-account", data_more="1")
     else:
         account = A("Sign in", href=session_.signin_href(), cls="v2-signin")
     mode = Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",

@@ -13,7 +13,7 @@ import re
 
 from fasthtml.common import A, Details, Div, H2, P, Span, Summary
 
-from gitaway import access, catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti, walletpass
+from gitaway import access, catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti, v2, walletpass
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui, tab_help
 
@@ -127,8 +127,16 @@ def sheet(v, found, ua, back, gone=""):
                           else _ticket(v, item, ua) if kind == "ticket" else _flight(v, index, item, can_edit, back))
     from gitaway.pages import bookedwhere, staycancel
     stay = kind in ("checkin", "checkout")
-    wallet = walletpass.buttons(item.confirmation, v["session"].get("tenant_id") or "") if stay and not item.booked_on.startswith("Cancelled") else ""      # F-288
-    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body, wallet, *([staycancel.panel(v, item, back)] if stay else [])]
+    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body, *([staycancel.panel(v, item, back)] if stay else [])]
+
+
+def more_rows(v, found):
+    """The booking's secondary actions, as rows for the page's More menu (F-293, D-949): a stay's "Add to Apple Wallet" and "Save to Google Wallet" (F-288, `walletpass.buttons`: none while neither vendor
+    is set up, none for a cancelled stay)."""
+    kind, item, _ = found
+    if kind in ("checkin", "checkout") and cal.is_imported(v["b"]) and not item.booked_on.startswith("Cancelled"):
+        return walletpass.buttons(item.confirmation, v["session"].get("tenant_id") or "", **v2.ITEM)
+    return []
 
 
 def sos(v, ua, back=""):

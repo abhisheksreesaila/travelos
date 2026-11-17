@@ -7,7 +7,7 @@ import pytest
 
 from tests.test_signin import EMAILS, person
 from tests.test_trip_import import TEMPLATE
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_more
 
 DAY = "2026-10-16"
 HOTEL_PLACE = "The Tidewater, Los Angeles"        # the sample stay, as Directions and the map's cache know it
@@ -94,12 +94,12 @@ def test_use_my_location_measures_in_the_page_and_sends_nothing(ctxs, base_url):
     know_the_hotel(HOTEL_PLACE, 34.0, -118.5)
     page = ctx.new_page()
     page.goto(f"{base_url}/trip/today?day={DAY}")
-    page.wait_for_selector("#td-locate")
+    page.wait_for_selector("#td-more")
     assert page.inner_text("#td-near") == ""           # nothing is asked until the tap
     sent = []
     kept = page.evaluate("JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage)])")
     page.on("request", lambda r: sent.append(r.url + (r.post_data or "")))
-    page.click("#td-locate")
+    open_more(page, "#td-locate", "td-more").click()      # F-293: "Use my location" is a row of the hotel's More menu
     page.wait_for_function("!/^(Finding|$)/.test(document.getElementById('td-near').textContent)")
     assert page.inner_text("#td-near") == "5.7 mi away, as the crow flies. Roughly 18 min at city speed, and more by road."
     assert [u for u in sent if "34.0" in u or "118.4" in u or "latitude" in u] == []
@@ -113,7 +113,7 @@ def test_a_refused_location_says_so_and_changes_nothing(ctxs, base_url):
     know_the_hotel(HOTEL_PLACE, 34.0, -118.5)
     page = ctx.new_page()
     page.goto(f"{base_url}/trip/today?day={DAY}")
-    page.click("#td-locate")
+    open_more(page, "#td-locate", "td-more").click()
     page.wait_for_function("!/^(Finding|$)/.test(document.getElementById('td-near').textContent)")
     assert page.inner_text("#td-near") == "Your location is off for this page, so there is nothing to measure. Nothing was sent."
     assert "Directions" in page.inner_text("#td-stay")      # the rest of the card is as it was
@@ -216,5 +216,27 @@ def test_on_a_travel_day_phone_the_hotels_key_actions_are_on_the_first_screen_ab
     page.goto(f"{base_url}/trip/today?day={DAY}")
     page.wait_for_selector("#td-directions")
     bar_top = page.evaluate("document.querySelector('.v2-sections').getBoundingClientRect().top")
-    for ident in ("td-directions", "td-ride"):
+    for ident in ("td-directions", "td-more"):      # F-293: the ride is a row of the hotel's More menu; the button that holds it is on the first screen
         assert page.evaluate("(i) => document.getElementById(i).getBoundingClientRect().bottom", ident) <= bar_top, ident
+
+
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
+def test_the_hotel_card_keeps_directions_and_its_more_menu_holds_the_ride(ctxs, base_url, viewport):
+    """F-293 (D-948): at rest the card has Directions (the bold action) and Call the hotel; the ride waits in the round More button's menu, which opens, has 48px rows and gives focus back on Escape."""
+    ctx = ctxs(viewport)
+    sign_in(ctx, base_url)
+    book_pasted(ctx, base_url)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/trip/today?day={DAY}")
+    page.wait_for_selector("#td-more")
+    assert page.is_hidden("#td-ride") and page.is_visible("#td-directions") and page.is_visible("#td-call")
+    box = page.locator("#td-more").bounding_box()
+    assert box["width"] >= 47.5 and box["height"] >= 47.5 and page.get_attribute("#td-more", "aria-expanded") == "false"
+    assert box["width"] < 60 and "More" in page.locator("#td-more").text_content()      # a round button; its word is for readers
+    open_more(page, "#td-ride", "td-more")
+    assert page.evaluate("document.getElementById('td-ride').getBoundingClientRect().height") >= 47.5
+    assert page.get_attribute("#td-ride", "href").startswith("https://m.uber.com/")
+    page.keyboard.press("Escape")
+    page.wait_for_selector("#td-more-menu", state="hidden")      # it folds back into its button first
+    assert page.evaluate("document.activeElement.id") == "td-more"
+    assert page.evaluate(OVERFLOW)

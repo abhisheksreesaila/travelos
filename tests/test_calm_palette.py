@@ -33,7 +33,7 @@ def test_the_palette_is_tokens_in_one_place_light_and_dark():
 
 
 def test_the_primary_actions_take_the_indigo_token():
-    for name, selector in (("v2drawer.css", ".dr-book"), ("v2plan.css", ".pl .save"), ("matrixbook.css", ".mxb-plan"), ("matrixbook.css", ".mxb-b1.sun")):
+    for name, selector in (("v2drawer.css", ".dr-book"), ("today.css", ".td-btn.is-main, .td-btn.is-main:hover"), ("matrixbook.css", ".mxb-plan"), ("matrixbook.css", ".mxb-b1.sun")):
         rule = re.search(r"^" + re.escape(selector) + r" \{[^}]*\}", (CSS / name).read_text(), re.M).group(0)
         assert "background: var(--cta-bg)" in rule, (name, selector)
 
