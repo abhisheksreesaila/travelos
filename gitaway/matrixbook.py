@@ -467,6 +467,8 @@ def purge(db) -> None:
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
         familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
+        familydb.run(db, "UPDATE matrix_payments SET guests = '', hotel_address = '' WHERE created_at < :t AND (guests != '' OR hotel_address != '')",      # kept only for the booked email (F-285)
+                     t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
 
 
 def save_prebook(db, token: str, user_id: str, row: Row, guests: str = "") -> None:

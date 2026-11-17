@@ -34,6 +34,10 @@ SOLD_BY = "Sold by Nuitée through LiteAPI"
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f  ]+")
 
 
+class NoTLS(Exception):
+    """The settings name neither SMTP_SSL nor STARTTLS: `deliver` refuses to send."""
+
+
 @dataclass(frozen=True)
 class Mail:
     subject: str
@@ -169,6 +173,8 @@ def render_mime(to, subject, text, html) -> str:
 def deliver(to, mail: Mail) -> None:
     """Send one message through the configured SMTP server (Resend: smtp.resend.com, port 465 with SMTP_SSL=true or 587 with STARTTLS). Raises on any failure; the caller logs without the address."""
     cfg, context = smtp(), ssl.create_default_context()
+    if not (cfg["use_ssl"] or cfg["use_tls"]):      # a password and a guest's details never cross the network in the clear
+        raise NoTLS("SMTP without TLS")
     server = smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=20, context=context) if cfg["use_ssl"] else smtplib.SMTP(cfg["host"], cfg["port"], timeout=20)
     with server:
         if cfg["use_tls"] and not cfg["use_ssl"]:
@@ -186,6 +192,8 @@ def _send(to, mail: Mail, booking_id: str) -> None:
     try:
         deliver(to, mail)
         log.info("booking email sent: %s", booking_id)
+    except NoTLS:
+        log.warning("booking email not sent: SMTP without TLS: %s", booking_id)
     except Exception:  # noqa: BLE001 - mail never undoes a booking; the log line has the id and no address, and no exception text (a server's refusal repeats the address)
         log.warning("booking email failed: %s", booking_id)
 

@@ -379,3 +379,33 @@ def test_the_cancelled_email_never_says_more_came_back_than_the_card_paid(real, 
     outbox.sent.clear()
     client.post("/trip/booking/cancel", data={"booking": "uuJxfM0--", "sure": "1", "next": href})
     assert "$468.60 comes back to the card you paid with" in outbox.sent[0][2] and "$520.66" not in outbox.sent[0][2]
+
+
+# ---- review fixes -----------------------------------------------------------------------------------------------------------------------------
+
+def test_smtp_without_ssl_or_starttls_is_refused_and_logged_with_the_booking_id_only(monkeypatch, caplog):
+    import smtplib
+    for k, v in {**SMTP, "SMTP_SSL": "false", "SMTP_STARTTLS": "false"}.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setattr(smtplib, "SMTP", lambda *a, **k: pytest.fail("connected without TLS"))
+    mail = bookingmail.Mail("s", "t", "<p>h</p>")
+    with pytest.raises(bookingmail.NoTLS):
+        bookingmail.deliver("anne@example.com", mail)
+    with caplog.at_level(logging.INFO):
+        bookingmail._send("anne@example.com", mail, "bk-1")
+    assert [r.getMessage() for r in caplog.records if r.name == "gitaway.bookingmail"] == ["booking email not sent: SMTP without TLS: bk-1"]
+
+
+def test_the_purge_blanks_the_party_and_hotel_address_with_the_guest_fields(live, family, outbox):
+    db, user = family
+    prep = paid(db, user)
+    mb.finish(db, "fam", prep.token, user)
+    row = mb.payment(db, prep.token)
+    assert (row["guests"], row["hotel_address"]) == ("2 adults", ADDRESS)      # kept for the booked email until the purge
+    mb.purge(db)
+    assert (mb.payment(db, prep.token)["guests"], mb.payment(db, prep.token)["hotel_address"]) == ("2 adults", ADDRESS)      # not old enough yet
+    old = (datetime.now(timezone.utc) - timedelta(days=mb.PURGE_GUEST + 1)).isoformat(timespec="seconds")
+    familydb.run(db, "UPDATE matrix_payments SET created_at = :t", t=old)
+    mb.purge(db)
+    row = mb.payment(db, prep.token)
+    assert (row["guests"], row["hotel_address"], row["status"]) == ("", "", "booked")
