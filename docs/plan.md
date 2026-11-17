@@ -1789,8 +1789,8 @@ Brief: docs/briefs/trip-day.md · Decisions D-931..D-935 · Needs: Apple Pass Ty
 - [ ] tested with test keys made in the tests; `scripts/wallet_setup.sh` walks the founder through both accounts
 - [ ] security review (personal data)
 
-## F-289 "My trip", "Find a trip", and sign in for 3D [todo]
+## F-289 "My trip", "Find a trip", and sign in for 3D [done]
 Founder 2026-11-17: "the word plan means different things to different people … it should mean you have finished booking, now plan your itinerary"; "we can put a big sign in to check 3D view and immersive experience".
-- [ ] the bar's Plan reads "My trip" (the calendar, titled "Your itinerary"); a visitor's "Plan a trip" reads "Find a trip"
-- [ ] a signed-out tap on satellite or 3D in See it from above shows a clear "Sign in to fly around the hotel in 3D" card with the sign-in way
-- [ ] the cover's dark sky is the deep night of the Harbour ground, not purple (D-925)
+- [x] the bar's Plan reads "My trip" (the calendar, titled "Your itinerary"); a visitor's "Plan a trip" reads "Find a trip"
+- [x] a signed-out tap on satellite or 3D in See it from above shows a clear "Sign in to fly around the hotel in 3D" card with the sign-in way
+- [x] the cover's dark sky is the deep night of the Harbour ground, not purple (D-925)
