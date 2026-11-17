@@ -9,7 +9,7 @@ import pytest
 from playwright.sync_api import expect
 
 from gitaway import gridsource, liteapi, tripmatrix as tm
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, set_mode
 from tests_browser.look import audit
 from tests_browser.test_matrixbook_sheet import BookStand, _no_presses_yet, fill, open_square, states, to_review  # noqa: F401 (fixtures and helpers)
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
@@ -230,3 +230,138 @@ def test_the_drawer_and_the_questions_read_fit_and_are_easy_to_tap_in_light_and_
     for key in ("small", "tiny", "wide"):
         assert not seen[key] if key != "wide" else seen[key] <= 1, ("the pass", key, seen[key][:6] if key != "wide" else seen[key])
     shot(page, f"{viewport['width']}-{scheme}-pass")
+
+
+# ---- F-283 (D-920..D-924): the zones, the mini-nav and the rooms row ----
+def rect(page, sel):
+    return page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return {top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height, width: r.width}; }", sel)
+
+
+def current(page):
+    return page.evaluate("() => [...document.querySelectorAll('.dr-znav [aria-current=\"true\"]')].map(a => a.dataset.znav)")
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_stay_and_flights_are_two_zones_each_with_its_band_and_a_divider_between(matrix, alt, viewport, scheme):  # noqa: F811
+    page = matrix(viewport, signed_in=True)
+    set_mode(page, scheme)      # the site's dark is localStorage `ga-mode`, not the browser's colour scheme
+    view = open_square(page, viewport)
+    page.wait_for_timeout(900)
+    expect(view.locator(".dr-zband.k-stay")).to_contain_text("Your stay")
+    expect(view.locator(".dr-zband.k-stay")).to_contain_text("Test Stay San Diego · 4 nights")
+    expect(view.locator(".dr-zband.k-flight")).to_contain_text("Your flights")
+    expect(view.locator(".dr-zband.k-flight")).to_contain_text("SFO ⇄ SAN · 4 people")
+    expect(view.locator(".dr-gap")).to_be_visible()
+    stay, gap, fly = rect(page, ".dr-stay"), rect(page, ".dr-gap"), rect(page, ".dr-fly")
+    assert stay["bottom"] <= gap["top"] + 1 and gap["bottom"] <= fly["top"] + 1 and gap["height"] >= 24, (stay, gap, fly)      # a divider of its own, between the two
+    colours = page.evaluate("() => ['.dr-stay .dr-zi', '.dr-fly .dr-zi'].map(s => getComputedStyle(document.querySelector(s)).backgroundColor)")
+    assert colours[0] != colours[1] and "rgba(0, 0, 0, 0)" not in colours, colours      # each its own accent
+    expect(view.locator(".dr-fly .dr-zband")).to_be_visible()      # the band stays when its zone is a summary
+    page.add_style_tag(content="#mx .mx-card, #mx-rail, .v2-hero, .dr-sampleslot { visibility: hidden; }")      # the bands, the nav and the rooms alone (the sample dashboard's loading line has its own colour check)
+    seen = audit(page)
+    for key in ("small", "tiny", "low", "glass"):
+        assert not seen[key], ("the zones", key, seen[key][:6])
+    assert seen["wide"] <= 1
+    shot(page, f"{viewport['width']}-{scheme}-zones", "f283")
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_the_mini_nav_shows_the_zone_you_are_in_and_jumps_there_and_book_focuses_the_foots_book(matrix, alt, viewport):  # noqa: F811
+    page = matrix(viewport, signed_in=True)
+    view = open_square(page, viewport)
+    page.wait_for_timeout(900)
+    items = view.locator(".dr-znav a")
+    assert [t.strip() for t in items.all_inner_texts()][:2] == ["Stay", "Flights"] and items.count() == 4
+    assert min(page.evaluate("() => [...document.querySelectorAll('.dr-znav a')].map(a => a.getBoundingClientRect().height)")) >= 47.5      # 48px targets
+    assert current(page) == ["stay"]
+    items.nth(1).click()      # Flights: scrolls to its zone and the nav says so
+    page.wait_for_function("() => document.querySelector('.dr-znav [data-znav=fly]').getAttribute('aria-current') === 'true'")
+    nav, zone = rect(page, ".dr-znav"), rect(page, ".dr-fly")
+    assert 0 <= nav["top"] < 60 and nav["bottom"] <= zone["top"] + 4 and zone["bottom"] <= viewport["height"] + 1, (nav, zone)      # the nav stuck to the top; the zone in view under it (the page's end may stop it short of the top)
+    assert current(page) == ["fly"]
+    items.nth(0).click()
+    page.wait_for_function("() => document.querySelector('.dr-znav [data-znav=stay]').getAttribute('aria-current') === 'true'")
+    assert current(page) == ["stay"] and rect(page, ".dr-stay")["top"] < 200
+    forms = page.evaluate("() => document.querySelectorAll('#mx-drawer form[action$=\"/plan/matrix/book\"]').length")
+    items.nth(3).click()      # Book: the foot's own Book gets the focus; it is not a second form
+    page.wait_for_function("() => document.activeElement && document.activeElement.classList.contains('dr-book')")
+    assert forms == 1 and page.locator(".mxb-sheet").count() == 0 and page.errors == []
+
+
+def test_the_nav_names_the_zone_by_an_observer_not_a_scroll_handler(matrix, alt):  # noqa: F811
+    js = (Path(__file__).resolve().parent.parent / "assets" / "js" / "v2drawer.js").read_text()
+    assert "IntersectionObserver" in js and "znav" in js
+    scrolls = [ln for ln in js.splitlines() if "addEventListener('scroll'" in ln]
+    assert len(scrolls) == 1 and "the gallery's dots" in scrolls[0]      # the one scroll listener there is the gallery's dots; neither the nav nor the rooms row has one
+
+
+def test_on_a_phone_the_mini_nav_never_sits_under_the_floating_bar_or_off_the_screen(matrix, alt):  # noqa: F811
+    page = matrix(PHONE, signed_in=True)
+    open_square(page, PHONE)
+    page.wait_for_timeout(900)
+    height = page.evaluate("() => document.documentElement.scrollHeight")
+    checked = 0
+    for y in range(0, height, 250):
+        page.evaluate("(y) => window.scrollTo(0, y)", y)
+        page.wait_for_timeout(120)
+        got = page.evaluate("""() => { const n = document.querySelector('.dr-znav').getBoundingClientRect(), b = document.querySelector('.v2-sections').getBoundingClientRect(), d = document.querySelector('#mx-drawer .dr').getBoundingClientRect(), h = document.querySelector('#mx-drawer .dr-head').getBoundingClientRect();
+            return {stuck: h.bottom < 0 && d.bottom > n.height + 40, overlap: n.top < b.bottom && n.bottom > b.top && n.left < b.right && n.right > b.left, on: n.top >= 0 && n.bottom <= innerHeight, top: n.top}; }""")
+        if got["stuck"]:      # while the drawer is read the nav is stuck at the top of the screen, a whole screen above the floating bar
+            checked += 1
+            assert not got["overlap"] and got["on"] and got["top"] < 20, (y, got)
+    assert checked >= 3
+    page.evaluate("() => window.scrollTo(0, document.documentElement.scrollHeight)")      # at the foot of the page the nav is still clear of the bar
+    page.wait_for_timeout(150)
+    assert page.evaluate("""() => { const n = document.querySelector('.dr-znav').getBoundingClientRect(), b = document.querySelector('.v2-sections').getBoundingClientRect();
+        return !(n.top < b.bottom && n.bottom > b.top && n.left < b.right && n.right > b.left); }""")
+    assert page.errors == []
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_every_room_is_in_a_scroll_snap_row_with_a_count_and_the_chosen_one_marked(matrix, alt, viewport):  # noqa: F811
+    page = matrix(viewport, signed_in=True)
+    view = open_square(page, viewport)
+    page.wait_for_timeout(900)
+    row = ".dr-rooms:not([hidden]) .dr-rrow"
+    expect(view.locator(".dr-rooms:not([hidden]) .dr-rn")).to_have_text("3 room types")
+    assert view.locator(f"{row} .dr-opt").count() == 3
+    css = page.evaluate("(s) => { const e = document.querySelector(s), c = getComputedStyle(e); return [c.scrollSnapType, c.overflowX, c.display]; }", row)
+    assert css[0].startswith("x ") and css[1] in ("auto", "scroll") and css[2] in ("flex", "grid"), css
+    expect(view.locator(f"{row} .dr-opt[aria-checked='true']")).to_have_count(1)
+    expect(view.locator(f"{row} .dr-opt[aria-checked='true'] .dr-d")).to_have_text("Chosen")
+    assert min(page.evaluate("(s) => [...document.querySelectorAll(s + ' .dr-opt')].map(e => e.getBoundingClientRect().height)", row)) >= 47.5
+    view.locator(f"{row} .dr-opt[data-room='1']").click()      # choosing still sets the index that tm.pick reads
+    assert view.locator("input[data-pick='rm']").first.input_value() == "1"
+    expect(view.locator(f"{row} .dr-opt[data-room='1']")).to_have_attribute("aria-checked", "true")
+    shot(page, f"{viewport['width']}-rooms", "f283")
+
+
+def test_on_a_laptop_the_arrows_show_only_when_the_row_overflows_and_move_it(matrix, alt):  # noqa: F811
+    page = matrix(DESKTOP, signed_in=True)
+    view = open_square(page, DESKTOP)
+    page.wait_for_timeout(900)
+    prev, nxt = view.locator(".dr-rooms:not([hidden]) [data-rarr='-1']"), view.locator(".dr-rooms:not([hidden]) [data-rarr='1']")
+    expect(nxt).to_be_visible()
+    expect(prev).to_be_disabled()      # at the start there is nothing earlier
+    assert min(rect(page, ".dr-rooms:not([hidden]) [data-rarr='1']")["height"], rect(page, ".dr-rooms:not([hidden]) [data-rarr='1']")["width"]) >= 47.5
+    nxt.click()
+    page.wait_for_function("() => document.querySelector('.dr-rooms:not([hidden]) .dr-rrow').scrollLeft > 40")      # reduced motion: it jumps
+    expect(prev).to_be_enabled()
+    page.add_style_tag(content=".dr-rrow .dr-opt { flex: 0 0 4rem !important; }")      # a row that fits needs no arrows
+    page.wait_for_function("() => document.querySelector('.dr-rooms:not([hidden]) [data-rarr=\"1\"]').hidden")
+    expect(prev).to_be_hidden()
+
+
+def test_on_a_phone_the_row_is_swiped_and_has_no_arrows_and_a_swipe_lands_on_a_room(matrix, alt):  # noqa: F811
+    page = matrix(PHONE, signed_in=True)
+    view = open_square(page, PHONE)
+    page.wait_for_timeout(900)
+    expect(view.locator(".dr-rooms:not([hidden]) [data-rarr]")).to_have_count(2)
+    assert not any(page.evaluate("() => [...document.querySelectorAll('.dr-rooms:not([hidden]) [data-rarr]')].map(a => a.getBoundingClientRect().width > 0)"))
+    page.evaluate("() => { document.querySelector('.dr-rooms:not([hidden]) .dr-rrow').scrollTo({left: 150, behavior: 'instant'}); }")
+    page.wait_for_timeout(400)
+    off = page.evaluate("""() => { const r = document.querySelector('.dr-rooms:not([hidden]) .dr-rrow'), rr = r.getBoundingClientRect();
+        return [r.scrollLeft, Math.min(...[...r.children].map(c => Math.abs(c.getBoundingClientRect().left - rr.left)))]; }""")
+    assert off[0] > 0 and off[1] <= 18, off      # it snapped: a room's edge sits at the row's edge
+    assert page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")

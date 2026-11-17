@@ -15,7 +15,7 @@ import re
 from datetime import date
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Form, H2, H3, Img, Input, P, Section, Small, Span, Sup
+from fasthtml.common import A, Button, Div, Form, H2, H3, Header, Img, Input, Nav, P, Section, Small, Span, Sup
 
 from gitaway import catalog, matrixbook as mb, reviewtrend, tripmatrix as tm, weather
 from gitaway.icons import icon
@@ -103,6 +103,16 @@ def _room_btn(r: tm.RoomPart, k: int, chosen: tm.RoomPart, on: bool):
                   data_room=str(k), data_c=str(r.cents), data_roomname=r.room, data_due=str(r.due_at_stay_cents), data_refund="1" if r.refundable else "", data_board=r.board)
 
 
+def _rooms_row(st: tm.StayPart, j: int):
+    """Every room type the source gave, in a scroll-snap row (F-283, D-922): the count and the arrows above it (the arrows only on a laptop and only when the row overflows: assets/js/v2drawer.js),
+    a swipe on a phone, the chosen room marked. Choosing is still `data-room`, an index `tm.pick` reads again."""
+    rooms = rooms_of(st)
+    arrow = lambda d, name, label: Button(icon(name, 18, 2.4), type="button", cls="dr-rarr", data_rarr=str(d), aria_label=label, hidden=True)  # noqa: E731
+    return Div(Div(Span(f"{len(rooms)} room type{'' if len(rooms) == 1 else 's'}", cls="dr-rn"), arrow(-1, "chev-left", "Earlier rooms"), arrow(1, "chev-right", "More rooms"), cls="dr-rhead"),
+               Div(*[_room_btn(r, k, rooms[0], k == 0) for k, r in enumerate(rooms)], cls="dr-rrow", role="radiogroup", aria_label=f"Rooms at {st.name}"),
+               cls="dr-rooms", data_for=str(j), hidden=j != 0)
+
+
 def _alt_btn(sq, st: tm.StayPart, place, j: int, on: bool, base: int):
     from gitaway.pages import tripmatrix as mx
     thumb = Img(src=st.photo, alt="", loading="lazy", referrerpolicy="no-referrer") if st.photo else mx._art(place, "dr-art")
@@ -115,8 +125,7 @@ def _alt_btn(sq, st: tm.StayPart, place, j: int, on: bool, base: int):
 def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int, ptype: str = ""):
     shown = alts[0]
     hotels = [_hotel(sq, st, place, i, j, j == 0) for j, st in enumerate(alts)]
-    room_lists = [Div(*[_room_btn(r, k, rooms_of(st)[0], k == 0) for k, r in enumerate(rooms_of(st))], cls="dr-rooms", role="radiogroup", aria_label=f"Rooms at {st.name}", data_for=str(j), hidden=j != 0)
-                  for j, st in enumerate(alts)]
+    room_lists = [_rooms_row(st, j) for j, st in enumerate(alts)]
     nights = shown.nights
     sub = Div(f"Rooms for {party} · {nights} night{'s' if nights != 1 else ''}", cls="dr-sub")
     from gitaway.pages import hotelview
@@ -213,8 +222,23 @@ def _why(s, lane, w, sq, asked_sq):
 
 
 def _mini_stay(names, room, price):
-    return Div(Span("Stay", cls="dr-k"), Span(names, cls="dr-mn", data_m="stay-name"), P(room, data_m="stay-room"), Span(price, cls="dr-pp num", data_m="stay-price"),
+    return Div(Span(names, cls="dr-mn", data_m="stay-name"), P(room, data_m="stay-room"), Span(price, cls="dr-pp num", data_m="stay-price"),
                Span(icon("expand", 16, 2.2), "Show stay", cls="dr-exp"), cls="dr-mini", data_show="stay", role="button", tabindex="0", aria_label="Show the stay")
+
+
+def _band(kind: str, ico: str, label: str, title, rest: str, price_m: str, price: str):
+    """A zone's own band (F-283, D-920): its icon in the kind's accent, "Your stay · Gaslamp Station Hotel · 4 nights" / "Your flights · SFO ⇄ SAN · 4 people", and its price (assets/js/v2drawer.js keeps the
+    hotel's name and the price in step with what is chosen). The band stays when the zone folds to its summary."""
+    return Header(Span(icon(ico, 24, 2.1), cls="dr-zi"), Div(Span(label, cls="dr-zl"), H3(title, rest, cls="dr-zh")), Div(Span(price, cls="num", data_m=price_m), cls="dr-zsum"), cls=f"dr-zband k-{kind}")
+
+
+def _znav(total: str, has_book: bool):
+    """The sticky mini-nav at the top of the drawer (F-283, D-921): Stay, Flights, Total and Book. They are links to places in this drawer (the foot's own Book is the one form: Book here focuses it);
+    assets/js/v2drawer.js marks the one you are in with an IntersectionObserver."""
+    item = lambda who, href, *kids, **kw: A(*kids, href=href, data_znav=who, **kw)  # noqa: E731
+    return Nav(item("stay", "#dr-z-stay", Span(cls="dr-zdot k-stay"), "Stay", aria_current="true"), item("fly", "#dr-z-fly", Span(cls="dr-zdot k-flight"), "Flights"),
+               item("tot", "#dr-head", "Total ", Span(total, cls="num", data_znav_total="1")), Span(cls="dr-zsp"),
+               item("book", "#dr-foot", "Book", cls="dr-zbook") if has_book else "", cls="dr-znav", aria_label="Parts of this trip")
 
 
 def _foot_words(sq):
@@ -238,17 +262,19 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     tabs = Div(*[Button(f"{lane.places[min(i, len(lane.places) - 1)].name} · {alts[0].nights} night{'s' if alts[0].nights != 1 else ''}", type="button", aria_pressed="true" if i == 0 else "false", data_tab=str(i))
                  for i, alts in enumerate(alts_by_stay)], cls="dr-seg") if multi else ""
     flights = sq.flights if len(sq.flights) > 1 else (sq.flight,)
-    stay_h = Div(Span(icon("bed", 17, 2.2), cls="dr-ic k-stay"), H3("Stays" if multi else "Stay"), cls="dr-pn-h")
-    fly_h = Div(Span(icon("plane", 17, 2.2), cls="dr-ic k-flight"), H3("Flights"), cls="dr-pn-h")
     names = " + ".join(st.name for st in sq.stays)
-    stay = Section(Div(stay_h, tabs, *stay_panes, cls="dr-full"), _mini_stay(names, sq.stays[0].room, catalog.money(sum(st.cents for st in sq.stays))), cls="dr-pn dr-stay", data_pane="stay", aria_label="Stay")
-    fly = Section(Div(fly_h, *[_flight_view(f, k, w, k == 0) for k, f in enumerate(flights)],
+    stay_price, fly_price = catalog.money(sum(st.cents for st in sq.stays)), catalog.money(flights[0].cents)
+    people = f"{s.travelers} {'person' if s.travelers == 1 else 'people'}"
+    stay_band = _band("stay", "bed", "Your stays" if multi else "Your stay", Span(names, data_m="stay-name"), f" · {w.nights} night{'s' if w.nights != 1 else ''}", "stay-price", stay_price)
+    fly_band = _band("flight", "plane", "Your flights", f"{s.home} ⇄ {lane.places[0].iata}", f" · {people}", "fly-price", fly_price)
+    stay = Section(stay_band, Div(tabs, *stay_panes, cls="dr-full"), _mini_stay(names, sq.stays[0].room, stay_price), cls="dr-pn dr-stay", data_pane="stay", aria_label="Stay", id="dr-z-stay")
+    fly = Section(fly_band, Div(*[_flight_view(f, k, w, k == 0) for k, f in enumerate(flights)],
                       Div(f"Other flights · {s.travelers} seats", cls="dr-sub"),
                       Div(*[_flight_btn(f, k, flights[0].cents, k == 0) for k, f in enumerate(flights)], cls="dr-rooms", role="radiogroup", aria_label="Other flights"), cls="dr-full"),
-                  Div(Span("Flights", cls="dr-k"), Span(f"{s.home} ⇄ {lane.places[0].iata}", cls="dr-route num"), Span(_flight_times(flights[0]), cls="dr-mn num", data_m="fly-times"),
-                      P(f"{flights[0].airline} · {stops_words(flights[0].stops).lower()}", data_m="fly-al"), Span(catalog.money(flights[0].cents), cls="dr-pp num", data_m="fly-price"),
+                  Div(Span(_flight_times(flights[0]), cls="dr-mn num", data_m="fly-times"),
+                      P(f"{flights[0].airline} · {stops_words(flights[0].stops).lower()}", data_m="fly-al"), Span(fly_price, cls="dr-pp num", data_m="fly-price"),
                       Span(icon("expand", 16, 2.2), "Show flights", cls="dr-exp"), cls="dr-mini", data_show="fly", role="button", tabindex="0", aria_label="Show the flights"),
-                  cls="dr-pn dr-fly is-mini", data_pane="fly", aria_label="Flights")
+                  cls="dr-pn dr-fly is-mini", data_pane="fly", aria_label="Flights", id="dr-z-fly")
     hidden = [Input(type="hidden", name=n, value=str(v)) for n, v in mx.params(s, lane=lane.key, w=w.key).items()]
     picks = [Input(type="hidden", name="fl", value="0", data_pick="fl"), Input(type="hidden", name="st", value=",".join("0" for _ in sq.stays), data_pick="st"),
              Input(type="hidden", name="rm", value=",".join("0" for _ in sq.stays), data_pick="rm")]
@@ -259,10 +285,13 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     save = ("" if not can_save else P(saved, cls="mx-saved", role="status") if saved else
             Form(*hidden, *picks, Button(icon("plus", 16, 2.4), "Save this trip" if soon else "Save to trip", type="submit", cls="dr-save" + (" is-lead" if soon else "")), method="post", action=mx.SAVE, cls="mx-save-f"))
     why = _why(s, lane, w, sq, asked_sq)
-    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot")
+    has_book = can_save and not soon
+    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot", id="dr-foot")
+    znav = _znav(total, has_book)
     head = Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), why, cls="dr-ti"),
-               Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head")
-    out = Div(head, Div(stay, fly, cls="dr-panels", data_open="stay"), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))
+               Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head", id="dr-head")
+    gap = Div(Span(icon("plane", 18, 2.2), cls="dr-gapi"), "Now, getting there", cls="dr-gap")
+    out = Div(head, znav, Div(stay, gap, fly, cls="dr-panels", data_open="stay"), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))
     return out
 
 

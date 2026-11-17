@@ -102,3 +102,39 @@ def test_a_two_place_trip_has_a_tab_and_a_pane_of_rooms_for_each_stay(sample, cl
     html = unescape(client.get("/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=losangeles%2Bsandiego&w=2026-12-12").text)
     assert 'data-tab="0"' in html and 'data-tab="1"' in html and "Los Angeles · 2 nights" in html and "San Diego · 2 nights" in html and html.count('class="dr-stay-grid dr-sp"') == 2
     assert html.index("Los Angeles · 2 nights") < html.index("San Diego · 2 nights") and 'name="st" value="0,0"' in html and 'name="rm" value="0,0"' in html
+
+
+# ---- F-283 (D-920..D-924): Stay and Flights each a zone of their own, a rooms row, a mini-nav ----
+def words(fragment: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", fragment)).strip()
+
+
+def test_stay_and_flights_each_have_their_own_band_built_from_the_squares_own_data(sample, client):
+    html = unescape(client.get(SQUARE).text)
+    sq = square()
+    stay = re.search(r'<header class="dr-zband k-stay"[^>]*>(.*?)</header>', html, re.S)
+    fly = re.search(r'<header class="dr-zband k-flight"[^>]*>(.*?)</header>', html, re.S)
+    assert stay and fly and "<svg" in stay.group(1) and "<svg" in fly.group(1)
+    assert words(stay.group(1)).startswith(f"Your stay {sq.stays[0].name} · 4 nights")
+    assert words(fly.group(1)).startswith("Your flights SFO ⇄ SAN · 4 people")      # the form's party: 2 adults and 2 kids
+
+
+def test_a_visible_divider_sits_between_the_two_zones(sample, client):
+    html = client.get(SQUARE).text
+    assert html.count('class="dr-gap"') == 1 and html.index('id="dr-z-stay"') < html.index('class="dr-gap"') < html.index('id="dr-z-fly"')
+
+
+def test_every_room_the_source_gave_is_in_a_row_with_its_count_and_arrows_and_only_indexes_choose(sample, client):
+    html = unescape(client.get(SQUARE).text)
+    assert html.count('class="dr-rrow"') == 3 and html.count("3 room types") == 3      # three hotels, three rooms each
+    assert html.count('data-rarr="-1"') == 3 and html.count('data-rarr="1"') == 3
+    assert [int(i) for i in re.findall(r'data-room="(\d+)"', html)] == [0, 1, 2] * 3      # choosing still goes through tm.pick's indexes
+
+
+def test_the_mini_nav_is_stay_flights_total_and_book_and_book_is_not_a_second_form(sample, client):
+    html = unescape(client.get(SQUARE).text)
+    nav = re.search(r'<nav [^>]*class="dr-znav"[^>]*>(.*?)</nav>', html, re.S).group(1)
+    assert re.findall(r'data-znav="(\w+)"', nav) == ["stay", "fly", "tot", "book"]
+    assert "<form" not in nav and html.count('action="/plan/matrix/book"') == 1
+    assert 'href="#dr-z-stay"' in nav and 'href="#dr-z-fly"' in nav
+    assert html.index('class="dr-znav"') < html.index('id="dr-z-stay"')      # at the top of the drawer, above the zones

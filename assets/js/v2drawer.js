@@ -6,6 +6,8 @@
 //   - one thing at a time (F-258, D-670): the stay is open, the flights a summary card; tapping a summary opens that side in place and folds the other to its summary. Nothing else changes
 //     it: choosing, the gallery and the tabs never move a side, at any width, and nothing here moves keyboard focus or the scroll.
 //   - the hotel gallery: scroll or the arrows; two stays (a two-place trip) are two tabs.
+//   - the zones (F-283, D-920..D-924): the sticky mini-nav (Stay, Flights, Total, Book) jumps to a zone and an IntersectionObserver says which one you are in; its Book focuses the foot's own Book (the one
+//     form); every room type is a scroll-snap row whose arrows show only while it overflows (an observer on its first and last room, not a scroll handler).
 // Durations and easings are the page's tokens (--v2-*), read here with getComputedStyle; reduced motion: nothing moves.
 (function () {
   var RM = window.matchMedia('(prefers-reduced-motion: reduce)'), phone = window.matchMedia('(max-width: 719px)');
@@ -62,6 +64,7 @@
     qa(dr, '.dr-flt').forEach(function (f) { f.hidden = parseInt(f.dataset.fltI, 10) !== s.fl; });
     qa(dr, '.dr-seg button').forEach(function (b) { b.setAttribute('aria-pressed', parseInt(b.dataset.tab, 10) === s.tab ? 'true' : 'false'); });
     var t = total(dr), names = [], rooms = [], price = 0;
+    qa(dr, '[data-znav-total]').forEach(function (e) { e.textContent = dollars(t); });
     qa(dr, '.dr-sp').forEach(function (p, i) { names.push(q(p, '.dr-hotel:not([hidden])').dataset.name); rooms.push(roomOf(dr, i).dataset.roomname); price += cents(roomOf(dr, i)); });
     set(dr, 'stay-name', names.join(' + '));
     set(dr, 'stay-room', rooms[0]);
@@ -188,13 +191,71 @@
     qa(dr, '.dr-pn:not(.is-mini) .dr-full, .dr-pn.is-mini .dr-mini').forEach(function (x) { x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: e }); });
   }
 
+  // ---- the mini-nav (F-283): jump to a zone, and say which zone you are in ----
+  function markZone(dr, who) {
+    qa(dr, '.dr-znav [data-znav]').forEach(function (a) {
+      if (a.dataset.znav === who) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    });
+  }
+  function jump(dr, who) {
+    var go = RM.matches ? 'auto' : 'smooth';
+    if (who === 'book') {      // the foot's own Book: nothing is booked here, the person presses it
+      var bk = q(dr, '.dr-book');
+      if (!bk) return;
+      bk.scrollIntoView({ block: phone.matches ? 'center' : 'nearest', behavior: go });      // on a phone the floating bar covers the screen's foot: centre it
+      bk.focus({ preventScroll: true });
+      return;
+    }
+    if (who === 'stay' || who === 'fly') markZone(dr, who);
+    var to = who === 'tot' ? q(dr, '.dr-head') : q(dr, '.dr-' + who);
+    if (to) to.scrollIntoView({ block: 'start', behavior: go });
+  }
+  function watch(dr) {      // the zone crossing a line a fifth of the way down the screen is the one you are in
+    if (!q(dr, '.dr-znav') || !window.IntersectionObserver) return;
+    var seen = {};
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { seen[e.target.dataset.pane] = e.isIntersecting; });
+      var who = seen.fly ? 'fly' : seen.stay ? 'stay' : '';
+      if (who) markZone(dr, who);
+    }, { rootMargin: '-20% 0px -55% 0px' });
+    io.observe(q(dr, '.dr-stay'));
+    io.observe(q(dr, '.dr-fly'));
+  }
+
+  // ---- the rooms row (F-283): arrows only while it overflows, and only at the ends where there is more; an observer on its first and last room tells ----
+  function rowArrows(dr) {
+    qa(dr, '.dr-rrow').forEach(function (row) {
+      if (row._io || !window.IntersectionObserver) return;
+      var box = row.parentNode, prev = q(box, '[data-rarr="-1"]'), next = q(box, '[data-rarr="1"]'), at = { first: true, last: true };
+      row._io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.target === row.firstElementChild) at.first = e.isIntersecting;
+          if (e.target === row.lastElementChild) at.last = e.isIntersecting;
+        });
+        var over = !(at.first && at.last);
+        prev.hidden = next.hidden = !over;
+        prev.disabled = at.first;
+        next.disabled = at.last;
+      }, { root: row, threshold: 0.95 });
+      row._io.observe(row.firstElementChild);
+      row._io.observe(row.lastElementChild);
+    });
+  }
+
   document.addEventListener('click', function (e) {
     var dr = e.target.closest && e.target.closest('#mx-drawer .dr, .dr-alone .dr');
     if (!dr) return;
+    var z = e.target.closest('[data-znav]');
+    if (z) { e.preventDefault(); jump(dr, z.dataset.znav); return; }
     var s = state(dr), t = e.target.closest('button, .dr-mini');
     if (!t) { var pn = e.target.closest('.dr-pn.is-mini'); if (pn) open(dr, pn.dataset.pane); return; }
     if (t.dataset.act === 'close') { document.dispatchEvent(new CustomEvent('mx:close')); return; }
     if (t.dataset.galGo) { var tr = q(t.closest('.dr-gal'), '.dr-track'); tr.scrollBy({ left: parseInt(t.dataset.galGo, 10) * tr.clientWidth, behavior: RM.matches ? 'auto' : 'smooth' }); return; }
+    if (t.dataset.rarr) {
+      var row = q(t.closest('.dr-rooms'), '.dr-rrow');
+      row.scrollBy({ left: parseInt(t.dataset.rarr, 10) * (row.firstElementChild.offsetWidth + (parseFloat(getComputedStyle(row).columnGap) || 0)), behavior: RM.matches ? 'auto' : 'smooth' });
+      return;
+    }
     if (t.dataset.tab) { s.tab = parseInt(t.dataset.tab, 10); apply(dr, ['.dr-sp:not([hidden])']); return; }
     if (t.dataset.room) { var i = s.tab; s.room[i] = parseInt(t.dataset.room, 10); apply(dr); return; }
     if (t.dataset.hotel) { var h = s.tab; s.hotel[h] = parseInt(t.dataset.hotel, 10); s.room[h] = 0; apply(dr, ['.dr-hotel:not([hidden])', '.dr-rooms:not([hidden])']); return; }
@@ -220,6 +281,8 @@
     if (why) why.hidden = !why.textContent.replace(/Our pick:/, '').trim();      // nothing known to say: no empty pill
     setOpen(dr);
     apply(dr);
+    watch(dr);
+    rowArrows(dr);
   }
   document.addEventListener('mx:drawer', function (e) { ready(e.detail.box.firstElementChild); });
   qa(document, '.dr-alone .dr').forEach(ready);      // the square's own page
