@@ -2,6 +2,7 @@
 
     pins(key, lat, lon, name)        the truth pins and the heads-up for a hotel: asked of Overpass once, kept AGE days in community.db (`aerial_osm`), None when no host answered and nothing is kept
     sample(which)                    the same for the showcase's recorded answers (tests/fixtures/aerial/): Hilton Los Angeles Airport and Hyatt Regency Lake Tahoe, labelled as a saved copy
+    warm(key, lat, lon, name, who)   ask a hotel's pins in the background when its square shows it (a bounded queue, one worker thread, one job in flight per hotel); run_pending() does the queue now (tests)
     teaser(key)                      the heads-up line for the card, only from what is kept (it never waits on the network); "" when nothing is kept
     open_google()                    one more photoreal or satellite open today: ("ok", the browser key), ("full", None) past GOOGLE_3D_A_DAY (default 100) or ("off", None) without GOOGLE_MAPS_API_KEY
     analyse(lat, lon, data)          pins and heads-up from an Overpass answer, every distance worked out here (the page only draws them)
@@ -9,7 +10,7 @@
 Nothing here is invented: a pin is an OpenStreetMap feature with its own tags, a heads-up line is worded from the distances computed from those, and "nothing mapped within 2 km" says only
 what the map holds. The page's key for Google is handed out only by `open_google`, which counts each open in the database (a restart does not reset it): each open is a billed root request.
 
-Overpass is asked at fixed hosts only (HOSTS, the second when the first fails), one GET each within HOST_TIMEOUT through gitaway/deadline.py's watchdog, a generic User-Agent (never a person's
+Overpass is asked at fixed mirrors only (HOSTS, each in turn when the one before fails; a failing mirror sits out MIRROR_WAIT), one GET each within HOST_TIMEOUT (BACKGROUND_TIMEOUT when nobody waits) through gitaway/deadline.py's watchdog, a generic User-Agent (never a person's
 address), at most MAX_BYTES read, two asks at a time. A 200 is not success (F-201's lesson): an answer with a `remark` about a timeout or memory, or with no elements, is a failure and is never
 kept. `TRANSPORT` is the one function that touches the network, (host, query, timeout) -> (status, body bytes); tests replace it.
 """
@@ -19,6 +20,7 @@ import json
 import logging
 import math
 import os
+import queue
 import socket
 import ssl
 import threading
@@ -35,10 +37,16 @@ from gitaway.weather import _lookup
 
 log = logging.getLogger("gitaway.aerial")
 
-HOSTS = ("overpass-api.de", "overpass.kumi.systems")
+HOSTS = ("overpass-api.de", "overpass.kumi.systems", "maps.mail.ru")      # fixed mirrors, tried in this order (checked 17 Nov 2026; overpass.private.coffee gave no answer to a tiny query and is not listed)
 PATH = "/api/interpreter"
+PATHS = {"maps.mail.ru": "/osm/tools/overpass/api/interpreter"}      # a mirror that does not serve at PATH
 RADIUS = 2000
-HOST_TIMEOUT = 8.0                   # seconds a host has, lookup to last byte
+HOST_TIMEOUT = 8.0                   # seconds a host has, lookup to last byte, when a person waits for the answer
+BACKGROUND_TIMEOUT = 40.0            # ... when a worker asks ahead and nobody waits (the mirrors answer slowly on a busy day)
+BACKGROUND_BUDGET = 60.0             # ... and the whole of one hotel's background job, across mirrors, so a slow mirror cannot hold one of the two slots for long
+MIRROR_WAIT = 300.0                  # a mirror that failed is not asked again for this long, by anyone
+QUEUE_MAX = 16                       # hotels waiting for a background ask; the rest are dropped (the tap asks for itself)
+ASYNC = True                         # False in the tests, which run the queue with run_pending()
 PINS_PER_PERSON_A_DAY = 30           # fresh Overpass asks one visitor or family may start in a day (kept answers are free)
 BUSY, LIMIT = {"busy": True}, {"limit": True}      # what `pins` answers when Overpass has no free slot, or this person has used their fresh asks
 AT_ONCE = 2                          # asks to Overpass in flight at once, for the whole site
@@ -58,6 +66,11 @@ _BAD = ("runtime error", "timed out", "out of memory", "too many requests", "dis
 _LOCK = threading.Lock()
 _SLOTS = threading.BoundedSemaphore(AT_ONCE)
 _failed: dict = {}                   # hotel key -> monotonic time of its last failure
+_down: dict = {}                     # mirror -> monotonic time it last failed
+_inflight: set = set()               # hotel keys queued or being asked
+_Q: queue.Queue = queue.Queue(QUEUE_MAX)
+_thread: list = []
+_stop = threading.Event()
 
 
 # ---- asking Overpass ----------------------------------------------------------------------------------------------------------
@@ -118,7 +131,7 @@ def _http(host, q, timeout):
         raise ValueError("GitAway asks only the Overpass hosts it lists")
     deadline = time.monotonic() + timeout
     conn = _connection(host, _lookup(host, deadline), deadline)
-    status, _headers, body = get_by_deadline(conn, f"{PATH}?data={quote(q, safe='')}", {"User-Agent": user_agent(), "Accept": "application/json", "Accept-Encoding": "identity"}, deadline, MAX_BYTES + 1)
+    status, _headers, body = get_by_deadline(conn, f"{PATHS.get(host, PATH)}?data={quote(q, safe='')}", {"User-Agent": user_agent(), "Accept": "application/json", "Accept-Encoding": "identity"}, deadline, MAX_BYTES + 1)
     return status, body
 
 
@@ -140,22 +153,32 @@ def _read(body) -> dict | None:
     return data
 
 
-def ask(lat: float, lon: float) -> tuple | None:
-    """(the answer, the host that gave it) from the first of HOSTS that gives a whole one, else None. Two asks at a time; a request that finds both slots taken gets BUSY at once."""
+def ask(lat: float, lon: float, timeout: float = HOST_TIMEOUT, budget: float | None = None) -> tuple | None:
+    """(the answer, the host that gave it) from the first of HOSTS that gives a whole one, else None. A mirror that failed lately is skipped (MIRROR_WAIT). Two asks at a time; a request that
+    finds both slots taken gets BUSY at once."""
     if not _SLOTS.acquire(blocking=False):      # both slots are busy: no request holds a worker thread waiting for Overpass; the page says "busy"
         return BUSY
     try:
         q = query(lat, lon)
+        end = time.monotonic() + budget if budget is not None else None
         for host in HOSTS:
+            if time.monotonic() - _down.get(host, -MIRROR_WAIT) < MIRROR_WAIT:
+                continue
+            left = timeout if end is None else min(timeout, end - time.monotonic())
+            if left < 1:      # the job's whole time is spent
+                break
             try:
-                status, body = TRANSPORT(host, q, HOST_TIMEOUT)
+                status, body = TRANSPORT(host, q, left)
             except (OSError, TimeoutError, ValueError) as e:        # refused, a bad certificate, the deadline: the next host
                 log.warning("Overpass %s: %s", host, type(e).__name__)
+                _down[host] = time.monotonic()
                 continue
             data = _read(body) if status == 200 else None
             if data is not None:
+                _down.pop(host, None)
                 return data, host
             log.warning("Overpass %s answered %s without a whole answer", host, status)
+            _down[host] = time.monotonic()
         return None
     finally:
         _SLOTS.release()
@@ -420,7 +443,7 @@ def teaser(key: str) -> str:
     return json.loads(row["body"]).get("headline", "")
 
 
-def pins(key: str, lat: float, lon: float, name: str, who: str = "") -> dict | None:
+def pins(key: str, lat: float, lon: float, name: str, who: str = "", timeout: float = HOST_TIMEOUT, budget: float | None = None) -> dict | None:
     """The hotel's truth: {"name", "lat", "lon", "pins", "heads", "headline", "source", "source_text"} or None when Overpass gave nothing and nothing is kept. Fresh kept answers cost nothing;
     otherwise one ask (two hosts at most); every host failing is remembered for FAIL_WAIT so a tab that keeps asking cannot hammer a public service."""
     kept = _kept(key, lat, lon, AGE)
@@ -430,7 +453,7 @@ def pins(key: str, lat: float, lon: float, name: str, who: str = "") -> dict | N
     if time.monotonic() - _failed.get(key, -FAIL_WAIT) >= FAIL_WAIT:
         if who and not _take("pins:" + who, PINS_PER_PERSON_A_DAY):
             return LIMIT
-        got = ask(lat, lon)
+        got = ask(lat, lon, timeout, budget)
         if got is BUSY:      # no slot free: nothing was asked, so the person's pin is given back
             if who:
                 _give("pins:" + who)
@@ -445,6 +468,104 @@ def pins(key: str, lat: float, lon: float, name: str, who: str = "") -> dict | N
     if old:
         return {**old[0], "name": name, "lat": lat, "lon": lon, "source": "saved", "source_text": _words(old[1], old[2], True)}
     return None
+
+
+# ---- asking ahead: pins are kept by the time anyone looks ---------------------------------------------------------------------
+
+def warm(key: str, lat: float, lon: float, name: str, who: str = "") -> bool:
+    """Queue this hotel's pins when its square shows it, unless a fresh answer is kept, the hotel failed lately, or its job is already queued: True when queued. Never waits and never asks
+    here; the job goes through `pins`, so the person's daily allowance is counted once, a kept answer is free and Overpass's two slots still hold."""
+    if _kept(key, lat, lon, AGE) or time.monotonic() - _failed.get(key, -FAIL_WAIT) < FAIL_WAIT:
+        return False
+    with _LOCK:
+        if key in _inflight:
+            return False
+        try:
+            _Q.put_nowait((key, lat, lon, name, who))
+        except queue.Full:
+            return False
+        _inflight.add(key)
+    if ASYNC:
+        _start()
+    return True
+
+
+def _one(job) -> None:
+    key, lat, lon, name, who = job
+    try:
+        pins(key, lat, lon, name, who, BACKGROUND_TIMEOUT, BACKGROUND_BUDGET)
+    except Exception:      # noqa: BLE001 (an ask ahead that fails leaves the pins to the card's tap)
+        log.exception("pins ahead failed for a hotel")
+    finally:
+        with _LOCK:
+            _inflight.discard(key)
+
+
+def _work() -> None:
+    while not _stop.is_set():
+        try:
+            job = _Q.get(timeout=30)
+        except queue.Empty:
+            return      # idle: the next warm starts a worker again
+        try:
+            if job is None:      # stop()'s sentinel
+                return
+            _one(job)
+        finally:
+            _Q.task_done()
+
+
+def _start() -> None:
+    with _LOCK:
+        if _thread and _thread[0].is_alive():
+            return
+        t = threading.Thread(target=_work, daemon=True, name="aerial-warm")
+        _thread[:] = [t]
+        t.start()
+
+
+def run_pending() -> int:
+    """Do every queued job now, on this thread (tests); the number done."""
+    n = 0
+    while True:
+        try:
+            job = _Q.get_nowait()
+        except queue.Empty:
+            return n
+        try:
+            if job is None:
+                continue
+            _one(job)
+            n += 1
+        finally:
+            _Q.task_done()
+
+
+def clear() -> None:
+    """Forget the queue (tests)."""
+    with _LOCK:
+        while True:
+            try:
+                _Q.get_nowait()
+            except queue.Empty:
+                break
+        _inflight.clear()
+
+
+def stop() -> None:
+    """Wait for the worker to finish what it is doing (tests)."""
+    threads = list(_thread)
+    _stop.set()
+    for _ in threads:
+        try:
+            _Q.put_nowait(None)      # wakes a worker idling in get(); a full queue means it is busy and will see the flag
+        except queue.Full:
+            pass
+    for t in threads:
+        t.join(5)
+    _thread.clear()
+    _stop.clear()
+    clear()
 
 
 def sample(which: str) -> dict | None:
