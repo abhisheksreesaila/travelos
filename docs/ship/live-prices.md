@@ -79,3 +79,9 @@ The founder books their own stay here after a deploy. Money moves: Nuitée charg
 ## Rollback
 - Stop new bookings at once: `GITAWAY_LIVE_BOOKING=0` on Railway, restart. Book says "Booking opens soon"; cancel and the return page keep working only while the flag is not 0, so cancel any stay first through LiteAPI's dashboard if the flag is set.
 - Code: `railway redeploy` the deployment id noted above (an earlier build has no booking at all and keeps D-768's "Booking opens soon").
+
+## Deployed 2026-11-17 (founder: "deploy the current status")
+- Rollback point before: `70520b35` (2026-11-13). Code deploy `db9d9034` (sandbox key), then the live key, GITAWAY_PUBLIC_URL, Resend SMTP and GOOGLE_MAPS_API_KEY (`scripts/railway_set_liteapi_key.sh`, `scripts/railway_set_launch_env.sh`, nothing printed), redeploy `047a4cd4`.
+- Checked on gitaway.me: /healthz 200; signed out, "Lake Tahoe from SFO" opens the matrix and 7 squares fill with live whole-trip prices in 7 s; no sample label; the bar is "Find a trip · Guides".
+- Not yet checked live: the founder's own booking and cancel (the steps above), the booking email from production, the visitor allowance from two networks, Wallet (no credentials yet, buttons hidden).
+- `.railwayignore` now keeps docs/report and scratch off the upload (233 MB hit Railway's limit).
