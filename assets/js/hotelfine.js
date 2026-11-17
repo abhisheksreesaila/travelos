@@ -59,7 +59,10 @@
     if (line._sig === sig) { line._rows = rows; return; }      // unchanged: keep the chips (and the focus on one)
     line._sig = sig; line._rows = rows;
     var box = q(line, '.hu-chips');
-    box.innerHTML = rows.map(function (x, i) { return '<button type="button" class="hu-chip" data-hu-i="' + i + '">' + svg('flag') + '<span>' + esc(x.text) + '</span></button>'; }).join('');
+    var CHIP_MAX = 5, CHIP_LEN = 56;      // a chip is a short signpost; the whole sentence stays in its row of the fine print (live hotels send long paragraphs)
+    var short = function (t) { if (t.length <= CHIP_LEN) return t; var cut = t.slice(0, CHIP_LEN), sp = cut.lastIndexOf(' '); return (sp > 24 ? cut.slice(0, sp) : cut).replace(/[\s,;:.-]+$/, '') + '…'; };
+    box.innerHTML = rows.slice(0, CHIP_MAX).map(function (x, i) { return '<button type="button" class="hu-chip" data-hu-i="' + i + '" title="' + esc(x.text) + '">' + svg('flag') + '<span>' + esc(short(x.text)) + '</span></button>'; }).join('') +
+      (rows.length > CHIP_MAX ? '<button type="button" class="hu-chip is-more" data-hu-i="' + CHIP_MAX + '"><span>+' + (rows.length - CHIP_MAX) + ' more in the fine print</span></button>' : '');
     line.hidden = !rows.length;
   }
   document.addEventListener('click', function (e) {

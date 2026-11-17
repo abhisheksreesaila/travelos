@@ -755,3 +755,11 @@ def test_a_timeout_is_not_asked_again(monkeypatch):
     monkeypatch.setattr(liteapi, "TRANSPORT", slow)
     got = liteapi.stays(checkin=date(2026, 12, 12), checkout=date(2026, 12, 16), adults=2, kid_ages=(7, 10), city="San Diego", country="US")
     assert not got.ok and len(calls) == 1
+
+
+def test_the_hotels_important_information_reads_as_clean_sentences_from_a_live_shaped_answer():
+    """Live 2026-11-17 (Margaritaville Resort Lake Tahoe): words run together across a lost break and a list sits under a heading; the Heads up line showed them raw."""
+    t = ("<p>The resort fee includes:</p><p>- Live music&amp;onsite entertainmentGuests are required to show a photo ID and credit card upon check-in. Please note that all "
+         "Special Requests are subject to availability and additional charges may apply.</p><p>A deposit may be required at the property.</p><p>The resort fee includes:</p>")
+    assert liteapi._important(t) == ("The resort fee includes: Live music&onsite entertainment", "Guests are required to show a photo ID and credit card upon check-in.",
+                                     "Please note that all Special Requests are subject to availability and additional charges may apply.", "A deposit may be required at the property.")

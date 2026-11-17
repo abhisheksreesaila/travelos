@@ -969,9 +969,23 @@ IMPORTANT_MAX, IMPORTANT_LINE = 12, 400
 
 
 def _important(html) -> tuple:
-    """The hotel's important information as plain lines (tags and scripts gone), at most IMPORTANT_MAX lines of IMPORTANT_LINE characters."""
-    lines = (" ".join(x.split()) for x in strip_html(html if isinstance(html, str) else "").split("\n"))
-    return tuple(x[:IMPORTANT_LINE] for x in lines if x)[:IMPORTANT_MAX]
+    """The hotel's important information as plain sentences (tags and scripts gone), at most IMPORTANT_MAX of IMPORTANT_LINE characters. Live answers (2026-11-17) run
+    words together across a lost line break ("entertainmentGuests") and give a list under a heading ("The resort fee includes:" then "- Live music"): the break is put back,
+    a heading's items join it ("The resort fee includes: Live music & onsite entertainment"), and a heading with nothing after it is dropped."""
+    text = strip_html(html if isinstance(html, str) else "")
+    text = re.sub(r"(?<=[a-z])(?=[A-Z][a-z])", "\n", text)      # a lost break between two sentences: "entertainmentGuests" -> "entertainment" / "Guests"
+    lines = [" ".join(x.split()) for x in text.split("\n")]
+    out: list = []
+    for line in (x for x in lines if x):
+        item = line.lstrip("-•* ").strip()
+        if not item:
+            continue
+        if (line[:1] in "-•*" or (out and out[-1].endswith(":"))) and out and (out[-1].endswith(":") or out[-1].endswith(",")):
+            out[-1] = (out[-1] + " " + item) if out[-1].endswith(":") else (out[-1] + ", " + item)      # a list item joins its heading
+            continue
+        out.extend(x.strip() for x in re.split(r"(?<=[.!?])\s+(?=[A-Z])", item) if x.strip())
+    out = [x for x in out if not x.endswith(":")]      # a heading whose list never came
+    return tuple(x[:IMPORTANT_LINE] for x in out)[:IMPORTANT_MAX]
 
 
 def read_hotel(answer) -> HotelDetails | None:
