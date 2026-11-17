@@ -363,13 +363,13 @@ def test_the_sample_card_names_the_recorded_hotel_and_says_sample(monkeypatch):
     assert aerialview.sample_card("San Diego") == ""
 
 
-def test_a_sample_squares_drawer_has_the_sample_card_for_each_of_its_hotels_and_none_off_the_showcase(client, monkeypatch):
+def test_a_sample_squares_fine_print_has_the_sample_card_once_and_none_off_the_showcase(client, monkeypatch):
     from tests.test_tripmatrix_page import MATRIX
     square = "/plan/matrix/square?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12"
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     html = client.get(square).text
-    assert html.count('class="av-card"') == 3 and html.count("Sample view") == 3 and "Hilton Los Angeles Airport" in html      # three sample hotels, each opening the recorded real one
-    assert len(re.findall(r'data-aerial="sample-lax\.\d{10}\.[0-9a-f]{24}"', html)) == 3
+    assert html.count('class="av-card"') == 1 and html.count("Sample view") == 1 and "Hilton Los Angeles Airport" in html      # F-282: one card, in the fine print's "Getting there and around", opening the recorded real hotel
+    assert len(re.findall(r'data-aerial="sample-lax\.\d{10}\.[0-9a-f]{24}"', html)) == 1
 
 
 def test_the_card_uses_none_of_the_data_names_the_drawers_clicks_read(monkeypatch):

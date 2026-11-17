@@ -117,13 +117,14 @@ def test_the_fragment_says_the_rating_the_ai_summary_and_what_guests_say_by_cate
     assert "Maria" in html and "Group · Australia · 2026-11-14" in html and "8/10" in html
     docs = _json.loads((FIX / "reviews.json").read_text())["data"]
     bare = [r["name"] for r in docs if not (r.get("headline") or r.get("pros") or r.get("cons"))]
-    assert bare and all(f">{n}<" not in html for n in bare)      # a score with no words is not a card
+    cards = html.split("<aside")[0]      # the page's own cards; the review drawer (F-282) lists every review, a score with no words too
+    assert bare and all(f">{n}<" not in cards for n in bare) and all(f">{n}<" in html for n in bare)      # a score with no words is not a card on the page
     assert f"Plus {len(bare)} score{'' if len(bare) == 1 else 's'} without words." in html and html.count("Plus ") == 1 and "Left a score" not in html
 
 
 def test_the_hotels_facilities_check_in_and_rooms_with_their_photos_are_there(hilton):
     html = hotelview.to_xml(hotelview.fragment(ID))
-    assert "Fitness facilities" in html and "All 24 amenities" in html and "Check-in from 04:00 PM" in html and "Check-out by 12:00 PM" in html
+    assert "The usual: " in html and "Fitness facilities" in html and "Check-in from 04:00 PM" in html and "Check-out by 12:00 PM" in html
     assert "Rooms at this hotel" in html and "2 Double Hearing Accessible Room" in html and "Double bed · 30 m² · Sleeps 4" in html
     photos = _json.loads(unescape(re.search(r'class="dr-roomphotos"[^>]*>(.*?)</span>', html, re.S).group(1)))
     assert photos["2 double beds"].startswith("https://www.hilton.com/")
@@ -178,10 +179,11 @@ def test_a_live_squares_drawer_has_a_slot_for_each_hotel_and_no_hotel_call_is_ma
     assert not [u for u in real.asked if "/data/" in u[0]]      # nothing asked for the hotel's photos until the script asks
 
 
-def test_the_showcase_shows_sample_photos_said_to_be_samples_and_never_a_review(sample, client):
+def test_the_showcase_shows_sample_photos_said_to_be_samples_and_a_sample_dashboard_labelled_as_one(sample, client):
     j = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["drawer"]
     assert "Sample photo · Hotel lobby" in j and "/assets/photos/lobby-front-desk.jpg" in j
-    assert "dr-rich" not in j and "dr-rev" not in j and j.index("Sample photo") < j.index("Illustration")      # the place's own drawing stays, labelled an illustration, after them
+    assert 'class="dr-rich"' not in j and j.index("Sample photo") < j.index("Illustration")      # the place's own drawing stays, labelled an illustration, after them; no hotel slot asks LiteAPI
+    assert "Sample: this is a real hotel’s recorded data (Hilton Los Angeles Airport" in j and "The hotels in this square are made up" in j      # F-282: the guests' words are a recorded real hotel's, said so
 
 
 # ---- flights: the +1 ----------------------------------------------------------------------------------------------------------------------------------------
