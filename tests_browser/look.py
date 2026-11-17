@@ -144,6 +144,7 @@ AUDIT = r"""async () => {
   scrollTo(left0, top0);
   free.remove();
   for (const it of items) {
+    if (!it.el.isConnected) continue;               // the page replaced it while it was scrolled into view (a lazy part, like the pins that load when seen): it is not on the page to read
     // the text's own fade as it was where it was seen: a part that changes with the scroll (the cover's tour beats) is read in its place
     const [bg, o] = done.has(it) ? done.get(it) : [flatten(ancestors(it.el)), fade(it.el)];
     if (!bg) continue;
