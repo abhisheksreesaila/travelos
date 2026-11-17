@@ -186,6 +186,12 @@ def test_on_a_phone_a_square_opens_the_drawer_under_the_matrix_and_it_closes(mat
     expect(drawer).to_contain_text("Sandbox booking: nothing is charged.")
     expect(drawer.locator(".dr-save")).to_be_visible()
     assert page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")      # no sideways scroll
+    assert page.locator(".v2-sections").is_visible()
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")      # overnight walk 2026-11-17: at the foot of the page Book my trip is clear of the floating bar
+    page.wait_for_timeout(150)
+    over = page.evaluate("""() => { const b = document.querySelector('#mx-drawer .dr-book'), s = document.querySelector('.v2-sections');
+        const r = b.getBoundingClientRect(), t = s.getBoundingClientRect(); return r.top < t.bottom && r.bottom > t.top && r.left < t.right && r.right > t.left; }""")
+    assert not over
     page.click("#mx-drawer [data-act='close']")
     expect(page.locator("#mx-drawer")).to_be_hidden()
     assert page.errors == []
@@ -856,3 +862,17 @@ def test_no_band_label_floats_and_the_marks_sit_inside_their_square(matrix, monk
     got = page.evaluate("""() => { const sq = document.querySelector('.mx-sq.is-find'), tag = getComputedStyle(sq, '::after');
         return {bands: [...document.querySelectorAll('.mx-band')].map(b => getComputedStyle(b, '::after').content), tag: tag.content, pos: tag.position, fits: sq.scrollHeight <= sq.clientHeight + 1}; }""")
     assert set(got["bands"]) == {"none"} and got["tag"] in ('"Our pick"', '"Pick · cheapest"') and got["pos"] == "static" and got["fits"], got
+
+
+def test_on_a_laptop_book_my_trip_stays_at_the_foot_of_the_screen_while_the_trip_is_read(matrix):
+    """Overnight walk 2026-11-17: the drawer's foot was meant to stick (v2drawer.css `.dr-foot { position: sticky }`), but `.dr { overflow: hidden }` made the drawer its own scroll
+    box and the foot scrolled away with the rooms. With `overflow: clip` the bold Book my trip stays in view while the hotel, rooms and flights are read."""
+    page = matrix(DESKTOP)
+    page.locator(".mx-lane[data-lane='losangeles'] .mx-sq").nth(2).click()
+    expect(page.locator("#mx-drawer .dr")).to_be_visible()
+    page.evaluate("window.scrollTo(0, document.getElementById('mx-drawer').offsetTop + 200)")
+    page.wait_for_timeout(150)
+    got = page.evaluate("""() => { const d = document.querySelector('#mx-drawer .dr').getBoundingClientRect(), b = document.querySelector('#mx-drawer .dr-book').getBoundingClientRect();
+        return {drawerBottom: d.bottom, bookBottom: b.bottom, vh: innerHeight}; }""")
+    assert got["drawerBottom"] > got["vh"] + 50, got            # the drawer runs on below the screen…
+    assert 0 < got["bookBottom"] <= got["vh"], got               # …and Book my trip is on screen, stuck at its foot

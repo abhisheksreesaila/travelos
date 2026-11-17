@@ -4,7 +4,7 @@
 .dr-wrap { min-width: 0; }
 .dr-wrap[hidden] { display: none; }
 .dr-alone { max-width: 62rem; margin: 0 auto; }
-.dr { position: relative; border-radius: var(--r-xl); background: var(--card-solid); box-shadow: var(--sh3); overflow: hidden; color: var(--ink); }
+.dr { position: relative; border-radius: var(--r-xl); background: var(--card-solid); box-shadow: var(--sh3); overflow: clip; color: var(--ink); }      /* clip, not hidden: hidden made the drawer a scroll box and quietly undid the sticky Book bar (overnight walk 2026-11-17) */
 .dr-head { display: flex; align-items: center; gap: 1.125rem; padding: 1.25rem 1.375rem 1.125rem; border-bottom: 1px solid var(--line); }
 .dr-hart { position: relative; width: 6.5rem; height: 4.5rem; flex: none; border-radius: 1rem; overflow: hidden; display: flex; background: var(--card-2); }
 .dr-hart .mx-art-i { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; }
@@ -138,6 +138,7 @@
 
 @media (max-width: 719px) {
   .dr { border-radius: 1.625rem; }
+  .dr-foot { position: static; }      /* a phone's foot holds the note, Save and Book (about 14rem): it stays in its place, not stuck over a quarter of the screen; the page's own bottom room (v2.css) lets it scroll clear of the floating bar */
   .dr-head { flex-wrap: wrap; gap: 0.75rem; padding: 1rem; position: relative; }
   .dr-hart { width: 4.5rem; height: 3.5rem; }
   .dr-ti { flex: 0 1 calc(100% - 9rem); }
