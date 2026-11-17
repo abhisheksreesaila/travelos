@@ -8,7 +8,7 @@ Subject: Your post as a guide people can plan from (opt in or ignore, one link)
 
 Hi [first name],
 
-I loved [post title]. I'm building GitAway, another place a travel post can travel: you paste your post and it becomes a guide, stop by stop, that readers can plan and book from. Your words, your name and your own links stay yours (GitAway adds nothing to the price), and the guide links back to your post. You can see readers and plans started on your stats page.
+I loved [post title]. I'm building GitAway, another place a travel post can travel: you paste your post and it becomes a guide, stop by stop, that readers can plan and book from. Your words, your name and your own links stay yours, and the guide links back to your post. GitAway earns only when a reader books a stay through GitAway itself, at the hotel's public price; your links are never touched. You can see readers and plans started on your stats page.
 
 I put mine up first so you can see how it reads: [link to my guide]
 

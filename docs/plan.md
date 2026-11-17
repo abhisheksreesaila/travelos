@@ -1824,6 +1824,6 @@ Founder: "I liked the booking emails … you can polish that as well". Decisions
 
 ## F-295 Ready for creators [built, awaiting review]
 Founder: "send this off to like 50 creators … incentive: another distribution platform … they keep their affiliate links … a link to the website, one second". Decisions D-952..D-954.
-- [ ] the creator path reads as that offer: /guides/make leads with "Your post becomes a guide people can plan and book from. Your words and your links stay yours." and the one-paste flow; a creator's guide shows their name and links prominently
-- [ ] docs/launch/creator-outreach.md: a short email for creators and one for travel blogs (what it is, why it helps them, the founder's own guide as the example, one link), plus a checklist of what a creator sees in the first minute
-- [ ] no new features: only words, order and polish of what exists
+- [x] the creator path reads as that offer: /guides/make leads with "Your post becomes a guide people can plan and book from. Your words and your links stay yours." and the one-paste flow; a creator's guide shows their name and links prominently
+- [x] docs/launch/creator-outreach.md: a short email for creators and one for travel blogs (what it is, why it helps them, the founder's own guide as the example, one link), plus a checklist of what a creator sees in the first minute
+- [x] no new features: only words, order and polish of what exists
