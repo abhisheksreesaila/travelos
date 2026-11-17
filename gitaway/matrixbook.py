@@ -34,6 +34,15 @@ NOTHING_CHARGED = "Sandbox booking: nothing is charged"
 log = logging.getLogger(__name__)
 SAMPLE_WORDS = "Sample booking: nothing is booked or charged"
 SOON_WORDS = "Booking opens soon"
+MERCHANT = "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card."      # F-292: the one sentence on the checkout, the booked pass and the stay's booking page
+SANDBOX_MERCHANT = "Booked through Nuitée (LiteAPI)'s sandbox: nothing is charged. GitAway never sees a card."
+
+
+def merchant_words() -> str:
+    """Who sells the stay, in the words that are true of this key: a live key books and charges for real; a sandbox key charges nothing."""
+    return MERCHANT if liteapi.mode() == "live" else SANDBOX_MERCHANT
+
+
 LIVE_WORDS = "Sold by Nuitée through LiteAPI. Your card is charged when you pay"
 SANDBOX, STAND_IN, SOON, LIVE = "sandbox", "stand-in", "soon", "live"
 MANY = "many"                   # a square of several stays is not booked in one go with the payment form (one payment, one stay)

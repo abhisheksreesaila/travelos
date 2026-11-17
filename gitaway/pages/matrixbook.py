@@ -179,7 +179,7 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
 def _policy(prep: mb.Prep):
     """The refund policy, word for word as LiteAPI gives it: our sentence from its deadline and fee, then its own remarks, and who sells it (D-843)."""
     rows = [Div(P(r.part.name, cls="mxb-k"), P(mb.policy_words(r.prebook), cls="mxb-pol-h"), P(r.prebook.remarks, cls="mx-r-s mxb-remarks") if r.prebook.remarks else "") for r in prep.rows]
-    return Div(Div(icon("shield", 16, 2.2), Span("Cancelling and refunds"), cls="mxb-pol-t"), *rows, P("Sold by Nuitée through LiteAPI. Nuitée charges your card; GitAway never sees it.", cls="mxb-fine"), cls="mxb-policy")
+    return Div(Div(icon("shield", 16, 2.2), Span("Cancelling and refunds"), cls="mxb-pol-t"), *rows, P(mb.merchant_words(), " ", A("How GitAway keeps you safe", href="/trust", target="_blank", rel="noopener"), cls="mxb-fine"), cls="mxb-policy")
 
 
 def _code_box(prep: mb.Prep):
@@ -232,7 +232,7 @@ def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = ""
                     cls="mxb-pass-row"),
                 Div(P("Paid", cls="mxb-k"), P(catalog.money(charged), cls="mxb-pass-h"),
                     P(f"{catalog.money(done.due_at_stay_cents)} more is paid at the hotel.", cls="mx-r-s") if done.due_at_stay_cents else "",
-                    P(icon("lock", 14, 2.2), "Charged by Nuitée through LiteAPI. GitAway never saw your card.", cls="mx-r-s"), cls="mxb-pass-row"),
+                    P(icon("lock", 14, 2.2), mb.merchant_words(), cls="mx-r-s"), cls="mxb-pass-row"),
                 Div(P("Cancelling", cls="mxb-k"), P((pay or {}).get("policy") or ("Refundable: you can cancel it from the booking page." if done.refundable else "Non-refundable: if you cancel, nothing comes back."), cls="mxb-pass-h"),
                     P("LiteAPI or the hotel sends the confirmation by email.", cls="mx-r-s"), cls="mxb-pass-row")]
         stub = Div(Div(P("Booking id", cls="mxb-k"), P(Span(done.booking_id, cls="mxb-id", data_booking_id=done.booking_id), cls="mxb-code"),

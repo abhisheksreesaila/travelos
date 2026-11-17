@@ -91,6 +91,7 @@
 .mxb-tick:focus-visible + .mxb-cb { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .mxb-agree.has-err { color: var(--food-i); }
 .mxb-fine { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.mxb-fine a { color: inherit; text-decoration: underline; text-underline-offset: 0.15em; }
 .mxb-fine:last-child { text-align: center; }
 
 .mxb-foot { display: flex; align-items: center; gap: 0.625rem; padding: 0.875rem 1.125rem 1.125rem; border-top: 1px solid var(--line); }

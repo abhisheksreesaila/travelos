@@ -185,7 +185,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
 
 def pg_foot():
     """The foot of a v2 reading page (F-272, D-800): Privacy and Terms, which the v2 top bar does not carry. The sentence under it is the site footer's, as it was."""
-    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="pg-foot-nav", aria_label="Legal"),
+    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), A("How GitAway keeps you safe", href="/trust"), cls="pg-foot-nav", aria_label="Legal"),
                   Span("Sample data only: no real bookings or payments." if showcase.on() else _footer_line(), cls="pg-fine"), cls="pg-foot")
 
 

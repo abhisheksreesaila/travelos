@@ -95,7 +95,7 @@ def test_the_review_says_who_sells_it_and_the_refund_rules_then_the_form_pays_an
     sheet = review(page, viewport)
     expect(sheet.locator(".mxb-sandbox")).to_have_text("Sold by Nuitée through LiteAPI. Your card is charged when you pay")
     expect(sheet.locator(".mxb-policy")).to_contain_text("Non-refundable: if you cancel, nothing comes back.")
-    expect(sheet.locator(".mxb-policy")).to_contain_text("Sold by Nuitée through LiteAPI. Nuitée charges your card; GitAway never sees it.")
+    expect(sheet.locator(".mxb-policy")).to_contain_text("Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card.")
     expect(sheet.locator(".mxb-codebox")).to_contain_text("Have a code?")
     expect(sheet.locator(".mxb-go")).to_be_disabled()                      # the tick is required
     expect(sheet.locator(".mxb-go")).to_contain_text("Continue · $1,540")
@@ -122,7 +122,7 @@ def test_the_review_says_who_sells_it_and_the_refund_rules_then_the_form_pays_an
     page.wait_for_timeout(1200)
     shot(page, f"{viewport['width']}-booked")
     expect(page.locator("[data-booking-id]")).to_have_text("uuJxfM0--")
-    expect(page.locator("body")).to_contain_text("Charged by Nuitée through LiteAPI. GitAway never saw your card.")
+    expect(page.locator("body")).to_contain_text("Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card.")
     sent = live.calls(BOOK)
     assert len(sent) == 1 and sent[0]["payment"]["method"] == "TRANSACTION_ID" and "ACC_CREDIT_CARD" not in json.dumps(live.asked)
     page.reload()                                                          # a reload shows the same booking and books nothing again

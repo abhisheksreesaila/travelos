@@ -99,7 +99,7 @@ def test_the_sheet_prebooks_for_the_payment_form_saves_the_ids_and_says_who_sell
     html = sheet(client)
     words = text(html)
     assert real.calls(PREBOOK) == [{"offerId": real.calls(PREBOOK)[0]["offerId"], "usePaymentSdk": True}] and len(real.calls(PREBOOK)) == 1
-    assert "Sold by Nuitée through LiteAPI" in words and "GitAway never sees it" in words and "Non-refundable: if you cancel, nothing comes back." in words
+    assert "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card." in words and "Non-refundable: if you cancel, nothing comes back." in words
     assert "Have a code?" in words and "Continue · $" in words and "Your card is charged when you pay" in words
     rows = payments()
     assert len(rows) == 1 and (rows[0]["status"], rows[0]["prebook_id"], rows[0]["transaction_id"], rows[0]["charge_cents"]) == ("prebooked", "nXPI8qf8C", "tr_cts_j_DBi8RkjWF1hJDzmsryP", 72993)      # the square shows $849.93: $729.93 now and the $120 fee at the hotel
@@ -140,7 +140,7 @@ def test_the_guest_form_answers_with_liteapis_payment_form_and_nothing_is_booked
     words = text(r.text)
     assert 'data-at="pay"' in r.text and 'data-pay-root="1"' in r.text and f'data-secret="{SECRET}"' in r.text and 'data-key="live"' in r.text
     assert f'data-return="http://testserver/plan/matrix/book/return?token={token(html)}"' in r.text
-    assert "Pay for your stay" in words and "Charged now" in words and "Sold by Nuitée through LiteAPI" in words and "Non-refundable" in words
+    assert "Pay for your stay" in words and "Charged now" in words and "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card." in words and "Non-refundable" in words
     assert real.calls(BOOK) == [] and len(real.calls(PREBOOK)) == 1                    # no second prebook, no booking
     row = payments()[0]
     assert (row["status"], row["guest_first"], row["guest_last"], row["guest_email"], row["guest_phone"], row["guest_remarks"]) == (
@@ -182,7 +182,7 @@ def test_after_the_form_the_stay_is_booked_with_the_transaction_id_and_the_pass_
     tok, r = paid(client)
     words = re.sub(r"\s+", " ", text(r.text))
     assert r.status_code == 200 and "You’re booked" in words and "Booking id uuJxfM0--" in words and "Hotel confirmation test" in words
-    assert "Charged by Nuitée through LiteAPI. GitAway never saw your card." in words and "Non-refundable" in words and 'href="/trip/plan?arrive=1"' in r.text
+    assert "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card." in words and "Non-refundable" in words and 'href="/trip/plan?arrive=1"' in r.text
     sent = real.calls(BOOK)
     assert len(sent) == 1 and sent[0]["payment"] == {"method": "TRANSACTION_ID", "transactionId": "tr_cts_j_DBi8RkjWF1hJDzmsryP"} and sent[0]["prebookId"] == "nXPI8qf8C"
     assert sent[0]["holder"] == {"firstName": "Anne-Marie", "lastName": "O’Neil", "email": "anne@example.com", "phone": "+1 415 555 0100"}

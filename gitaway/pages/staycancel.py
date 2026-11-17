@@ -8,7 +8,7 @@ A refundable stay's cancel gives the money back, a non-refundable one's charges 
 `matrix_bookings` is ever cancelled, by LiteAPI's booking id read from the stay's confirmation; a sample booking (`SAMPLE-...`) never calls LiteAPI.
 """
 
-from fasthtml.common import Button, Div, Form, Input, Label, P, Span
+from fasthtml.common import A, Button, Div, Form, Input, Label, P, Span
 from starlette.responses import RedirectResponse, Response
 
 from gitaway import access, bookingmail, catalog, familydb, liteapi, matrixbook as mb, reports, session as ses
@@ -46,14 +46,15 @@ def panel(v, h, back: str = ""):
             return ""
         done = mb.cancelled(fam.db, booking)
         pay = familydb.row(fam.db, "SELECT policy, charge_cents FROM matrix_payments WHERE booking_id = :b", b=booking) or {}
+    who = P(mb.merchant_words(), " ", A("How GitAway keeps you safe", href="/trust"), cls="bk-cancel-merchant", id="bk-merchant")      # F-292
     if done:
-        return Div(Div(icon("check", 16, 2.6), Span("Cancelled"), cls="hp-k"), P(_came_back(done, pay.get("charge_cents")), cls="bk-cancel-done", id="bk-cancelled"), cls="bk-cancel")
+        return Div(Div(icon("check", 16, 2.6), Span("Cancelled"), cls="hp-k"), P(_came_back(done, pay.get("charge_cents")), cls="bk-cancel-done", id="bk-cancelled"), who, cls="bk-cancel")
     policy = pay.get("policy") or ("Refundable: LiteAPI gives the money back." if row["refundable"] else "Non-refundable: if you cancel, nothing comes back.")
     ask = Form(Input(type="hidden", name="booking", value=booking), Input(type="hidden", name="next", value=back),
                Label(Input(type="checkbox", name="sure", value="1", required=True), Span("I want to cancel this stay"), cls="bk-cancel-sure"),
                Button(icon("x", 16, 2.6), "Cancel this stay", type="submit", cls="tp-btn tp-btn-white bk-cancel-go", id="bk-cancel-go"), method="post", action=PATH, cls="bk-cancel-f") \
         if access.can_edit(v["role"]) else ""
-    return Div(Div(Span("Cancelling", cls="hp-k"), cls="bk-cancel-h"), P(policy, cls="bk-cancel-policy", id="bk-policy"), ask, cls="bk-cancel")
+    return Div(Div(Span("Cancelling", cls="hp-k"), cls="bk-cancel-h"), P(policy, cls="bk-cancel-policy", id="bk-policy"), who, ask, cls="bk-cancel")
 
 
 def register(app):

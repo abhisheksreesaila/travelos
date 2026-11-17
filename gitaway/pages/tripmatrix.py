@@ -339,7 +339,7 @@ def about_el(s: State, skies, sample: bool):
                    Div(P(f"Under each start day: the flight and the stay for {s.travelers}, all in. The ringed band is your {nights_words(s.nights)}; tap a start to move it.", cls="mx-legend-n"),
                        fine_p(sample),
                        Div(*[A(text, href=to, rel="noopener", cls="mx-wx-n") if to else Span(text, cls="mx-wx-n") for text, to in notes], cls="mx-wx") if notes else "",
-                       Div(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="mx-about-nav", aria_label="Legal"), mode_switch("about"), cls="mx-about-foot"), cls="mx-pop mx-pop-about"),
+                       Div(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), A("How GitAway keeps you safe", href="/trust"), cls="mx-about-nav", aria_label="Legal"), mode_switch("about"), cls="mx-about-foot"), cls="mx-pop mx-pop-about"),
                    cls="mx-tk mx-about", data_pop="about")
 
 
