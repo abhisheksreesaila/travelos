@@ -333,7 +333,7 @@ def plan_page(session, request, arrive=False):
                Script(NotStr(_safe(data)), type="application/json", id="pl-data"),
                *[NotStr(f'<template id="pl-ico-{n}">{icon(n, 18, 2.6)}</template>') for n in ("x", "minus", "plus", "check", "share")],
                cls="pl" + (" is-arrive" if arrive else ""), data_pl="1")
-    return page("Plan the trip", body, current="trip", head=HEAD, noindex=True, footer=False, v2=True,
+    return page("Your itinerary", body, current="trip", head=HEAD, noindex=True, footer=False, v2=True,
                 mood=moods.of_text(v.place, v.days[0][1], v.days[-1][1]) if v.days else "")
 
 

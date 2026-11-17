@@ -78,12 +78,12 @@ def _state(traveler):
 
 
 def items(signed_in: bool, has_trip: bool) -> list:
-    """The section pill's items as (key, label, href): Book, Plan (only with a trip) and Guides for a signed-in person; Plan a trip (the one door, layout.plan_href) and Guides for a visitor, whose
+    """The section pill's items as (key, label, href): Book, My trip (the booked trip's itinerary, only with a trip) and Guides for a signed-in person; Find a trip (the one door, layout.plan_href) and Guides for a visitor (F-289), whose
     Sign in is the account button beside the pill (F-262: Family left the bar; the family lives in Planning's Together drawer and the avatar menu)."""
     if not signed_in:
         from gitaway.layout import plan_href      # here: layout imports this module
-        return [("start", "Plan a trip", plan_href()), ("guides", "Guides", "/guides")]
-    return [("book", "Book", showcase.planning_path())] + ([("plan", "Plan", "/trip/plan")] if has_trip else []) + [("guides", "Guides", "/guides")]
+        return [("start", "Find a trip", plan_href()), ("guides", "Guides", "/guides")]      # F-289: "plan" means only the booked trip's days now
+    return [("book", "Book", showcase.planning_path())] + ([("plan", "My trip", "/trip/plan")] if has_trip else []) + [("guides", "Guides", "/guides")]
 
 
 def menu_items(captain: bool, new: int = 0, has_trip: bool = False) -> list:

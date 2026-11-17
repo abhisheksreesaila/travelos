@@ -30,7 +30,8 @@ BACK_MORE = "Satellite and photoreal views are limited each day, because each on
 NO_PINS = "OpenStreetMap did not answer just now, so there are no pins to show. The map is still here."
 HEADERS = {"Cache-Control": "no-store"}
 TOKEN_AGE = 6 * 3600       # seconds a card's token is good for the pins and the key: a token scraped from a page stops working
-SIGN_IN = "Sign in for satellite and 3D"
+SIGN_IN = "Fly around the hotel in 3D"      # F-289: the immersive view is a reason to sign in, said as an invitation
+SIGN_IN_MORE = "Sign in to see the real rooftops, the pool, the parking and what is next door, in satellite and photoreal 3D. The map works without it."
 BUSY_WORDS = "Pins are busy, try again in a moment"
 LIMIT_WORDS = "You have looked at a lot of places today. Try again tomorrow, or come back to this one: its pins are kept."
 
@@ -111,10 +112,14 @@ def register(app):
         return JSONResponse({"ok": True, **got, "keyed": aerial.offered()}, headers=HEADERS)
 
     @app.post(PATH + "/open")
-    def aerial_open(session, id: str = "", view: str = ""):
+    def aerial_open(request, session, id: str = "", view: str = ""):
         who = str((session or {}).get("user_id") or "")
         if not who:      # the Google views are for signed-in people, like Save, Book and Plan (D-761): nobody signed out can draw the key or the day's count down
-            return JSONResponse({"ok": False, "signin": True, "message": SIGN_IN}, status_code=401, headers=HEADERS)
+            from gitaway import session as ses
+            back = request.headers.get("referer", "")
+            here = back.split(str(request.base_url).rstrip("/"), 1)[1] if back.startswith(str(request.base_url).rstrip("/")) else None      # back to the same page after signing in, only ever our own path
+            return JSONResponse({"ok": False, "signin": True, "message": SIGN_IN, "more": SIGN_IN_MORE, "href": ses.signin_href(here if here and here.startswith("/") and not here.startswith("//") else None)},
+                                status_code=401, headers=HEADERS)
         if not unsign(id) or view not in ("sat", "photo"):
             return JSONResponse({"ok": False}, status_code=400, headers=HEADERS)
         state, key = aerial.open_google(who)

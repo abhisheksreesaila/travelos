@@ -37,7 +37,7 @@ def _import_path():
 def paths():
     """The ways to begin: a plain list of links, so it works without JavaScript. Planning is the trip matrix, so where that does not exist it is left out."""
     community = [_path(COMMUNITY, "fork", "bubble", "Browse community trips", "Real trips from travelers and creators. Fork one and make it yours.", "Take a look")] if showcase.on() else []
-    plan = [_path(showcase.planning_path(), "plane", "sun", "Plan a trip", "Pick a place and dates. We line up the whole trip, a flight and a stay, for every start day.", "Start planning")] if showcase.matrix_open() else []
+    plan = [_path(showcase.planning_path(), "plane", "sun", "Find a trip", "Pick a place and dates. We line up the whole trip, a flight and a stay, for every start day.", "Start planning")] if showcase.matrix_open() else []
     return Div(
         *plan,
         _import_path(),

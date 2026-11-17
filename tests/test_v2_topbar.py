@@ -23,7 +23,7 @@ def parts(html):
 def test_a_visitor_sees_plan_a_trip_and_guides_and_sign_in_and_no_menu(client):
     html = client.get(MATRIX).text
     pills, menu, out = parts(html)
-    assert [p[0] for p in pills] == ["Plan a trip", "Guides"]      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar; F-262: Guides replaced Community trips and For creators
+    assert [p[0] for p in pills] == ["Find a trip", "Guides"]      # F-289: the search is "Find a trip"      # review of F-255: the one door (layout.plan_href) stays in a visitor's bar; F-262: Guides replaced Community trips and For creators
     assert pills[1:] == [("Guides", "/guides", False)] and pills[0][1] == "/plan/ask"      # D-761: a visitor searches without an account
     assert menu == [] and not out
     assert ">Sign in<" in html
@@ -39,8 +39,8 @@ def test_signed_in_without_a_trip_has_book_and_guides_but_no_plan_or_family(clie
 
 def test_with_a_trip_the_pill_is_book_plan_guides_and_marks_the_page_it_is_on(client):
     book(client)
-    assert parts(client.get(PLAN).text)[0] == [("Book", ASK, False), ("Plan", PLAN, True), ("Guides", "/guides", False)]
-    assert parts(client.get(ASK).text)[0] == [("Book", ASK, True), ("Plan", PLAN, False), ("Guides", "/guides", False)]
+    assert parts(client.get(PLAN).text)[0] == [("Book", ASK, False), ("My trip", PLAN, True), ("Guides", "/guides", False)]
+    assert parts(client.get(ASK).text)[0] == [("Book", ASK, True), ("My trip", PLAN, False), ("Guides", "/guides", False)]
 
 
 def test_the_captain_alone_has_admin_in_the_menu(client, monkeypatch):

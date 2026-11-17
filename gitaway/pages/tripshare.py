@@ -169,7 +169,7 @@ def register(app):
     def share_page(token: str):
         sh = tripshare.find(token)
         if not sh:
-            return notice("Not shared", H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Plan a trip", href=plan_href(), cls="btn btn-primary"), status=404, noindex=True)
+            return notice("Not shared", H1("This trip is not shared"), P("The link was turned off, or it is not right."), A("Find a trip", href=plan_href(), cls="btn btn-primary"), status=404, noindex=True)
         return public_page(sh)
 
     @app.get("/s/{token}/card.png")

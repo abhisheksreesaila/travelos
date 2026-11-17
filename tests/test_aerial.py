@@ -521,7 +521,17 @@ def test_the_card_uses_none_of_the_data_names_the_drawers_clicks_read(monkeypatc
 def test_signed_out_nobody_gets_the_key_or_spends_the_count_and_the_page_is_told_to_sign_in(client, monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
     r = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"})
-    assert r.status_code == 401 and r.json() == {"ok": False, "signin": True, "message": "Sign in for satellite and 3D"} and "AIza" not in r.text and aerial.opens_today() == 0
+    j = r.json()
+    assert r.status_code == 401 and j["ok"] is False and j["signin"] is True and "AIza" not in r.text and aerial.opens_today() == 0
+    assert j["message"] == "Fly around the hotel in 3D" and "Sign in" in j["more"] and j["href"].startswith("/signin")      # F-289: an invitation with the way in
+
+
+def test_the_sign_in_invitation_brings_the_visitor_back_to_the_same_page_and_never_elsewhere(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
+    here = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}, headers={"referer": "http://testserver/plan/matrix?to=San+Diego"}).json()["href"]
+    away = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}, headers={"referer": "https://evil.example/plan/matrix"}).json()["href"]
+    assert "plan%2Fmatrix" in here or "plan/matrix" in here
+    assert "evil" not in away
 
 
 def test_a_viewer_may_open_the_views_because_they_only_look(client, monkeypatch):

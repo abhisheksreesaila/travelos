@@ -202,4 +202,4 @@ def notice(title: str, *body, status: int = 200, current: str = "", head=(), **k
 
 
 # The cover's way in (founder, 2026-11-13, D-458; F-262): Plan a trip is drawn as `plan_href()`. Guides is always there: off the showcase, before anyone has shared a guide, its page says so.
-NAV = [("Guides", "/guides"), ("Plan a trip", "/plan/matrix")]
+NAV = [("Guides", "/guides"), ("Find a trip", "/plan/matrix")]      # F-289: the search is "Find a trip"; "My trip" is the booked trip's days
