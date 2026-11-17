@@ -1,6 +1,6 @@
 """The v2 sky's mood (F-260, D-690..D-697): which of five skies a page wears, chosen by a plain rule from the trip's place and dates.
 
-    beach        today's sky: a sun, clouds, the shore
+    beach        the shore at the foot of the Harbour ground (F-281)
     snow         a cool sky and a snowy peak
     hike         green and gold, a mountain trail
     celebration  dusk violet and fireworks

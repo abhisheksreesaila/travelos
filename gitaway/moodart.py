@@ -1,5 +1,5 @@
 """The foot of each mood's sky and the night's moon (F-260, D-690): one simple cartoon object per mood, drawn like the beach's shore (a 1440 x 260 inline SVG, decorative).
-gitaway/moods.py chooses the mood; assets/css/v2-moods.css gives each its gradient and turns the foot down in the dark."""
+gitaway/moods.py chooses the mood; assets/css/v2-moods.css styles each mood's object at the foot (the ground itself is the Harbour gradient, F-281) and turns it down in the dark."""
 
 import math
 
