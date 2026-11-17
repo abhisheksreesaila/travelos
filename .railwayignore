@@ -13,3 +13,9 @@ tests/
 tests_browser/
 docs/design/
 __pycache__/
+docs/report/
+scratchpad/
+cover3d/
+.hooks-debug/
+.hooks-state/
+.pytest_cache/
