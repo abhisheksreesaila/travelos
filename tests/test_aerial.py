@@ -593,3 +593,43 @@ def test_a_busy_answer_does_not_use_up_one_of_the_persons_fresh_pins(client, liv
         for _ in taken:
             aerial._SLOTS.release()
     assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lpbusy")}).json()["ok"] is True      # the one allowed fresh ask is still there
+
+
+# ---- F-286 review fixes ---------------------------------------------------------------------------------------------------------
+
+def test_stop_really_ends_an_idle_worker_so_it_cannot_take_a_later_tests_jobs(live, monkeypatch):
+    live(recorded("osm-lax.json"))
+    monkeypatch.setattr(aerial, "ASYNC", True)
+    aerial.warm("lp1b8e6", LAX[1], LAX[2], LAX[0])
+    for _ in range(100):
+        if aerial.teaser("lp1b8e6"):
+            break
+        time.sleep(0.05)
+    worker = aerial._thread[0]
+    started = time.monotonic()
+    aerial.stop()
+    assert not worker.is_alive() and time.monotonic() - started < 3 and aerial._thread == []
+
+
+def test_one_hotels_background_job_has_a_total_budget_across_mirrors_so_a_slow_mirror_cannot_hold_a_slot(live, monkeypatch):
+    from types import SimpleNamespace
+    now = [1000.0]
+    monkeypatch.setattr(aerial, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    asked = []
+
+    def slow(host, q, timeout):
+        asked.append((host, timeout))
+        now[0] += timeout      # the mirror uses all the time it is given
+        raise TimeoutError("past the deadline")
+    monkeypatch.setattr(aerial, "TRANSPORT", slow)
+    aerial.warm("lpslow", LAX[1], LAX[2], LAX[0])
+    aerial.run_pending()
+    assert aerial.BACKGROUND_BUDGET == 60.0
+    assert asked == [("overpass-api.de", 40.0), ("overpass.kumi.systems", 20.0)]      # 60 s in all: the third mirror is not asked
+
+
+def test_the_showcase_hotels_are_made_up_so_showing_one_queues_nothing(live, monkeypatch):
+    f = live(recorded("osm-lax.json"))
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    hotelview.fragment("lp1b8e6")
+    assert aerial.run_pending() == 0 and f.calls == []
