@@ -54,6 +54,11 @@ def _when(dt) -> str:
     return f"{_d(dt)}, {_t(dt)}"
 
 
+def _ft(dt) -> str:
+    """A flight's time on its airport's own clock, with the zone: "Fri Oct 16, 8:05 AM PDT"."""
+    return f"{_when(dt)} {dt.tzname()}" if dt.tzinfo else _when(dt)
+
+
 def _place(stay, trip) -> str:
     """What Directions and the ride look up: the stay's name and address (the sample's: its name and the place)."""
     return f"{stay.name}, {stay.address}" if stay.address else f"{stay.name}, {trip.place}"
@@ -71,9 +76,9 @@ def _code(label, code):
 
 def _flight(i, first, trip):
     f = i.flight
-    rows = [Div(Span("Leaves", cls="td-k"), Span(_when(f.depart), cls="td-v"), cls="td-row"), Div(Span("Lands", cls="td-k"), Span(_when(f.arrive), cls="td-v"), cls="td-row")]
+    rows = [Div(Span("Leaves", cls="td-k"), Span(_ft(f.depart), cls="td-v"), cls="td-row"), Div(Span("Lands", cls="td-k"), Span(_ft(f.arrive), cls="td-v"), cls="td-row")]
     leave = (Div(icon("bell", 20, 2.2), Div(B(f"Leave by about {_t(i.leave.at)}"), Small(i.leave.words()), cls="td-lv-t"), cls="td-leave", id="td-leave") if i.leave and not i.past else "")
-    return Section(Div(_tag("Next", "is-next") if first else _tag("Done") if i.past else "", Span(icon("plane", 22, 2.2), cls="td-ic k-flight"),
+    return Section(Div(_tag("Next", "is-next") if first else _tag("In the air") if i.airborne else _tag("Done") if i.past else "", Span(icon("plane", 22, 2.2), cls="td-ic k-flight"),
                        Div(H2(f"{f.origin} → {f.dest}"), Span(f.name, cls="td-sub"), cls="td-ht"), cls="td-head"),
                    *rows, leave, _code("Confirmation", f.confirmation), cls="td-card td-flight" + (" is-next" if first else ""), id="td-flight")
 
@@ -146,14 +151,14 @@ def _packing(trip, days, notes):
 def _checkin_card(i):
     f = i.flight
     link = A(icon("ticket", 18, 2.4), f"Open {f.airline}'s check-in", href=i.checkin_url, target="_blank", rel="noopener", cls="td-btn td-checkin") if i.checkin_url else ""
-    return Section(Div(Span(icon("plane", 22, 2.2), cls="td-ic k-flight"), Div(H2(f"Flight check-in opens {_when(i.opens)}"), Span(f"{f.name} · {f.origin} → {f.dest}, leaves {_when(f.depart)}", cls="td-sub"), cls="td-ht"), cls="td-head"),
+    return Section(Div(Span(icon("plane", 22, 2.2), cls="td-ic k-flight"), Div(H2(f"Flight check-in opens {_ft(i.opens)}"), Span(f"{f.name} · {f.origin} → {f.dest}, leaves {_ft(f.depart)}", cls="td-sub"), cls="td-ht"), cls="td-head"),
                    P("Online check-in usually opens 24 hours before a flight.", cls="td-fine"), link, cls="td-card td-opens", id="td-opens")
 
 
 def _plans(t):
     if not t.plans:
         return Section(H2("Today's plans"), P("Nothing planned for today yet.", cls="td-none"), A("Plan the day", href="/trip/plan", cls="td-btn"), cls="td-card td-plans", id="td-plans")
-    return Section(H2("Today's plans"), *[Div(Span(tday.span_label(p.start, p.end), cls="td-time"), B(p.title), cls="td-plan") for p in t.plans], A("Open the plan", href="/trip/plan", cls="td-link"), cls="td-card td-plans", id="td-plans")
+    return Section(H2("Today's plans"), *[Div(Span(tday.span_label(p.start, p.end), cls="td-time"), B(p.title), cls="td-plan") for p in t.plans], A("Open My trip", href="/trip/plan", cls="td-link"), cls="td-card td-plans", id="td-plans")
 
 
 # ---- the page -----------------------------------------------------------------------------------------------------------------------------
@@ -223,7 +228,7 @@ def draw(session, request, day=""):
         body += [_plans(t), _stay(t.stay, trip, ua, "staying", _coords(session, trip, t.stay), b) if t.stay else "", _weather(days, notes, t.day)]
     else:
         body.append(Section(H2("Share the trip"), P("Make a card of it for Instagram. It never shows a booking, a price or an email.", cls="td-fine"), tripshare.open_button(access.request_role()) or "", cls="td-card td-share", id="td-share"))
-    return Div(head, *[x for x in body if x != ""], Div(A(icon("chev-left", 16, 2.6), "Back to the plan", href="/trip/plan", cls="td-link"), cls="td-foot"), cls="td-wrap", data_state=t.state)
+    return Div(head, *[x for x in body if x != ""], Div(A(icon("chev-left", 16, 2.6), "Back to My trip", href="/trip/plan", cls="td-link"), cls="td-foot"), cls="td-wrap", data_state=t.state)
 
 
 def card(session, day=""):

@@ -2,7 +2,8 @@
 shows a card for it while the trip is near. Nothing is invented: a phone, a code, an airline's check-in page appears only where a source gave it, and the leave-by time says it is an estimate."""
 
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from gitaway import showcase, today as td
 from tests.test_calendar import add, book
@@ -25,7 +26,14 @@ def trip(**over):
 
 
 def at(day, hour=7, minute=0):
-    return datetime(2026, 10, day, hour, minute)
+    return datetime(2026, 10, day, hour, minute)          # a clock at the trip (its zone: Los Angeles unless the trip says)
+
+
+def local(zone, day, hour=0, minute=0):
+    return datetime(2026, 10, day, hour, minute, tzinfo=ZoneInfo(zone))
+
+
+PT, ET = "America/Los_Angeles", "America/New_York"
 
 
 # ---- where the trip is ---------------------------------------------------------------------------------------------------------------
@@ -51,7 +59,7 @@ def test_before_counts_the_days_and_says_when_check_in_opens_with_the_airlines_o
     today = td.build(trip(), at(10))
     assert (today.state, today.to_go) == ("before", 6)
     out = today.flights[0]
-    assert out.flight.name == "Delta DL 1234" and out.opens == datetime(2026, 10, 15, 8, 5)
+    assert out.flight.name == "Delta DL 1234" and out.opens == local(PT, 15, 8, 5)
     assert out.checkin_url == "https://www.delta.com/us/en/check-in/overview"
 
 
@@ -67,7 +75,7 @@ def test_the_flight_comes_first_with_a_leave_by_time_from_the_drive_and_the_buff
     assert today.state == "travel"
     first = today.items[0]
     assert isinstance(first, td.FlightItem) and first.flight.name == "Delta DL 1234"
-    assert first.leave.at == datetime(2026, 10, 16, 5, 20)          # 8:05 less 45 min of driving and 2 h at the airport
+    assert first.leave.at == local(PT, 16, 5, 20)          # 8:05 less 45 min of driving and 2 h at the airport
     assert first.leave.words() == "An estimate: 45 min by car from San Francisco, plus 2 h at the airport."
 
 
@@ -80,14 +88,14 @@ def test_no_drive_no_leave_by_and_an_international_flight_keeps_three_hours():
 def test_the_flight_home_leaves_from_the_hotels_address():
     today = td.build(trip(), at(20, 6), drives={"LAX": 30})
     flight = next(i for i in today.items if isinstance(i, td.FlightItem))
-    assert flight.leave.at == datetime(2026, 10, 20, 11, 40) and flight.leave.town == "123 Ocean Ave, Santa Monica, CA 90401"
+    assert flight.leave.at == local(PT, 20, 11, 40) and flight.leave.town == "123 Ocean Ave, Santa Monica, CA 90401"
 
 
 def test_the_hotel_follows_with_its_address_check_in_time_and_code():
     today = td.build(trip(), at(16, 10))
     stay, flight = today.items
     assert isinstance(flight, td.FlightItem) and flight.past
-    assert isinstance(stay, td.StayItem) and stay.phase == "checkin" and stay.at == datetime(2026, 10, 16, 15, 0)
+    assert isinstance(stay, td.StayItem) and stay.phase == "checkin" and stay.at == local(PT, 16, 15, 0)
     assert (stay.stay.address, stay.stay.confirmation, stay.stay.phone) == ("123 Ocean Ave, Santa Monica, CA 90401", "987654321", "+1 310 555 0100")
 
 
@@ -104,13 +112,66 @@ def test_a_checkout_day_with_a_flight_puts_the_checkout_before_the_flight():
     assert [(type(i).__name__, getattr(i, "phase", "")) for i in today.items] == [("StayItem", "checkout"), ("FlightItem", "")]
 
 
+# ---- time zones: each flight is in its own airports' clocks -------------------------------------------------------------------
+
+def flight_of(today):
+    return next(i for i in today.items if isinstance(i, td.FlightItem))
+
+
+def coast_trip(**over):
+    """San Francisco to New York: the trip (and the hotel) is on Eastern time, the flight out leaves on Pacific time and the one home leaves on Eastern."""
+    out = dict(zone=ET, place="New York", home="San Francisco",
+               flights=(td.Flight("Delta", "DL 400", "SFO", "JFK", datetime(2026, 10, 16, 8, 5), datetime(2026, 10, 16, 16, 35), "ABCDEF"),
+                        td.Flight("Delta", "DL 401", "JFK", "SFO", datetime(2026, 10, 20, 14, 10), datetime(2026, 10, 20, 17, 40), "ABCDEF")),
+               stays=(td.Stay("The Hudson", datetime(2026, 10, 16, 17, 0), datetime(2026, 10, 20, 11, 0), "1 Pier Way, New York, NY"),))
+    return trip(**{**out, **over})
+
+
+def test_a_flight_leaving_home_is_judged_by_the_home_clock_not_the_trips():
+    t = coast_trip()
+    late_morning_et = datetime(2026, 10, 16, 10, 30)      # 7:30 AM in San Francisco: the 8:05 AM flight has not left
+    out = flight_of(td.build(t, late_morning_et))
+    assert (out.flight.name, out.past) == ("Delta DL 400", False)
+    assert flight_of(td.build(t, datetime(2026, 10, 16, 11, 30))).past is True       # 8:30 AM in San Francisco: it has
+
+
+def test_each_time_is_in_its_own_airports_zone_and_the_flight_lasts_what_it_lasts():
+    f = flight_of(td.build(coast_trip(), datetime(2026, 10, 16, 6, 0))).flight
+    assert (f.depart.tzname(), f.arrive.tzname()) == ("PDT", "EDT") and (f.depart.hour, f.arrive.hour) == (8, 16)
+    assert f.arrive - f.depart == timedelta(hours=5, minutes=30)
+
+
+def test_the_flight_home_leaves_on_the_hotels_clock_and_leave_by_follows_it():
+    today = td.build(coast_trip(), datetime(2026, 10, 20, 12, 0), drives={"JFK": 50})
+    flight = next(i for i in today.items if isinstance(i, td.FlightItem))
+    assert flight.past is False and flight.leave.at == local(ET, 20, 11, 20) and flight.flight.arrive.tzname() == "PDT"
+
+
+def test_a_red_eye_crossing_midnight_is_still_the_travel_day_it_left_on():
+    eye = td.Flight("Delta", "DL 480", "SFO", "JFK", datetime(2026, 10, 16, 23, 30), datetime(2026, 10, 17, 8, 0), "ABCDEF")
+    t = coast_trip(flights=(eye,))
+    now = datetime(2026, 10, 17, 0, 15)            # past midnight in New York, 9:15 PM on the 16th in San Francisco
+    today = td.build(t, now)
+    assert today.state == "travel" and flight_of(today).flight.name == "Delta DL 480" and flight_of(today).past is False
+    assert flight_of(today).flight.arrive - flight_of(today).flight.depart == timedelta(hours=5, minutes=30)
+    assert (flight_of(td.build(t, datetime(2026, 10, 17, 3, 0))).past, flight_of(td.build(t, datetime(2026, 10, 17, 3, 0))).airborne) == (True, True)      # 11:30 PM in San Francisco is gone by 3 AM in New York
+
+
+def test_an_airport_or_airline_we_do_not_know_falls_back_safely():
+    nowhere = td.Flight("Tiny Air", "TA 1", "XYZ", "QQQ", datetime(2026, 10, 16, 8, 5), datetime(2026, 10, 16, 9, 30))
+    assert td.buffer_for(nowhere) == 180 and td.checkin_url(nowhere) == ""      # not provably domestic: the longer buffer; no airline page: no link
+    t = trip(flights=(nowhere,), home="Springfield")
+    item = flight_of(td.build(t, at(16, 6), drives={"XYZ": 30}))
+    assert item.flight.depart.tzname() == "PDT" and item.leave.at == local(PT, 16, 4, 35) and item.checkin_url == ""      # the trip's own clock stands in for an airport we do not know
+
+
 # ---- during, after, and the booking as facts ---------------------------------------------------------------------------------------
 
 def test_during_lists_only_todays_plans_in_time_order_with_the_hotel_and_its_check_out():
     today = td.build(trip(), at(18))
     assert today.state == "during" and today.day == 2
     assert [(p.title, p.start) for p in today.plans] == [("Venice Canals", 540), ("Pier", 840)]
-    assert today.stay.name == "The Example Hotel" and today.stay.check_out == datetime(2026, 10, 20, 11, 0)
+    assert today.stay.name == "The Example Hotel" and today.stay.check_out == local(PT, 20, 11, 0)
 
 
 def test_after_has_nothing_but_the_end_of_the_trip():
@@ -139,6 +200,19 @@ def test_the_sample_booking_is_labelled_sample_and_has_no_code_or_phone_to_show(
     assert (t.stays[0].name, t.stays[0].area, t.stays[0].confirmation, t.stays[0].phone, t.stays[0].address) == ("The Tidewater", "Santa Monica", "", "", "")
 
 
+def test_a_stay_that_was_cancelled_never_reaches_the_day(client):
+    from tests.test_signin import person
+    from gitaway import matrixbook, session as ses
+    imported(client)
+    assert [h.name for h in td.from_booking(person(), ses.booking(person())).stays] == ["The Example Hotel Santa Monica"]
+    with ses.family(person()) as fam:
+        trip_id = fam.trip_id
+    matrixbook.mark_cancelled(person(), trip_id, "987654321")
+    assert td.from_booking(person(), ses.booking(person())).stays == ()
+    html = client.get("/trip/today?day=2026-10-16").text
+    assert "987654321" not in html and "The Example Hotel" not in visible(html)
+
+
 # ---- the page ------------------------------------------------------------------------------------------------------------------------
 
 def test_signed_out_signs_in_and_without_a_booking_starts_one(client):
@@ -153,7 +227,7 @@ def test_before_the_trip_the_page_counts_down_and_says_this_is_a_sample(client):
     html = client.get("/trip/today").text
     text = visible(html)
     assert "16 days to go" in text and "Sample trip" in text
-    assert "Flight check-in opens Thu Oct 15, 8:05 AM" in text and "Skylark Air 214" in text
+    assert "Flight check-in opens Thu Oct 15, 8:05 AM PDT" in text and "Skylark Air 214" in text
 
 
 def test_the_day_query_previews_another_date_on_the_showcase_only(client, monkeypatch):
@@ -171,7 +245,7 @@ def test_a_travel_day_shows_the_hotel_directions_a_ride_and_who_to_call(client):
     html = text_html.text
     text = visible(html)
     assert "The Example Hotel Santa Monica" in text and "123 Ocean Ave, Santa Monica, CA 90401" in text
-    assert "987654321" in text and "Check in 3:00 PM" in text and "Alaska Airlines AS 1234" in text
+    assert "987654321" in text and "Check in 3:00 PM" in text and "Alaska Airlines AS 1234" in text and "Fri Oct 16, 8:05 AM PDT" in text and "Fri Oct 16, 9:32 AM PDT" in text
     assert 'href="https://www.google.com/maps/search/?api=1&amp;query=The+Example+Hotel+Santa+Monica%2C+123+Ocean+Ave%2C+Santa+Monica%2C+CA+90401"' in html
     assert 'href="https://m.uber.com/ul/' in html
     assert 'href="tel:+13105550100"' in html

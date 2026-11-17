@@ -10,11 +10,11 @@ carried only when the booking or a table of the airline's own pages has it; the 
 The weather, the Uber link and the page's words are the page's; this module only says what the day holds.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from gitaway import catalog, tripcal as cal, tripday as td, zones
+from gitaway import catalog, session as ses, tripcal as cal, tripday as td, zones
 
 NEAR_DAYS = 3
 CHECKIN_OPENS = timedelta(hours=24)       # what the airlines GitAway links to say: online check-in opens a day before
@@ -69,6 +69,7 @@ class Trip:
     plans: tuple = ()
     home: str = ""            # the town the trip leaves from, when the booking says (the sample's), else ""
     sample: bool = False      # the showcase's own sample trip: everything on it is sample data and the page says so
+    zone: str = zones.DEFAULT  # the destination's clock: the hotel's times, the plans' days and "today" are on it
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,7 @@ class FlightItem:
     opens: datetime           # when online check-in opens
     checkin_url: str          # the airline's page, "" when we have none
     leave: LeaveBy | None
+    airborne: bool = False    # in the air now
 
 
 @dataclass(frozen=True)
@@ -113,12 +115,31 @@ class Today:
     plans: tuple = ()         # during: today's Plans in time order
 
 
-def _date(now) -> date:
-    return now.date() if isinstance(now, datetime) else now
+# ---- the clocks: a flight's times are its airports' own, the hotel's and "today" are the destination's ---------------------------------------------
+
+def _at(dt, zone):
+    """`dt` on `zone`'s clock (a time the booking wrote with no zone); one that already has a zone is left as it is."""
+    return dt if dt.tzinfo else dt.replace(tzinfo=ZoneInfo(zone or zones.DEFAULT))
 
 
-def _flies(trip, d) -> bool:
-    return any(f.depart.date() == d for f in trip.flights)
+def _aware(trip) -> Trip:
+    """The trip with every time on its own clock: a flight leaves on its origin airport's zone and lands on its destination airport's (an airport we do not know keeps the trip's), a stay's times on the trip's."""
+    flights = tuple(replace(f, depart=_at(f.depart, zones.AIRPORTS.get(f.origin) or trip.zone), arrive=_at(f.arrive, zones.AIRPORTS.get(f.dest) or trip.zone)) for f in trip.flights)
+    stays = tuple(replace(s, check_in=_at(s.check_in, trip.zone), check_out=_at(s.check_out, trip.zone)) for s in trip.stays)
+    return replace(trip, flights=flights, stays=stays)
+
+
+def _today(trip, now) -> date:
+    return now.astimezone(ZoneInfo(trip.zone or zones.DEFAULT)).date()
+
+
+def _on_today(f, now) -> bool:
+    """Does flight `f` belong to today: it leaves today by the clock of the airport it leaves from, or it is in the air (a red-eye leaving at 11:30 PM Pacific is still that evening's flight in New York at 3 AM)?"""
+    return f.depart.date() == now.astimezone(f.depart.tzinfo).date() or f.depart <= now < f.arrive
+
+
+def _flies(trip, now) -> bool:
+    return any(_on_today(f, now) for f in trip.flights)
 
 
 def _stays(trip, d) -> bool:
@@ -126,16 +147,18 @@ def _stays(trip, d) -> bool:
 
 
 def state(trip, now) -> str:
-    d = _date(now)
+    trip = _aware(trip)
+    now = _at(now, trip.zone)
+    d = _today(trip, now)
     if d < trip.start:
         return "before"
     if d > trip.end:
         return "after"
-    return "travel" if _flies(trip, d) or _stays(trip, d) else "during"
+    return "travel" if _flies(trip, now) or _stays(trip, d) else "during"
 
 
 def near(trip, now) -> bool:
-    d = _date(now)
+    d = _today(trip, _at(now, trip.zone))
     return trip.start - timedelta(days=NEAR_DAYS) <= d <= trip.end
 
 
@@ -161,6 +184,7 @@ def leave_by(flight, drive, town) -> LeaveBy | None:
 
 def drive_town(trip, flight, stay=None) -> str:
     """Where the drive to `flight`'s airport starts: the trip's home town for the flight that leaves home ("" when the booking does not say), else the stay's address or the destination."""
+    trip = _aware(trip)
     if flight == min(trip.flights, key=lambda f: f.depart):
         return trip.home
     return stay.address if stay and stay.address else trip.place
@@ -168,8 +192,9 @@ def drive_town(trip, flight, stay=None) -> str:
 
 def _flight_item(trip, f, now, drives) -> FlightItem:
     drive = drives.get(f.origin)
-    stay = next((s for s in trip.stays if s.check_in.date() <= f.depart.date() <= s.check_out.date()), None)
-    return FlightItem(f, f.depart, f.depart <= now, f.depart - CHECKIN_OPENS, checkin_url(f), leave_by(f, drive, drive_town(trip, f, stay)))
+    local = f.depart.astimezone(ZoneInfo(trip.zone)).date()
+    stay = next((s for s in trip.stays if s.check_in.date() <= local <= s.check_out.date()), None)
+    return FlightItem(f, f.depart, f.depart <= now, f.depart - CHECKIN_OPENS, checkin_url(f), leave_by(f, drive, drive_town(trip, f, stay)), f.depart <= now < f.arrive)
 
 
 def _stay_item(s, d, now) -> StayItem:
@@ -177,13 +202,15 @@ def _stay_item(s, d, now) -> StayItem:
         return StayItem(s, s.check_in, s.check_in <= now, "checkin")
     if s.check_out.date() == d:
         return StayItem(s, s.check_out, s.check_out <= now, "checkout")
-    return StayItem(s, datetime.combine(d, datetime.min.time()), False, "staying")
+    return StayItem(s, datetime.combine(d, datetime.min.time(), tzinfo=s.check_in.tzinfo), False, "staying")
 
 
 def build(trip, now, drives=None) -> Today:
-    """What the day shows. `drives`: {departure airport: minutes by car}, the airportdrive answers the page asked for (none, no leave-by time)."""
+    """What the day shows. `now`: the moment (a naive one is the clock at the trip). `drives`: {departure airport: minutes by car}, the airportdrive answers the page asked for (none, no leave-by time)."""
     drives = drives or {}
-    d = _date(now)
+    trip = _aware(trip)
+    now = _at(now, trip.zone)
+    d = _today(trip, now)
     st = state(trip, now)
     day = max(0, min((trip.end - trip.start).days, (d - trip.start).days))
     to_go = max(0, (trip.start - d).days)
@@ -197,7 +224,7 @@ def build(trip, now, drives=None) -> Today:
     if st == "during":
         plans = tuple(sorted((p for p in trip.plans if p.day == d), key=lambda p: (p.start, p.title)))
         return Today(st, day, 0, stay=covering, plans=plans)
-    flights = [_flight_item(trip, f, now, drives) for f in trip.flights if f.depart.date() == d]
+    flights = [_flight_item(trip, f, now, drives) for f in trip.flights if _on_today(f, now)]
     items = sorted([*flights, *[i for i in stay_here if i.phase != "staying"]], key=lambda i: (i.past, i.at))
     return Today(st, day, 0, items=tuple(items), stay=covering)
 
@@ -211,12 +238,13 @@ def _minutes(d, m) -> datetime:
 def from_booking(session, b, acts=None) -> Trip:
     """The open trip's booking `b` as a Trip: a pasted booking's legs and hotels as written, the sample's flight and stay from the catalog (labelled sample). `acts`: the family's plans."""
     t = cal.trip("", b)
+    zone = ses.trip_zone(session)
     plans = tuple(Plan(t.depart + timedelta(days=a.day), a.start, a.end, a.title) for a in (acts if acts is not None else cal.activities(session)))
     if cal.is_imported(b):
         p = cal.plan_of(b)
         flights = tuple(Flight(x.airline, x.number, x.origin, x.dest, x.depart, x.arrive, x.confirmation) for x in p.legs)
-        stays = tuple(Stay(h.name, h.check_in, h.check_out, h.address, "", h.confirmation, h.phone, cal.booked_on(p, h)) for h in p.hotels)
-        return Trip(p.title, p.destination, p.start, p.end, flights, stays, plans)
+        stays = tuple(Stay(h.name, h.check_in, h.check_out, h.address, "", h.confirmation, h.phone, cal.booked_on(p, h)) for h in p.hotels if not h.booked_on.startswith("Cancelled"))      # a cancelled stay (matrixbook.mark_cancelled) is not part of the day
+        return Trip(p.title, p.destination, p.start, p.end, flights, stays, plans, zone=zone)
     flight, stay = cal.flight_of(b), cal.stay_of(b)
     sample = bool(b) and catalog.SAMPLE_TRIP == t
     flights = ()
@@ -225,7 +253,7 @@ def from_booking(session, b, acts=None) -> Trip:
         flights = (Flight(airline, number, t.origin, flight.airport, _minutes(t.depart, flight.depart_min), _minutes(t.depart, flight.arrive_min)),
                    Flight(airline, number, flight.airport, t.origin, _minutes(t.return_, flight.back_depart_min), _minutes(t.return_, flight.back_arrive_min)))
     stays = (Stay(stay.name, _minutes(t.depart, cal.CHECK_IN), _minutes(t.return_, cal.CHECK_OUT), area=stay.headline),) if stay else ()
-    return Trip(t.title, t.destination_name, t.depart, t.return_, flights, stays, plans, home=t.origin_name, sample=sample)
+    return Trip(t.title, t.destination_name, t.depart, t.return_, flights, stays, plans, home=t.origin_name, sample=sample, zone=zone)
 
 
 def local_now(zone) -> datetime:
