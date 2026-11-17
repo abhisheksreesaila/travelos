@@ -24,7 +24,7 @@ from datetime import date
 from email.message import EmailMessage
 from html import escape
 
-from gitaway import blogbutton, catalog, familydb
+from gitaway import blogbutton, catalog, familydb, walletpass
 from gitaway.matrixbook import _EMAIL
 
 log = logging.getLogger("gitaway.bookingmail")
@@ -101,12 +101,13 @@ def booked_mail(d: dict) -> Mail:
     policy = one_line(d.get("policy"), 400) or "See the booking page for the cancelling policy."
     tag = "Sandbox booking: nothing was charged." if d.get("sandbox") else ""
     mine, plan = _url(f"{RETURN_PATH}?token={d['token']}"), _url(PLAN_PATH)
+    wallet = [(label, _url(path)) for label, path in d.get("wallet") or ()]      # F-288: our signed download routes (they sign in first), never an attachment
     hello = f"Hi {first}," if first else "Hi,"
     lead = f"Your stay at {hotel} is booked."
     note = "The hotel keeps your name for check-in: bring an ID that matches it."
     text = "\n".join([hello, "", lead, *([tag] if tag else []), "", *[f"{k}: {v}" for k, v in rows], "", f"Cancelling: {policy}", "", note, "", f"Open your booking: {mine}",
-                      f"Plan this trip: {plan}", "", f"{SOLD_BY}. GitAway never sees or keeps your card.", ""])
-    html = _shell(f"Booked: {hotel}", hello, lead, tag, rows, [("Cancelling", policy)], note, [("Open your booking", mine, True), ("Plan this trip", plan, False)],
+                      *[f"{label}: {url}" for label, url in wallet], f"Plan this trip: {plan}", "", f"{SOLD_BY}. GitAway never sees or keeps your card.", ""])
+    html = _shell(f"Booked: {hotel}", hello, lead, tag, rows, [("Cancelling", policy)], note, [("Open your booking", mine, True), *[(label, url, False) for label, url in wallet], ("Plan this trip", plan, False)],
                   f"{SOLD_BY}. GitAway never sees or keeps your card.")
     return Mail(f"Booked: {hotel}, {_span(d['checkin'], d['checkout'])}", text, html)
 
@@ -210,7 +211,7 @@ def _sandbox() -> bool:
     return mb.mode() != mb.LIVE
 
 
-def booked(db, booking: dict, pay: dict, guest) -> None:
+def booked(db, booking: dict, pay: dict, guest, family: str = "") -> None:
     """Email the lead guest `guest` (a `liteapi.Guest`, already validated by `matrixbook.clean_guest`) that `booking` (the matrix_bookings row) is booked, from the saved prebook `pay`. Called before the
     guest's address is blanked. Nothing happens without SMTP settings or for a sample, and a booking is emailed once."""
     try:
@@ -218,7 +219,8 @@ def booked(db, booking: dict, pay: dict, guest) -> None:
             return
         mail = booked_mail({"first": guest.first, "hotel": booking["hotel"], "address": pay.get("hotel_address"), "checkin": booking["checkin"], "checkout": booking["checkout"],
                             "guests": pay.get("guests"), "room": booking["room"], "booking_id": booking["booking_id"], "confirmation": booking["confirmation"], "charge_cents": pay["charge_cents"],
-                            "due_cents": booking["due_at_stay_cents"], "policy": pay.get("policy"), "token": pay["id"], "sandbox": _sandbox()})
+                            "due_cents": booking["due_at_stay_cents"], "policy": pay.get("policy"), "token": pay["id"], "sandbox": _sandbox(),
+                            "wallet": walletpass.links(booking["booking_id"], family, walletpass.MAIL_TTL)})
         _spawn(_send, guest.email, mail, booking["booking_id"])
     except Exception:  # noqa: BLE001 - never undo or hold up a booking over its email
         log.warning("booking email failed: %s", booking.get("booking_id"))

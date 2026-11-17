@@ -331,11 +331,11 @@ def _stored(row) -> Done:
                 row["confirmation"], bool(row["sample"]), row["trip_id"])
 
 
-def _insert(db, ref, trip_id, user_id, *, booking_id, place, hotel, room, checkin, checkout, total, due, refundable, confirmation, sample) -> None:
+def _insert(db, ref, trip_id, user_id, *, booking_id, place, hotel, room, checkin, checkout, total, due, refundable, confirmation, sample, hotel_id="") -> None:
     familydb.run(db, "INSERT INTO matrix_bookings (id, trip_id, user_id, booking_id, place, hotel, room, checkin, checkout, total_cents, due_at_stay_cents, refundable, confirmation, "
-                     "sample, created_at) VALUES (:i, :t, :u, :b, :p, :h, :r, :a, :o, :c, :d, :f, :k, :s, :now)",
+                     "sample, created_at, hotel_id) VALUES (:i, :t, :u, :b, :p, :h, :r, :a, :o, :c, :d, :f, :k, :s, :now, :hid)",
                  i=ref, t=trip_id, u=user_id, b=booking_id, p=place, h=hotel[:120], r=room[:120], a=checkin, o=checkout, c=total, d=due, f=1 if refundable else 0,
-                 k=confirmation[:60], s=1 if sample else 0, now=familydb.now())
+                 k=confirmation[:60], s=1 if sample else 0, now=familydb.now(), hid=hotel_id[:40])
 
 
 def _save(db, ref, trip_id, user_id, row: Row, booking: liteapi.Booking | None, sample: bool) -> None:
@@ -343,7 +343,7 @@ def _save(db, ref, trip_id, user_id, row: Row, booking: liteapi.Booking | None, 
     _insert(db, ref, trip_id, user_id, booking_id=("SAMPLE-" + ref[:8].upper()) if booking is None else booking.booking_id, place=row.place,
             hotel=row.part.name if booking is None else (booking.hotel or row.part.name), room=pre.room, checkin=pre.checkin.isoformat(), checkout=pre.checkout.isoformat(),
             total=(booking.cents + pre.due_at_stay_cents) if booking else row.total_cents, due=pre.due_at_stay_cents, refundable=pre.refundable,
-            confirmation="SAMPLE" if booking is None else booking.confirmation, sample=sample)
+            confirmation="SAMPLE" if booking is None else booking.confirmation, sample=sample, hotel_id="" if booking is None else (booking.hotel_id or row.part.hotel_id))
 
 
 def book(prep: Prep, guest: liteapi.Guest, db, family: str, trip_id: str, user_id: str) -> Result:
@@ -524,14 +524,14 @@ def finish(db, family: str, token: str, user_id: str, budget: str = "") -> Resul
             with familydb.transaction(db):
                 _insert(db, ref, pay["trip_id"], user_id, booking_id=booking.booking_id, place=pay["place"], hotel=booking.hotel or pay["hotel"], room=pay["room"], checkin=pay["checkin"],
                         checkout=pay["checkout"], total=pay["charge_cents"] + pay["due_at_stay_cents"], due=pay["due_at_stay_cents"], refundable=booking.refundable or bool(pay["refundable"]),
-                        confirmation=booking.confirmation, sample=False)
+                        confirmation=booking.confirmation, sample=False, hotel_id=booking.hotel_id)
         except IntegrityError:      # a second call stored it first
             pass
         mine = familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)
     from gitaway import bookingmail      # the guest's address is still on the row: the booked email is composed before it is blanked below (F-285)
     lead, _ = clean_guest(pay["guest_first"], pay["guest_last"], pay["guest_email"])
     if lead:
-        bookingmail.booked(db, mine[0], pay, lead)
+        bookingmail.booked(db, mine[0], pay, lead, family)
     with familydb.transaction(db):
         familydb.run(db, "UPDATE matrix_payments SET status = 'booked', booking_id = :b, guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now WHERE id = :i",
                      b=mine[0]["booking_id"], i=token, now=familydb.now())

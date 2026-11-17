@@ -37,7 +37,7 @@ PATH = "/plan/matrix"
 TILE, SQUARE, SAVE, WARM, BOOK, RAIL = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/rail"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/v2rail.css"), Link(rel="stylesheet", href="/assets/css/v2drawer.css"),
-        Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
+        Link(rel="stylesheet", href="/assets/css/matrixbook.css"), Link(rel="stylesheet", href="/assets/css/walletpass.css"),
         Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True),
         Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True),
         Link(rel="stylesheet", href="/assets/css/aerial.css"), Script(src="/assets/js/aerial.js", defer=True),

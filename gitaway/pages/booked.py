@@ -13,7 +13,7 @@ import re
 
 from fasthtml.common import A, Details, Div, H2, P, Span, Summary
 
-from gitaway import access, catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti
+from gitaway import access, catalog, morning, passes, passkeys, phones, session as ses, tripcal as cal, tripday as td, tripimport as ti, walletpass
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui, tab_help
 
@@ -126,7 +126,9 @@ def sheet(v, found, ua, back, gone=""):
     pills, title, body = (_hotel(v, kind, item, index, ua, can_edit, back) if kind in ("checkin", "checkout") else _car(v, kind, item, ua, can_edit, back) if kind in ("pickup", "dropoff")
                           else _ticket(v, item, ua) if kind == "ticket" else _flight(v, index, item, can_edit, back))
     from gitaway.pages import bookedwhere, staycancel
-    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body, *([staycancel.panel(v, item, back)] if kind in ("checkin", "checkout") else [])]
+    stay = kind in ("checkin", "checkout")
+    wallet = walletpass.buttons(item.confirmation, v["session"].get("tenant_id") or "") if stay and not item.booked_on.startswith("Cancelled") else ""      # F-288
+    return pills, title, [bookedwhere.line(kind, item, cal.plan_of(v["b"]), "bk-where"), *body, wallet, *([staycancel.panel(v, item, back)] if stay else [])]
 
 
 def sos(v, ua, back=""):
