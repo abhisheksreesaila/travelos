@@ -35,7 +35,7 @@ def draw(h, rv, pt=""):
 
 def test_the_dashboard_is_the_score_with_words_and_count_the_strip_and_the_category_bars_beside_the_photos(hundred):
     html = draw(hotel(), hundred)
-    top = html[html.index('class="dr-top'):html.index('class="dr-info"')]
+    top = html[html.index('class="dr-top'):html.index('class="fp"')]
     assert 'class="dr-photos"' in top and 'class="dr-dash"' in top and top.index("dr-photos") < top.index("dr-dash")
     assert '<span class="dr-score num">7.6</span>' in top and "Good" in top and "6,263 reviews" in top
     assert "How the last 100 reviews went" in top and "The last 10 were all 8 or more." in top

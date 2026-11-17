@@ -195,12 +195,12 @@ def dashboard(h, rv, ptype=""):
 
 def rich(h, rv=None, ptype=""):
     """The fragment: everything the hotel and its guests say, as one element for the hotel's slot. `h` is liteapi.HotelDetails, `rv` liteapi.HotelReviews or None.
-    The photos and the dashboard sit side by side, then what the hotel says, the fine print up front (with F-284's "See it from above" card), the newest cards, the rooms, the drawer of every review."""
+    The photos (and what the hotel says under them) and the dashboard sit side by side, then the fine print up front (with F-284's "See it from above" card), the newest cards, the rooms, the drawer of every review."""
     from gitaway.pages import aerialview, fineprint, reviewdrawer      # the card, the fine print and the drawer are their own modules (F-284, F-282)
     mos = mosaic([(p.url, p.caption) for p in h.photos], h.name)
     dash = dashboard(h, rv, ptype)
-    top = Div(mos, dash, cls="dr-top" + (" has-dash" if mos and dash else ""))
-    return Div(top, Div(_paragraphs(h), cls="dr-info"), fineprint.section(h, rv, aerialview.card(h)), _reviews(rv, ptype), _rooms(h),
+    top = Div(Div(mos, Div(_paragraphs(h), cls="dr-info"), cls="dr-left"), dash, cls="dr-top" + (" has-dash" if dash else ""))
+    return Div(top, fineprint.section(h, rv, aerialview.card(h)), _reviews(rv, ptype), _rooms(h),
                Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), reviewdrawer.drawer(h, rv), cls="dr-richin")
 
 
