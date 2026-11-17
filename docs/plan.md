@@ -1747,13 +1747,13 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html · D
 - [ ] every room type the source gave sits in a scroll-snap row with count and arrows (laptop), swipe (phone), the chosen room marked; choosing still goes through `tm.pick` indexes
 - [ ] no photo scrubber (founder 2026-11-16: "might not be needed, too much stress on the page"): the gallery stays the mosaic and lightbox (F-275)
 
-## F-284 See it from above: satellite, truth pins, photoreal on tap [todo]
+## F-284 See it from above: satellite, truth pins, photoreal on tap [done]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · Decisions D-905..D-909 · Needs: none (Google key on Railway for photoreal on gitaway.me)
-- [ ] a "See it from above" card in the opened square's hotel (one line of the top heads-up), opening a full-screen sheet (phone) or panel (laptop) that loads nothing 3D before the tap and frees it on close
-- [ ] Map view keyless (MapLibre + OpenFreeMap, 3D buildings); satellite and photoreal through Google Map Tiles with `GOOGLE_MAPS_API_KEY` (browser key, referrer-restricted), handed to the page only by a server route that counts opens per day (`GOOGLE_3D_A_DAY`, default 100) and says "Back tomorrow" past it; without the key those views are not offered
-- [ ] truth pins from OpenStreetMap asked by the server (fixed Overpass hosts, timeout, cached per hotel for days), distances on the server, a heads-up line chosen from them; the showcase uses a recorded fixture
-- [ ] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
-- [ ] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
+- [x] a "See it from above" card in the opened square's hotel (one line of the top heads-up), opening a full-screen sheet (phone) or panel (laptop) that loads nothing 3D before the tap and frees it on close
+- [x] Map view keyless (MapLibre + OpenFreeMap, 3D buildings); satellite and photoreal through Google Map Tiles with `GOOGLE_MAPS_API_KEY` (browser key, referrer-restricted), handed to the page only by a server route that counts opens per day (`GOOGLE_3D_A_DAY`, default 100) and says "Back tomorrow" past it; without the key those views are not offered
+- [x] truth pins from OpenStreetMap asked by the server (fixed Overpass hosts, timeout, cached per hotel for days), distances on the server, a heads-up line chosen from them; the showcase uses a recorded fixture
+- [x] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
+- [x] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
 
 ## F-285 Booking emails through Resend [todo]
 Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910..D-914 · Needs: SMTP settings for Resend on Railway for gitaway.me
