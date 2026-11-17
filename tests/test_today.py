@@ -308,3 +308,24 @@ def test_the_page_is_a_page_of_the_app_with_the_location_button_and_no_coordinat
     html = client.get("/trip/today?day=2026-10-16").text
     assert "/assets/css/today.css" in html and "/assets/js/today.js" in html
     assert 'id="td-locate"' not in html          # the sample's stay has no coordinates: no button to measure to nothing
+
+
+def test_the_page_is_never_kept_by_the_browser_after_sign_out(client):
+    book(client)
+    assert client.get("/trip/today").headers["cache-control"] == "private, no-store"
+
+
+def test_the_page_carries_when_it_was_drawn_for_the_saved_copy_notice(client):
+    book(client)
+    html = client.get("/trip/today").text
+    m = re.search(r'<div[^>]*id="td-saved"[^>]*>', html)
+    assert m and 'hidden' in m.group(0) and 'data-saved="0"' in m.group(0)
+    assert re.search(r'data-at="20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d', m.group(0))
+
+
+def test_a_signed_in_page_says_when_the_session_runs_out_and_a_signed_out_one_says_nothing(client):
+    import time
+    assert 'name="ga-until"' not in client.get("/offline").text
+    book(client)
+    until = int(re.search(r'<meta name="ga-until" content="(\d+)">', client.get("/trip/today").text).group(1))
+    assert 29 * 86400 < until - time.time() <= 30 * 86400 + 5

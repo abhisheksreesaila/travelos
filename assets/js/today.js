@@ -32,6 +32,14 @@
     });
   }
 
+  // 3. A copy the service worker served from its cache says so, and when it was drawn (the worker flips data-saved to 1; the time is the server's, in this device's clock).
+  var saved = document.getElementById("td-saved");
+  if (saved && saved.dataset.saved === "1") {
+    var at = new Date(saved.dataset.at);
+    saved.textContent = "Saved copy · as of " + (isNaN(at) ? "an earlier visit" : at.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }));
+    saved.hidden = false;
+  }
+
   var card = document.getElementById("td-card");
   if (card && card.dataset.today && "serviceWorker" in navigator) {
     navigator.serviceWorker.ready.then(function (reg) {

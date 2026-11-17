@@ -140,10 +140,12 @@ def test_the_page_once_opened_shows_its_codes_and_address_with_no_signal(ctxs, b
     page.goto(f"{base_url}{path}")
     page.wait_for_selector("#td-stay")
     saved(page, path)
+    assert page.is_hidden("#td-saved")          # online, it is the live page: no notice
     ctx.set_offline(True)
     page.goto(f"{base_url}{path}")
     text = page.inner_text("#main")
     assert "987654321" in text and "123 Ocean Ave, Santa Monica, CA 90401" in text and "ABCDEF" in text
+    assert re.fullmatch(r"Saved copy · as of \w{3},? \d{1,2}:\d{2}\s?[AP]M", page.inner_text("#td-saved").strip())      # the copy says it is a copy, and from when
 
 
 def test_the_planners_card_has_the_day_kept_before_it_is_ever_opened(ctxs, base_url):
@@ -160,3 +162,59 @@ def test_the_planners_card_has_the_day_kept_before_it_is_ever_opened(ctxs, base_
     ctx.set_offline(True)
     page.goto(f"{base_url}{path}")
     assert "Flight check-in opens" in page.inner_text("#main") and "987654321" in page.inner_text("#main")
+
+
+def test_a_saved_page_is_not_served_after_the_sign_in_it_was_saved_under_has_run_out(ctxs, base_url):
+    ctx = ctxs()
+    sign_in(ctx, base_url)
+    book_pasted(ctx, base_url)
+    page = ctx.new_page()
+    controlled(page, base_url)
+    path = f"/trip/today?day={DAY}"
+    page.goto(f"{base_url}{path}")
+    page.wait_for_selector("#td-stay")
+    saved(page, path)
+    record = page.evaluate("caches.open('ga-who').then(c => c.match('/__who')).then(r => r.text())")
+    who, until = record.split("|")
+    assert int(until) > 0                       # the page told the worker when the sign-in runs out
+    page.evaluate("(w) => caches.open('ga-who').then(c => c.put('/__who', new Response(w + '|1')))", who)      # ... which was long ago
+    ctx.set_offline(True)
+    try:
+        page.goto(f"{base_url}{path}")
+    except Exception:
+        pass
+    text = page.locator("body").inner_text()
+    assert "987654321" not in text and "ABCDEF" not in text
+    assert page.evaluate("caches.keys().then(k => k.filter(n => n.startsWith('ga-pages-')).length)") == 0      # and the saved pages were let go
+
+
+UNDER_THE_BAR = """() => { const bar = document.querySelector('.v2-sections'); if (!bar || getComputedStyle(bar).position !== 'fixed') return ['no floating bar'];
+    const b = bar.getBoundingClientRect();
+    return [...document.querySelectorAll('#main .td-btn, #main .td-link')].filter(e => { const r = e.getBoundingClientRect();
+        return r.width > 0 && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; }).map(e => e.textContent.trim()); }"""
+
+
+@pytest.mark.parametrize("day", ["2026-10-13", "2026-10-16", "2026-10-18"], ids=["before", "travel", "during"])
+def test_on_a_phone_no_control_sits_under_the_floating_bar_at_rest_or_at_the_foot(ctxs, base_url, day):
+    ctx = ctxs(PHONE)
+    sign_in(ctx, base_url)
+    book_pasted(ctx, base_url)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/trip/today?day={day}")
+    page.wait_for_selector(".td-wrap")
+    assert page.evaluate(UNDER_THE_BAR) == []
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_timeout(150)
+    assert page.evaluate(UNDER_THE_BAR) == []
+
+
+def test_on_a_travel_day_phone_the_hotels_key_actions_are_on_the_first_screen_above_the_bar(ctxs, base_url):
+    ctx = ctxs(PHONE)
+    sign_in(ctx, base_url)
+    book_pasted(ctx, base_url)
+    page = ctx.new_page()
+    page.goto(f"{base_url}/trip/today?day={DAY}")
+    page.wait_for_selector("#td-directions")
+    bar_top = page.evaluate("document.querySelector('.v2-sections').getBoundingClientRect().top")
+    for ident in ("td-directions", "td-ride"):
+        assert page.evaluate("(i) => document.getElementById(i).getBoundingClientRect().bottom", ident) <= bar_top, ident

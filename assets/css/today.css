@@ -1,11 +1,13 @@
 /* Today (F-287, D-926..D-930): the next thing, on the day. A phone's column of cards, a laptop's two columns; v2 tokens only (they turn to the slate night in dark mode). Sizes are rem, a px is a hairline. */
-.td-wrap { max-width: 40rem; margin: 0 auto; padding: 5.5rem 1rem 6rem; display: grid; gap: 0.875rem; }
+.td-wrap { max-width: 40rem; margin: 0 auto; padding: 1rem 1rem 2rem; display: grid; gap: 0.875rem; }      /* the page's own bottom padding (v2.css) already clears the phone's floating Book / Guides bar */
 .td-top { display: grid; gap: 0.5rem; padding: 0.25rem 0.25rem 0.5rem; }
 .td-h1 { margin: 0; font-family: var(--f-display); font-weight: var(--d-wt); font-size: clamp(2rem, 7vw, 2.75rem); letter-spacing: var(--d-track); line-height: var(--d-lh); color: var(--ink); }
 .td-lede, .td-count { margin: 0; font-size: 1.125rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .td-count .num { font-family: var(--f-display); font-size: 3rem; font-weight: var(--d-wt); color: var(--ink); line-height: 1; }
 .td-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .td-tag { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 0.75rem; border-radius: 99rem; background: var(--head-chip); color: var(--ink); font-weight: 700; font-size: max(var(--label-min), 0.8125rem); }
+.td-saved { margin: 0; padding: 0.625rem 0.875rem; border-radius: 1rem; background: var(--tix-t); color: var(--tix-i); font-weight: 700; }
+.td-saved[hidden] { display: none; }
 .td-tag.is-next { background: var(--cta-bg); color: var(--cta-fg); }
 .td-tag.is-sample, .td-tag.is-preview { background: var(--tix-t); color: var(--tix-i); }
 
@@ -68,7 +70,7 @@ a.td-fine { text-decoration: underline; }
 
 @media (min-width: 40rem) { .td-minicard { grid-template-columns: auto 1fr auto; } .td-minicard .td-open { grid-column: auto; } }
 @media (min-width: 64rem) {
-  .td-wrap { max-width: 64rem; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; padding-top: 6.5rem; }
+  .td-wrap { max-width: 64rem; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; padding-top: 3rem; }
   .td-top, .td-foot { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { .td-btn { transition: none; } .td-btn:active { transform: none; } }

@@ -14,7 +14,7 @@ from datetime import date, datetime, time
 
 from fasthtml.common import A, B, Div, H1, H2, Link, P, Script, Section, Span, Small
 
-from gitaway import access, airportdrive, geo, phone, phones, planv2 as pv, session as ses, showcase, today as td, tripcal as cal, tripday as tday, tripgeo
+from gitaway import access, airportdrive, catalog, geo, phone, phones, planv2 as pv, session as ses, showcase, today as td, tripcal as cal, tripday as tday, tripgeo
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booking, tripshare
@@ -117,7 +117,7 @@ def _stay(stay, trip, ua, phase, coords, b=None, past=False, first=False, dated=
                A(icon("car", 18, 2.4), "Get a ride", href=uber_deep_link("", place), rel="noopener", cls="td-btn", id="td-ride"), cls="td-acts")
     return Section(Div(_tag("Next", "is-next") if first else _tag("Done") if past else "", Span(icon("bed", 22, 2.2), cls="td-ic k-stay"),
                        Div(H2(stay.name), Span("Where you are staying" if phase == "staying" else "Your hotel", cls="td-sub"), cls="td-ht"), cls="td-head"),
-                   *rows, addr, _code("Confirmation", stay.confirmation), acts, wallet_slot(b), _locate(coords), _contact(stay),
+                   acts, *rows, addr, _code("Confirmation", stay.confirmation), wallet_slot(b), _locate(coords), _contact(stay),
                    cls="td-card td-stay" + (" is-next" if first else ""), id="td-stay")
 
 
@@ -208,7 +208,8 @@ def draw(session, request, day=""):
     tags = [_tag("Sample trip: made-up flight and hotel", "is-sample")] if trip.sample else []
     if preview:
         tags.append(_tag(f"Preview of {preview:%a, %b} {preview.day}", "is-preview"))
-    head = Section(Div(*tags, cls="td-tags") if tags else "", H1(title, cls="td-h1 disp"), lead, cls="td-top", id="td-top")
+    saved = Div(id="td-saved", cls="td-saved", hidden=True, data_saved="0", data_at=catalog.now_utc().strftime("%Y-%m-%dT%H:%M:%SZ"), role="status")      # sw.js flips data-saved to 1 in a copy it serves from its cache; today.js then says so
+    head = Section(saved, Div(*tags, cls="td-tags") if tags else "", H1(title, cls="td-h1 disp"), lead, cls="td-top", id="td-top")
     body = []
     if t.state == "before":
         nxt = next((i for i in t.flights if not i.past), None)
