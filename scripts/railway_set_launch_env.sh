@@ -22,4 +22,4 @@ set_plain SMTP_USER "resend"
 set_plain SMTP_MAIL_FROM "GitAway <trips@gitaway.me>"
 from_file SMTP_PASSWORD "$RESEND" RESEND_API_KEY
 from_file GOOGLE_MAPS_API_KEY "$GMAPS" GOOGLE_MAPS_API_KEY
-echo "done; names on Railway now:"; "$RW" variables --service web --kv | cut -d= -f1 | grep -E '^(GITAWAY_PUBLIC_URL|SMTP_|GOOGLE_MAPS_API_KEY|LITEAPI_KEY)$' | sort
+echo "done; names on Railway now:"; "$RW" variables --service web --kv | cut -d= -f1 | grep -E '^(GITAWAY_PUBLIC_URL|SMTP_.*|GOOGLE_MAPS_API_KEY|LITEAPI_KEY)$' | sort
