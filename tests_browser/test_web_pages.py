@@ -75,7 +75,7 @@ def test_each_page_has_the_v2_bar_white_cards_and_the_v2_type_at_1440_by_900(ari
     ctx, page = ari
     page.goto(f"{base_url}{path}")
     expect(page.locator(".v2-top")).to_be_visible()
-    expect(page.locator(".v2-sections a")).to_have_text(["Book", "Plan", "Guides"])      # M5 triage: the bar is Book · Plan · Guides (F-255); Family members is in the avatar's menu
+    expect(page.locator(".v2-sections a")).to_have_text(["Book", "My trip", "Guides"])      # F-289: the bar is Book · My trip · Guides; Family members is in the avatar's menu
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and style[1] >= 24, style      # F-272: a near-opaque white card, radius 26 (v2's card)

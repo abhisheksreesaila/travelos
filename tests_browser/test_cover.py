@@ -151,7 +151,7 @@ def test_dark_follows_the_sites_own_choice_and_light_is_the_default(cover):
     assert dark.evaluate("document.documentElement.dataset.mode") == "dark"
     dark.wait_for_timeout(1300)
     assert float(dark.evaluate("getComputedStyle(document.querySelector('.cv-sky .moon')).opacity")) == 1 and float(dark.evaluate("getComputedStyle(document.querySelector('.cv-sky .sun')).opacity")) == 0
-    assert dark.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(244, 245, 251)"      # the v2 ink of the dark mode
+    assert dark.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(245, 247, 250)"      # the v2 ink of the dark mode
     paper = dark.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor")
     assert paper == "rgb(237, 230, 215)"      # the postcard is paper in both modes (dimmed in the dark)
     dark.click(".cv-mode")      # the bar's button is the site's switch: it turns the page and the choice is kept

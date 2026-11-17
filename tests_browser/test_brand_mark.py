@@ -13,7 +13,7 @@ MEASURE = """() => [...document.querySelectorAll('.ga-brand-mark, .si-logo')].fi
 })"""
 LOOK = {"light": {"tile": "rgb(11, 11, 13)", "strokes": ["rgb(255, 255, 255)", "rgb(140, 140, 255)", "rgb(211, 140, 255)", "rgb(255, 154, 92)"], "word": "rgb(11, 11, 13)"},
         "dark": {"tile": "rgb(245, 245, 247)", "strokes": ["rgb(11, 11, 13)", "rgb(67, 56, 202)", "rgb(139, 47, 201)", "rgb(194, 65, 12)"], "word": "rgb(245, 245, 247)"}}
-COVER = {"light": "rgb(15, 17, 36)", "dark": "rgb(244, 245, 251)"}      # the cover's wordmark ink (F-266's postcard)
+COVER = {"light": "rgb(15, 17, 36)", "dark": "rgb(245, 247, 250)"}      # the cover's wordmark ink (F-266's postcard)
 
 
 def _marks(page):

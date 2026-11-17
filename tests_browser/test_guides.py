@@ -61,7 +61,7 @@ def test_the_hub_filters_and_a_guide_opens_a_stop_and_adds_it_to_the_plan(family
     page.goto(f"{base_url}/guides")
     expect(page.locator(".gcard")).to_have_count(4)      # the four samples, labelled
     shot(page, f"hub-{viewport['width']}")
-    expect(page.locator(".v2-sections a")).to_have_text(["Book", "Plan", "Guides"])
+    expect(page.locator(".v2-sections a")).to_have_text(["Book", "My trip", "Guides"])
     expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text("Guides")
     # a filter is a plain link: "3 to 4 days" leaves the three guides of three and four days
     page.get_by_role("link", name="3 to 4 days").click()
