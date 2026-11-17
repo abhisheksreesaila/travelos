@@ -84,6 +84,7 @@
     dr.dataset.total = String(t);
     (what || []).forEach(function (sel) { qa(dr, sel).forEach(fade); });
     loadRich(dr);
+    dr.dispatchEvent(new CustomEvent('dr:changed', { bubbles: true }));      // F-282: the fine print follows the room and flight now chosen (assets/js/hotelfine.js)
   }
 
   // ---- the hotel's own photos, words and reviews (F-275, D-860): asked when the hotel is shown, never for a square nobody opened; kept for the next time ----
@@ -103,6 +104,7 @@
           if (hotel) hotel.classList.add('has-rich');      // its mosaic replaces the one-photo gallery
           roomThumbs(slot);
           fade(slot);
+          slot.dispatchEvent(new CustomEvent('dr:rich', { bubbles: true }));      // F-282: the hotel's page is in: its fine print reads the chosen room and flight
         })
         .catch(function () { delete richKept[id]; slot.dataset.state = 'none'; slot.hidden = true; });      // nothing came: the hotel is what the search gave, as before
     });
