@@ -1,0 +1,92 @@
+/* See it from above (F-284, D-905..D-909; docs/design/flyaround is the prototype): the card in the opened square's hotel, and the sheet (a phone's full screen, a laptop's panel) with the map and
+   the truth pins. v2 tokens only; the sheet grows from the card and folds back with GA.motion, so no duration is written here but the hover's --v2-quick. Frosted glass is the .v2-glass class,
+   on the controls floating over the map. */
+
+/* the card */
+.av-card { display: grid; grid-template-columns: 6.5rem 1fr auto; align-items: center; gap: 1rem; width: 100%; min-height: var(--target); padding: 0.75rem; margin: 0.75rem 0; text-align: left;
+  border-radius: 1.25rem; border: 1px solid var(--line); background: var(--card-solid); color: var(--ink); box-shadow: var(--sh2); font: inherit; cursor: pointer;
+  transition: box-shadow var(--v2-quick) var(--v2-ease); }
+.av-card:hover { box-shadow: var(--sh3); }
+.av-card:focus-visible { outline: 3px solid var(--flight); outline-offset: 3px; }
+.av-thumb { width: 6.5rem; height: 5rem; border-radius: 0.9rem; overflow: hidden; background: var(--card-2); }
+.av-thumb svg { width: 100%; height: 100%; display: block; }
+.av-tx { display: grid; gap: 0.25rem; min-width: 0; }
+.av-k { font: 600 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--flight); }
+.av-t { font: 560 1.35rem/1.15 var(--f-display); }
+.av-l { color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.35; }
+.av-go { width: 3rem; height: 3rem; border-radius: 999px; display: grid; place-items: center; background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); }
+.av-go svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 30rem) { .av-card { grid-template-columns: 5rem 1fr; } .av-go { display: none; } .av-thumb { width: 5rem; height: 4.5rem; } }
+
+/* the sheet */
+body.av-open { overflow: hidden; }
+.av-scrim { position: fixed; inset: 0; z-index: 80; background: var(--scrim); }
+.av-sheet { position: fixed; inset: 0; z-index: 81; display: grid; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; background: var(--card-solid); color: var(--ink); }
+@media (min-width: 64rem) {
+  .av-sheet { inset: 5vh 4vw; border-radius: 1.5rem; box-shadow: var(--sh3); grid-template-columns: minmax(0, 1fr) 23rem; grid-template-rows: minmax(0, 1fr); }
+}
+.av-stage { position: relative; min-height: 0; background: var(--card-2); }
+.av-map { position: absolute; inset: 0; }
+.av-canvas { position: absolute; inset: 0; }
+.av-canvas canvas:focus { outline: none; }
+.av-loading { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: var(--ink-2); font-weight: 560; pointer-events: none; }
+.av-loading[hidden], .av-msg[hidden], .av-resume[hidden] { display: none; }
+.av-loading span { padding: 0.6rem 1rem; border-radius: 999px; }
+.av-bar { position: absolute; left: 0.75rem; right: 0.75rem; top: max(0.75rem, env(safe-area-inset-top)); z-index: 3; display: flex; gap: 0.5rem; align-items: center; pointer-events: none; }
+.av-bar > * { pointer-events: auto; }
+.av-round { width: var(--target); height: var(--target); padding: 0; border-radius: 999px; display: grid; place-items: center; border: 0; color: var(--ink); cursor: pointer; }
+.av-seg { display: flex; padding: 0.25rem; gap: 0.15rem; margin-left: auto; border-radius: 999px; }
+.av-seg button { min-height: 2.5rem; padding: 0 0.85rem; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: 560 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
+.av-seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+@media (max-width: 26rem) { .av-seg button { padding: 0 0.6rem; } }
+.av-i { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.av-resume { position: absolute; left: 50%; bottom: 3.25rem; z-index: 3; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 1.1rem;
+  border: 0; border-radius: 999px; color: var(--ink); font: 600 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
+.av-attr { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0.35rem 0.75rem; font-size: max(var(--label-min), 0.8125rem); line-height: 1.35; color: var(--ink-2); background: var(--card-t); border-top: 1px solid var(--line); }
+.av-attr a { color: inherit; }
+.av-sheet.cesium-on .av-attr { bottom: auto; top: 4.5rem; left: 0.75rem; right: auto; border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.2rem 0.55rem; }
+@media (max-width: 40rem) { .av-sheet.cesium-on .av-attr { top: auto; bottom: 4.4rem; } }
+.av-sheet .cesium-widget-credits { padding: 0.2rem 0.5rem; background: var(--card-t); border-radius: 0.4rem; color: var(--ink); }
+.maplibregl-ctrl-attrib { display: none; }      /* the sheet's own attribution line is always visible instead */
+.av-msg { position: absolute; inset: 0; z-index: 2; overflow: auto; display: grid; align-content: start; justify-items: center; padding: 5rem 1rem 3.5rem; }
+.av-card2 { max-width: 30rem; padding: 1.25rem; border-radius: 1.25rem; border: 1px solid var(--line); background: var(--card-solid); box-shadow: var(--sh2); }
+.av-card2 b { display: block; font: 560 1.4rem/1.15 var(--f-display); margin-bottom: 0.5rem; }
+.av-card2 p { margin: 0; color: var(--ink-2); }
+
+/* the truth panel */
+.av-truth { overflow: auto; max-height: 44svh; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card-solid); }
+@media (min-width: 64rem) { .av-truth { max-height: none; padding: 1.25rem; border-top: 0; border-left: 1px solid var(--line); } }
+.av-kk { font: 600 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.av-truth h2 { margin: 0.35rem 0 0.75rem; font: 560 1.5rem/1.12 var(--f-display); letter-spacing: -0.02em; }
+.av-hd { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 0.75rem; padding: 0.8rem 0.9rem; border-radius: 1rem; background: var(--tix-t); color: var(--ink); }
+.av-hd svg { margin-top: 0.1rem; color: var(--tix); }
+.av-hd.good { background: var(--see-t); }
+.av-hd.good svg { color: var(--see); }
+.av-hd b { display: block; font-weight: 650; }
+.av-src { margin: 0.25rem 0 0.75rem; color: var(--ink-3); font-size: max(var(--text-min), 0.875rem); }
+.av-src.warn { color: var(--ink-2); }
+.av-pins { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.av-pin { display: grid; grid-template-columns: 2.5rem 1fr auto; gap: 0.75rem; align-items: center; width: 100%; min-height: 3.5rem; padding: 0.6rem 0.7rem; text-align: left;
+  border-radius: 1rem; border: 1px solid var(--line); background: var(--card-solid); color: var(--ink); font: inherit; cursor: pointer; }
+.av-pin:hover { background: var(--card-2); }
+.av-pin.none { opacity: 0.7; cursor: default; }
+.av-ic { width: 2.5rem; height: 2.5rem; border-radius: 0.8rem; display: grid; place-items: center; }
+.av-nm { display: block; font-weight: 600; line-height: 1.25; }
+.av-sub { display: block; color: var(--ink-3); font-size: max(var(--text-min), 0.875rem); line-height: 1.3; }
+.av-d { text-align: right; font-weight: 650; line-height: 1.2; }
+.av-d small { display: block; font-weight: 500; color: var(--ink-3); font-size: max(var(--text-min), 0.875rem); }
+.av-note { margin: 1rem 0 0; color: var(--ink-3); font-size: max(var(--text-min), 0.875rem); }
+.av-c-flight { background: var(--flight-t); color: var(--flight); }
+.av-c-road { background: var(--tix-t); color: var(--tix); }
+.av-c-water { background: var(--wx-t); color: var(--wx); }
+.av-c-food { background: var(--food-t); color: var(--food); }
+.av-c-shop { background: var(--see-t); color: var(--see); }
+.av-c-park { background: var(--stay-t); color: var(--stay); }
+
+/* the map's markers */
+.av-mk { width: 2.25rem; height: 2.25rem; border-radius: 999px; display: grid; place-items: center; border: 2px solid var(--card-solid); box-shadow: var(--sh2); }
+.av-mk .av-i { width: 1.1rem; height: 1.1rem; }
+.av-mk.hotel { width: 2.75rem; height: 2.75rem; background: var(--ink); color: var(--on-ink); }
+.av-mk.flash { animation: av-flash var(--v2-flash) var(--v2-ease) 2; }
+@keyframes av-flash { 50% { scale: 1.35; } }      /* the individual property: MapLibre positions a marker with its transform */
+@media (prefers-reduced-motion: reduce) { .av-mk.flash { animation: none; } }

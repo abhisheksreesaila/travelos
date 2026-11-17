@@ -191,7 +191,8 @@ def rich(h, rv=None, ptype=""):
     mos = mosaic([(p.url, p.caption) for p in h.photos], h.name)
     times = P(Span(icon("calendar", 15, 2), f"Check-in from {h.checkin}") if h.checkin else "", Span(icon("calendar", 15, 2), f"Check-out by {h.checkout}") if h.checkout else "", cls="dr-times") if h.checkin or h.checkout else ""
     info = Div(Div(_paragraphs(h), _facilities(h), times, cls="dr-ic-l"), Div(_rating(h, rv), cls="dr-ic-r"), cls="dr-info")
-    return Div(mos, info, _trend(rv, h.rating, ptype), _categories(rv), _reviews(rv, ptype), _rooms(h), Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), cls="dr-richin")
+    from gitaway.pages import aerialview      # F-284: the "See it from above" card, under the photos (its own module)
+    return Div(mos, aerialview.card(h), info, _trend(rv, h.rating, ptype), _categories(rv), _reviews(rv, ptype), _rooms(h), Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), cls="dr-richin")
 
 
 def fragment(hotel_id: str, family: str = "", ptype: str = ""):

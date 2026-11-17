@@ -122,6 +122,9 @@ def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int, ptype: 
     from gitaway.pages import hotelview
     slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), data_pt=ptype, hidden=j != 0,
                  role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
+    if sq.sample:      # F-284: a sample square has no hotel of LiteAPI's; the card opens a recorded real one, labelled a sample
+        from gitaway.pages import aerialview
+        slots = [Div(aerialview.sample_card(place.name), cls="dr-rich", data_state="done", data_for=str(j), hidden=j != 0) for j in range(len(alts))]
     return Div(Div(*hotels, cls="dr-hl"),
                Div(sub, *room_lists,
                    Div(f"Other stays in {place.name}", cls="dr-sub") if len(alts) > 1 else "",
