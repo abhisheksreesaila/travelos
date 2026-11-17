@@ -1727,10 +1727,10 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (gro
 - [x] the extra-info row is the Fill treatment: a dark-frost tray titled "More to know before you pick", chips with a gradient icon, a teaser line and a count, on matrix and opened square; still loads on demand (F-277)
 - [x] phone and laptop, both modes, 48px targets, reduced motion respected
 
-## F-282 The hotel as a decision dashboard, with the fine print up front [todo]
+## F-282 The hotel as a decision dashboard, with the fine print up front [done]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hotel, fine print, drawer) · Decisions D-895..D-899 · Needs: F-281
-- [ ] beside the gallery (laptop) or below it (phone): score with words and count, the last-100 dot strip and streaks (reviewtrend), category bars from LiteAPI's sentiment categories
-- [ ] "The fine print, up front", built only from LiteAPI's data (fees paid at the hotel, `hotelImportantInformation`, check-in/out times, cancellation policy, facilities, sentiment cons):
+- [x] beside the gallery (laptop) or below it (phone): score with words and count, the last-100 dot strip and streaks (reviewtrend), category bars from LiteAPI's sentiment categories
+- [x] "The fine print, up front", built only from LiteAPI's data (fees paid at the hotel, `hotelImportantInformation`, check-in/out times, cancellation policy, facilities, sentiment cons):
   - costs not in the price, with "what the stay really costs";
   - policies that bite, with check-in time against the flight's landing time;
   - fits your family;
@@ -1738,9 +1738,9 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hot
   - what guests complain about, opening the matching reviews;
   - unusual items flagged "Heads up", ordinary amenities in one "The usual" line;
   - anything absent says "not listed"
-- [ ] the map's truth feeds the dashboard (founder 2026-11-16: "important things highlighted like a dashboard … now with maps, important pin points"): "Getting there and around" leads with F-284's heads-up line and the top pins (flight path, freeway, water, grocery, parking) with distance and time, and holds the "See it from above" card; an unusual pin (flight path overhead, freeway under 300 m) wears the same "Heads up" flag as a fee
-- [ ] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
-- [ ] the showcase shows labelled sample data; tests over the recorded fixtures
+- [x] the map's truth feeds the dashboard (founder 2026-11-16: "important things highlighted like a dashboard … now with maps, important pin points"): "Getting there and around" leads with F-284's heads-up line and the top pins (flight path, freeway, water, grocery, parking) with distance and time, and holds the "See it from above" card; an unusual pin (flight path overhead, freeway under 300 m) wears the same "Heads up" flag as a fee
+- [x] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
+- [x] the showcase shows labelled sample data; tests over the recorded fixtures
 
 ## F-283 Stay and flights apart, and a rooms row [todo]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html · Decisions D-900..D-904 · Needs: F-282
