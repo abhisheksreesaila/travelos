@@ -1796,3 +1796,34 @@ Founder 2026-11-17: "the word plan means different things to different people �
 - [x] the bar's Plan reads "My trip" (the calendar, titled "Your itinerary"); a visitor's "Plan a trip" reads "Find a trip"
 - [x] a signed-out tap on satellite or 3D in See it from above shows a clear "Sign in to fly around the hotel in 3D" card with the sign-in way
 - [x] the cover's dark sky is the deep night of the Harbour ground, not purple (D-925)
+
+## F-290 Reviews as a calm dashboard, the analysis in the side drawer [todo]
+Founder 2026-11-17 (launch polish): "the reviews should not be shown down and expanded, it takes away the focus … it should be a side drawer … reviews six years ago no one cares, only the last hundred or fifty … a beautiful dashboard … on demand, if they have a question … real-time search". Decisions D-937..D-940.
+- [ ] the opened square shows only a compact dashboard: score and words, the last-100 strip with its one-line streak, category bars as short bars with their scores (no paragraphs); one "Read the reviews" way in
+- [ ] everything long moves into the side drawer: the AI summary per category (its paragraphs), what guests like and watch for, and the reviews themselves, newest first, only the fetched last 100
+- [ ] "Ask the reviews": a search box in the drawer that filters the reviews live as you type (words in pros, cons, headline) and says how many mention it, e.g. "parking · 6 of 100 reviews"; no AI, no network
+- [ ] phone and laptop, both modes, 48px targets; the drawer keeps its focus trap, Escape and reduced motion
+
+## F-291 The gotchas, up top in one line [todo]
+Founder: "show them the gotchas … the key things I get tripped by … expose that". Decisions D-941..D-942.
+- [ ] above the dashboard, one quiet line of the fine print's "Heads up" items as chips (for example "Parking $42/night · Resort fee · Lands 3 h before check-in · Flight path overhead"), each opening its row in "The fine print, up front"; nothing when there are none; never invented (same sources as F-282/F-284)
+
+## F-292 Say who sells it and how it is kept safe [todo]
+Founder: "powered by Nuitée / LiteAPI and all bookings are handled through that … be explicit … talk about security … so they are not put off by a newcomer's vibe-coded app". Decisions D-943..D-945.
+- [ ] checkout, booked pass and the stay's booking page say plainly "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card."
+- [ ] a short /trust page ("How GitAway keeps you safe"), every sentence true of the code today (checked against it): card only in LiteAPI/Nuitée's form; guest name and email go to LiteAPI and are erased from GitAway within 7 days; sign-in by Google, no passwords; no ad trackers or third-party analytics; reviewed by security audits before each money or data change; how to reach us; linked from the checkout, the footer and the about-prices card
+
+## F-293 One more minimal pass: secondary things on demand [todo]
+Founder: "everything should first focus on the core feature and everything else comes as secondary … no misplaced buttons like share on Instagram where it's not needed … all on demand … minimalistic and functional". Decisions D-946..D-949.
+- [ ] walk the signed-in pages (My trip, Today, booking page, matrix top, square) at 390 and 1440; each screen keeps one bold action and its core; secondary actions (Share to Instagram, export, settings-like links) move into one "More" menu or appear where they are used; nothing removed that a test or a brief requires
+- [ ] before/after screenshots in docs/report/f293-*.png
+
+## F-294 The booking emails, polished [todo]
+Founder: "I liked the booking emails … you can polish that as well". Decisions D-950..D-951.
+- [ ] the booked and cancelled emails in the site's look (deep header band, the logo, one bold "Open your booking"), the Wallet links when offered, "Booked and paid through Nuitée (LiteAPI)", a short what-next (check-in time, the Today page the day before), plain-text part kept; previews in docs/design/emails/
+
+## F-295 Ready for creators [todo]
+Founder: "send this off to like 50 creators … incentive: another distribution platform … they keep their affiliate links … a link to the website, one second". Decisions D-952..D-954.
+- [ ] the creator path reads as that offer: /guides/make leads with "Your post becomes a guide people can plan and book from. Your words and your links stay yours." and the one-paste flow; a creator's guide shows their name and links prominently
+- [ ] docs/launch/creator-outreach.md: a short email for creators and one for travel blogs (what it is, why it helps them, the founder's own guide as the example, one link), plus a checklist of what a creator sees in the first minute
+- [ ] no new features: only words, order and polish of what exists
