@@ -1758,11 +1758,11 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · D
 
 ## F-285 Booking emails through Resend [todo]
 Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910..D-914 · Needs: SMTP settings for Resend on Railway for gitaway.me
-- [ ] when a stay is booked (`matrixbook.finish`, also the worker's late finish), one email goes to the lead guest's email: hotel, address, dates, guests, room, LiteAPI booking id and hotel confirmation code, total charged, fees paid at the hotel, the refund policy word for word, "Sold by Nuitée through LiteAPI", links to the booking page and Plan this trip
-- [ ] when a stay is cancelled in-app, one email with the refund LiteAPI reported
-- [ ] sent through fh-saas `send_email` (SMTP_* env: Resend's SMTP), on its own thread, sent before the guest's address is blanked, never twice for one booking (kept on the row), never logging the address or names; no SMTP settings means no email and no error
-- [ ] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
-- [ ] security review (personal data)
+- [x] when a stay is booked (`matrixbook.finish`, also the worker's late finish), one email goes to the lead guest's email: hotel, address, dates, guests, room, LiteAPI booking id and hotel confirmation code, total charged, fees paid at the hotel, the refund policy word for word, "Sold by Nuitée through LiteAPI", links to the booking page and Plan this trip
+- [x] when a stay is cancelled in-app, one email with the refund LiteAPI reported, to the person who cancelled
+- [x] sent with smtplib through fh-saas `get_smtp_config` (SMTP_* env: Resend's SMTP; not `send_email`, which logs the recipient), on its own thread, sent before the guest's address is blanked, never twice for one booking (kept on the row), never logging the address or names; no SMTP settings means no email and no error
+- [x] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
+- [x] security review (personal data; security auditor: ship)
 
 ## F-286 Pins that are there when you look [todo]
 Brief: docs/briefs/matrix-v5.md · Decisions D-915..D-917 · Needs: F-284
