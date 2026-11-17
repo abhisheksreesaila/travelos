@@ -16,8 +16,9 @@ SHOTS = Path(__file__).resolve().parent.parent / "docs" / "report"
 
 WORDS_JS = """() => [...document.querySelectorAll('.v2-top *, #main *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => {
   const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-  return {t: e.textContent.trim().slice(0, 30), x: r.left, y: r.top, w: r.width, h: r.height, c: s.color, shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && +s.opacity > 0 && r.top >= 0 && r.bottom <= innerHeight};
-}).filter(w => w.shown)"""
+  return {t: e.textContent.trim().slice(0, 30), x: r.left, y: r.top, w: r.width, h: r.height, c: s.color, shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && +s.opacity > 0 && r.top >= 0 && r.bottom <= innerHeight,
+  closed: !!((d) => d && !d.open && !e.closest('summary'))(e.closest('details'))};      // F-281: the words of a closed popover are laid out but never painted (the Early preview note)
+}).filter(w => w.shown && !w.closed)"""
 
 
 def lum(c):

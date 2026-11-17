@@ -7,7 +7,6 @@ import pytest
 from playwright.sync_api import expect
 
 from tests_browser.helpers import DESKTOP, PHONE, set_mode
-from tests_browser.test_calm_palette import ratio, rgb
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
 from tests_browser.test_v2_targets import small
 
@@ -46,18 +45,18 @@ def test_no_widget_data_is_fetched_until_its_chip_is_tapped(matrix):  # noqa: F8
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
-def test_the_row_is_labelled_tinted_one_scroller_and_48px(matrix, viewport, scheme):  # noqa: F811
+def test_the_row_is_titled_frosted_one_scroller_and_48px(matrix, viewport, scheme):  # noqa: F811
     page = matrix(viewport, scheme=scheme)
     set_mode(page, scheme)
     row = chips(page)
     label = page.locator("#mx-rail .rl-lab")
-    expect(label).to_have_text("Extra info · tap any")
+    expect(label).to_have_text("More to know before you pick")      # F-281: the tray is titled for what it is for
     tray = page.locator("#mx-rail .rl-chips")
-    colours = page.evaluate("""() => { const t = document.querySelector('#mx-rail .rl-chips'), l = document.querySelector('#mx-rail .rl-lab'), b = getComputedStyle(document.body);
-        return {tray: getComputedStyle(t).backgroundColor, label: getComputedStyle(l).color, page: getComputedStyle(document.documentElement).backgroundColor, overflow: getComputedStyle(t).overflowX}; }""")
+    colours = page.evaluate("""() => { const t = document.querySelector('#mx-rail .rl-chips'), f = document.querySelector('#mx-rail .rl-tray'), l = document.querySelector('#mx-rail .rl-lab');
+        return {frost: getComputedStyle(f).backgroundColor, label: getComputedStyle(l).color, overflow: getComputedStyle(t).overflowX}; }""")
     assert colours["overflow"] == "auto"
-    assert ratio(rgb(colours["label"]), rgb(colours["tray"])) >= 4.5      # the label reads on its own tint
-    assert colours["tray"] != colours["page"]      # a tint of its own, not the page's colour
+    assert colours["frost"] in ("rgba(16, 12, 24, 0.6)", "rgba(8, 6, 14, 0.62)")      # a dark frost of its own over the ground, in light and in dark
+    assert colours["label"] == "rgb(244, 247, 251)"      # its words are the ground's (the painted-pixel ratios are in test_harbour.py)
     tops = {round(b["y"]) for b in (row.nth(i).bounding_box() for i in range(row.count()))}
     assert len(tops) == 1      # one line: a scroller, never a wrapped pile
     assert min(row.nth(i).bounding_box()["height"] for i in range(row.count())) >= 47.5
