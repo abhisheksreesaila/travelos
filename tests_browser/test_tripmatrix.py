@@ -395,9 +395,27 @@ def test_a_square_that_stays_busy_backs_off_and_then_says_so(matrix, stand, monk
     asks = []
     page.on("request", lambda r: asks.append(r.url) if "/plan/matrix/tile" in r.url and "lane=sandiego&w=2026-12-12" in r.url else None)
     sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
-    expect(sq.locator(".mx-in")).to_have_text("Lots of searches right now. Try again in a minute.", timeout=40000)
+    expect(sq.locator(".mx-in")).to_have_text("No price yet", timeout=40000)
     page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
     assert len(asks) <= 3 and page.errors == []      # the first ask happened before the listener; 3 more at most
+
+
+def test_a_square_whose_search_failed_is_asked_again_twice_then_says_no_price_yet(matrix, stand, monkeypatch):
+    """A dropped line or a stream cut empty is not the answer (founder 2026-11-16: "could not search ... say something else"): asked again 3 and 6 s on, then quiet words."""
+    real = stand.__call__
+
+    def always_failed(lane, w, adults=2, kid_ages=(), home="", family="", peek=False, rank=0, wait=None):
+        if not peek and tm.key(lane.key, w.key) == "sandiego|2026-12-12":
+            return tm.Square(lane.key, w.key, tm.FAILED)
+        return real(lane, w, adults, kid_ages, home, family, peek, rank)
+    monkeypatch.setattr(gridsource, "SQUARE", always_failed)
+    page = matrix(DESKTOP, wait=False)
+    asks = []
+    page.on("request", lambda r: asks.append(r.url) if "/plan/matrix/tile" in r.url and "lane=sandiego&w=2026-12-12" in r.url else None)
+    sq = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq[data-sq='sandiego|2026-12-12']")
+    expect(sq.locator(".mx-in")).to_have_text("No price yet", timeout=30000)
+    page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
+    assert 1 <= len(asks) <= 2 and page.errors == [] and "Couldn" not in page.content()
 
 
 def test_on_a_phone_the_note_is_just_the_fact_and_its_source(matrix):

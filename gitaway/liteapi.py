@@ -56,7 +56,7 @@ NOT_PAID = "not paid"      # a TRANSACTION_ID book LiteAPI refuses because the p
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
-FAIL_KEEP = timedelta(minutes=5)
+FAIL_KEEP = timedelta(seconds=2)            # a failure (a dropped line, a stream cut empty) is shared by the askers of that moment only; asked again a few seconds on, it searches
 DATA_KEEP = timedelta(hours=24)          # a hotel's own words
 PER_FAMILY_A_DAY = 150                   # uncached calls a family (or, together, everyone signed out) may make in a day
 PER_VISITOR_A_DAY = 60                   # uncached searches one signed-out visitor may make in a day (F-265, D-764): about three full matrices; a visitor is `stats.searcher`'s "v:" code
@@ -599,7 +599,7 @@ def _stream(path: str, body: dict, at: datetime, gate=None):
 
     pumping = threading.Thread(target=pump, daemon=True, name="liteapi-stream")
     pumping.start()
-    flights, size, msg, bulk_at, complete = {}, 0, [], None, False
+    flights, size, msg, bulk_at, complete, ended = {}, 0, [], None, False, False
 
     def take(event, payload):
         nonlocal complete
@@ -642,6 +642,7 @@ def _stream(path: str, body: dict, at: datetime, gate=None):
                     raise Unreadable(f"over {MAX_BYTES} bytes")
                 return read_flights(read_body(item[1], item[2]), at), True
             if item[0] == "end":
+                ended = True      # LiteAPI closed the stream itself: what came is all there is
                 break
             line = item[1]
             size += len(line)
@@ -667,6 +668,8 @@ def _stream(path: str, body: dict, at: datetime, gate=None):
         with hand["lock"]:
             if not hand["done"] and gate is not None and gate.ok:      # still connecting: its place at the gate goes with it
                 hand["gate"], gate.ok = gate, False
+    if not flights and (complete or ended):      # the search answered and found none (a route nobody flies those days): None found, not a failure
+        return (), True
     if not flights:
         raise Unreadable(f"no flights in the stream after {time.monotonic() - started:.1f} s")
     return tuple(sorted(flights.values(), key=lambda f: (f.cents, f.id))), complete

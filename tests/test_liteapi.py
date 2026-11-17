@@ -481,6 +481,14 @@ def test_a_stream_with_nothing_by_the_cap_fails_honestly(monkeypatch, caplog):
     assert got.status == liteapi.FAILED and time.monotonic() - t0 < 1.0 and KEY not in caplog.text and s.cut.is_set()
 
 
+def test_a_stream_liteapi_ends_with_no_flights_is_none_found_not_a_failure(monkeypatch):
+    monkeypatch.setenv("LITEAPI_KEY", KEY)
+    monkeypatch.setattr(liteapi, "STREAM_CAP", 2.0)
+    monkeypatch.setattr(liteapi, "TRANSPORT", Streamer(head_s=0.0, complete=True, sse=b""))      # the line closes at once, nothing in it: a route nobody flies
+    got = flights()
+    assert got.ok and got.items == () and got.complete
+
+
 def test_a_transport_that_hangs_before_answering_is_cut_at_the_cap(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", KEY)
     monkeypatch.setattr(liteapi, "STREAM_CAP", 0.3)

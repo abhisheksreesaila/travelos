@@ -21,11 +21,11 @@ from gitaway.partners import places as places_
 NEARLY_CENTS = 0           # a nearby trip is a find only when it costs no more than the asked place on the same dates (D-860: D-435 let a dearer one through and the page called it a find)
 MAX_FLEX = 3
 OK, OVER, FAILED, NONE, NO_SAMPLE, BUSY, LIMIT = "ok", "over budget", "failed", "none", "no sample", "busy", "visitor limit"
-SAID = {OVER: "Today’s price searches are used up. Back tomorrow.", FAILED: "Couldn’t search just now. Try again in a few minutes.",
+SAID = {OVER: "Today’s price searches are used up. Back tomorrow.", FAILED: "No price came back for these days. Ask again in a few minutes.",
         BUSY: "Lots of searches right now. This one is asked again in a moment.",
         LIMIT: "You have used today’s free searches. The squares you have already seen stay open.",
         NONE: "No flights or no stays came back for these dates.", NO_SAMPLE: "No sample prices for this place. Real prices need a LiteAPI key."}
-SHORT = {OVER: "Used up today", FAILED: "Couldn’t search", NONE: "None found", NO_SAMPLE: "No sample", BUSY: "Busy, trying again", LIMIT: "Sign in to go on"}
+SHORT = {OVER: "Used up today", FAILED: "No price yet", NONE: "None found", NO_SAMPLE: "No sample", BUSY: "Busy, trying again", LIMIT: "Sign in to go on"}
 MARKS = ("find", "low", "over")
 
 

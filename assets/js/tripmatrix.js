@@ -22,7 +22,7 @@
   document.documentElement.setAttribute('data-liquid', '');
   var data = JSON.parse(raw.textContent);
   MAX_AT_ONCE = data.at_once || MAX_AT_ONCE;      // F-273 review: the server's gate size for the key the site runs with (32 live, 3 sandbox), so a sandbox page doesn't flood its gate into BUSY retries
-  var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, MARGIN = '240px 120px', again = 0, looking = false;
+  var MAX_AT_ONCE = 32, SLOW_MS = 4000, BUSY_MS = 3000, BUSY_TRIES = 3, FAIL_TRIES = 2, MARGIN = '240px 120px', again = 0, looking = false;
   var N = data.nights, stores = {}, known, drawers, asked, tries, seen = {}, active = 0, timers = {}, curFind = null;
   var sliding = false, touched = false, bandAt = {};
   function store(n) { return stores[n] || (stores[n] = { known: {}, drawers: {}, asked: {}, tries: {} }); }
@@ -245,12 +245,9 @@
   }
   function land(k, j, n) {
     var st = store(n);
-    if (j.s === 'busy') {      // no turn at the server's gate in time: asked again after 3, 6, 12 s, then the square says so and settles
-      st.tries[k] = (st.tries[k] || 0) + 1;
-      if (st.tries[k] > BUSY_TRIES) { said(k, 'Lots of searches right now. Try again in a minute.', n); return; }
-      again++;
-      setTimeout(function () { again--; delete st.asked[k]; pump(); }, BUSY_MS * Math.pow(2, st.tries[k] - 1));
-      return;
+    if (j.s === 'busy' || j.s === 'failed') {      // no turn at the gate, or a line that dropped: asked again after 3, 6 (12) s, then the square settles quietly
+      if (retry(k, n, j.s === 'busy' ? BUSY_TRIES : FAIL_TRIES)) return;
+      if (j.s === 'busy') { said(k, 'No price yet', n); return; }
     }
     st.known[k] = { c: j.c, s: j.s, e: j.e, i: j.inner, l: j.label };
     st.drawers[k] = j.drawer;
@@ -263,6 +260,14 @@
     if (opened === k) show(k, null, true);
     else followDefault();
     estFlag();
+  }
+  function retry(k, n, most) {      // true: asked again later (the square keeps searching); false: tried enough
+    var st = store(n);
+    st.tries[k] = (st.tries[k] || 0) + 1;
+    if (st.tries[k] > most) return false;
+    again++;
+    setTimeout(function () { again--; delete st.asked[k]; pump(); }, BUSY_MS * Math.pow(2, st.tries[k] - 1));
+    return true;
   }
   function said(k, words, n) {
     var st = store(n);
@@ -297,7 +302,7 @@
     fetch(withNights(data.tile, n) + '&lane=' + encodeURIComponent(p[0]) + '&w=' + encodeURIComponent(p[1]), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { land(k, j, n); })
-      .catch(function () { said(k, 'Couldn’t search', n); })
+      .catch(function () { if (!retry(k, n, FAIL_TRIES)) said(k, 'No price yet', n); })
       .then(function () { clearTimeout(timers[k]); active--; pump(); });
   }
   var showing = new Set();      // the square elements in view now (a key has two: the laptop's lane and the phone's card, one of them hidden)
