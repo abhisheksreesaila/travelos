@@ -5,6 +5,8 @@ no test reaches the network, and no test needs a Google key."""
 
 import json
 import re
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -28,6 +30,9 @@ def recorded(name) -> bytes:
 @pytest.fixture(autouse=True)
 def clean():
     aerial._failed.clear()
+    aerial._down.clear()
+    aerial._inflight.clear()
+    aerial.clear()
     with community.connect() as db:
         db.conn.execute(text("DELETE FROM aerial_osm"))
         db.conn.execute(text("DELETE FROM aerial_opens"))
@@ -125,15 +130,15 @@ def test_a_200_with_a_remark_about_a_timeout_or_no_elements_is_a_failure_and_is_
     half = json.dumps({"elements": [{"type": "node", "id": 1, "lat": 1, "lon": 2, "tags": {}}], "remark": 'runtime error: Query timed out in "query" at line 3'}).encode()
     f = overpass(half, json.dumps({"elements": []}).encode())
     assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None
-    assert len(f.calls) == 2
+    assert len(f.calls) == len(aerial.HOSTS)
     with community.connect() as db:
         assert db.conn.execute(text("SELECT COUNT(*) FROM aerial_osm")).scalar() == 0
 
 
 def test_every_host_failing_is_remembered_so_a_tab_that_keeps_asking_does_not_hammer_overpass(overpass):
     f = overpass(502, OSError("refused"))
-    assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None and len(f.calls) == 2
-    assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None and len(f.calls) == 2      # not asked again within FAIL_WAIT
+    assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None and len(f.calls) == len(aerial.HOSTS)
+    assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None and len(f.calls) == len(aerial.HOSTS)      # not asked again within FAIL_WAIT
 
 
 def test_a_kept_answer_older_than_a_week_is_asked_again_and_when_nobody_answers_the_old_copy_is_shown_as_a_saved_copy(overpass):
@@ -145,7 +150,7 @@ def test_a_kept_answer_older_than_a_week_is_asked_again_and_when_nobody_answers_
         db.conn.commit()
     f = overpass(502, 502)
     got = aerial.pins("lp1b8e6", LAX[1], LAX[2], LAX[0])
-    assert len(f.calls) == 2 and got["source"] == "saved" and "OpenStreetMap is busy right now, so these are from a copy saved on" in got["source_text"]
+    assert len(f.calls) == len(aerial.HOSTS) and got["source"] == "saved" and "OpenStreetMap is busy right now, so these are from a copy saved on" in got["source_text"]
 
 
 def test_a_hotel_whose_coordinates_changed_is_not_served_the_old_answer(overpass):
@@ -156,13 +161,143 @@ def test_a_hotel_whose_coordinates_changed_is_not_served_the_old_answer(overpass
 
 
 def test_overpass_is_asked_at_fixed_hosts_only_with_a_generic_user_agent(monkeypatch):
-    assert aerial.HOSTS == ("overpass-api.de", "overpass.kumi.systems")
+    assert aerial.HOSTS == ("overpass-api.de", "overpass.kumi.systems", "maps.mail.ru")
+    assert aerial.PATHS == {"maps.mail.ru": "/osm/tools/overpass/api/interpreter"}
     with pytest.raises(ValueError):
         aerial._http("evil.example", "x", 1)
     ua = aerial.user_agent()
     assert re.fullmatch(r"GitAway/1\.0 https://\S+", ua) and "@" not in ua
     q = aerial.query(33.9461921, -118.3816538)
     assert "around:2000,33.946192,-118.381654" in q and "[timeout:20]" in q
+
+
+def test_a_third_mirror_is_asked_at_its_own_path_when_the_first_two_fail(overpass):
+    f = overpass(502, TimeoutError("past the deadline"), recorded("osm-lax.json"))
+    got = aerial.pins("lp1b8e6", LAX[1], LAX[2], LAX[0])
+    assert [c[0] for c in f.calls] == ["overpass-api.de", "overpass.kumi.systems", "maps.mail.ru"]
+    assert got["source_text"].startswith("From OpenStreetMap (maps.mail.ru)") and got["headline"] == "Between two flight paths · 15 car parks within 500 m"
+
+
+def test_each_mirror_is_called_at_its_own_address_and_no_other(monkeypatch):
+    seen = []
+
+    def fake_get(conn, target, headers, deadline, cap):
+        seen.append((conn.host, target.split("?")[0]))
+        return 200, {}, b"{}"
+    monkeypatch.setattr(aerial, "get_by_deadline", fake_get)
+    monkeypatch.setattr(aerial, "_lookup", lambda host, deadline: ["192.0.2.1"])
+    for host in aerial.HOSTS:
+        aerial._http(host, "x", 1)
+    assert seen == [("overpass-api.de", "/api/interpreter"), ("overpass.kumi.systems", "/api/interpreter"), ("maps.mail.ru", "/osm/tools/overpass/api/interpreter")]
+    with pytest.raises(ValueError):
+        aerial._http("overpass.private.coffee", "x", 1)      # not a listed host
+
+
+def test_a_failing_mirror_sits_out_for_a_few_minutes_then_is_asked_again(overpass):
+    f = overpass(502, recorded("osm-lax.json"), recorded("osm-tahoe.json"), recorded("osm-lax.json"))
+    aerial.pins("lpa", LAX[1], LAX[2], "A")
+    assert [c[0] for c in f.calls] == ["overpass-api.de", "overpass.kumi.systems"]
+    aerial.pins("lpb", TAHOE[1], TAHOE[2], "B")      # another hotel: the first host is still sitting out
+    assert [c[0] for c in f.calls] == ["overpass-api.de", "overpass.kumi.systems", "overpass.kumi.systems"]
+    assert 180 <= aerial.MIRROR_WAIT <= 600
+    aerial._down["overpass-api.de"] -= aerial.MIRROR_WAIT + 1      # its time is up
+    aerial.pins("lpc", LAX[1] + 0.01, LAX[2], "C")
+    assert f.calls[-1][0] == "overpass-api.de"
+
+
+def test_every_mirror_sitting_out_asks_nobody(overpass):
+    f = overpass()
+    for host in aerial.HOSTS:
+        aerial._down[host] = time.monotonic()
+    assert aerial.pins("lp1", LAX[1], LAX[2], LAX[0]) is None and f.calls == []
+
+
+def test_a_background_ask_is_given_longer_than_a_tap_because_nobody_waits_for_it(overpass):
+    f = overpass(recorded("osm-lax.json"), recorded("osm-lax.json"))
+    aerial.pins("lpt", LAX[1], LAX[2], LAX[0])
+    aerial.warm("lpbg", LAX[1] + 0.01, LAX[2], "A")
+    aerial.run_pending()
+    assert f.calls[0][1] == aerial.HOST_TIMEOUT and f.calls[1][1] == aerial.BACKGROUND_TIMEOUT > aerial.HOST_TIMEOUT
+
+
+# ---- pins asked when the hotel is shown ----------------------------------------------------------------------------------------
+
+def test_showing_a_hotel_queues_its_pins_and_once_kept_the_card_says_the_heads_up(live, monkeypatch):
+    from fasthtml.common import to_xml
+    f = live(recorded("osm-lax.json"))
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "")
+    first = to_xml(hotelview.fragment("lp1b8e6"))
+    assert aerial.NEUTRAL in first and f.calls == []      # drawing the hotel asked nobody: the job waits for a worker
+    assert aerial.run_pending() == 1 and len(f.calls) == 1
+    assert "Between two flight paths · 15 car parks within 500 m" in to_xml(hotelview.fragment("lp1b8e6"))
+    assert aerial.run_pending() == 0 and len(f.calls) == 1      # kept: nothing queued, nothing asked
+
+
+def test_a_hotel_is_queued_once_while_its_job_is_waiting_and_a_kept_hotel_is_never_queued(live):
+    live(recorded("osm-lax.json"))
+    assert aerial.warm("lp1b8e6", LAX[1], LAX[2], LAX[0]) is True
+    assert aerial.warm("lp1b8e6", LAX[1], LAX[2], LAX[0]) is False      # one in flight per hotel
+    assert aerial.run_pending() == 1
+    assert aerial.warm("lp1b8e6", LAX[1], LAX[2], LAX[0]) is False      # fresh and kept
+
+
+def test_a_hotel_that_just_failed_is_not_queued_again_within_the_wait(live):
+    f = live(502, 502, 502)
+    aerial.warm("lpf", LAX[1], LAX[2], LAX[0])
+    aerial.run_pending()
+    assert len(f.calls) == len(aerial.HOSTS) and aerial.warm("lpf", LAX[1], LAX[2], LAX[0]) is False
+
+
+def test_the_background_ask_counts_against_the_person_once_and_the_taps_use_of_it_is_free(client, live, monkeypatch):
+    monkeypatch.setattr(aerial, "PINS_PER_PERSON_A_DAY", 1)
+    f = live(recorded("osm-lax.json"), recorded("osm-tahoe.json"))
+    aerial.warm("lp1b8e6", LAX[1], LAX[2], LAX[0], "visitor-1")
+    aerial.run_pending()
+    got = client.get("/plan/matrix/aerial/pins", params={"id": tok("lp1b8e6")}).json()      # the tap, a moment later, reads what is kept
+    assert got["ok"] is True and got["source"] == "kept" and len(f.calls) == 1
+    aerial.warm("lpother", TAHOE[1], TAHOE[2], TAHOE[0], "visitor-1")      # the person's one fresh ask is spent: nothing is asked
+    assert aerial.run_pending() == 1 and len(f.calls) == 1
+    assert aerial.teaser("lpother") == ""
+
+
+def test_a_job_that_finds_overpass_busy_gives_the_persons_ask_back(live, monkeypatch):
+    monkeypatch.setattr(aerial, "PINS_PER_PERSON_A_DAY", 1)
+    f = live(recorded("osm-lax.json"))
+    taken = [aerial._SLOTS.acquire(blocking=False) for _ in range(aerial.AT_ONCE)]
+    try:
+        aerial.warm("lpbusy", LAX[1], LAX[2], LAX[0], "visitor-2")
+        aerial.run_pending()
+    finally:
+        for _ in taken:
+            aerial._SLOTS.release()
+    assert f.calls == [] and aerial.warm("lpbusy", LAX[1], LAX[2], LAX[0], "visitor-2") is True      # not stuck in flight, and the allowance is still whole
+    aerial.run_pending()
+    assert len(f.calls) == 1 and aerial.teaser("lpbusy") != ""
+
+
+def test_the_hotel_route_returns_while_overpass_is_still_thinking(client, live, monkeypatch):
+    """With real workers the hotel's fragment comes back at once; the pins arrive when Overpass does."""
+    gate, started = threading.Event(), threading.Event()
+    body = recorded("osm-lax.json")
+
+    def slow(host, q, timeout):
+        started.set()
+        gate.wait(10)
+        return 200, body
+    monkeypatch.setattr(aerial, "TRANSPORT", slow)
+    monkeypatch.setattr(aerial, "ASYNC", True)
+    try:
+        j = client.get("/plan/matrix/hotel", params={"id": hotelview.token("lp1b8e6")}).json()
+        assert "See it from above" in j["html"] and started.wait(5) and aerial.teaser("lp1b8e6") == ""      # asked, and not waited for
+        gate.set()
+        for _ in range(100):
+            if aerial.teaser("lp1b8e6"):
+                break
+            time.sleep(0.05)
+        assert aerial.teaser("lp1b8e6") == "Between two flight paths · 15 car parks within 500 m"
+    finally:
+        gate.set()
+        aerial.stop()
 
 
 # ---- the count behind Google's imagery ------------------------------------------------------------------------------------------

@@ -157,6 +157,18 @@ def _no_matrix_warm(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_aerial_warm(monkeypatch):
+    """Pins asked ahead when a hotel is shown (F-286) are queued but no worker starts in tests: a test runs the queue with `aerial.run_pending()`."""
+    from gitaway import aerial
+    monkeypatch.setattr(aerial, "ASYNC", False)
+    aerial.stop()
+    aerial.clear()
+    yield
+    aerial.stop()
+    aerial.clear()
+
+
+@pytest.fixture(autouse=True)
 def _no_plan_worker():
     """A test that starts the app (a live server) starts the Plan it for me worker with it (planforme.start in on_startup), and it would go on building the paid orders of every later test
     before the test looks at them. Stop it before each test; a test that wants the worker calls `planforme.start` itself and stops it (F-193)."""

@@ -18,7 +18,7 @@ import secrets
 from fasthtml.common import Button, Details, Div, H4, Img, Li, P, Small, Span, Summary, Ul, to_xml
 from starlette.responses import JSONResponse
 
-from gitaway import liteapi, reviewtrend
+from gitaway import aerial, liteapi, reviewtrend
 from gitaway.icons import icon
 
 PATH = "/plan/matrix/hotel"
@@ -200,6 +200,8 @@ def fragment(hotel_id: str, family: str = "", ptype: str = ""):
     h = liteapi.hotel(hotel_id, family)
     if h is None:
         return None
+    if h.lat is not None and h.lng is not None:
+        aerial.warm(h.id, h.lat, h.lng, h.name, family)      # F-286: its pins are asked in the background, so they are kept by the time the card is tapped
     return rich(h, liteapi.reviews(hotel_id, family), ptype)
 
 
