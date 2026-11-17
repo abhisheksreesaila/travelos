@@ -267,7 +267,7 @@ def test_the_pins_route_reads_the_hotel_place_from_liteapi_and_asks_overpass_for
 
 def test_a_made_up_or_unsigned_id_is_nothing_and_asks_nobody(client, live):
     f = live(recorded("osm-lax.json"))
-    for bad in ("", "lp1b8e6", "lp1b8e6.000000000000000000000000", "sample-lax", tok("lp1b8e6")[:-1] + "0"):
+    for bad in ("", "lp1b8e6", "lp1b8e6.000000000000000000000000", "sample-lax", tok("lp1b8e6")[:-1] + ("1" if tok("lp1b8e6")[-1] == "0" else "0")):
         assert client.get("/plan/matrix/aerial/pins", params={"id": bad}).status_code == 404, bad
     assert f.calls == []
 
