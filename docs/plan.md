@@ -1808,19 +1808,19 @@ Founder 2026-11-17 (launch polish): "the reviews should not be shown down and ex
 Founder: "show them the gotchas … the key things I get tripped by … expose that". Decisions D-941..D-942.
 - [x] above the dashboard, one quiet line of the fine print's "Heads up" items as chips (for example "Parking $42/night · Resort fee · Lands 3 h before check-in · Flight path overhead"), each opening its row in "The fine print, up front"; nothing when there are none; never invented (same sources as F-282/F-284)
 
-## F-292 Say who sells it and how it is kept safe [todo]
+## F-292 Say who sells it and how it is kept safe [done]
 Founder: "powered by Nuitée / LiteAPI and all bookings are handled through that … be explicit … talk about security … so they are not put off by a newcomer's vibe-coded app". Decisions D-943..D-945.
-- [ ] checkout, booked pass and the stay's booking page say plainly "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card."
-- [ ] a short /trust page ("How GitAway keeps you safe"), every sentence true of the code today (checked against it): card only in LiteAPI/Nuitée's form; guest name and email go to LiteAPI and are erased from GitAway within 7 days; sign-in by Google, no passwords; no ad trackers or third-party analytics; reviewed by security audits before each money or data change; how to reach us; linked from the checkout, the footer and the about-prices card
+- [x] checkout, booked pass and the stay's booking page say plainly "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card."
+- [x] a short /trust page ("How GitAway keeps you safe"), every sentence true of the code today (checked against it): card only in LiteAPI/Nuitée's form; guest name and email go to LiteAPI and are erased from GitAway within 7 days; sign-in by Google, no passwords; no ad trackers or third-party analytics; reviewed by security audits before each money or data change; how to reach us; linked from the checkout, the footer and the about-prices card
 
-## F-293 One more minimal pass: secondary things on demand [todo]
+## F-293 One more minimal pass: secondary things on demand [done]
 Founder: "everything should first focus on the core feature and everything else comes as secondary … no misplaced buttons like share on Instagram where it's not needed … all on demand … minimalistic and functional". Decisions D-946..D-949.
-- [ ] walk the signed-in pages (My trip, Today, booking page, matrix top, square) at 390 and 1440; each screen keeps one bold action and its core; secondary actions (Share to Instagram, export, settings-like links) move into one "More" menu or appear where they are used; nothing removed that a test or a brief requires
-- [ ] before/after screenshots in docs/report/f293-*.png
+- [x] walk the signed-in pages (My trip, Today, booking page, matrix top, square) at 390 and 1440; each screen keeps one bold action and its core; secondary actions (Share to Instagram, export, settings-like links) move into one "More" menu or appear where they are used; nothing removed that a test or a brief requires
+- [x] before/after screenshots in docs/report/f293-*.png
 
-## F-294 The booking emails, polished [todo]
+## F-294 The booking emails, polished [done]
 Founder: "I liked the booking emails … you can polish that as well". Decisions D-950..D-951.
-- [ ] the booked and cancelled emails in the site's look (deep header band, the logo, one bold "Open your booking"), the Wallet links when offered, "Booked and paid through Nuitée (LiteAPI)", a short what-next (check-in time, the Today page the day before), plain-text part kept; previews in docs/design/emails/
+- [x] the booked and cancelled emails in the site's look (deep header band, the logo, one bold "Open your booking"), the Wallet links when offered, "Booked and paid through Nuitée (LiteAPI)", a short what-next (check-in time, the Today page the day before), plain-text part kept; previews in docs/design/emails/
 
 ## F-295 Ready for creators [built, awaiting review]
 Founder: "send this off to like 50 creators … incentive: another distribution platform … they keep their affiliate links … a link to the website, one second". Decisions D-952..D-954.
