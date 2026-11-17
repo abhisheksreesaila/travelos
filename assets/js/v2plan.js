@@ -364,7 +364,7 @@
       badge(0);
     });
   }
-  function badge(n) { var b = document.getElementById('pl-badge'); if (!b) return; b.textContent = n; b.hidden = !n; }
+  function badge(n) { var b = document.getElementById('pl-badge'), d = document.getElementById('pl-more-dot'); if (b) { b.textContent = n; b.hidden = !n; } if (d) d.hidden = !n; }      // the count in the menu row, the dot on the More button
   function send() {
     var f = $('#pl-say'), text = f.value.trim(); if (!text) return;
     var parts = key.split(':'), body = new URLSearchParams(), url = '/trip/family/message';
@@ -375,7 +375,7 @@
   }
   $('#pl-send').addEventListener('click', send);
   $('#pl-say').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); send(); } });
-  $$('#pl-together, [data-together]').forEach(function (b) { b.addEventListener('click', function () { openSide('trip'); }); });
+  $('#pl-together').addEventListener('click', function () { openSide('trip'); });
   $$('[data-close]', side).forEach(function (b) { b.addEventListener('click', closeSide); });
   side.addEventListener('click', function (e) {
     var c = e.target.closest('[data-copy]');
@@ -384,9 +384,8 @@
 
   // ---- save: the plan is already stored; this reads it back and shows what is there ----
   function closeSheet() { sheet.hidden = true; sheet.classList.remove('in'); root.classList.remove('sheet-open'); if (side.hidden) scrim.classList.remove('on'); }
-  function saveNow(btn) {
-    btn.classList.add('busy'); var s0 = btn.innerHTML; btn.innerHTML = '<span class="v2-spin"></span>';
-    refresh().then(function () { openSheet(); }, function () { toast('Could not reach the trip to check it.', { error: true }); }).then(function () { btn.classList.remove('busy'); btn.innerHTML = s0; });
+  function saveNow() {
+    refresh().then(function () { openSheet(); }, function () { toast('Could not reach the trip to check it.', { error: true }); });
   }
   function openSheet() {
     var sum = saved || { plans: [], booked: D.summary.booked, titles: [], days: D.days.length, people: D.summary.people };
@@ -411,7 +410,7 @@
     if (window.GA && GA.hideToast) GA.hideToast(true);
     sheet.hidden = false; sheet.classList.add('in'); root.classList.add('sheet-open'); scrim.classList.add('on'); back.focus({ preventScroll: true });
   }
-  $$('#pl-save, [data-save]').forEach(function (b) { b.addEventListener('click', function () { saveNow(b); }); });
+  $('#pl-save').addEventListener('click', saveNow);
 
   // ---- coming back to the tab: read the trip again (no live channel: a change someone else made shows on return) ----
   function again() { if (document.hidden || drag || !pop.hidden) return; refresh().catch(function () { /* offline: what is drawn stays */ }); if (!side.hidden) loadThread(key); }

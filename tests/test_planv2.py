@@ -276,3 +276,28 @@ def test_the_day_view_names_its_day_in_the_chips_and_keeps_a_header_row_only_to_
     wet = replace(dry, word="Rain", cond="rain")
     monkeypatch.setattr(pv, "sky", lambda t: ([dry, dry, wet, dry, dry], []))
     assert "Rain likely" in booked.get("/trip/plan/cal?view=day&day=2").text
+
+
+# ---- F-293 (D-946): the secondary things are on demand, in one More menu ------------------------------------------------------------
+
+def more_menu(html):
+    """The trip's More menu: its button and its menu, as html."""
+    start = html.rfind("<div", 0, html.index('id="pl-more"'))
+    return html[start:html.index("</div>", html.index('id="pl-more-menu"')) + 6]
+
+
+def test_the_trip_header_holds_one_more_button_and_shares_planning_together_and_save_wait_inside_it(booked):
+    page = booked.get("/trip/plan").text
+    more = more_menu(page)
+    assert more.count('data-more="1"') == 1 and re.search(r'aria-haspopup="menu"[^>]*aria-expanded="false"|aria-expanded="false"[^>]*aria-haspopup="menu"', more)
+    labels = re.findall(r'role="menuitem"[^>]*>(?:<svg.*?</svg>)?(?:<span[^>]*>)?([^<]+)', more, re.S)
+    assert [x.strip() for x in labels if x.strip() and not x.strip().isdigit()] == ["Plan together", "Save plan", "Share to Instagram"]
+    for what in ('id="pl-together"', 'id="pl-save"', 'id="sh-open"'):
+        assert what in more and page.count(what) == 1, what          # each only inside the menu: nothing of them at rest
+    assert 'class="dock' not in page and 'class="pl-bar' not in page      # the phone's floating Together/Save bar and the desktop's bar of them are gone
+
+
+def test_a_viewer_s_more_menu_has_no_share(crew):
+    owner, viewer = crew
+    more = more_menu(viewer.get("/trip/plan").text)
+    assert 'id="pl-together"' in more and 'id="pl-save"' in more and "sh-open" not in more and "Share to Instagram" not in more

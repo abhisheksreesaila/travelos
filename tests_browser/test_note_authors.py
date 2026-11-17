@@ -4,13 +4,13 @@ import uuid
 
 from playwright.sync_api import expect
 
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_more
 from tests_browser.test_family_invite import contexts, invite_from_page, owner_page  # noqa: F401 - the fixture and helpers
 
 
 def open_talk(page, base_url, phone):
     page.goto(f"{base_url}/trip/plan")
-    page.click(".dock [data-together]" if phone else "#pl-together")
+    open_more(page, "#pl-together").click()      # F-293: a row of the trip's More menu
     expect(page.locator("#pl-side")).to_be_visible()
 
 

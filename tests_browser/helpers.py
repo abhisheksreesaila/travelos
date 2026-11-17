@@ -1,4 +1,7 @@
 """Shared constants for the browser tests."""
+
+from playwright.sync_api import expect
+
 DESKTOP = {"width": 1440, "height": 900}
 PHONE = {"width": 390, "height": 844}
 
@@ -50,3 +53,11 @@ def set_mode(page, scheme):
         page.wait_for_selector("#mx.is-live")
         page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
     assert page.evaluate("document.documentElement.dataset.mode") == scheme
+
+
+def open_more(page, row):
+    """F-293 (D-946): the trip's Plan together, Save plan and Share to Instagram are rows of its More menu. Open the menu (if it is closed) and give back the row's locator, `row` a selector."""
+    if page.locator("#pl-more-menu").is_hidden():
+        page.click("#pl-more")
+    expect(page.locator(row)).to_be_visible()
+    return page.locator(row)

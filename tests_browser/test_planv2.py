@@ -9,7 +9,7 @@ import pytest
 from playwright.sync_api import expect
 
 from tests.test_calendar import PICK
-from tests_browser.helpers import DESKTOP, PHONE
+from tests_browser.helpers import DESKTOP, PHONE, open_more
 from tests_browser.look import audit
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "report"
@@ -177,7 +177,7 @@ def test_the_page_keeps_4_5_to_1_over_the_glass_with_48px_targets_and_no_sideway
     add(page, 1, 12, "Pier walk")
     for name in ("calendar", "drawer"):
         if name == "drawer":
-            page.click("#pl-together" if viewport["width"] > 720 else ".dock [data-together]")
+            open_more(page, "#pl-together").click()      # F-293: Plan together is a row of the trip's More menu
             expect(page.locator("#pl-side")).to_be_visible()
             page.wait_for_timeout(400)
         shot(page, f"{viewport['width']}{'-dark' if scheme == 'dark' else ''}-{name}")
@@ -198,7 +198,7 @@ def test_the_rail_plus_drops_a_suggestion_where_it_fits_and_marks_it_done(plan):
 def test_save_reads_the_plan_back_and_shows_what_is_stored(plan):
     page = plan(DESKTOP)
     add(page, 1, 12, "Pier walk")
-    page.click("#pl-save")
+    open_more(page, "#pl-save").click()      # F-293: Save plan is a row of the trip's More menu
     expect(page.locator("#pl-sheet")).to_be_visible()
     expect(page.locator("#pl-sheet .done-h b")).to_have_text("Plan saved")
     assert page.locator("#pl-sheet .cols").inner_text().lower().split() == ["days", "5", "plans", "1", "booked", "4"]
