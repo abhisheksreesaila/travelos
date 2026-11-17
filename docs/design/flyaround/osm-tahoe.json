@@ -1,0 +1,3516 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-17T04:02:48Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 12115475004,
+  "lat": 39.2479758,
+  "lon": -119.9631353,
+  "tags": {
+    "brand": "Grocery Outlet",
+    "brand:wikidata": "Q5609934",
+    "name": "Grocery Outlet",
+    "official_name": "Grocery Outlet Bargain Market",
+    "shop": "supermarket"
+  }
+},
+{
+  "type": "node",
+  "id": 8930667937,
+  "lat": 39.2403058,
+  "lon": -119.9408511,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Austin's Restaurant"
+  }
+},
+{
+  "type": "node",
+  "id": 3023873122,
+  "lat": 39.2489218,
+  "lon": -119.9521981,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "mexican",
+    "name": "T’s Mesquite Rotisserie"
+  }
+},
+{
+  "type": "node",
+  "id": 5809758253,
+  "lat": 39.2492997,
+  "lon": -119.9516010,
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:housenumber": "907",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "amenity": "restaurant",
+    "cuisine": "american;tapas",
+    "name": "Bite"
+  }
+},
+{
+  "type": "node",
+  "id": 8349787049,
+  "lat": 39.2502026,
+  "lon": -119.9544324,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "asian",
+    "name": "Indus"
+  }
+},
+{
+  "type": "node",
+  "id": 8349787050,
+  "lat": 39.2501969,
+  "lon": -119.9542200,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "italian",
+    "name": "Mofo's",
+    "opening_hours": "Mo-Sa 11:00-20:30; Su 17:00-20:30"
+  }
+},
+{
+  "type": "node",
+  "id": 8349787052,
+  "lat": 39.2501952,
+  "lon": -119.9540606,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "japanese",
+    "name": "Koi Sushi"
+  }
+},
+{
+  "type": "node",
+  "id": 8430350457,
+  "lat": 39.2490895,
+  "lon": -119.9520989,
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:housenumber": "901",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "amenity": "restaurant",
+    "cuisine": "burger",
+    "diet:meat": "yes",
+    "diet:vegetarian": "yes",
+    "name": "Inclined Burgers and Brews",
+    "phone": "+1-775-298-7909",
+    "website": "https://inclinedburgersandbrew.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 8430350458,
+  "lat": 39.2491685,
+  "lon": -119.9520989,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "thai",
+    "name": "Thai Recipe"
+  }
+},
+{
+  "type": "node",
+  "id": 8929708656,
+  "lat": 39.2500478,
+  "lon": -119.9509418,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "barbecue",
+    "name": "Gus's Santa Maria Style BBQ"
+  }
+},
+{
+  "type": "node",
+  "id": 8929708657,
+  "lat": 39.2494279,
+  "lon": -119.9535897,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Sage Leaf"
+  }
+},
+{
+  "type": "node",
+  "id": 9461145067,
+  "lat": 39.2493003,
+  "lon": -119.9518630,
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:housenumber": "907",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "amenity": "restaurant",
+    "cuisine": "asian",
+    "name": "Fredricks Fusion Bistro"
+  }
+},
+{
+  "type": "node",
+  "id": 9461245435,
+  "lat": 39.2507023,
+  "lon": -119.9512150,
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:housenumber": "930",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "addr:unit": "101",
+    "amenity": "restaurant",
+    "cuisine": "italian",
+    "name": "Azzara’s"
+  }
+},
+{
+  "type": "node",
+  "id": 9785995294,
+  "lat": 39.2502537,
+  "lon": -119.9555862,
+  "tags": {
+    "addr:city": "in",
+    "addr:housenumber": "868",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "addr:unit": "4",
+    "amenity": "restaurant",
+    "bar": "yes",
+    "cuisine": "american",
+    "name": "Crosby's Tavern",
+    "phone": "+17758331030",
+    "website": "https://crosbyspub.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 13695496499,
+  "lat": 39.2493013,
+  "lon": -119.9516404,
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:housenumber": "907",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "amenity": "restaurant",
+    "check_date": "2026-03-31",
+    "cuisine": "tapas;grill;spanish",
+    "currency:XBT": "yes",
+    "name": "La Loca",
+    "opening_hours": "Tu-Sa 17:00-22:00",
+    "payment:lightning": "yes",
+    "payment:lightning:operator": "square",
+    "payment:lightning_contactless": "no",
+    "payment:onchain": "no",
+    "phone": "+1-775-770-0377"
+  }
+},
+{
+  "type": "node",
+  "id": 471036224,
+  "lat": 39.2508376,
+  "lon": -119.9494330,
+  "tags": {
+    "brand": "Raley's",
+    "brand:wikidata": "Q7286970",
+    "name": "Raley's",
+    "shop": "supermarket"
+  }
+},
+{
+  "type": "node",
+  "id": 3023873113,
+  "lat": 39.2498121,
+  "lon": -119.9504520,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "pizza",
+    "name": "Jiffy's Pizza"
+  }
+},
+{
+  "type": "node",
+  "id": 3023873123,
+  "lat": 39.2499799,
+  "lon": -119.9501821,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Rosewood"
+  }
+},
+{
+  "type": "node",
+  "id": 14381955698,
+  "lat": 39.2472010,
+  "lon": -119.9491643,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "hawaiian",
+    "name": "Sam Choi's Hawaiian"
+  }
+},
+{
+  "type": "node",
+  "id": 3005118769,
+  "lat": 39.2531613,
+  "lon": -119.9443574,
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "node",
+  "id": 14353738640,
+  "lat": 39.2474533,
+  "lon": -119.9221048,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "american",
+    "outdoor_seating": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 840426309,
+  "center": {
+    "lat": 39.2475414,
+    "lon": -119.9638042
+  },
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:county": "Washoe",
+    "addr:housenumber": "754",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Mays Boulevard",
+    "amenity": "restaurant",
+    "building": "commercial",
+    "cuisine": "mexican",
+    "name": "Lupita's",
+    "source": "WC GIS"
+  }
+},
+{
+  "type": "way",
+  "id": 840426321,
+  "center": {
+    "lat": 39.2489118,
+    "lon": -119.9611266
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 914691078,
+  "center": {
+    "lat": 39.2504325,
+    "lon": -119.9625808
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "35 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1099827633,
+  "center": {
+    "lat": 39.2496405,
+    "lon": -119.9624833
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 345152749,
+  "center": {
+    "lat": 39.2500140,
+    "lon": -119.9572737
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "35 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887461,
+  "center": {
+    "lat": 39.2506677,
+    "lon": -119.9569219
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 840426322,
+  "center": {
+    "lat": 39.2476410,
+    "lon": -119.9628225
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 914691079,
+  "center": {
+    "lat": 39.2181597,
+    "lon": -119.9299817
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "maxspeed": "45 mph",
+    "noname": "yes",
+    "official_name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "no",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "source:name": "Nevada Department of Transportation",
+    "source:name:url": "https://www.dot.nv.gov/home/showpublisheddocument/24133/639033944728700000;https://www.dot.nv.gov/home/showpublisheddocument/21914/638251859535000000",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152752,
+  "center": {
+    "lat": 39.2385954,
+    "lon": -119.9329873
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "maxspeed": "45 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "no",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1190434696,
+  "center": {
+    "lat": 39.2331388,
+    "lon": -119.9360559
+  },
+  "tags": {
+    "access": "private",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 1503600704,
+  "center": {
+    "lat": 39.2291532,
+    "lon": -119.9323615
+  },
+  "tags": {
+    "alt_name": "Tahoe Boulevard;Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "maxspeed": "45 mph",
+    "name": "Lakeshore Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "no",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "source:name": "Nevada Department of Transportation",
+    "source:name:url": "https://www.dot.nv.gov/home/showpublisheddocument/24133/639033944728700000;https://www.dot.nv.gov/home/showpublisheddocument/21914/638251859535000000",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1190254187,
+  "center": {
+    "lat": 39.2309820,
+    "lon": -119.9330875
+  },
+  "tags": {
+    "access": "private",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 1190434682,
+  "center": {
+    "lat": 39.2315832,
+    "lon": -119.9340175
+  },
+  "tags": {
+    "access": "private",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 345152748,
+  "center": {
+    "lat": 39.2475419,
+    "lon": -119.9424351
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "40 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 497216966,
+  "center": {
+    "lat": 39.2372931,
+    "lon": -119.9447073
+  },
+  "tags": {
+    "ele": "1900",
+    "gnis:feature_id": "860097",
+    "name": "Incline Beach(multiple beaches, including private property)",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 907916847,
+  "center": {
+    "lat": 39.2395262,
+    "lon": -119.9475517
+  },
+  "tags": {
+    "lifeguard": "yes",
+    "name": "Inclive IVGID Beach",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655910,
+  "center": {
+    "lat": 39.2460382,
+    "lon": -119.9466539
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194764351,
+  "center": {
+    "lat": 39.2464898,
+    "lon": -119.9487037
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1578425678,
+  "center": {
+    "lat": 39.2391956,
+    "lon": -119.9461671
+  },
+  "tags": {
+    "lifeguard": "yes",
+    "name": "Ski Beach",
+    "natural": "beach"
+  }
+},
+{
+  "type": "way",
+  "id": 1187903717,
+  "center": {
+    "lat": 39.2443909,
+    "lon": -119.9488956
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187903718,
+  "center": {
+    "lat": 39.2442192,
+    "lon": -119.9487453
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910737,
+  "center": {
+    "lat": 39.2446066,
+    "lon": -119.9489150
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910738,
+  "center": {
+    "lat": 39.2447081,
+    "lon": -119.9488097
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910741,
+  "center": {
+    "lat": 39.2439238,
+    "lon": -119.9485951
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910742,
+  "center": {
+    "lat": 39.2437572,
+    "lon": -119.9487027
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910743,
+  "center": {
+    "lat": 39.2451650,
+    "lon": -119.9497678
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1187910744,
+  "center": {
+    "lat": 39.2453461,
+    "lon": -119.9496405
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198560,
+  "center": {
+    "lat": 39.2434292,
+    "lon": -119.9486691
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198561,
+  "center": {
+    "lat": 39.2431670,
+    "lon": -119.9475451
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198562,
+  "center": {
+    "lat": 39.2430110,
+    "lon": -119.9474607
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198563,
+  "center": {
+    "lat": 39.2429561,
+    "lon": -119.9477660
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198564,
+  "center": {
+    "lat": 39.2429390,
+    "lon": -119.9482394
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198565,
+  "center": {
+    "lat": 39.2429541,
+    "lon": -119.9472697
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198566,
+  "center": {
+    "lat": 39.2434148,
+    "lon": -119.9475015
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198567,
+  "center": {
+    "lat": 39.2445545,
+    "lon": -119.9469830
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198568,
+  "center": {
+    "lat": 39.2446098,
+    "lon": -119.9466032
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198569,
+  "center": {
+    "lat": 39.2445612,
+    "lon": -119.9463664
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198570,
+  "center": {
+    "lat": 39.2453665,
+    "lon": -119.9472085
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198572,
+  "center": {
+    "lat": 39.2460024,
+    "lon": -119.9477011
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198573,
+  "center": {
+    "lat": 39.2460470,
+    "lon": -119.9481090
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1188198574,
+  "center": {
+    "lat": 39.2460164,
+    "lon": -119.9483532
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189279486,
+  "center": {
+    "lat": 39.2453763,
+    "lon": -119.9476025
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189279495,
+  "center": {
+    "lat": 39.2448161,
+    "lon": -119.9487044
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189279496,
+  "center": {
+    "lat": 39.2433062,
+    "lon": -119.9484410
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189279497,
+  "center": {
+    "lat": 39.2432245,
+    "lon": -119.9485528
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189507122,
+  "center": {
+    "lat": 39.2448664,
+    "lon": -119.9496976
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1189707994,
+  "center": {
+    "lat": 39.2446846,
+    "lon": -119.9468652
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1190281908,
+  "center": {
+    "lat": 39.2453324,
+    "lon": -119.9469752
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655899,
+  "center": {
+    "lat": 39.2414160,
+    "lon": -119.9465740
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655904,
+  "center": {
+    "lat": 39.2406805,
+    "lon": -119.9451086
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655905,
+  "center": {
+    "lat": 39.2429968,
+    "lon": -119.9484513
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655906,
+  "center": {
+    "lat": 39.2430511,
+    "lon": -119.9479092
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655907,
+  "center": {
+    "lat": 39.2432340,
+    "lon": -119.9476664
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655908,
+  "center": {
+    "lat": 39.2440608,
+    "lon": -119.9489490
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655909,
+  "center": {
+    "lat": 39.2451700,
+    "lon": -119.9499287
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655911,
+  "center": {
+    "lat": 39.2458319,
+    "lon": -119.9457681
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194764345,
+  "center": {
+    "lat": 39.2452481,
+    "lon": -119.9459231
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 1195098725,
+  "center": {
+    "lat": 39.2461555,
+    "lon": -119.9479690
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195098726,
+  "center": {
+    "lat": 39.2454963,
+    "lon": -119.9472878
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195098727,
+  "center": {
+    "lat": 39.2447255,
+    "lon": -119.9466454
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1196987464,
+  "center": {
+    "lat": 39.2407852,
+    "lon": -119.9479350
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1196987466,
+  "center": {
+    "lat": 39.2406376,
+    "lon": -119.9471524
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1341380617,
+  "center": {
+    "lat": 39.2395008,
+    "lon": -119.9392094
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1190288572,
+  "center": {
+    "lat": 39.2340451,
+    "lon": -119.9352806
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152750,
+  "center": {
+    "lat": 39.2455183,
+    "lon": -119.9379866
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "45 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1197241333,
+  "center": {
+    "lat": 39.2406380,
+    "lon": -119.9417912
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1341376959,
+  "center": {
+    "lat": 39.2396172,
+    "lon": -119.9388386
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341381091,
+  "center": {
+    "lat": 39.2396487,
+    "lon": -119.9392506
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655900,
+  "center": {
+    "lat": 39.2444469,
+    "lon": -119.9422029
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1194655901,
+  "center": {
+    "lat": 39.2446240,
+    "lon": -119.9433209
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136096,
+  "center": {
+    "lat": 39.2424323,
+    "lon": -119.9395313
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136098,
+  "center": {
+    "lat": 39.2430530,
+    "lon": -119.9383352
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136099,
+  "center": {
+    "lat": 39.2446873,
+    "lon": -119.9378297
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136102,
+  "center": {
+    "lat": 39.2447559,
+    "lon": -119.9383431
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136103,
+  "center": {
+    "lat": 39.2445160,
+    "lon": -119.9388892
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136104,
+  "center": {
+    "lat": 39.2437278,
+    "lon": -119.9399403
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136105,
+  "center": {
+    "lat": 39.2450139,
+    "lon": -119.9381411
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195136106,
+  "center": {
+    "lat": 39.2453337,
+    "lon": -119.9383141
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1195879675,
+  "center": {
+    "lat": 39.2456425,
+    "lon": -119.9407596
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1341378408,
+  "center": {
+    "lat": 39.2398943,
+    "lon": -119.9387450
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341380913,
+  "center": {
+    "lat": 39.2398295,
+    "lon": -119.9386068
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 623887455,
+  "center": {
+    "lat": 39.2511278,
+    "lon": -119.9543872
+  },
+  "tags": {
+    "access": "customers",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887476,
+  "center": {
+    "lat": 39.2499864,
+    "lon": -119.9559846
+  },
+  "tags": {
+    "access": "customers",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887479,
+  "center": {
+    "lat": 39.2500944,
+    "lon": -119.9549009
+  },
+  "tags": {
+    "access": "customers",
+    "amenity": "parking",
+    "fee": "no",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887510,
+  "center": {
+    "lat": 39.2505618,
+    "lon": -119.9539434
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887568,
+  "center": {
+    "lat": 39.2522492,
+    "lon": -119.9536361
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887578,
+  "center": {
+    "lat": 39.2514426,
+    "lon": -119.9532314
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887579,
+  "center": {
+    "lat": 39.2520544,
+    "lon": -119.9531954
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 623887580,
+  "center": {
+    "lat": 39.2520422,
+    "lon": -119.9529351
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "parking": "surface",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 907910222,
+  "center": {
+    "lat": 39.2490833,
+    "lon": -119.9523453
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1341375013,
+  "center": {
+    "lat": 39.2494360,
+    "lon": -119.9555037
+  },
+  "tags": {
+    "brand": "Natural Grocers",
+    "brand:wikidata": "Q17146520",
+    "building": "yes",
+    "name": "Natural Grocers",
+    "shop": "supermarket"
+  }
+},
+{
+  "type": "way",
+  "id": 345152753,
+  "center": {
+    "lat": 39.2492966,
+    "lon": -119.9470223
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "3",
+    "lanes:backward": "1",
+    "lanes:forward": "1",
+    "lit": "yes",
+    "maxspeed": "40 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 907910520,
+  "center": {
+    "lat": 39.2471749,
+    "lon": -119.9486635
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 1025906459,
+  "center": {
+    "lat": 39.2490886,
+    "lon": -119.9489849
+  },
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:county": "Washoe",
+    "addr:housenumber": "931",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Tahoe Boulevard",
+    "amenity": "restaurant",
+    "building": "office",
+    "cuisine": "american",
+    "name": "Alibi Ale Works Incline Public House",
+    "source": "WC GIS",
+    "website": "https://alibialeworks.com/incline-public-house/"
+  }
+},
+{
+  "type": "way",
+  "id": 1026130916,
+  "center": {
+    "lat": 39.2523324,
+    "lon": -119.9474584
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1196101385,
+  "center": {
+    "lat": 39.2473912,
+    "lon": -119.9465606
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 1341378398,
+  "center": {
+    "lat": 39.2522905,
+    "lon": -119.9468141
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341378570,
+  "center": {
+    "lat": 39.2522055,
+    "lon": -119.9475408
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341379417,
+  "center": {
+    "lat": 39.2502092,
+    "lon": -119.9463432
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 345152746,
+  "center": {
+    "lat": 39.2495555,
+    "lon": -119.9502448
+  },
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "3",
+    "lanes:backward": "1",
+    "lanes:forward": "1",
+    "lit": "yes",
+    "maxspeed": "35 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 840426344,
+  "center": {
+    "lat": 39.2504742,
+    "lon": -119.9496793
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1024035009,
+  "center": {
+    "lat": 39.2529227,
+    "lon": -119.9536185
+  },
+  "tags": {
+    "amenity": "parking",
+    "capacity": "30",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1341377780,
+  "center": {
+    "lat": 39.2532691,
+    "lon": -119.9553631
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341378283,
+  "center": {
+    "lat": 39.2532638,
+    "lon": -119.9551799
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341378631,
+  "center": {
+    "lat": 39.2531226,
+    "lon": -119.9552001
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341379500,
+  "center": {
+    "lat": 39.2531959,
+    "lon": -119.9559568
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341379846,
+  "center": {
+    "lat": 39.2531465,
+    "lon": -119.9553530
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1341380013,
+  "center": {
+    "lat": 39.2532039,
+    "lon": -119.9561055
+  },
+  "tags": {
+    "access": "private",
+    "amenity": "parking",
+    "building": "carport"
+  }
+},
+{
+  "type": "way",
+  "id": 1467372908,
+  "center": {
+    "lat": 39.2532480,
+    "lon": -119.9518519
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 1341380786,
+  "center": {
+    "lat": 39.2487436,
+    "lon": -119.9329703
+  },
+  "tags": {
+    "addr:city": "Incline Village",
+    "addr:county": "Washoe",
+    "addr:housenumber": "341",
+    "addr:postcode": "89451",
+    "addr:state": "NV",
+    "addr:street": "Ski Way",
+    "amenity": "restaurant",
+    "building": "retail",
+    "cuisine": "american",
+    "name": "Big Water Grille",
+    "website": "https://www.bigwatergrille.com/"
+  }
+},
+{
+  "type": "way",
+  "id": 308834484,
+  "center": {
+    "lat": 39.2346283,
+    "lon": -119.9300469
+  },
+  "tags": {
+    "amenity": "parking"
+  }
+},
+{
+  "type": "way",
+  "id": 308834510,
+  "center": {
+    "lat": 39.2342764,
+    "lon": -119.9301972
+  },
+  "tags": {
+    "amenity": "restaurant",
+    "building": "yes",
+    "name": "Tunnel Creek Cafe",
+    "outdoor_seating": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 723030551,
+  "center": {
+    "lat": 39.2365994,
+    "lon": -119.9289163
+  },
+  "tags": {
+    "amenity": "parking",
+    "name": "Bullwheel Parking Lot",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 723030553,
+  "center": {
+    "lat": 39.2357764,
+    "lon": -119.9295298
+  },
+  "tags": {
+    "amenity": "parking",
+    "name": "Bullwheel Parking Lot",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 1382349101,
+  "center": {
+    "lat": 39.2344626,
+    "lon": -119.9304579
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "street_side"
+  }
+},
+{
+  "type": "way",
+  "id": 1382349102,
+  "center": {
+    "lat": 39.2373119,
+    "lon": -119.9286179
+  },
+  "tags": {
+    "amenity": "parking",
+    "parking": "street_side"
+  }
+},
+{
+  "type": "way",
+  "id": 438297812,
+  "bounds": {
+    "minlat": 39.2207261,
+    "minlon": -120.0659574,
+    "maxlat": 39.2490133,
+    "maxlon": -119.9322447
+  },
+  "geometry": [
+    { "lat": 39.2365027, "lon": -120.0659574 },
+    { "lat": 39.2367723, "lon": -120.0640432 },
+    { "lat": 39.2369474, "lon": -120.0632026 },
+    { "lat": 39.2370684, "lon": -120.0628220 },
+    { "lat": 39.2373820, "lon": -120.0622015 },
+    { "lat": 39.2377365, "lon": -120.0615309 },
+    { "lat": 39.2381209, "lon": -120.0608182 },
+    { "lat": 39.2384453, "lon": -120.0603396 },
+    { "lat": 39.2386224, "lon": -120.0600701 },
+    { "lat": 39.2386415, "lon": -120.0599471 },
+    { "lat": 39.2386900, "lon": -120.0596895 },
+    { "lat": 39.2387731, "lon": -120.0595406 },
+    { "lat": 39.2388781, "lon": -120.0593936 },
+    { "lat": 39.2390175, "lon": -120.0591655 },
+    { "lat": 39.2391156, "lon": -120.0589390 },
+    { "lat": 39.2391657, "lon": -120.0587388 },
+    { "lat": 39.2392111, "lon": -120.0585274 },
+    { "lat": 39.2392576, "lon": -120.0582479 },
+    { "lat": 39.2393424, "lon": -120.0579276 },
+    { "lat": 39.2393956, "lon": -120.0573369 },
+    { "lat": 39.2394282, "lon": -120.0568522 },
+    { "lat": 39.2394575, "lon": -120.0562114 },
+    { "lat": 39.2394427, "lon": -120.0557205 },
+    { "lat": 39.2394234, "lon": -120.0554120 },
+    { "lat": 39.2394636, "lon": -120.0554036 },
+    { "lat": 39.2394514, "lon": -120.0545697 },
+    { "lat": 39.2394501, "lon": -120.0544577 },
+    { "lat": 39.2394479, "lon": -120.0542791 },
+    { "lat": 39.2394288, "lon": -120.0539356 },
+    { "lat": 39.2394160, "lon": -120.0535140 },
+    { "lat": 39.2394109, "lon": -120.0533471 },
+    { "lat": 39.2394109, "lon": -120.0530390 },
+    { "lat": 39.2393934, "lon": -120.0525430 },
+    { "lat": 39.2393744, "lon": -120.0520039 },
+    { "lat": 39.2393533, "lon": -120.0515960 },
+    { "lat": 39.2393241, "lon": -120.0510323 },
+    { "lat": 39.2393010, "lon": -120.0506504 },
+    { "lat": 39.2392883, "lon": -120.0504407 },
+    { "lat": 39.2392785, "lon": -120.0501686 },
+    { "lat": 39.2392408, "lon": -120.0496910 },
+    { "lat": 39.2392308, "lon": -120.0495528 },
+    { "lat": 39.2391950, "lon": -120.0492848 },
+    { "lat": 39.2391616, "lon": -120.0491292 },
+    { "lat": 39.2391246, "lon": -120.0490321 },
+    { "lat": 39.2390912, "lon": -120.0489782 },
+    { "lat": 39.2390590, "lon": -120.0489736 },
+    { "lat": 39.2387646, "lon": -120.0489854 },
+    { "lat": 39.2386447, "lon": -120.0489830 },
+    { "lat": 39.2385987, "lon": -120.0489632 },
+    { "lat": 39.2385798, "lon": -120.0489104 },
+    { "lat": 39.2385625, "lon": -120.0488514 },
+    { "lat": 39.2385562, "lon": -120.0487640 },
+    { "lat": 39.2385404, "lon": -120.0486807 },
+    { "lat": 39.2385372, "lon": -120.0486411 },
+    { "lat": 39.2385278, "lon": -120.0485242 },
+    { "lat": 39.2385011, "lon": -120.0484388 },
+    { "lat": 39.2384853, "lon": -120.0483636 },
+    { "lat": 39.2384900, "lon": -120.0483006 },
+    { "lat": 39.2384932, "lon": -120.0482172 },
+    { "lat": 39.2385247, "lon": -120.0481522 },
+    { "lat": 39.2385483, "lon": -120.0480566 },
+    { "lat": 39.2386538, "lon": -120.0481481 },
+    { "lat": 39.2386585, "lon": -120.0483229 },
+    { "lat": 39.2387120, "lon": -120.0483738 },
+    { "lat": 39.2389010, "lon": -120.0483555 },
+    { "lat": 39.2389561, "lon": -120.0483087 },
+    { "lat": 39.2389712, "lon": -120.0482297 },
+    { "lat": 39.2389854, "lon": -120.0481556 },
+    { "lat": 39.2389938, "lon": -120.0481115 },
+    { "lat": 39.2390104, "lon": -120.0480465 },
+    { "lat": 39.2390159, "lon": -120.0479753 },
+    { "lat": 39.2390072, "lon": -120.0479164 },
+    { "lat": 39.2389993, "lon": -120.0478676 },
+    { "lat": 39.2390119, "lon": -120.0478188 },
+    { "lat": 39.2390371, "lon": -120.0477294 },
+    { "lat": 39.2390529, "lon": -120.0476166 },
+    { "lat": 39.2390545, "lon": -120.0474966 },
+    { "lat": 39.2390515, "lon": -120.0474123 },
+    { "lat": 39.2390489, "lon": -120.0473381 },
+    { "lat": 39.2390392, "lon": -120.0472179 },
+    { "lat": 39.2390291, "lon": -120.0470926 },
+    { "lat": 39.2390053, "lon": -120.0468292 },
+    { "lat": 39.2389719, "lon": -120.0465626 },
+    { "lat": 39.2388122, "lon": -120.0462355 },
+    { "lat": 39.2386516, "lon": -120.0459558 },
+    { "lat": 39.2385006, "lon": -120.0458721 },
+    { "lat": 39.2384316, "lon": -120.0457302 },
+    { "lat": 39.2383364, "lon": -120.0456433 },
+    { "lat": 39.2379261, "lon": -120.0454741 },
+    { "lat": 39.2378283, "lon": -120.0451640 },
+    { "lat": 39.2376704, "lon": -120.0450420 },
+    { "lat": 39.2376422, "lon": -120.0447037 },
+    { "lat": 39.2374593, "lon": -120.0440589 },
+    { "lat": 39.2373522, "lon": -120.0432411 },
+    { "lat": 39.2372818, "lon": -120.0432138 },
+    { "lat": 39.2372561, "lon": -120.0431035 },
+    { "lat": 39.2374684, "lon": -120.0430708 },
+    { "lat": 39.2375003, "lon": -120.0430340 },
+    { "lat": 39.2374942, "lon": -120.0428308 },
+    { "lat": 39.2374852, "lon": -120.0427547 },
+    { "lat": 39.2374002, "lon": -120.0427006 },
+    { "lat": 39.2374139, "lon": -120.0426384 },
+    { "lat": 39.2374338, "lon": -120.0426449 },
+    { "lat": 39.2374429, "lon": -120.0425970 },
+    { "lat": 39.2373553, "lon": -120.0425583 },
+    { "lat": 39.2373771, "lon": -120.0425301 },
+    { "lat": 39.2373951, "lon": -120.0424563 },
+    { "lat": 39.2374795, "lon": -120.0422436 },
+    { "lat": 39.2377539, "lon": -120.0422163 },
+    { "lat": 39.2379534, "lon": -120.0420808 },
+    { "lat": 39.2383159, "lon": -120.0409725 },
+    { "lat": 39.2382417, "lon": -120.0398433 },
+    { "lat": 39.2381813, "lon": -120.0392504 },
+    { "lat": 39.2381052, "lon": -120.0385027 },
+    { "lat": 39.2377020, "lon": -120.0378153 },
+    { "lat": 39.2374802, "lon": -120.0372732 },
+    { "lat": 39.2372624, "lon": -120.0367411 },
+    { "lat": 39.2375639, "lon": -120.0363445 },
+    { "lat": 39.2377012, "lon": -120.0363288 },
+    { "lat": 39.2377459, "lon": -120.0362933 },
+    { "lat": 39.2377722, "lon": -120.0362373 },
+    { "lat": 39.2377918, "lon": -120.0361276 },
+    { "lat": 39.2378036, "lon": -120.0360084 },
+    { "lat": 39.2378022, "lon": -120.0358974 },
+    { "lat": 39.2377830, "lon": -120.0357722 },
+    { "lat": 39.2377424, "lon": -120.0356357 },
+    { "lat": 39.2376731, "lon": -120.0349945 },
+    { "lat": 39.2375943, "lon": -120.0344851 },
+    { "lat": 39.2375148, "lon": -120.0339268 },
+    { "lat": 39.2374875, "lon": -120.0336977 },
+    { "lat": 39.2374472, "lon": -120.0333593 },
+    { "lat": 39.2373817, "lon": -120.0328209 },
+    { "lat": 39.2372845, "lon": -120.0324718 },
+    { "lat": 39.2371809, "lon": -120.0318365 },
+    { "lat": 39.2370515, "lon": -120.0310438 },
+    { "lat": 39.2369329, "lon": -120.0305777 },
+    { "lat": 39.2368198, "lon": -120.0302024 },
+    { "lat": 39.2367441, "lon": -120.0297443 },
+    { "lat": 39.2366742, "lon": -120.0288841 },
+    { "lat": 39.2366702, "lon": -120.0288482 },
+    { "lat": 39.2366092, "lon": -120.0283095 },
+    { "lat": 39.2364847, "lon": -120.0276193 },
+    { "lat": 39.2363545, "lon": -120.0269330 },
+    { "lat": 39.2361513, "lon": -120.0259571 },
+    { "lat": 39.2359427, "lon": -120.0250621 },
+    { "lat": 39.2358457, "lon": -120.0246274 },
+    { "lat": 39.2356421, "lon": -120.0239414 },
+    { "lat": 39.2354028, "lon": -120.0232853 },
+    { "lat": 39.2352081, "lon": -120.0228642 },
+    { "lat": 39.2350108, "lon": -120.0225569 },
+    { "lat": 39.2347616, "lon": -120.0226606 },
+    { "lat": 39.2345383, "lon": -120.0226230 },
+    { "lat": 39.2342835, "lon": -120.0224128 },
+    { "lat": 39.2340140, "lon": -120.0219850 },
+    { "lat": 39.2338719, "lon": -120.0216349 },
+    { "lat": 39.2334730, "lon": -120.0206049 },
+    { "lat": 39.2332736, "lon": -120.0194033 },
+    { "lat": 39.2328082, "lon": -120.0182875 },
+    { "lat": 39.2323428, "lon": -120.0177725 },
+    { "lat": 39.2291515, "lon": -120.0153692 },
+    { "lat": 39.2276888, "lon": -120.0144251 },
+    { "lat": 39.2263590, "lon": -120.0140818 },
+    { "lat": 39.2256941, "lon": -120.0131376 },
+    { "lat": 39.2251640, "lon": -120.0128648 },
+    { "lat": 39.2250663, "lon": -120.0128379 },
+    { "lat": 39.2250120, "lon": -120.0127917 },
+    { "lat": 39.2249687, "lon": -120.0127548 },
+    { "lat": 39.2249417, "lon": -120.0126663 },
+    { "lat": 39.2249001, "lon": -120.0125912 },
+    { "lat": 39.2248461, "lon": -120.0124812 },
+    { "lat": 39.2248814, "lon": -120.0124168 },
+    { "lat": 39.2249707, "lon": -120.0123954 },
+    { "lat": 39.2250237, "lon": -120.0123269 },
+    { "lat": 39.2250373, "lon": -120.0122224 },
+    { "lat": 39.2250082, "lon": -120.0120843 },
+    { "lat": 39.2249272, "lon": -120.0119998 },
+    { "lat": 39.2248191, "lon": -120.0116846 },
+    { "lat": 39.2247505, "lon": -120.0114727 },
+    { "lat": 39.2246903, "lon": -120.0113990 },
+    { "lat": 39.2245967, "lon": -120.0113949 },
+    { "lat": 39.2245261, "lon": -120.0114083 },
+    { "lat": 39.2244596, "lon": -120.0114164 },
+    { "lat": 39.2243703, "lon": -120.0115585 },
+    { "lat": 39.2242871, "lon": -120.0115934 },
+    { "lat": 39.2242414, "lon": -120.0115317 },
+    { "lat": 39.2242477, "lon": -120.0114191 },
+    { "lat": 39.2243266, "lon": -120.0113064 },
+    { "lat": 39.2244243, "lon": -120.0112340 },
+    { "lat": 39.2244430, "lon": -120.0111267 },
+    { "lat": 39.2244035, "lon": -120.0109872 },
+    { "lat": 39.2243245, "lon": -120.0108773 },
+    { "lat": 39.2242331, "lon": -120.0108048 },
+    { "lat": 39.2241438, "lon": -120.0107083 },
+    { "lat": 39.2240482, "lon": -120.0106332 },
+    { "lat": 39.2239464, "lon": -120.0104642 },
+    { "lat": 39.2238674, "lon": -120.0104776 },
+    { "lat": 39.2237905, "lon": -120.0105286 },
+    { "lat": 39.2237178, "lon": -120.0104642 },
+    { "lat": 39.2237012, "lon": -120.0103301 },
+    { "lat": 39.2236596, "lon": -120.0102845 },
+    { "lat": 39.2235411, "lon": -120.0102402 },
+    { "lat": 39.2234840, "lon": -120.0101209 },
+    { "lat": 39.2234061, "lon": -120.0100833 },
+    { "lat": 39.2233272, "lon": -120.0101075 },
+    { "lat": 39.2233085, "lon": -120.0101745 },
+    { "lat": 39.2233230, "lon": -120.0102738 },
+    { "lat": 39.2232898, "lon": -120.0103542 },
+    { "lat": 39.2232254, "lon": -120.0103703 },
+    { "lat": 39.2232025, "lon": -120.0103140 },
+    { "lat": 39.2232108, "lon": -120.0102228 },
+    { "lat": 39.2232108, "lon": -120.0101316 },
+    { "lat": 39.2231318, "lon": -120.0101370 },
+    { "lat": 39.2230861, "lon": -120.0101692 },
+    { "lat": 39.2229199, "lon": -120.0099921 },
+    { "lat": 39.2228077, "lon": -120.0097024 },
+    { "lat": 39.2227661, "lon": -120.0094235 },
+    { "lat": 39.2226830, "lon": -120.0093430 },
+    { "lat": 39.2225833, "lon": -120.0094020 },
+    { "lat": 39.2224752, "lon": -120.0094020 },
+    { "lat": 39.2224212, "lon": -120.0092894 },
+    { "lat": 39.2224067, "lon": -120.0091955 },
+    { "lat": 39.2224856, "lon": -120.0089917 },
+    { "lat": 39.2225523, "lon": -120.0089318 },
+    { "lat": 39.2225812, "lon": -120.0089058 },
+    { "lat": 39.2226809, "lon": -120.0088039 },
+    { "lat": 39.2227488, "lon": -120.0086755 },
+    { "lat": 39.2227703, "lon": -120.0086349 },
+    { "lat": 39.2228230, "lon": -120.0084180 },
+    { "lat": 39.2228596, "lon": -120.0082675 },
+    { "lat": 39.2228680, "lon": -120.0079724 },
+    { "lat": 39.2228596, "lon": -120.0077793 },
+    { "lat": 39.2228264, "lon": -120.0076076 },
+    { "lat": 39.2228264, "lon": -120.0074628 },
+    { "lat": 39.2228804, "lon": -120.0071570 },
+    { "lat": 39.2228970, "lon": -120.0069049 },
+    { "lat": 39.2228472, "lon": -120.0065348 },
+    { "lat": 39.2227641, "lon": -120.0061646 },
+    { "lat": 39.2226103, "lon": -120.0057623 },
+    { "lat": 39.2225898, "lon": -120.0056198 },
+    { "lat": 39.2226288, "lon": -120.0055958 },
+    { "lat": 39.2226416, "lon": -120.0054676 },
+    { "lat": 39.2226297, "lon": -120.0053490 },
+    { "lat": 39.2225950, "lon": -120.0052519 },
+    { "lat": 39.2225413, "lon": -120.0051765 },
+    { "lat": 39.2224793, "lon": -120.0051595 },
+    { "lat": 39.2224184, "lon": -120.0052054 },
+    { "lat": 39.2223374, "lon": -120.0052965 },
+    { "lat": 39.2222294, "lon": -120.0052884 },
+    { "lat": 39.2221541, "lon": -120.0051756 },
+    { "lat": 39.2221206, "lon": -120.0050373 },
+    { "lat": 39.2221398, "lon": -120.0049479 },
+    { "lat": 39.2220771, "lon": -120.0047944 },
+    { "lat": 39.2220162, "lon": -120.0046897 },
+    { "lat": 39.2219745, "lon": -120.0045556 },
+    { "lat": 39.2219852, "lon": -120.0044986 },
+    { "lat": 39.2219780, "lon": -120.0044139 },
+    { "lat": 39.2219398, "lon": -120.0043523 },
+    { "lat": 39.2219267, "lon": -120.0042922 },
+    { "lat": 39.2219340, "lon": -120.0042478 },
+    { "lat": 39.2218715, "lon": -120.0041202 },
+    { "lat": 39.2218277, "lon": -120.0039748 },
+    { "lat": 39.2217835, "lon": -120.0039718 },
+    { "lat": 39.2217572, "lon": -120.0039379 },
+    { "lat": 39.2217489, "lon": -120.0038686 },
+    { "lat": 39.2217095, "lon": -120.0037438 },
+    { "lat": 39.2216844, "lon": -120.0036760 },
+    { "lat": 39.2216200, "lon": -120.0035974 },
+    { "lat": 39.2215782, "lon": -120.0035943 },
+    { "lat": 39.2215090, "lon": -120.0035943 },
+    { "lat": 39.2214660, "lon": -120.0036236 },
+    { "lat": 39.2214135, "lon": -120.0036791 },
+    { "lat": 39.2214004, "lon": -120.0036513 },
+    { "lat": 39.2213873, "lon": -120.0035943 },
+    { "lat": 39.2213586, "lon": -120.0035512 },
+    { "lat": 39.2213348, "lon": -120.0034896 },
+    { "lat": 39.2213025, "lon": -120.0034341 },
+    { "lat": 39.2212524, "lon": -120.0034218 },
+    { "lat": 39.2211748, "lon": -120.0034542 },
+    { "lat": 39.2211390, "lon": -120.0034511 },
+    { "lat": 39.2211283, "lon": -120.0034110 },
+    { "lat": 39.2211438, "lon": -120.0033402 },
+    { "lat": 39.2211295, "lon": -120.0032770 },
+    { "lat": 39.2210973, "lon": -120.0032416 },
+    { "lat": 39.2210149, "lon": -120.0032138 },
+    { "lat": 39.2209445, "lon": -120.0032154 },
+    { "lat": 39.2209266, "lon": -120.0031830 },
+    { "lat": 39.2209182, "lon": -120.0030829 },
+    { "lat": 39.2209636, "lon": -120.0029227 },
+    { "lat": 39.2210006, "lon": -120.0028518 },
+    { "lat": 39.2210030, "lon": -120.0027917 },
+    { "lat": 39.2209791, "lon": -120.0027393 },
+    { "lat": 39.2209147, "lon": -120.0027008 },
+    { "lat": 39.2208729, "lon": -120.0026978 },
+    { "lat": 39.2208466, "lon": -120.0026562 },
+    { "lat": 39.2208478, "lon": -120.0025961 },
+    { "lat": 39.2208598, "lon": -120.0025576 },
+    { "lat": 39.2208442, "lon": -120.0024959 },
+    { "lat": 39.2208108, "lon": -120.0024852 },
+    { "lat": 39.2207750, "lon": -120.0025036 },
+    { "lat": 39.2207464, "lon": -120.0025252 },
+    { "lat": 39.2207297, "lon": -120.0025129 },
+    { "lat": 39.2207261, "lon": -120.0024405 },
+    { "lat": 39.2207595, "lon": -120.0023080 },
+    { "lat": 39.2207822, "lon": -120.0022741 },
+    { "lat": 39.2208180, "lon": -120.0022649 },
+    { "lat": 39.2208729, "lon": -120.0022541 },
+    { "lat": 39.2209194, "lon": -120.0022002 },
+    { "lat": 39.2209815, "lon": -120.0020969 },
+    { "lat": 39.2210710, "lon": -120.0018643 },
+    { "lat": 39.2211128, "lon": -120.0017118 },
+    { "lat": 39.2211378, "lon": -120.0015932 },
+    { "lat": 39.2211605, "lon": -120.0015485 },
+    { "lat": 39.2212035, "lon": -120.0015100 },
+    { "lat": 39.2212954, "lon": -120.0014823 },
+    { "lat": 39.2213980, "lon": -120.0014623 },
+    { "lat": 39.2214935, "lon": -120.0014006 },
+    { "lat": 39.2216116, "lon": -120.0013575 },
+    { "lat": 39.2217250, "lon": -120.0013328 },
+    { "lat": 39.2219196, "lon": -120.0013298 },
+    { "lat": 39.2221165, "lon": -120.0013375 },
+    { "lat": 39.2223552, "lon": -120.0013575 },
+    { "lat": 39.2225020, "lon": -120.0013991 },
+    { "lat": 39.2225604, "lon": -120.0013760 },
+    { "lat": 39.2225915, "lon": -120.0013267 },
+    { "lat": 39.2226225, "lon": -120.0013036 },
+    { "lat": 39.2226571, "lon": -120.0013328 },
+    { "lat": 39.2226822, "lon": -120.0014053 },
+    { "lat": 39.2227263, "lon": -120.0014345 },
+    { "lat": 39.2228266, "lon": -120.0014653 },
+    { "lat": 39.2229029, "lon": -120.0014576 },
+    { "lat": 39.2229328, "lon": -120.0014022 },
+    { "lat": 39.2229626, "lon": -120.0013945 },
+    { "lat": 39.2230056, "lon": -120.0014284 },
+    { "lat": 39.2230414, "lon": -120.0014854 },
+    { "lat": 39.2230629, "lon": -120.0016132 },
+    { "lat": 39.2231070, "lon": -120.0017442 },
+    { "lat": 39.2231691, "lon": -120.0018659 },
+    { "lat": 39.2232168, "lon": -120.0019752 },
+    { "lat": 39.2232956, "lon": -120.0020523 },
+    { "lat": 39.2233612, "lon": -120.0020569 },
+    { "lat": 39.2233911, "lon": -120.0020230 },
+    { "lat": 39.2233899, "lon": -120.0019367 },
+    { "lat": 39.2233982, "lon": -120.0018674 },
+    { "lat": 39.2234161, "lon": -120.0018197 },
+    { "lat": 39.2234567, "lon": -120.0017781 },
+    { "lat": 39.2234818, "lon": -120.0017072 },
+    { "lat": 39.2234925, "lon": -120.0016502 },
+    { "lat": 39.2235534, "lon": -120.0015778 },
+    { "lat": 39.2235951, "lon": -120.0015254 },
+    { "lat": 39.2237073, "lon": -120.0014946 },
+    { "lat": 39.2238171, "lon": -120.0014961 },
+    { "lat": 39.2239436, "lon": -120.0014761 },
+    { "lat": 39.2240439, "lon": -120.0014900 },
+    { "lat": 39.2241405, "lon": -120.0015285 },
+    { "lat": 39.2241990, "lon": -120.0016132 },
+    { "lat": 39.2242611, "lon": -120.0017272 },
+    { "lat": 39.2242981, "lon": -120.0017580 },
+    { "lat": 39.2243482, "lon": -120.0017596 },
+    { "lat": 39.2243947, "lon": -120.0017288 },
+    { "lat": 39.2244186, "lon": -120.0016702 },
+    { "lat": 39.2244162, "lon": -120.0016132 },
+    { "lat": 39.2244269, "lon": -120.0015547 },
+    { "lat": 39.2244962, "lon": -120.0014715 },
+    { "lat": 39.2245439, "lon": -120.0014453 },
+    { "lat": 39.2245702, "lon": -120.0014561 },
+    { "lat": 39.2245630, "lon": -120.0014854 },
+    { "lat": 39.2245332, "lon": -120.0015254 },
+    { "lat": 39.2244962, "lon": -120.0015994 },
+    { "lat": 39.2244926, "lon": -120.0016517 },
+    { "lat": 39.2245176, "lon": -120.0016687 },
+    { "lat": 39.2245678, "lon": -120.0016410 },
+    { "lat": 39.2246573, "lon": -120.0016148 },
+    { "lat": 39.2247420, "lon": -120.0016040 },
+    { "lat": 39.2247826, "lon": -120.0016132 },
+    { "lat": 39.2248411, "lon": -120.0016641 },
+    { "lat": 39.2248781, "lon": -120.0017149 },
+    { "lat": 39.2249723, "lon": -120.0018150 },
+    { "lat": 39.2249950, "lon": -120.0018813 },
+    { "lat": 39.2249556, "lon": -120.0019768 },
+    { "lat": 39.2249353, "lon": -120.0020569 },
+    { "lat": 39.2249413, "lon": -120.0021324 },
+    { "lat": 39.2249664, "lon": -120.0022032 },
+    { "lat": 39.2250129, "lon": -120.0022479 },
+    { "lat": 39.2251155, "lon": -120.0023034 },
+    { "lat": 39.2251716, "lon": -120.0023065 },
+    { "lat": 39.2252444, "lon": -120.0022279 },
+    { "lat": 39.2253292, "lon": -120.0021262 },
+    { "lat": 39.2254055, "lon": -120.0020353 },
+    { "lat": 39.2254759, "lon": -120.0018951 },
+    { "lat": 39.2255249, "lon": -120.0018042 },
+    { "lat": 39.2255499, "lon": -120.0017565 },
+    { "lat": 39.2255869, "lon": -120.0017334 },
+    { "lat": 39.2256168, "lon": -120.0017318 },
+    { "lat": 39.2256931, "lon": -120.0017811 },
+    { "lat": 39.2257612, "lon": -120.0017704 },
+    { "lat": 39.2258674, "lon": -120.0017688 },
+    { "lat": 39.2259712, "lon": -120.0017950 },
+    { "lat": 39.2262291, "lon": -120.0017566 },
+    { "lat": 39.2265742, "lon": -120.0015842 },
+    { "lat": 39.2268861, "lon": -120.0014304 },
+    { "lat": 39.2271232, "lon": -120.0015450 },
+    { "lat": 39.2275974, "lon": -120.0011947 },
+    { "lat": 39.2279511, "lon": -120.0010106 },
+    { "lat": 39.2282573, "lon": -120.0010606 },
+    { "lat": 39.2286868, "lon": -120.0009515 },
+    { "lat": 39.2288911, "lon": -120.0010391 },
+    { "lat": 39.2292617, "lon": -120.0009121 },
+    { "lat": 39.2296891, "lon": -120.0007065 },
+    { "lat": 39.2301166, "lon": -120.0005707 },
+    { "lat": 39.2304111, "lon": -120.0006145 },
+    { "lat": 39.2306061, "lon": -120.0007143 },
+    { "lat": 39.2308427, "lon": -120.0006906 },
+    { "lat": 39.2309566, "lon": -120.0007802 },
+    { "lat": 39.2310954, "lon": -120.0010134 },
+    { "lat": 39.2313807, "lon": -120.0008643 },
+    { "lat": 39.2315809, "lon": -120.0008507 },
+    { "lat": 39.2315908, "lon": -120.0008098 },
+    { "lat": 39.2316172, "lon": -120.0007007 },
+    { "lat": 39.2318089, "lon": -120.0006640 },
+    { "lat": 39.2318550, "lon": -120.0008381 },
+    { "lat": 39.2319687, "lon": -120.0009485 },
+    { "lat": 39.2319193, "lon": -120.0010428 },
+    { "lat": 39.2319847, "lon": -120.0012019 },
+    { "lat": 39.2321617, "lon": -120.0012613 },
+    { "lat": 39.2323212, "lon": -120.0011718 },
+    { "lat": 39.2327821, "lon": -120.0010076 },
+    { "lat": 39.2331457, "lon": -120.0008986 },
+    { "lat": 39.2337326, "lon": -120.0007341 },
+    { "lat": 39.2340801, "lon": -120.0005767 },
+    { "lat": 39.2342551, "lon": -120.0005294 },
+    { "lat": 39.2345907, "lon": -120.0006439 },
+    { "lat": 39.2348020, "lon": -120.0006368 },
+    { "lat": 39.2350591, "lon": -120.0006672 },
+    { "lat": 39.2356679, "lon": -120.0003261 },
+    { "lat": 39.2360304, "lon": -120.0002011 },
+    { "lat": 39.2366900, "lon": -119.9995692 },
+    { "lat": 39.2370276, "lon": -119.9995952 },
+    { "lat": 39.2377344, "lon": -119.9994017 },
+    { "lat": 39.2380811, "lon": -119.9994004 },
+    { "lat": 39.2382712, "lon": -119.9993997 },
+    { "lat": 39.2384421, "lon": -119.9994965 },
+    { "lat": 39.2385029, "lon": -119.9995135 },
+    { "lat": 39.2385459, "lon": -119.9994904 },
+    { "lat": 39.2386138, "lon": -119.9994427 },
+    { "lat": 39.2386402, "lon": -119.9994241 },
+    { "lat": 39.2387022, "lon": -119.9994118 },
+    { "lat": 39.2387810, "lon": -119.9993671 },
+    { "lat": 39.2388311, "lon": -119.9993117 },
+    { "lat": 39.2389623, "lon": -119.9991561 },
+    { "lat": 39.2389826, "lon": -119.9990760 },
+    { "lat": 39.2390399, "lon": -119.9989712 },
+    { "lat": 39.2390554, "lon": -119.9989050 },
+    { "lat": 39.2390685, "lon": -119.9988372 },
+    { "lat": 39.2391055, "lon": -119.9987925 },
+    { "lat": 39.2391532, "lon": -119.9987910 },
+    { "lat": 39.2391962, "lon": -119.9988264 },
+    { "lat": 39.2392344, "lon": -119.9988141 },
+    { "lat": 39.2393477, "lon": -119.9987093 },
+    { "lat": 39.2394014, "lon": -119.9986631 },
+    { "lat": 39.2394849, "lon": -119.9986092 },
+    { "lat": 39.2395529, "lon": -119.9986277 },
+    { "lat": 39.2396269, "lon": -119.9986724 },
+    { "lat": 39.2397456, "lon": -119.9987264 },
+    { "lat": 39.2399073, "lon": -119.9987679 },
+    { "lat": 39.2399980, "lon": -119.9988280 },
+    { "lat": 39.2400552, "lon": -119.9988742 },
+    { "lat": 39.2401006, "lon": -119.9989882 },
+    { "lat": 39.2401316, "lon": -119.9990513 },
+    { "lat": 39.2401757, "lon": -119.9990744 },
+    { "lat": 39.2402282, "lon": -119.9990513 },
+    { "lat": 39.2402843, "lon": -119.9990775 },
+    { "lat": 39.2402939, "lon": -119.9991407 },
+    { "lat": 39.2403666, "lon": -119.9992085 },
+    { "lat": 39.2404243, "lon": -119.9992501 },
+    { "lat": 39.2405048, "lon": -119.9992732 },
+    { "lat": 39.2406152, "lon": -119.9993048 },
+    { "lat": 39.2406808, "lon": -119.9993447 },
+    { "lat": 39.2408069, "lon": -119.9993766 },
+    { "lat": 39.2409495, "lon": -119.9994049 },
+    { "lat": 39.2410385, "lon": -119.9994155 },
+    { "lat": 39.2411372, "lon": -119.9994102 },
+    { "lat": 39.2413848, "lon": -119.9993725 },
+    { "lat": 39.2414278, "lon": -119.9993660 },
+    { "lat": 39.2414942, "lon": -119.9993414 },
+    { "lat": 39.2415662, "lon": -119.9993147 },
+    { "lat": 39.2417101, "lon": -119.9992616 },
+    { "lat": 39.2418093, "lon": -119.9991991 },
+    { "lat": 39.2418526, "lon": -119.9991873 },
+    { "lat": 39.2419404, "lon": -119.9991200 },
+    { "lat": 39.2419527, "lon": -119.9990687 },
+    { "lat": 39.2420240, "lon": -119.9989802 },
+    { "lat": 39.2420856, "lon": -119.9988900 },
+    { "lat": 39.2421034, "lon": -119.9987572 },
+    { "lat": 39.2421405, "lon": -119.9987148 },
+    { "lat": 39.2421829, "lon": -119.9987254 },
+    { "lat": 39.2421898, "lon": -119.9988068 },
+    { "lat": 39.2422213, "lon": -119.9988563 },
+    { "lat": 39.2422583, "lon": -119.9988121 },
+    { "lat": 39.2422967, "lon": -119.9987059 },
+    { "lat": 39.2423844, "lon": -119.9986121 },
+    { "lat": 39.2424392, "lon": -119.9985537 },
+    { "lat": 39.2424872, "lon": -119.9985467 },
+    { "lat": 39.2425530, "lon": -119.9985537 },
+    { "lat": 39.2426051, "lon": -119.9985343 },
+    { "lat": 39.2426475, "lon": -119.9985484 },
+    { "lat": 39.2427120, "lon": -119.9985927 },
+    { "lat": 39.2427736, "lon": -119.9985767 },
+    { "lat": 39.2428353, "lon": -119.9985183 },
+    { "lat": 39.2431407, "lon": -119.9982547 },
+    { "lat": 39.2431805, "lon": -119.9982203 },
+    { "lat": 39.2437227, "lon": -119.9977522 },
+    { "lat": 39.2438623, "lon": -119.9976450 },
+    { "lat": 39.2439216, "lon": -119.9976317 },
+    { "lat": 39.2439120, "lon": -119.9976814 },
+    { "lat": 39.2439231, "lon": -119.9977170 },
+    { "lat": 39.2440002, "lon": -119.9977007 },
+    { "lat": 39.2440868, "lon": -119.9976611 },
+    { "lat": 39.2441497, "lon": -119.9976448 },
+    { "lat": 39.2442355, "lon": -119.9976245 },
+    { "lat": 39.2442749, "lon": -119.9976458 },
+    { "lat": 39.2442812, "lon": -119.9976692 },
+    { "lat": 39.2443284, "lon": -119.9977139 },
+    { "lat": 39.2443906, "lon": -119.9977241 },
+    { "lat": 39.2445055, "lon": -119.9977139 },
+    { "lat": 39.2446546, "lon": -119.9976818 },
+    { "lat": 39.2447334, "lon": -119.9976787 },
+    { "lat": 39.2448169, "lon": -119.9976541 },
+    { "lat": 39.2448646, "lon": -119.9976263 },
+    { "lat": 39.2449290, "lon": -119.9975786 },
+    { "lat": 39.2450138, "lon": -119.9975123 },
+    { "lat": 39.2450973, "lon": -119.9974754 },
+    { "lat": 39.2451784, "lon": -119.9974584 },
+    { "lat": 39.2452476, "lon": -119.9974384 },
+    { "lat": 39.2453705, "lon": -119.9974230 },
+    { "lat": 39.2454683, "lon": -119.9973891 },
+    { "lat": 39.2455661, "lon": -119.9973352 },
+    { "lat": 39.2456353, "lon": -119.9972874 },
+    { "lat": 39.2457451, "lon": -119.9971750 },
+    { "lat": 39.2457988, "lon": -119.9970671 },
+    { "lat": 39.2458095, "lon": -119.9970009 },
+    { "lat": 39.2458382, "lon": -119.9969439 },
+    { "lat": 39.2459169, "lon": -119.9968607 },
+    { "lat": 39.2460255, "lon": -119.9967698 },
+    { "lat": 39.2461412, "lon": -119.9966928 },
+    { "lat": 39.2461901, "lon": -119.9966219 },
+    { "lat": 39.2462653, "lon": -119.9965449 },
+    { "lat": 39.2463619, "lon": -119.9964679 },
+    { "lat": 39.2465015, "lon": -119.9963847 },
+    { "lat": 39.2466220, "lon": -119.9963000 },
+    { "lat": 39.2466828, "lon": -119.9962815 },
+    { "lat": 39.2468081, "lon": -119.9962861 },
+    { "lat": 39.2468654, "lon": -119.9962460 },
+    { "lat": 39.2469143, "lon": -119.9961921 },
+    { "lat": 39.2470073, "lon": -119.9960720 },
+    { "lat": 39.2470932, "lon": -119.9959811 },
+    { "lat": 39.2471529, "lon": -119.9959441 },
+    { "lat": 39.2472519, "lon": -119.9958948 },
+    { "lat": 39.2473294, "lon": -119.9958640 },
+    { "lat": 39.2473819, "lon": -119.9958085 },
+    { "lat": 39.2474034, "lon": -119.9957346 },
+    { "lat": 39.2474010, "lon": -119.9956637 },
+    { "lat": 39.2474332, "lon": -119.9955713 },
+    { "lat": 39.2474840, "lon": -119.9954292 },
+    { "lat": 39.2475454, "lon": -119.9953092 },
+    { "lat": 39.2476288, "lon": -119.9951995 },
+    { "lat": 39.2476681, "lon": -119.9950836 },
+    { "lat": 39.2476681, "lon": -119.9950104 },
+    { "lat": 39.2476839, "lon": -119.9949576 },
+    { "lat": 39.2480108, "lon": -119.9946431 },
+    { "lat": 39.2488824, "lon": -119.9930379 },
+    { "lat": 39.2489769, "lon": -119.9925806 },
+    { "lat": 39.2489146, "lon": -119.9925631 },
+    { "lat": 39.2489074, "lon": -119.9924371 },
+    { "lat": 39.2489676, "lon": -119.9921916 },
+    { "lat": 39.2490008, "lon": -119.9920723 },
+    { "lat": 39.2490014, "lon": -119.9920212 },
+    { "lat": 39.2490133, "lon": -119.9910182 },
+    { "lat": 39.2489614, "lon": -119.9903758 },
+    { "lat": 39.2488752, "lon": -119.9900459 },
+    { "lat": 39.2488326, "lon": -119.9898461 },
+    { "lat": 39.2488170, "lon": -119.9897736 },
+    { "lat": 39.2486975, "lon": -119.9893668 },
+    { "lat": 39.2487017, "lon": -119.9891665 },
+    { "lat": 39.2487126, "lon": -119.9890198 },
+    { "lat": 39.2486830, "lon": -119.9889046 },
+    { "lat": 39.2486872, "lon": -119.9886601 },
+    { "lat": 39.2486342, "lon": -119.9885848 },
+    { "lat": 39.2486571, "lon": -119.9884201 },
+    { "lat": 39.2487301, "lon": -119.9884165 },
+    { "lat": 39.2487090, "lon": -119.9881355 },
+    { "lat": 39.2487058, "lon": -119.9878183 },
+    { "lat": 39.2486827, "lon": -119.9875671 },
+    { "lat": 39.2485846, "lon": -119.9875438 },
+    { "lat": 39.2485377, "lon": -119.9874691 },
+    { "lat": 39.2484223, "lon": -119.9875429 },
+    { "lat": 39.2484104, "lon": -119.9874744 },
+    { "lat": 39.2484488, "lon": -119.9873916 },
+    { "lat": 39.2485124, "lon": -119.9873163 },
+    { "lat": 39.2486110, "lon": -119.9873250 },
+    { "lat": 39.2486259, "lon": -119.9871727 },
+    { "lat": 39.2486189, "lon": -119.9870671 },
+    { "lat": 39.2486059, "lon": -119.9869734 },
+    { "lat": 39.2485511, "lon": -119.9867850 },
+    { "lat": 39.2486036, "lon": -119.9866117 },
+    { "lat": 39.2485504, "lon": -119.9865789 },
+    { "lat": 39.2485490, "lon": -119.9862500 },
+    { "lat": 39.2484970, "lon": -119.9860399 },
+    { "lat": 39.2484891, "lon": -119.9859071 },
+    { "lat": 39.2485565, "lon": -119.9858461 },
+    { "lat": 39.2485885, "lon": -119.9857460 },
+    { "lat": 39.2486109, "lon": -119.9853958 },
+    { "lat": 39.2486164, "lon": -119.9852939 },
+    { "lat": 39.2486340, "lon": -119.9849734 },
+    { "lat": 39.2486053, "lon": -119.9848759 },
+    { "lat": 39.2485842, "lon": -119.9848060 },
+    { "lat": 39.2485480, "lon": -119.9847450 },
+    { "lat": 39.2485066, "lon": -119.9847078 },
+    { "lat": 39.2484562, "lon": -119.9847156 },
+    { "lat": 39.2484064, "lon": -119.9847504 },
+    { "lat": 39.2483392, "lon": -119.9847598 },
+    { "lat": 39.2482989, "lon": -119.9847541 },
+    { "lat": 39.2482542, "lon": -119.9847246 },
+    { "lat": 39.2482183, "lon": -119.9846311 },
+    { "lat": 39.2481982, "lon": -119.9844198 },
+    { "lat": 39.2481982, "lon": -119.9842486 },
+    { "lat": 39.2481981, "lon": -119.9840712 },
+    { "lat": 39.2482281, "lon": -119.9839084 },
+    { "lat": 39.2482718, "lon": -119.9838187 },
+    { "lat": 39.2483069, "lon": -119.9838294 },
+    { "lat": 39.2482932, "lon": -119.9839325 },
+    { "lat": 39.2483047, "lon": -119.9840268 },
+    { "lat": 39.2483115, "lon": -119.9841453 },
+    { "lat": 39.2482969, "lon": -119.9842236 },
+    { "lat": 39.2483263, "lon": -119.9844221 },
+    { "lat": 39.2483139, "lon": -119.9845217 },
+    { "lat": 39.2483407, "lon": -119.9845671 },
+    { "lat": 39.2483911, "lon": -119.9845900 },
+    { "lat": 39.2484963, "lon": -119.9845706 },
+    { "lat": 39.2485231, "lon": -119.9845733 },
+    { "lat": 39.2485678, "lon": -119.9845596 },
+    { "lat": 39.2485996, "lon": -119.9845525 },
+    { "lat": 39.2486007, "lon": -119.9845407 },
+    { "lat": 39.2486055, "lon": -119.9844867 },
+    { "lat": 39.2486072, "lon": -119.9844256 },
+    { "lat": 39.2485947, "lon": -119.9841773 },
+    { "lat": 39.2486020, "lon": -119.9839801 },
+    { "lat": 39.2485692, "lon": -119.9837309 },
+    { "lat": 39.2485551, "lon": -119.9836104 },
+    { "lat": 39.2485369, "lon": -119.9836018 },
+    { "lat": 39.2485207, "lon": -119.9833362 },
+    { "lat": 39.2485556, "lon": -119.9832472 },
+    { "lat": 39.2485223, "lon": -119.9829705 },
+    { "lat": 39.2484931, "lon": -119.9829154 },
+    { "lat": 39.2484582, "lon": -119.9828860 },
+    { "lat": 39.2483726, "lon": -119.9829139 },
+    { "lat": 39.2482827, "lon": -119.9829338 },
+    { "lat": 39.2482247, "lon": -119.9829275 },
+    { "lat": 39.2481776, "lon": -119.9829025 },
+    { "lat": 39.2481676, "lon": -119.9828394 },
+    { "lat": 39.2481001, "lon": -119.9825131 },
+    { "lat": 39.2480623, "lon": -119.9820937 },
+    { "lat": 39.2480576, "lon": -119.9820149 },
+    { "lat": 39.2480872, "lon": -119.9819478 },
+    { "lat": 39.2481245, "lon": -119.9819862 },
+    { "lat": 39.2481398, "lon": -119.9820297 },
+    { "lat": 39.2481416, "lon": -119.9820839 },
+    { "lat": 39.2481465, "lon": -119.9821580 },
+    { "lat": 39.2481972, "lon": -119.9824136 },
+    { "lat": 39.2482559, "lon": -119.9827136 },
+    { "lat": 39.2482766, "lon": -119.9827289 },
+    { "lat": 39.2483057, "lon": -119.9827519 },
+    { "lat": 39.2483528, "lon": -119.9827731 },
+    { "lat": 39.2484566, "lon": -119.9827516 },
+    { "lat": 39.2484905, "lon": -119.9827163 },
+    { "lat": 39.2485224, "lon": -119.9826818 },
+    { "lat": 39.2485390, "lon": -119.9826456 },
+    { "lat": 39.2485466, "lon": -119.9825807 },
+    { "lat": 39.2485383, "lon": -119.9824885 },
+    { "lat": 39.2485044, "lon": -119.9823570 },
+    { "lat": 39.2484767, "lon": -119.9822138 },
+    { "lat": 39.2484254, "lon": -119.9820628 },
+    { "lat": 39.2483735, "lon": -119.9819860 },
+    { "lat": 39.2483124, "lon": -119.9819461 },
+    { "lat": 39.2482638, "lon": -119.9819195 },
+    { "lat": 39.2482624, "lon": -119.9818807 },
+    { "lat": 39.2483554, "lon": -119.9818630 },
+    { "lat": 39.2483651, "lon": -119.9817768 },
+    { "lat": 39.2483332, "lon": -119.9817059 },
+    { "lat": 39.2482965, "lon": -119.9816503 },
+    { "lat": 39.2482857, "lon": -119.9816298 },
+    { "lat": 39.2482609, "lon": -119.9816262 },
+    { "lat": 39.2482604, "lon": -119.9816115 },
+    { "lat": 39.2482821, "lon": -119.9815725 },
+    { "lat": 39.2482908, "lon": -119.9815611 },
+    { "lat": 39.2482959, "lon": -119.9815491 },
+    { "lat": 39.2483104, "lon": -119.9815191 },
+    { "lat": 39.2483150, "lon": -119.9815017 },
+    { "lat": 39.2483162, "lon": -119.9814915 },
+    { "lat": 39.2483161, "lon": -119.9814725 },
+    { "lat": 39.2483125, "lon": -119.9814510 },
+    { "lat": 39.2483038, "lon": -119.9813860 },
+    { "lat": 39.2482299, "lon": -119.9811546 },
+    { "lat": 39.2481982, "lon": -119.9811163 },
+    { "lat": 39.2481582, "lon": -119.9810667 },
+    { "lat": 39.2481415, "lon": -119.9809730 },
+    { "lat": 39.2480599, "lon": -119.9808399 },
+    { "lat": 39.2480419, "lon": -119.9805969 },
+    { "lat": 39.2479867, "lon": -119.9805026 },
+    { "lat": 39.2479316, "lon": -119.9801426 },
+    { "lat": 39.2478305, "lon": -119.9798618 },
+    { "lat": 39.2477915, "lon": -119.9796880 },
+    { "lat": 39.2478646, "lon": -119.9793640 },
+    { "lat": 39.2478044, "lon": -119.9791253 },
+    { "lat": 39.2479373, "lon": -119.9788919 },
+    { "lat": 39.2480599, "lon": -119.9785727 },
+    { "lat": 39.2481180, "lon": -119.9781543 },
+    { "lat": 39.2481201, "lon": -119.9778727 },
+    { "lat": 39.2480952, "lon": -119.9777117 },
+    { "lat": 39.2480973, "lon": -119.9776259 },
+    { "lat": 39.2481035, "lon": -119.9775079 },
+    { "lat": 39.2481890, "lon": -119.9772443 },
+    { "lat": 39.2484135, "lon": -119.9766947 },
+    { "lat": 39.2481052, "lon": -119.9746224 },
+    { "lat": 39.2476911, "lon": -119.9730778 },
+    { "lat": 39.2471933, "lon": -119.9713240 },
+    { "lat": 39.2471171, "lon": -119.9711254 },
+    { "lat": 39.2470432, "lon": -119.9710017 },
+    { "lat": 39.2466799, "lon": -119.9704102 },
+    { "lat": 39.2461559, "lon": -119.9696467 },
+    { "lat": 39.2458969, "lon": -119.9691293 },
+    { "lat": 39.2458373, "lon": -119.9690610 },
+    { "lat": 39.2453663, "lon": -119.9689186 },
+    { "lat": 39.2452662, "lon": -119.9689295 },
+    { "lat": 39.2451828, "lon": -119.9689865 },
+    { "lat": 39.2451317, "lon": -119.9690068 },
+    { "lat": 39.2450781, "lon": -119.9690016 },
+    { "lat": 39.2449980, "lon": -119.9689360 },
+    { "lat": 39.2448943, "lon": -119.9688170 },
+    { "lat": 39.2448779, "lon": -119.9687620 },
+    { "lat": 39.2448658, "lon": -119.9686559 },
+    { "lat": 39.2449035, "lon": -119.9685977 },
+    { "lat": 39.2450187, "lon": -119.9686921 },
+    { "lat": 39.2451180, "lon": -119.9687284 },
+    { "lat": 39.2452242, "lon": -119.9686027 },
+    { "lat": 39.2452674, "lon": -119.9684176 },
+    { "lat": 39.2452505, "lon": -119.9682124 },
+    { "lat": 39.2452052, "lon": -119.9680105 },
+    { "lat": 39.2450831, "lon": -119.9677297 },
+    { "lat": 39.2449239, "lon": -119.9673715 },
+    { "lat": 39.2442831, "lon": -119.9664405 },
+    { "lat": 39.2437666, "lon": -119.9655630 },
+    { "lat": 39.2437926, "lon": -119.9647322 },
+    { "lat": 39.2438601, "lon": -119.9639014 },
+    { "lat": 39.2436545, "lon": -119.9630317 },
+    { "lat": 39.2435620, "lon": -119.9625781 },
+    { "lat": 39.2435402, "lon": -119.9621245 },
+    { "lat": 39.2432800, "lon": -119.9610647 },
+    { "lat": 39.2429616, "lon": -119.9600130 },
+    { "lat": 39.2426105, "lon": -119.9590958 },
+    { "lat": 39.2425492, "lon": -119.9588518 },
+    { "lat": 39.2425129, "lon": -119.9585380 },
+    { "lat": 39.2418219, "lon": -119.9561158 },
+    { "lat": 39.2413588, "lon": -119.9541781 },
+    { "lat": 39.2414748, "lon": -119.9538875 },
+    { "lat": 39.2415012, "lon": -119.9536410 },
+    { "lat": 39.2414185, "lon": -119.9533413 },
+    { "lat": 39.2410142, "lon": -119.9522541 },
+    { "lat": 39.2402007, "lon": -119.9500353 },
+    { "lat": 39.2399218, "lon": -119.9493463 },
+    { "lat": 39.2397370, "lon": -119.9488905 },
+    { "lat": 39.2392855, "lon": -119.9478415 },
+    { "lat": 39.2390558, "lon": -119.9473729 },
+    { "lat": 39.2390374, "lon": -119.9473354 },
+    { "lat": 39.2388881, "lon": -119.9470310 },
+    { "lat": 39.2385548, "lon": -119.9464176 },
+    { "lat": 39.2385441, "lon": -119.9463980 },
+    { "lat": 39.2383068, "lon": -119.9459726 },
+    { "lat": 39.2381850, "lon": -119.9457496 },
+    { "lat": 39.2374459, "lon": -119.9444268 },
+    { "lat": 39.2373263, "lon": -119.9442852 },
+    { "lat": 39.2373160, "lon": -119.9441680 },
+    { "lat": 39.2372459, "lon": -119.9439655 },
+    { "lat": 39.2365109, "lon": -119.9425485 },
+    { "lat": 39.2360488, "lon": -119.9413464 },
+    { "lat": 39.2348501, "lon": -119.9389565 },
+    { "lat": 39.2345282, "lon": -119.9383131 },
+    { "lat": 39.2344526, "lon": -119.9381738 },
+    { "lat": 39.2341074, "lon": -119.9375380 },
+    { "lat": 39.2339566, "lon": -119.9372478 },
+    { "lat": 39.2336701, "lon": -119.9365806 },
+    { "lat": 39.2336181, "lon": -119.9364727 },
+    { "lat": 39.2335317, "lon": -119.9363559 },
+    { "lat": 39.2333700, "lon": -119.9362462 },
+    { "lat": 39.2331676, "lon": -119.9361186 },
+    { "lat": 39.2330368, "lon": -119.9360187 },
+    { "lat": 39.2330006, "lon": -119.9359910 },
+    { "lat": 39.2324975, "lon": -119.9356065 },
+    { "lat": 39.2324132, "lon": -119.9355083 },
+    { "lat": 39.2323952, "lon": -119.9354795 },
+    { "lat": 39.2323582, "lon": -119.9354204 },
+    { "lat": 39.2323440, "lon": -119.9353977 },
+    { "lat": 39.2322371, "lon": -119.9352933 },
+    { "lat": 39.2321802, "lon": -119.9352384 },
+    { "lat": 39.2321459, "lon": -119.9351933 },
+    { "lat": 39.2321158, "lon": -119.9351402 },
+    { "lat": 39.2320431, "lon": -119.9350809 },
+    { "lat": 39.2319492, "lon": -119.9349933 },
+    { "lat": 39.2318663, "lon": -119.9348871 },
+    { "lat": 39.2318060, "lon": -119.9347995 },
+    { "lat": 39.2317690, "lon": -119.9347102 },
+    { "lat": 39.2317608, "lon": -119.9346473 },
+    { "lat": 39.2317580, "lon": -119.9346261 },
+    { "lat": 39.2317649, "lon": -119.9345952 },
+    { "lat": 39.2317758, "lon": -119.9345315 },
+    { "lat": 39.2317841, "lon": -119.9344775 },
+    { "lat": 39.2317656, "lon": -119.9343819 },
+    { "lat": 39.2317306, "lon": -119.9342864 },
+    { "lat": 39.2316826, "lon": -119.9341988 },
+    { "lat": 39.2316470, "lon": -119.9340970 },
+    { "lat": 39.2315839, "lon": -119.9339572 },
+    { "lat": 39.2315353, "lon": -119.9338838 },
+    { "lat": 39.2314955, "lon": -119.9338077 },
+    { "lat": 39.2314414, "lon": -119.9336803 },
+    { "lat": 39.2313968, "lon": -119.9336042 },
+    { "lat": 39.2313447, "lon": -119.9335546 },
+    { "lat": 39.2312933, "lon": -119.9335281 },
+    { "lat": 39.2312584, "lon": -119.9334945 },
+    { "lat": 39.2312385, "lon": -119.9334617 },
+    { "lat": 39.2312029, "lon": -119.9334219 },
+    { "lat": 39.2311597, "lon": -119.9334166 },
+    { "lat": 39.2311384, "lon": -119.9334290 },
+    { "lat": 39.2311008, "lon": -119.9334228 },
+    { "lat": 39.2310727, "lon": -119.9333759 },
+    { "lat": 39.2310685, "lon": -119.9333193 },
+    { "lat": 39.2310541, "lon": -119.9332688 },
+    { "lat": 39.2310274, "lon": -119.9332096 },
+    { "lat": 39.2309774, "lon": -119.9331052 },
+    { "lat": 39.2308646, "lon": -119.9329659 },
+    { "lat": 39.2308273, "lon": -119.9329017 },
+    { "lat": 39.2308133, "lon": -119.9329049 },
+    { "lat": 39.2307660, "lon": -119.9328927 },
+    { "lat": 39.2307188, "lon": -119.9328736 },
+    { "lat": 39.2306594, "lon": -119.9328405 },
+    { "lat": 39.2306446, "lon": -119.9327760 },
+    { "lat": 39.2306208, "lon": -119.9327010 },
+    { "lat": 39.2305704, "lon": -119.9325912 },
+    { "lat": 39.2304975, "lon": -119.9324850 },
+    { "lat": 39.2303866, "lon": -119.9323851 },
+    { "lat": 39.2303221, "lon": -119.9323620 },
+    { "lat": 39.2302839, "lon": -119.9323682 },
+    { "lat": 39.2302350, "lon": -119.9323451 },
+    { "lat": 39.2299549, "lon": -119.9322533 },
+    { "lat": 39.2298049, "lon": -119.9322447 }
+  ],
+  "tags": {
+    "source": "yahoo;Bing"
+  }
+},
+{
+  "type": "way",
+  "id": 438297814,
+  "bounds": {
+    "minlat": 39.2017018,
+    "minlon": -119.9336425,
+    "maxlat": 39.2262252,
+    "maxlon": -119.9275428
+  },
+  "geometry": [
+    { "lat": 39.2262252, "lon": -119.9335997 },
+    { "lat": 39.2261508, "lon": -119.9336285 },
+    { "lat": 39.2260699, "lon": -119.9336425 },
+    { "lat": 39.2259540, "lon": -119.9336425 },
+    { "lat": 39.2258381, "lon": -119.9336347 },
+    { "lat": 39.2257536, "lon": -119.9336347 },
+    { "lat": 39.2256799, "lon": -119.9336036 },
+    { "lat": 39.2256111, "lon": -119.9335568 },
+    { "lat": 39.2255640, "lon": -119.9334649 },
+    { "lat": 39.2255242, "lon": -119.9334197 },
+    { "lat": 39.2254723, "lon": -119.9333963 },
+    { "lat": 39.2254167, "lon": -119.9334103 },
+    { "lat": 39.2253431, "lon": -119.9334664 },
+    { "lat": 39.2252706, "lon": -119.9335272 },
+    { "lat": 39.2252018, "lon": -119.9335412 },
+    { "lat": 39.2251246, "lon": -119.9335365 },
+    { "lat": 39.2250437, "lon": -119.9335178 },
+    { "lat": 39.2249942, "lon": -119.9334711 },
+    { "lat": 39.2249978, "lon": -119.9334259 },
+    { "lat": 39.2250364, "lon": -119.9333448 },
+    { "lat": 39.2250678, "lon": -119.9332513 },
+    { "lat": 39.2250642, "lon": -119.9331656 },
+    { "lat": 39.2250292, "lon": -119.9330067 },
+    { "lat": 39.2249821, "lon": -119.9328976 },
+    { "lat": 39.2249217, "lon": -119.9328305 },
+    { "lat": 39.2247986, "lon": -119.9327900 },
+    { "lat": 39.2246525, "lon": -119.9327807 },
+    { "lat": 39.2245402, "lon": -119.9327978 },
+    { "lat": 39.2242830, "lon": -119.9328446 },
+    { "lat": 39.2241237, "lon": -119.9328555 },
+    { "lat": 39.2240355, "lon": -119.9328352 },
+    { "lat": 39.2239800, "lon": -119.9328321 },
+    { "lat": 39.2239534, "lon": -119.9328679 },
+    { "lat": 39.2239534, "lon": -119.9329163 },
+    { "lat": 39.2239426, "lon": -119.9329443 },
+    { "lat": 39.2239039, "lon": -119.9329583 },
+    { "lat": 39.2238436, "lon": -119.9329490 },
+    { "lat": 39.2238134, "lon": -119.9329365 },
+    { "lat": 39.2237748, "lon": -119.9328851 },
+    { "lat": 39.2237506, "lon": -119.9328337 },
+    { "lat": 39.2237277, "lon": -119.9327698 },
+    { "lat": 39.2236963, "lon": -119.9327183 },
+    { "lat": 39.2236480, "lon": -119.9326840 },
+    { "lat": 39.2235816, "lon": -119.9326669 },
+    { "lat": 39.2235755, "lon": -119.9326295 },
+    { "lat": 39.2236033, "lon": -119.9325562 },
+    { "lat": 39.2236226, "lon": -119.9325220 },
+    { "lat": 39.2236673, "lon": -119.9325033 },
+    { "lat": 39.2236975, "lon": -119.9324674 },
+    { "lat": 39.2237192, "lon": -119.9323832 },
+    { "lat": 39.2237349, "lon": -119.9322383 },
+    { "lat": 39.2237410, "lon": -119.9321697 },
+    { "lat": 39.2237736, "lon": -119.9321323 },
+    { "lat": 39.2238086, "lon": -119.9321105 },
+    { "lat": 39.2238291, "lon": -119.9320466 },
+    { "lat": 39.2238182, "lon": -119.9319765 },
+    { "lat": 39.2237349, "lon": -119.9318830 },
+    { "lat": 39.2236649, "lon": -119.9317754 },
+    { "lat": 39.2235924, "lon": -119.9316476 },
+    { "lat": 39.2234995, "lon": -119.9315432 },
+    { "lat": 39.2234041, "lon": -119.9314404 },
+    { "lat": 39.2232725, "lon": -119.9312845 },
+    { "lat": 39.2231003, "lon": -119.9311693 },
+    { "lat": 39.2230213, "lon": -119.9310298 },
+    { "lat": 39.2229839, "lon": -119.9308957 },
+    { "lat": 39.2227927, "lon": -119.9307831 },
+    { "lat": 39.2225849, "lon": -119.9307026 },
+    { "lat": 39.2223938, "lon": -119.9306114 },
+    { "lat": 39.2223072, "lon": -119.9304773 },
+    { "lat": 39.2222899, "lon": -119.9304505 },
+    { "lat": 39.2221652, "lon": -119.9304344 },
+    { "lat": 39.2220655, "lon": -119.9304612 },
+    { "lat": 39.2219761, "lon": -119.9304451 },
+    { "lat": 39.2219491, "lon": -119.9303566 },
+    { "lat": 39.2219366, "lon": -119.9302359 },
+    { "lat": 39.2218972, "lon": -119.9300133 },
+    { "lat": 39.2218244, "lon": -119.9297960 },
+    { "lat": 39.2217330, "lon": -119.9295788 },
+    { "lat": 39.2216312, "lon": -119.9293293 },
+    { "lat": 39.2214816, "lon": -119.9290370 },
+    { "lat": 39.2213444, "lon": -119.9288224 },
+    { "lat": 39.2211346, "lon": -119.9285998 },
+    { "lat": 39.2209372, "lon": -119.9283396 },
+    { "lat": 39.2207460, "lon": -119.9281572 },
+    { "lat": 39.2205525, "lon": -119.9280203 },
+    { "lat": 39.2203418, "lon": -119.9279152 },
+    { "lat": 39.2202549, "lon": -119.9278872 },
+    { "lat": 39.2201735, "lon": -119.9278790 },
+    { "lat": 39.2200939, "lon": -119.9278300 },
+    { "lat": 39.2200107, "lon": -119.9278125 },
+    { "lat": 39.2199112, "lon": -119.9278206 },
+    { "lat": 39.2198696, "lon": -119.9278358 },
+    { "lat": 39.2198334, "lon": -119.9278732 },
+    { "lat": 39.2198054, "lon": -119.9279082 },
+    { "lat": 39.2197638, "lon": -119.9279362 },
+    { "lat": 39.2196905, "lon": -119.9279059 },
+    { "lat": 39.2196444, "lon": -119.9279070 },
+    { "lat": 39.2195666, "lon": -119.9279432 },
+    { "lat": 39.2195051, "lon": -119.9279537 },
+    { "lat": 39.2194554, "lon": -119.9279456 },
+    { "lat": 39.2194273, "lon": -119.9279817 },
+    { "lat": 39.2194147, "lon": -119.9280366 },
+    { "lat": 39.2194020, "lon": -119.9281102 },
+    { "lat": 39.2193929, "lon": -119.9281650 },
+    { "lat": 39.2193649, "lon": -119.9281907 },
+    { "lat": 39.2193459, "lon": -119.9281732 },
+    { "lat": 39.2193342, "lon": -119.9281172 },
+    { "lat": 39.2193351, "lon": -119.9280576 },
+    { "lat": 39.2193070, "lon": -119.9280226 },
+    { "lat": 39.2192473, "lon": -119.9280226 },
+    { "lat": 39.2191596, "lon": -119.9280460 },
+    { "lat": 39.2191089, "lon": -119.9280833 },
+    { "lat": 39.2190411, "lon": -119.9281837 },
+    { "lat": 39.2190013, "lon": -119.9282491 },
+    { "lat": 39.2189733, "lon": -119.9282538 },
+    { "lat": 39.2189760, "lon": -119.9282223 },
+    { "lat": 39.2189859, "lon": -119.9281779 },
+    { "lat": 39.2189787, "lon": -119.9281534 },
+    { "lat": 39.2189552, "lon": -119.9281499 },
+    { "lat": 39.2189244, "lon": -119.9281720 },
+    { "lat": 39.2189000, "lon": -119.9282141 },
+    { "lat": 39.2188810, "lon": -119.9282491 },
+    { "lat": 39.2188647, "lon": -119.9282491 },
+    { "lat": 39.2188837, "lon": -119.9281487 },
+    { "lat": 39.2189063, "lon": -119.9281032 },
+    { "lat": 39.2189154, "lon": -119.9280600 },
+    { "lat": 39.2188991, "lon": -119.9280390 },
+    { "lat": 39.2188521, "lon": -119.9280214 },
+    { "lat": 39.2188123, "lon": -119.9280179 },
+    { "lat": 39.2187788, "lon": -119.9280483 },
+    { "lat": 39.2187598, "lon": -119.9281195 },
+    { "lat": 39.2187309, "lon": -119.9281849 },
+    { "lat": 39.2186992, "lon": -119.9281942 },
+    { "lat": 39.2186847, "lon": -119.9281697 },
+    { "lat": 39.2187100, "lon": -119.9280565 },
+    { "lat": 39.2187146, "lon": -119.9280214 },
+    { "lat": 39.2186766, "lon": -119.9279712 },
+    { "lat": 39.2186069, "lon": -119.9279280 },
+    { "lat": 39.2185527, "lon": -119.9279199 },
+    { "lat": 39.2185092, "lon": -119.9279432 },
+    { "lat": 39.2184667, "lon": -119.9279817 },
+    { "lat": 39.2184170, "lon": -119.9279981 },
+    { "lat": 39.2183772, "lon": -119.9279549 },
+    { "lat": 39.2183899, "lon": -119.9278615 },
+    { "lat": 39.2183817, "lon": -119.9277833 },
+    { "lat": 39.2183302, "lon": -119.9276980 },
+    { "lat": 39.2182677, "lon": -119.9276502 },
+    { "lat": 39.2181927, "lon": -119.9276187 },
+    { "lat": 39.2181113, "lon": -119.9275661 },
+    { "lat": 39.2180000, "lon": -119.9275521 },
+    { "lat": 39.2179385, "lon": -119.9275428 },
+    { "lat": 39.2179041, "lon": -119.9275720 },
+    { "lat": 39.2178553, "lon": -119.9276210 },
+    { "lat": 39.2177902, "lon": -119.9276420 },
+    { "lat": 39.2177259, "lon": -119.9276899 },
+    { "lat": 39.2176807, "lon": -119.9277296 },
+    { "lat": 39.2176319, "lon": -119.9277179 },
+    { "lat": 39.2175848, "lon": -119.9276315 },
+    { "lat": 39.2175496, "lon": -119.9275883 },
+    { "lat": 39.2174871, "lon": -119.9275696 },
+    { "lat": 39.2173876, "lon": -119.9275801 },
+    { "lat": 39.2173207, "lon": -119.9276046 },
+    { "lat": 39.2172158, "lon": -119.9276490 },
+    { "lat": 39.2171299, "lon": -119.9276875 },
+    { "lat": 39.2170313, "lon": -119.9277249 },
+    { "lat": 39.2169137, "lon": -119.9278253 },
+    { "lat": 39.2167907, "lon": -119.9279164 },
+    { "lat": 39.2166441, "lon": -119.9280471 },
+    { "lat": 39.2165265, "lon": -119.9281685 },
+    { "lat": 39.2164560, "lon": -119.9282701 },
+    { "lat": 39.2164225, "lon": -119.9283378 },
+    { "lat": 39.2164135, "lon": -119.9284289 },
+    { "lat": 39.2163909, "lon": -119.9284756 },
+    { "lat": 39.2163492, "lon": -119.9284966 },
+    { "lat": 39.2162408, "lon": -119.9285649 },
+    { "lat": 39.2161821, "lon": -119.9285949 },
+    { "lat": 39.2161088, "lon": -119.9285969 },
+    { "lat": 39.2160506, "lon": -119.9285898 },
+    { "lat": 39.2160104, "lon": -119.9286050 },
+    { "lat": 39.2159789, "lon": -119.9286447 },
+    { "lat": 39.2159198, "lon": -119.9286986 },
+    { "lat": 39.2158742, "lon": -119.9287260 },
+    { "lat": 39.2158427, "lon": -119.9287880 },
+    { "lat": 39.2158096, "lon": -119.9288673 },
+    { "lat": 39.2158002, "lon": -119.9289415 },
+    { "lat": 39.2157781, "lon": -119.9289781 },
+    { "lat": 39.2157324, "lon": -119.9290228 },
+    { "lat": 39.2157151, "lon": -119.9290675 },
+    { "lat": 39.2156994, "lon": -119.9291041 },
+    { "lat": 39.2156765, "lon": -119.9291132 },
+    { "lat": 39.2156490, "lon": -119.9291020 },
+    { "lat": 39.2155907, "lon": -119.9291000 },
+    { "lat": 39.2155261, "lon": -119.9291234 },
+    { "lat": 39.2154718, "lon": -119.9291752 },
+    { "lat": 39.2154009, "lon": -119.9292067 },
+    { "lat": 39.2153458, "lon": -119.9292515 },
+    { "lat": 39.2152891, "lon": -119.9292708 },
+    { "lat": 39.2152245, "lon": -119.9292718 },
+    { "lat": 39.2151505, "lon": -119.9293124 },
+    { "lat": 39.2150977, "lon": -119.9293470 },
+    { "lat": 39.2150647, "lon": -119.9293470 },
+    { "lat": 39.2150466, "lon": -119.9293297 },
+    { "lat": 39.2150536, "lon": -119.9292911 },
+    { "lat": 39.2150466, "lon": -119.9292728 },
+    { "lat": 39.2150245, "lon": -119.9292555 },
+    { "lat": 39.2149702, "lon": -119.9292637 },
+    { "lat": 39.2149166, "lon": -119.9292616 },
+    { "lat": 39.2148639, "lon": -119.9292464 },
+    { "lat": 39.2148182, "lon": -119.9292454 },
+    { "lat": 39.2147757, "lon": -119.9292565 },
+    { "lat": 39.2147237, "lon": -119.9292535 },
+    { "lat": 39.2146867, "lon": -119.9292159 },
+    { "lat": 39.2146213, "lon": -119.9291925 },
+    { "lat": 39.2145394, "lon": -119.9291823 },
+    { "lat": 39.2144630, "lon": -119.9291498 },
+    { "lat": 39.2144253, "lon": -119.9291264 },
+    { "lat": 39.2143567, "lon": -119.9291153 },
+    { "lat": 39.2142874, "lon": -119.9291254 },
+    { "lat": 39.2142481, "lon": -119.9291102 },
+    { "lat": 39.2142221, "lon": -119.9290848 },
+    { "lat": 39.2141953, "lon": -119.9290543 },
+    { "lat": 39.2142032, "lon": -119.9290177 },
+    { "lat": 39.2142221, "lon": -119.9289933 },
+    { "lat": 39.2142678, "lon": -119.9289882 },
+    { "lat": 39.2143024, "lon": -119.9289669 },
+    { "lat": 39.2143347, "lon": -119.9289354 },
+    { "lat": 39.2143378, "lon": -119.9289161 },
+    { "lat": 39.2143197, "lon": -119.9289008 },
+    { "lat": 39.2142394, "lon": -119.9288906 },
+    { "lat": 39.2141764, "lon": -119.9288896 },
+    { "lat": 39.2141063, "lon": -119.9288825 },
+    { "lat": 39.2140457, "lon": -119.9288571 },
+    { "lat": 39.2140047, "lon": -119.9288419 },
+    { "lat": 39.2139654, "lon": -119.9288398 },
+    { "lat": 39.2139496, "lon": -119.9288225 },
+    { "lat": 39.2139520, "lon": -119.9288053 },
+    { "lat": 39.2139835, "lon": -119.9288012 },
+    { "lat": 39.2140126, "lon": -119.9288012 },
+    { "lat": 39.2140599, "lon": -119.9287931 },
+    { "lat": 39.2140677, "lon": -119.9287707 },
+    { "lat": 39.2140496, "lon": -119.9287453 },
+    { "lat": 39.2140244, "lon": -119.9287311 },
+    { "lat": 39.2140221, "lon": -119.9287077 },
+    { "lat": 39.2140260, "lon": -119.9286681 },
+    { "lat": 39.2140126, "lon": -119.9286427 },
+    { "lat": 39.2139827, "lon": -119.9286355 },
+    { "lat": 39.2139473, "lon": -119.9286325 },
+    { "lat": 39.2139087, "lon": -119.9286498 },
+    { "lat": 39.2138756, "lon": -119.9286853 },
+    { "lat": 39.2138520, "lon": -119.9287148 },
+    { "lat": 39.2138063, "lon": -119.9287179 },
+    { "lat": 39.2137693, "lon": -119.9287331 },
+    { "lat": 39.2137386, "lon": -119.9287860 },
+    { "lat": 39.2137173, "lon": -119.9287951 },
+    { "lat": 39.2136811, "lon": -119.9287534 },
+    { "lat": 39.2136464, "lon": -119.9287443 },
+    { "lat": 39.2135905, "lon": -119.9287941 },
+    { "lat": 39.2135456, "lon": -119.9287941 },
+    { "lat": 39.2135267, "lon": -119.9288144 },
+    { "lat": 39.2135078, "lon": -119.9288886 },
+    { "lat": 39.2134811, "lon": -119.9288978 },
+    { "lat": 39.2134661, "lon": -119.9288927 },
+    { "lat": 39.2134590, "lon": -119.9288622 },
+    { "lat": 39.2134850, "lon": -119.9287900 },
+    { "lat": 39.2135063, "lon": -119.9287605 },
+    { "lat": 39.2135031, "lon": -119.9287402 },
+    { "lat": 39.2134661, "lon": -119.9287301 },
+    { "lat": 39.2134157, "lon": -119.9286955 },
+    { "lat": 39.2133858, "lon": -119.9286701 },
+    { "lat": 39.2133315, "lon": -119.9286650 },
+    { "lat": 39.2132984, "lon": -119.9286792 },
+    { "lat": 39.2132346, "lon": -119.9286762 },
+    { "lat": 39.2131614, "lon": -119.9286904 },
+    { "lat": 39.2130842, "lon": -119.9286803 },
+    { "lat": 39.2130078, "lon": -119.9286711 },
+    { "lat": 39.2129330, "lon": -119.9286752 },
+    { "lat": 39.2128936, "lon": -119.9286803 },
+    { "lat": 39.2128275, "lon": -119.9286904 },
+    { "lat": 39.2127912, "lon": -119.9287168 },
+    { "lat": 39.2127716, "lon": -119.9287514 },
+    { "lat": 39.2127708, "lon": -119.9288327 },
+    { "lat": 39.2127700, "lon": -119.9288551 },
+    { "lat": 39.2127471, "lon": -119.9288642 },
+    { "lat": 39.2127227, "lon": -119.9288276 },
+    { "lat": 39.2126967, "lon": -119.9288063 },
+    { "lat": 39.2126558, "lon": -119.9288063 },
+    { "lat": 39.2126133, "lon": -119.9288175 },
+    { "lat": 39.2125448, "lon": -119.9288093 },
+    { "lat": 39.2124534, "lon": -119.9287819 },
+    { "lat": 39.2123684, "lon": -119.9287290 },
+    { "lat": 39.2123275, "lon": -119.9287068 },
+    { "lat": 39.2122715, "lon": -119.9287087 },
+    { "lat": 39.2122053, "lon": -119.9287433 },
+    { "lat": 39.2121266, "lon": -119.9287605 },
+    { "lat": 39.2120738, "lon": -119.9287768 },
+    { "lat": 39.2120219, "lon": -119.9287626 },
+    { "lat": 39.2119699, "lon": -119.9287555 },
+    { "lat": 39.2119376, "lon": -119.9287392 },
+    { "lat": 39.2119266, "lon": -119.9287036 },
+    { "lat": 39.2118715, "lon": -119.9286569 },
+    { "lat": 39.2118029, "lon": -119.9286355 },
+    { "lat": 39.2117533, "lon": -119.9285969 },
+    { "lat": 39.2117155, "lon": -119.9285654 },
+    { "lat": 39.2116502, "lon": -119.9285817 },
+    { "lat": 39.2115281, "lon": -119.9285989 },
+    { "lat": 39.2114155, "lon": -119.9286172 },
+    { "lat": 39.2113155, "lon": -119.9286630 },
+    { "lat": 39.2112667, "lon": -119.9286884 },
+    { "lat": 39.2112147, "lon": -119.9287819 },
+    { "lat": 39.2111603, "lon": -119.9288398 },
+    { "lat": 39.2111013, "lon": -119.9288744 },
+    { "lat": 39.2110635, "lon": -119.9289130 },
+    { "lat": 39.2110320, "lon": -119.9289547 },
+    { "lat": 39.2109879, "lon": -119.9289892 },
+    { "lat": 39.2109461, "lon": -119.9289963 },
+    { "lat": 39.2108737, "lon": -119.9289821 },
+    { "lat": 39.2108162, "lon": -119.9289760 },
+    { "lat": 39.2107548, "lon": -119.9289963 },
+    { "lat": 39.2106957, "lon": -119.9290258 },
+    { "lat": 39.2106359, "lon": -119.9291051 },
+    { "lat": 39.2105729, "lon": -119.9291915 },
+    { "lat": 39.2105366, "lon": -119.9292840 },
+    { "lat": 39.2105319, "lon": -119.9293155 },
+    { "lat": 39.2105004, "lon": -119.9293267 },
+    { "lat": 39.2104516, "lon": -119.9293246 },
+    { "lat": 39.2104035, "lon": -119.9293561 },
+    { "lat": 39.2103492, "lon": -119.9294029 },
+    { "lat": 39.2103106, "lon": -119.9294598 },
+    { "lat": 39.2102927, "lon": -119.9294996 },
+    { "lat": 39.2102714, "lon": -119.9295536 },
+    { "lat": 39.2102632, "lon": -119.9296164 },
+    { "lat": 39.2102611, "lon": -119.9296624 },
+    { "lat": 39.2102303, "lon": -119.9297173 },
+    { "lat": 39.2102042, "lon": -119.9297633 },
+    { "lat": 39.2101563, "lon": -119.9298031 },
+    { "lat": 39.2101268, "lon": -119.9298765 },
+    { "lat": 39.2101199, "lon": -119.9299296 },
+    { "lat": 39.2101302, "lon": -119.9299650 },
+    { "lat": 39.2101131, "lon": -119.9299960 },
+    { "lat": 39.2100671, "lon": -119.9300154 },
+    { "lat": 39.2100472, "lon": -119.9300491 },
+    { "lat": 39.2100287, "lon": -119.9301057 },
+    { "lat": 39.2098692, "lon": -119.9302493 },
+    { "lat": 39.2096759, "lon": -119.9303673 },
+    { "lat": 39.2094327, "lon": -119.9304773 },
+    { "lat": 39.2092665, "lon": -119.9304398 },
+    { "lat": 39.2091044, "lon": -119.9303271 },
+    { "lat": 39.2089069, "lon": -119.9302895 },
+    { "lat": 39.2088030, "lon": -119.9301340 },
+    { "lat": 39.2087261, "lon": -119.9300133 },
+    { "lat": 39.2085806, "lon": -119.9298523 },
+    { "lat": 39.2084207, "lon": -119.9297492 },
+    { "lat": 39.2083686, "lon": -119.9297156 },
+    { "lat": 39.2081837, "lon": -119.9296270 },
+    { "lat": 39.2079550, "lon": -119.9296056 },
+    { "lat": 39.2076973, "lon": -119.9295922 },
+    { "lat": 39.2075290, "lon": -119.9296378 },
+    { "lat": 39.2073489, "lon": -119.9297101 },
+    { "lat": 39.2073087, "lon": -119.9297263 },
+    { "lat": 39.2070988, "lon": -119.9298819 },
+    { "lat": 39.2069450, "lon": -119.9299140 },
+    { "lat": 39.2067932, "lon": -119.9298684 },
+    { "lat": 39.2066519, "lon": -119.9299435 },
+    { "lat": 39.2065916, "lon": -119.9300267 },
+    { "lat": 39.2064503, "lon": -119.9300455 },
+    { "lat": 39.2063921, "lon": -119.9301313 },
+    { "lat": 39.2062217, "lon": -119.9301876 },
+    { "lat": 39.2060804, "lon": -119.9301823 },
+    { "lat": 39.2058912, "lon": -119.9302681 },
+    { "lat": 39.2058032, "lon": -119.9303368 },
+    { "lat": 39.2057603, "lon": -119.9304961 },
+    { "lat": 39.2057645, "lon": -119.9307482 },
+    { "lat": 39.2058123, "lon": -119.9309226 },
+    { "lat": 39.2058330, "lon": -119.9310701 },
+    { "lat": 39.2058517, "lon": -119.9312203 },
+    { "lat": 39.2058268, "lon": -119.9312793 },
+    { "lat": 39.2057665, "lon": -119.9313678 },
+    { "lat": 39.2057046, "lon": -119.9314329 },
+    { "lat": 39.2056171, "lon": -119.9314922 },
+    { "lat": 39.2055355, "lon": -119.9315898 },
+    { "lat": 39.2054721, "lon": -119.9315892 },
+    { "lat": 39.2053903, "lon": -119.9315220 },
+    { "lat": 39.2053682, "lon": -119.9315880 },
+    { "lat": 39.2052906, "lon": -119.9317286 },
+    { "lat": 39.2052095, "lon": -119.9318197 },
+    { "lat": 39.2050765, "lon": -119.9318439 },
+    { "lat": 39.2049227, "lon": -119.9318439 },
+    { "lat": 39.2047731, "lon": -119.9318707 },
+    { "lat": 39.2046338, "lon": -119.9318788 },
+    { "lat": 39.2045195, "lon": -119.9317849 },
+    { "lat": 39.2044384, "lon": -119.9316508 },
+    { "lat": 39.2044135, "lon": -119.9315140 },
+    { "lat": 39.2044592, "lon": -119.9313718 },
+    { "lat": 39.2045382, "lon": -119.9312726 },
+    { "lat": 39.2045345, "lon": -119.9310815 },
+    { "lat": 39.2044929, "lon": -119.9309474 },
+    { "lat": 39.2043910, "lon": -119.9309313 },
+    { "lat": 39.2042372, "lon": -119.9308965 },
+    { "lat": 39.2041541, "lon": -119.9308401 },
+    { "lat": 39.2040003, "lon": -119.9308106 },
+    { "lat": 39.2037421, "lon": -119.9307522 },
+    { "lat": 39.2035647, "lon": -119.9307415 },
+    { "lat": 39.2033303, "lon": -119.9308287 },
+    { "lat": 39.2030653, "lon": -119.9308206 },
+    { "lat": 39.2029336, "lon": -119.9307200 },
+    { "lat": 39.2028713, "lon": -119.9305725 },
+    { "lat": 39.2027611, "lon": -119.9304652 },
+    { "lat": 39.2026566, "lon": -119.9304501 },
+    { "lat": 39.2024994, "lon": -119.9304014 },
+    { "lat": 39.2024343, "lon": -119.9302557 },
+    { "lat": 39.2023124, "lon": -119.9301361 },
+    { "lat": 39.2021644, "lon": -119.9301972 },
+    { "lat": 39.2020803, "lon": -119.9301477 },
+    { "lat": 39.2019619, "lon": -119.9301615 },
+    { "lat": 39.2018832, "lon": -119.9300656 },
+    { "lat": 39.2019003, "lon": -119.9300133 },
+    { "lat": 39.2017018, "lon": -119.9298926 }
+  ]
+},
+{
+  "type": "way",
+  "id": 1190215743,
+  "bounds": {
+    "minlat": 39.2262252,
+    "minlon": -119.9335997,
+    "maxlat": 39.2276011,
+    "maxlon": -119.9328753
+  },
+  "geometry": [
+    { "lat": 39.2276011, "lon": -119.9328753 },
+    { "lat": 39.2275445, "lon": -119.9328946 },
+    { "lat": 39.2274920, "lon": -119.9329364 },
+    { "lat": 39.2274275, "lon": -119.9329468 },
+    { "lat": 39.2273734, "lon": -119.9329944 },
+    { "lat": 39.2273331, "lon": -119.9330137 },
+    { "lat": 39.2272547, "lon": -119.9330242 },
+    { "lat": 39.2271707, "lon": -119.9330539 },
+    { "lat": 39.2270923, "lon": -119.9331149 },
+    { "lat": 39.2270013, "lon": -119.9331669 },
+    { "lat": 39.2269683, "lon": -119.9332142 },
+    { "lat": 39.2269484, "lon": -119.9332427 },
+    { "lat": 39.2268850, "lon": -119.9333141 },
+    { "lat": 39.2268320, "lon": -119.9334048 },
+    { "lat": 39.2267848, "lon": -119.9334509 },
+    { "lat": 39.2267167, "lon": -119.9335107 },
+    { "lat": 39.2266377, "lon": -119.9335381 },
+    { "lat": 39.2265511, "lon": -119.9335440 },
+    { "lat": 39.2264538, "lon": -119.9335499 },
+    { "lat": 39.2263608, "lon": -119.9335439 },
+    { "lat": 39.2262822, "lon": -119.9335683 },
+    { "lat": 39.2262252, "lon": -119.9335997 }
+  ],
+  "tags": {
+    "source": "yahoo;Bing"
+  }
+},
+{
+  "type": "way",
+  "id": 1190215744,
+  "bounds": {
+    "minlat": 39.2276011,
+    "minlon": -119.9328753,
+    "maxlat": 39.2298049,
+    "maxlon": -119.9322447
+  },
+  "geometry": [
+    { "lat": 39.2298049, "lon": -119.9322447 },
+    { "lat": 39.2297241, "lon": -119.9322585 },
+    { "lat": 39.2295973, "lon": -119.9322951 },
+    { "lat": 39.2294771, "lon": -119.9323631 },
+    { "lat": 39.2293516, "lon": -119.9324014 },
+    { "lat": 39.2292261, "lon": -119.9324136 },
+    { "lat": 39.2291276, "lon": -119.9324066 },
+    { "lat": 39.2290196, "lon": -119.9323648 },
+    { "lat": 39.2289400, "lon": -119.9323404 },
+    { "lat": 39.2288482, "lon": -119.9323143 },
+    { "lat": 39.2287821, "lon": -119.9323143 },
+    { "lat": 39.2286822, "lon": -119.9323369 },
+    { "lat": 39.2285877, "lon": -119.9323509 },
+    { "lat": 39.2285108, "lon": -119.9323317 },
+    { "lat": 39.2284231, "lon": -119.9323369 },
+    { "lat": 39.2283232, "lon": -119.9323787 },
+    { "lat": 39.2282611, "lon": -119.9324362 },
+    { "lat": 39.2282071, "lon": -119.9324972 },
+    { "lat": 39.2281612, "lon": -119.9325617 },
+    { "lat": 39.2281032, "lon": -119.9325948 },
+    { "lat": 39.2280290, "lon": -119.9326052 },
+    { "lat": 39.2279493, "lon": -119.9326244 },
+    { "lat": 39.2278589, "lon": -119.9326662 },
+    { "lat": 39.2277631, "lon": -119.9327499 },
+    { "lat": 39.2276794, "lon": -119.9328370 },
+    { "lat": 39.2276011, "lon": -119.9328753 }
+  ],
+  "tags": {
+    "source": "yahoo;Bing"
+  }
+},
+{
+  "type": "way",
+  "id": 345152752,
+  "bounds": {
+    "minlat": 39.2320756,
+    "minlon": -119.9373475,
+    "maxlat": 39.2451152,
+    "maxlon": -119.9286271
+  },
+  "geometry": [
+    { "lat": 39.2451152, "lon": -119.9373475 },
+    { "lat": 39.2446927, "lon": -119.9366753 },
+    { "lat": 39.2445845, "lon": -119.9365056 },
+    { "lat": 39.2445476, "lon": -119.9364468 },
+    { "lat": 39.2444655, "lon": -119.9363160 },
+    { "lat": 39.2442493, "lon": -119.9359718 },
+    { "lat": 39.2440265, "lon": -119.9356121 },
+    { "lat": 39.2436411, "lon": -119.9349998 },
+    { "lat": 39.2430244, "lon": -119.9340061 },
+    { "lat": 39.2424389, "lon": -119.9330487 },
+    { "lat": 39.2421927, "lon": -119.9326447 },
+    { "lat": 39.2417907, "lon": -119.9319959 },
+    { "lat": 39.2414408, "lon": -119.9314323 },
+    { "lat": 39.2413487, "lon": -119.9312880 },
+    { "lat": 39.2412480, "lon": -119.9311356 },
+    { "lat": 39.2411329, "lon": -119.9309708 },
+    { "lat": 39.2410185, "lon": -119.9308162 },
+    { "lat": 39.2409097, "lon": -119.9306739 },
+    { "lat": 39.2408020, "lon": -119.9305383 },
+    { "lat": 39.2406897, "lon": -119.9304085 },
+    { "lat": 39.2405550, "lon": -119.9302660 },
+    { "lat": 39.2404257, "lon": -119.9301375 },
+    { "lat": 39.2401571, "lon": -119.9298781 },
+    { "lat": 39.2400942, "lon": -119.9298176 },
+    { "lat": 39.2400203, "lon": -119.9297494 },
+    { "lat": 39.2395095, "lon": -119.9292861 },
+    { "lat": 39.2393985, "lon": -119.9291875 },
+    { "lat": 39.2393055, "lon": -119.9291113 },
+    { "lat": 39.2392113, "lon": -119.9290392 },
+    { "lat": 39.2391082, "lon": -119.9289682 },
+    { "lat": 39.2389976, "lon": -119.9289031 },
+    { "lat": 39.2388871, "lon": -119.9288442 },
+    { "lat": 39.2388168, "lon": -119.9288103 },
+    { "lat": 39.2387674, "lon": -119.9287893 },
+    { "lat": 39.2386535, "lon": -119.9287431 },
+    { "lat": 39.2385420, "lon": -119.9287063 },
+    { "lat": 39.2384320, "lon": -119.9286769 },
+    { "lat": 39.2383175, "lon": -119.9286541 },
+    { "lat": 39.2382001, "lon": -119.9286393 },
+    { "lat": 39.2380835, "lon": -119.9286308 },
+    { "lat": 39.2379229, "lon": -119.9286271 },
+    { "lat": 39.2378676, "lon": -119.9286331 },
+    { "lat": 39.2377617, "lon": -119.9286422 },
+    { "lat": 39.2376624, "lon": -119.9286555 },
+    { "lat": 39.2375359, "lon": -119.9286777 },
+    { "lat": 39.2374046, "lon": -119.9287108 },
+    { "lat": 39.2372752, "lon": -119.9287537 },
+    { "lat": 39.2371557, "lon": -119.9288054 },
+    { "lat": 39.2370337, "lon": -119.9288638 },
+    { "lat": 39.2369207, "lon": -119.9289269 },
+    { "lat": 39.2368165, "lon": -119.9289895 },
+    { "lat": 39.2367116, "lon": -119.9290579 },
+    { "lat": 39.2366058, "lon": -119.9291313 },
+    { "lat": 39.2364940, "lon": -119.9292094 },
+    { "lat": 39.2362831, "lon": -119.9293550 },
+    { "lat": 39.2359345, "lon": -119.9295996 },
+    { "lat": 39.2351650, "lon": -119.9301450 },
+    { "lat": 39.2346763, "lon": -119.9304949 },
+    { "lat": 39.2343493, "lon": -119.9307286 },
+    { "lat": 39.2338611, "lon": -119.9310797 },
+    { "lat": 39.2335445, "lon": -119.9313073 },
+    { "lat": 39.2332779, "lon": -119.9315000 },
+    { "lat": 39.2330706, "lon": -119.9316312 },
+    { "lat": 39.2328687, "lon": -119.9317577 },
+    { "lat": 39.2327068, "lon": -119.9318593 },
+    { "lat": 39.2325403, "lon": -119.9319506 },
+    { "lat": 39.2323644, "lon": -119.9320343 },
+    { "lat": 39.2323579, "lon": -119.9320374 },
+    { "lat": 39.2322416, "lon": -119.9320845 },
+    { "lat": 39.2321475, "lon": -119.9321218 },
+    { "lat": 39.2320756, "lon": -119.9321411 }
+  ],
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "maxspeed": "45 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "no",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152748,
+  "bounds": {
+    "minlat": 39.2459215,
+    "minlon": -119.9462444,
+    "maxlat": 39.2491622,
+    "maxlon": -119.9386257
+  },
+  "geometry": [
+    { "lat": 39.2491622, "lon": -119.9462444 },
+    { "lat": 39.2490743, "lon": -119.9458590 },
+    { "lat": 39.2487506, "lon": -119.9443884 },
+    { "lat": 39.2486879, "lon": -119.9441264 },
+    { "lat": 39.2485978, "lon": -119.9438099 },
+    { "lat": 39.2485055, "lon": -119.9435126 },
+    { "lat": 39.2484109, "lon": -119.9432255 },
+    { "lat": 39.2483208, "lon": -119.9429753 },
+    { "lat": 39.2482977, "lon": -119.9429140 },
+    { "lat": 39.2482467, "lon": -119.9427795 },
+    { "lat": 39.2480826, "lon": -119.9423894 },
+    { "lat": 39.2479492, "lon": -119.9420861 },
+    { "lat": 39.2477680, "lon": -119.9417137 },
+    { "lat": 39.2475981, "lon": -119.9414016 },
+    { "lat": 39.2474214, "lon": -119.9410984 },
+    { "lat": 39.2473493, "lon": -119.9409792 },
+    { "lat": 39.2470840, "lon": -119.9405405 },
+    { "lat": 39.2468708, "lon": -119.9402019 },
+    { "lat": 39.2467241, "lon": -119.9399649 },
+    { "lat": 39.2467055, "lon": -119.9399355 },
+    { "lat": 39.2464695, "lon": -119.9395542 },
+    { "lat": 39.2462256, "lon": -119.9391538 },
+    { "lat": 39.2459215, "lon": -119.9386257 }
+  ],
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "40 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152750,
+  "bounds": {
+    "minlat": 39.2451152,
+    "minlon": -119.9386257,
+    "maxlat": 39.2459215,
+    "maxlon": -119.9373475
+  },
+  "geometry": [
+    { "lat": 39.2459215, "lon": -119.9386257 },
+    { "lat": 39.2458250, "lon": -119.9384791 },
+    { "lat": 39.2457962, "lon": -119.9384339 },
+    { "lat": 39.2457328, "lon": -119.9383345 },
+    { "lat": 39.2456345, "lon": -119.9381763 },
+    { "lat": 39.2451152, "lon": -119.9373475 }
+  ],
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "45 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152753,
+  "bounds": {
+    "minlat": 39.2491622,
+    "minlon": -119.9478003,
+    "maxlat": 39.2494310,
+    "maxlon": -119.9462444
+  },
+  "geometry": [
+    { "lat": 39.2494310, "lon": -119.9478003 },
+    { "lat": 39.2493817, "lon": -119.9474617 },
+    { "lat": 39.2493736, "lon": -119.9474089 },
+    { "lat": 39.2493352, "lon": -119.9471582 },
+    { "lat": 39.2492782, "lon": -119.9468334 },
+    { "lat": 39.2491911, "lon": -119.9463915 },
+    { "lat": 39.2491622, "lon": -119.9462444 }
+  ],
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "3",
+    "lanes:backward": "1",
+    "lanes:forward": "1",
+    "lit": "yes",
+    "maxspeed": "40 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 345152746,
+  "bounds": {
+    "minlat": 39.2494310,
+    "minlon": -119.9526894,
+    "maxlat": 39.2496800,
+    "maxlon": -119.9478003
+  },
+  "geometry": [
+    { "lat": 39.2496800, "lon": -119.9526894 },
+    { "lat": 39.2496546, "lon": -119.9519782 },
+    { "lat": 39.2496354, "lon": -119.9515502 },
+    { "lat": 39.2496240, "lon": -119.9513076 },
+    { "lat": 39.2496031, "lon": -119.9507575 },
+    { "lat": 39.2495754, "lon": -119.9500294 },
+    { "lat": 39.2495423, "lon": -119.9492778 },
+    { "lat": 39.2495290, "lon": -119.9489917 },
+    { "lat": 39.2495274, "lon": -119.9489578 },
+    { "lat": 39.2495114, "lon": -119.9486800 },
+    { "lat": 39.2495045, "lon": -119.9485785 },
+    { "lat": 39.2494918, "lon": -119.9484083 },
+    { "lat": 39.2494720, "lon": -119.9481592 },
+    { "lat": 39.2494598, "lon": -119.9480489 },
+    { "lat": 39.2494497, "lon": -119.9479583 },
+    { "lat": 39.2494310, "lon": -119.9478003 }
+  ],
+  "tags": {
+    "alt_name": "Lake Tahoe North Shore Scenic Byway;Lake Tahoe - Eastshore Drive",
+    "cycleway": "lane",
+    "hgv": "designated",
+    "hgv:national_network": "yes",
+    "highway": "primary",
+    "lanes": "3",
+    "lanes:backward": "1",
+    "lanes:forward": "1",
+    "lit": "yes",
+    "maxspeed": "35 mph",
+    "name": "Tahoe Boulevard",
+    "ref": "SR 28",
+    "sidewalk": "separate",
+    "source:hgv:national_network": "Title 23: Highways Part 658 http://ecfr.gpoaccess.gov/cgi/t/text/text-idx?c=ecfr&rgn=div5&view=text&node=23:1.0.1.7.33&idno=23 and document from NDOT listing the FAP routes",
+    "surface": "asphalt"
+  }
+}
+
+  ]
+}

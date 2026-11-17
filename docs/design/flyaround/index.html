@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>See It From Above</title>
+<meta name="description" content="Throwaway prototype: the hotel seen from above, with truth pins from OpenStreetMap. Nothing 3D loads before the tap; closing frees WebGL.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=Newsreader:opsz,wght@6..72,400..700&display=swap" rel="stylesheet">
+<style>
+/* GitAway v2 tokens (assets/css/v2-tokens.css), the subset this page uses. */
+:root {
+  --f-display: "Newsreader", Georgia, serif; --f-ui: "Inter", system-ui, sans-serif;
+  --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
+  --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
+  --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73; --on-ink: #FFFFFF;
+  --card-t: rgb(255 255 255 / .86); --card-solid: #FFFFFF; --card-2: #F2F3FA;
+  --line: rgb(15 17 36 / .10); --line-2: rgb(15 17 36 / .18);
+  --glass: rgb(255 255 255 / .62); --glass-line: rgb(255 255 255 / .75);
+  --flight: #4338CA; --flight-t: #E4E3FB; --stay: #8B2FC9; --stay-t: #F1E3FA;
+  --food: #C92A5E; --food-t: #FBE1EA; --see: #0F766E; --see-t: #D9F2EF;
+  --tix: #C2410C; --tix-t: #FCE6DA; --wx: #0369A1; --wx-t: #DBEFFA;
+  --warn: #B45309; --warn-t: #FEF0D7;
+  --cta-bg: #4338CA; --cta-fg: #FFFFFF; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(67 56 202 / .7);
+  --scrim: rgb(10 10 30 / .28);
+  --sh1: 0 1px 0.125rem rgb(20 20 60 / .06), 0 0.125rem 0.5rem rgb(20 20 60 / .06);
+  --sh2: 0 0.125rem 0.375rem rgb(20 20 60 / .08), 0 0.875rem 2rem -0.625rem rgb(40 30 110 / .22);
+  --sh3: 0 0.25rem 0.875rem rgb(20 20 60 / .07), 0 2.125rem 4.375rem -1.5rem rgb(40 30 110 / .32);
+  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
+  --bld: #D9D6F0; --bld-top: #C9C4EC;
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  --spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+  --v2-ease: cubic-bezier(.2, .8, .2, 1);
+  --t-grow: 560ms; --t-shrink: 320ms; --t-quick: 200ms;
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F;
+  --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4; --on-ink: #0F1124;
+  --card-t: rgb(20 22 44 / .80); --card-solid: #171A33; --card-2: #22264A;
+  --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
+  --glass: rgb(26 28 56 / .80); --glass-line: rgb(255 255 255 / .10);
+  --flight: #7B73FF; --flight-t: #24215A; --stay: #C084FC; --stay-t: #321A4A;
+  --food: #FF6B9A; --food-t: #401528; --see: #2DD4BF; --see-t: #0E302D;
+  --tix: #FB923C; --tix-t: #3D1E0E; --wx: #38BDF8; --wx-t: #0C2A3E;
+  --warn: #FBBF24; --warn-t: #3A2A08;
+  --cta-bg: #4F46E5; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .7);
+  --scrim: rgb(10 10 30 / .5);
+  --sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
+  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
+  --bld: #3A3F6B; --bld-top: #4A4F80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100svh; color: var(--ink); font: 450 1rem/1.5 var(--f-ui); font-optical-sizing: auto; overflow-x: clip;
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%) fixed; background-color: var(--sky-2); }
+button { font: inherit; color: inherit; cursor: pointer; }
+.num { font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+svg.i { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the page around the card: a slice of the hotel dashboard */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; max-width: 72rem; margin: 0 auto; padding: 1rem; }
+.brand { font: 600 1.5rem/1 var(--f-display); letter-spacing: -0.02em; }
+.brand small { font: 500 max(0.8125rem, .75rem)/1 var(--f-ui); color: var(--ink-3); letter-spacing: 0; margin-left: .5rem; }
+.chipbtn { display: inline-flex; align-items: center; gap: .4rem; min-height: 3rem; padding: 0 1rem; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card-t); }
+main { max-width: 72rem; margin: 0 auto; padding: 0 1rem 4rem; }
+.hotels { display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0 1rem; }
+.hotels button { min-height: 3rem; padding: 0 1.1rem; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card-t); font-weight: 560; }
+.hotels button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.dash { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 64rem) { .dash { grid-template-columns: 1.4fr 1fr; } }
+.card { background: var(--card-t); border: 1px solid var(--line); border-radius: 1.25rem; box-shadow: var(--sh2); }
+.hero { padding: 1.25rem; }
+.hero h1 { font: 560 clamp(1.75rem, 4vw, 2.5rem)/1.08 var(--f-display); letter-spacing: -0.022em; margin: 0 0 .35rem; }
+.hero .addr { color: var(--ink-2); margin: 0 0 1rem; }
+.facts { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+.facts li { padding: .3rem .75rem; border-radius: 999px; background: var(--card-2); color: var(--ink-2); font-size: max(1rem, .875rem); }
+.hint { color: var(--ink-3); font-size: max(1rem, .875rem); margin: 1rem 0 0; }
+
+/* the card that opens the fly-around */
+.above { display: grid; grid-template-columns: 6.5rem 1fr auto; align-items: center; gap: 1rem; width: 100%; padding: .75rem; text-align: left;
+  border-radius: 1.25rem; border: 1px solid var(--line); background: var(--card-solid); box-shadow: var(--sh2);
+  transition: transform var(--t-quick) var(--v2-ease), box-shadow var(--t-quick) var(--v2-ease); }
+.above:hover { box-shadow: var(--sh3); }
+.above:active { transform: scale(.985); }
+.above:focus-visible { outline: 3px solid var(--flight); outline-offset: 3px; }
+.thumb { width: 6.5rem; height: 5rem; border-radius: .9rem; overflow: hidden; background: var(--card-2); }
+.thumb svg { width: 100%; height: 100%; display: block; }
+.above .k { font: 600 max(0.8125rem, .75rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--flight); }
+.above .t { font: 560 1.35rem/1.15 var(--f-display); margin: .3rem 0 .2rem; }
+.above .l { color: var(--ink-2); }
+.above .go { width: 3rem; height: 3rem; border-radius: 999px; display: grid; place-items: center; background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); }
+.side { padding: 1.25rem; }
+@media (max-width: 30rem) { .above { grid-template-columns: 5rem 1fr; } .above .go { display: none; } .thumb { width: 5rem; height: 4.5rem; } .brand small { display: none; } }
+.side h2 { font: 560 1.25rem/1.2 var(--f-display); margin: 0 0 .5rem; }
+.side p { margin: 0 0 .75rem; color: var(--ink-2); }
+
+/* the sheet (phone) / panel (laptop) */
+.scrim { position: fixed; inset: 0; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-grow) var(--v2-ease); z-index: 40; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; inset: 0; z-index: 50; display: none; background: var(--card-solid); overflow: hidden;
+  grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+.sheet.open { display: grid; }
+@media (min-width: 64rem) {
+  .sheet { inset: 5vh 4vw; border-radius: 1.5rem; box-shadow: var(--sh3); grid-template-columns: minmax(0, 1fr) 23rem; grid-template-rows: minmax(0, 1fr); }
+}
+.sheet.anim { transition: clip-path var(--t-grow) var(--spring-soft), opacity var(--t-grow) var(--v2-ease); }
+.sheet.anim.closing { transition: clip-path var(--t-shrink) var(--v2-ease), opacity var(--t-shrink) var(--v2-ease); }
+.stage { position: relative; min-height: 0; background: var(--card-2); }
+.mapbox { position: absolute; inset: 0; }
+.mapbox canvas:focus { outline: none; }
+.glass { background: var(--glass); border: 1px solid var(--glass-line); box-shadow: var(--glass-sh); -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3); }
+.bar { position: absolute; left: .75rem; right: .75rem; top: max(.75rem, env(safe-area-inset-top)); display: flex; gap: .5rem; align-items: center; z-index: 3; pointer-events: none; }
+.bar > * { pointer-events: auto; }
+.round { width: 3rem; height: 3rem; border-radius: 999px; display: grid; place-items: center; border: 1px solid var(--glass-line); }
+.seg { display: flex; padding: .25rem; border-radius: 999px; gap: .15rem; margin-left: auto; }
+.seg button { min-height: 2.5rem; padding: 0 .85rem; border: 0; border-radius: 999px; background: transparent; font-weight: 560; font-size: max(1rem, .875rem); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+@media (max-width: 26rem) { .seg button { padding: 0 .6rem; } }
+.resume { position: absolute; left: 50%; bottom: 3.25rem; transform: translateX(-50%); z-index: 3; display: none; align-items: center; gap: .5rem; min-height: 3rem; padding: 0 1.1rem; border-radius: 999px; font-weight: 600; }
+.resume.on { display: inline-flex; }
+.debug { position: absolute; right: .75rem; bottom: 3.25rem; z-index: 3; padding: .35rem .6rem; border-radius: .75rem; font: 500 .75rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); max-width: 15rem; }
+@media (max-width: 40rem) { .debug { top: 4.25rem; bottom: auto; right: .75rem; opacity: .9; } .resume { bottom: 3.25rem; } }
+.attr { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: .35rem .75rem; font-size: .8125rem; color: var(--ink-2); background: var(--card-t); border-top: 1px solid var(--line); }
+.attr a { color: inherit; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; color: var(--ink-2); font-weight: 560; }
+.loading span { padding: .6rem 1rem; border-radius: 999px; }
+
+/* photoreal without a key */
+.nokey { position: absolute; inset: 0; z-index: 2; overflow: auto; padding: 5rem 1rem 3.5rem; display: none; background: radial-gradient(120% 80% at 50% 0%, var(--sky-1), var(--sky-2) 60%, var(--sky-3)); }
+.nokey.on { display: block; }
+@media (max-width: 63.99rem) { .sheet.nokey-on .debug { display: none; } .sheet.nokey-on .truth { max-height: 26svh; } .sheet.nokey-on .attr { display: none; } }
+.nokey .card { max-width: 34rem; margin: 0 auto; padding: 1.25rem; }
+.nokey h3 { font: 560 1.5rem/1.15 var(--f-display); margin: 0 0 .5rem; }
+.nokey p, .nokey li { color: var(--ink-2); }
+.nokey ul { padding-left: 1.1rem; margin: .5rem 0 1rem; }
+.nokey label { display: block; font-weight: 600; margin: .75rem 0 .35rem; }
+.nokey .row { display: flex; gap: .5rem; }
+.nokey input { flex: 1; min-width: 0; min-height: 3rem; padding: 0 .9rem; border-radius: .8rem; border: 1px solid var(--line-2); background: var(--card-solid); color: var(--ink); font: inherit; }
+.btn { min-height: 3rem; padding: 0 1.1rem; border-radius: 999px; border: 0; background: var(--cta-bg); color: var(--cta-fg); font-weight: 600; box-shadow: var(--cta-sh); }
+.btn.quiet { background: var(--card-2); color: var(--ink); box-shadow: none; border: 1px solid var(--line-2); }
+.nokey .small { font-size: max(1rem, .875rem); color: var(--ink-3); }
+
+/* the truth panel */
+.truth { overflow: auto; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); max-height: 44svh; background: var(--card-solid); }
+@media (min-width: 64rem) { .truth { max-height: none; border-top: 0; border-left: 1px solid var(--line); padding: 1.25rem; } }
+.truth .k { font: 600 max(0.8125rem, .75rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.truth h2 { font: 560 1.5rem/1.12 var(--f-display); letter-spacing: -0.02em; margin: .35rem 0 .75rem; }
+.heads { display: flex; gap: .6rem; align-items: flex-start; padding: .8rem .9rem; border-radius: 1rem; background: var(--warn-t); color: var(--ink); margin-bottom: .75rem; }
+.heads svg { color: var(--warn); margin-top: .1rem; }
+.heads.good { background: var(--see-t); } .heads.good svg { color: var(--see); }
+.heads b { display: block; font-weight: 650; }
+.src { font-size: max(1rem, .875rem); color: var(--ink-3); margin: .25rem 0 .75rem; }
+.src.warn { color: var(--warn); }
+.pins { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.pin { display: grid; grid-template-columns: 2.5rem 1fr auto; gap: .75rem; align-items: center; width: 100%; padding: .6rem .7rem; text-align: left; border-radius: 1rem; border: 1px solid var(--line); background: var(--card-solid); min-height: 3.5rem; }
+.pin:hover { background: var(--card-2); }
+.pin .ic { width: 2.5rem; height: 2.5rem; border-radius: .8rem; display: grid; place-items: center; }
+.pin .nm { font-weight: 600; line-height: 1.25; }
+.pin .sub { color: var(--ink-3); font-size: max(1rem, .875rem); line-height: 1.3; }
+.pin .d { text-align: right; font-weight: 650; line-height: 1.2; }
+.pin .d small { display: block; font-weight: 500; color: var(--ink-3); font-size: max(1rem, .875rem); }
+.pin.none { opacity: .7; }
+.c-flight { background: var(--flight-t); color: var(--flight); } .c-road { background: var(--tix-t); color: var(--tix); }
+.c-water { background: var(--wx-t); color: var(--wx); } .c-food { background: var(--food-t); color: var(--food); }
+.c-shop { background: var(--see-t); color: var(--see); } .c-park { background: var(--stay-t); color: var(--stay); }
+.note { margin: 1rem 0 0; color: var(--ink-3); font-size: max(1rem, .875rem); }
+
+/* map markers */
+.mk { width: 2.25rem; height: 2.25rem; border-radius: 999px; display: grid; place-items: center; border: 2px solid var(--card-solid); box-shadow: var(--sh2); }
+.mk svg { width: 1.1rem; height: 1.1rem; }
+.mk.hotel { width: 2.75rem; height: 2.75rem; background: var(--ink); color: var(--on-ink); }
+.mk.flash { animation: flash 900ms var(--v2-ease) 2; }
+@keyframes flash { 50% { transform: scale(1.35); } }
+@media (prefers-reduced-motion: reduce) { .sheet.anim, .sheet.anim.closing { transition: opacity var(--t-quick) linear; } .mk.flash { animation: none; } }
+.maplibregl-ctrl-attrib { display: none !important; } /* our own attribution line is always visible instead */
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M10.5 21l1.5-1v-5.5l8 2.5v-2l-8-5V4.5a1.5 1.5 0 0 0-3 0V10l-8 5v2l8-2.5V20l1.5 1z"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M5 21L9 3M19 21L15 3M12 5v2M12 11v2M12 17v2"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 9c2 0 2-1.5 4-1.5S8 9 10 9s2-1.5 4-1.5S16 9 18 9s2-1.5 4-1.5M2 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 8H6.3"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></symbol>
+  <symbol id="i-fork" viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3 3.5-3 7h3v11"/></symbol>
+  <symbol id="i-park" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 16V8h3a2.5 2.5 0 0 1 0 5h-3"/></symbol>
+  <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3zM12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brand">GitAway <small>prototype · see it from above</small></div>
+  <button class="chipbtn" id="mode" type="button" aria-label="Switch light or dark"><svg class="i"><use href="#i-moon"/></svg><span>Dark</span></button>
+</header>
+
+<main>
+  <div class="hotels" role="group" aria-label="Hotel">
+    <button type="button" data-h="lax" aria-pressed="true">Hilton LAX</button>
+    <button type="button" data-h="tahoe" aria-pressed="false">Hyatt Regency Lake Tahoe</button>
+  </div>
+  <div class="dash">
+    <section class="card hero" aria-labelledby="hname">
+      <h1 id="hname"></h1>
+      <p class="addr" id="haddr"></p>
+      <ul class="facts" id="hfacts"></ul>
+      <div style="margin-top:1.25rem">
+        <button class="above" id="open" type="button" aria-haspopup="dialog">
+          <span class="thumb" id="thumb" aria-hidden="true"></span>
+          <span><span class="k">Know this before you book</span><span class="t" style="display:block">See it from above</span><span class="l" id="teaser"></span></span>
+          <span class="go" aria-hidden="true"><svg class="i"><use href="#i-arrow"/></svg></span>
+        </button>
+      </div>
+      <p class="hint">Nothing 3D loads until you tap. Closing frees the map and its WebGL context.</p>
+    </section>
+    <aside class="card side">
+      <h2>Why from above</h2>
+      <p>Hotel photos are framed to flatter. From a few hundred metres up you see what the listing leaves out: the freeway, the runway, the parking lot, how far the water really is.</p>
+      <p>Truth pins come from OpenStreetMap, measured from the hotel's door as the crow flies, with walking and driving time estimated from that distance.</p>
+    </aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="stage">
+    <div class="mapbox" id="mapbox"></div>
+    <div class="loading" id="loading"><span class="glass">Loading the view…</span></div>
+    <div class="nokey" id="nokey">
+      <div class="card">
+        <h3>Photoreal 3D needs a Google key</h3>
+        <p>This view streams Google's Photorealistic 3D Tiles through the Map Tiles API, drawn by CesiumJS.</p>
+        <ul>
+          <li>It is metered: Google bills per root tileset request (one per session here), plus the tiles that follow under its usage limits.</li>
+          <li>Cesium ion offers Google's tiles free, but only for non-commercial use, so a commercial GitAway would use its own Google key.</li>
+          <li>It is heavier than the light view: textured meshes, more memory, more data. On a phone the detail is turned down and the tile cache capped.</li>
+        </ul>
+        <p>What you would see: the hotel as a real textured 3D model, the cars in the lot, the planes on the apron, the tree line on the shore.</p>
+        <label for="gkey">Google Maps API key (Map Tiles API enabled)</label>
+        <div class="row"><input id="gkey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…"><button class="btn" id="usekey" type="button">Use key</button></div>
+        <p class="small">Kept only in this browser's localStorage. It never leaves your machine except to Google.</p>
+        <button class="btn quiet" id="forget" type="button" hidden>Forget saved key</button>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="round glass" id="close" type="button" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <div class="seg glass" role="group" aria-label="View">
+        <button type="button" data-v="map" aria-pressed="true">Map</button>
+        <button type="button" data-v="sat" aria-pressed="false">Satellite</button>
+        <button type="button" data-v="photo" aria-pressed="false">Photoreal</button>
+      </div>
+    </div>
+    <button class="resume glass" id="resume" type="button"><svg class="i"><use href="#i-orbit"/></svg><span>Resume orbit</span></button>
+    <div class="debug glass num" id="debug" aria-live="off"></div>
+    <div class="attr" id="attr"></div>
+  </div>
+  <section class="truth" aria-labelledby="sheetTitle">
+    <div class="k">What the photos don't show</div>
+    <h2 id="sheetTitle"></h2>
+    <div id="heads"></div>
+    <p class="src" id="src">Looking around the hotel…</p>
+    <ul class="pins" id="pins"></ul>
+    <p class="note">Distances are straight-line from the hotel; walking adds a quarter for real streets at 80 m a minute, driving assumes city speeds plus two minutes to park.</p>
+  </section>
+</div>
+
+<script>
+'use strict';
+/* ---------- data: the two hotels, geocoded once with Nominatim (16 Nov 2026) ---------- */
+const HOTELS = {
+  lax: { name: 'Hilton Los Angeles Airport', short: 'Hilton LAX', addr: '5711 West Century Boulevard, Los Angeles, CA',
+    lat: 33.9461921, lon: -118.3816538, h: 0, facts: ['4 stars', '1,234 rooms', 'Airport shuttle', 'from $189 a night'], snapshot: 'osm-lax.json', water: 'Beach' },
+  tahoe: { name: 'Hyatt Regency Lake Tahoe', short: 'Hyatt Regency Lake Tahoe', addr: '111 Country Club Drive, Incline Village, NV',
+    lat: 39.2407285, lon: -119.9426988, h: 1880, facts: ['4 stars', 'Private beach', 'Casino', 'from $329 a night'], snapshot: 'osm-tahoe.json', water: 'Lake shore', lake: 'Lake Tahoe' },
+};
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const RADIUS = 2000;
+const VERSIONS = { maplibre: '4.7.1', cesium: '1.123.0' };
+const MQ_DESK = matchMedia('(min-width: 64rem)');
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} } };
+const $ = (s) => document.querySelector(s);
+const ICON = { flight: 'i-plane', road: 'i-road', water: 'i-wave', shop: 'i-cart', food: 'i-fork', park: 'i-park' };
+const svgUse = (id, cls = 'i') => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- light and dark ---------- */
+function setMode(m) {
+  document.documentElement.dataset.mode = m; store.set('fly-mode', m);
+  $('#mode').innerHTML = m === 'dark' ? `${svgUse('i-sun')}<span>Light</span>` : `${svgUse('i-moon')}<span>Dark</span>`;
+  if (S.engine === 'maplibre' && S.map) restyle();
+}
+
+/* ---------- geometry: distances on the client ---------- */
+const R_EARTH = 6371008.8;
+function proj(lat0) { const k = Math.cos(lat0 * Math.PI / 180); return (lat, lon) => [lon * Math.PI / 180 * R_EARTH * k, lat * Math.PI / 180 * R_EARTH]; }
+function haversine(a, b) {
+  const r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * R_EARTH * Math.asin(Math.sqrt(s));
+}
+/* nearest point on a polyline (equirectangular around the hotel is exact enough under 2 km) */
+function nearestOnLine(hotel, pts) {
+  const P = proj(hotel[0]), h = P(hotel[0], hotel[1]);
+  let best = { d: Infinity, at: pts[0] };
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = P(pts[i][0], pts[i][1]), b = P(pts[i + 1][0], pts[i + 1][1]);
+    const vx = b[0] - a[0], vy = b[1] - a[1], L = vx * vx + vy * vy || 1;
+    const t = Math.max(0, Math.min(1, ((h[0] - a[0]) * vx + (h[1] - a[1]) * vy) / L));
+    const x = a[0] + t * vx, y = a[1] + t * vy, d = Math.hypot(h[0] - x, h[1] - y);
+    if (d < best.d) best = { d, at: [pts[i][0] + t * (pts[i + 1][0] - pts[i][0]), pts[i][1] + t * (pts[i + 1][1] - pts[i][1])] };
+  }
+  return best;
+}
+/* how a runway's line meets the hotel: sideways from the centreline, and how far past the nearer end */
+function runwayRelation(hotel, pts) {
+  const P = proj(hotel[0]), h = P(hotel[0], hotel[1]), a = P(pts[0][0], pts[0][1]), b = P(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+  const vx = b[0] - a[0], vy = b[1] - a[1], L = Math.hypot(vx, vy) || 1, ux = vx / L, uy = vy / L;
+  const along = (h[0] - a[0]) * ux + (h[1] - a[1]) * uy;
+  const side = Math.abs((h[0] - a[0]) * uy - (h[1] - a[1]) * ux);
+  const past = along < 0 ? -along : along > L ? along - L : 0;
+  const cross = (h[0] - a[0]) * uy - (h[1] - a[1]) * ux;
+  const sign = Math.sign(cross) * Math.sign(ux || 1);   // which side of the line the hotel is on, the same for parallel runways drawn either way
+  return { side, past, length: L, sign };
+}
+const walkMin = (m) => Math.max(1, Math.round(m * 1.25 / 80));
+const driveMin = (m) => Math.max(1, Math.round(m * 1.4 / 500 + 2));
+function howFar(m) {
+  const w = walkMin(m);
+  return w <= 20 ? { big: `${w} min`, small: 'walk' } : { big: `${driveMin(m)} min`, small: 'drive' };
+}
+const metres = (m) => m < 950 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
+
+/* ---------- truth pins from OpenStreetMap ---------- */
+function overpassQuery(h) {
+  const A = `around:${RADIUS},${h.lat},${h.lon}`;
+  return `[out:json][timeout:20];
+(
+ way(${A})[aeroway=runway];
+ way(${A})[aeroway=terminal];
+ way(${A})[highway~"^(motorway|trunk|primary)$"];
+ nwr(${A})[natural=beach];
+ way(${A})[natural=coastline];
+ nwr(${A})[shop=supermarket];
+ nwr(${A})[amenity=restaurant];
+ nwr(${A})[amenity=parking][parking!=underground];
+);
+out tags center qt;
+rel(${A})[natural=water][name];
+way(r)(${A});
+out tags geom qt;
+(way(${A})[aeroway=runway];way(around:1200,${h.lat},${h.lon})[highway~"^(motorway|trunk|primary)$"];way(${A})[natural=coastline];);
+out tags geom qt;`;
+}
+async function fetchTimeout(url, opts, ms) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, { ...opts, signal: ctl.signal }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+/* live first; if it has not answered in 3 s, show the saved copy at once (labelled) and swap in the live answer if it still arrives */
+async function loadOsm(h, onEarly) {
+  const body = new URLSearchParams({ data: overpassQuery(h) });
+  let early = null;
+  const timer = setTimeout(async () => {
+    try { early = { data: await fetchTimeout(h.snapshot, {}, 4000), source: 'snapshot' }; onEarly(early); } catch {}
+  }, 3000);
+  for (const url of OVERPASS) {
+    try { const data = await fetchTimeout(url, { method: 'POST', body }, 10000); clearTimeout(timer); return { data, source: 'live', host: new URL(url).host }; }
+    catch (e) { console.warn('Overpass failed', url, e.name === 'AbortError' ? 'timeout' : e.message); }
+  }
+  clearTimeout(timer);
+  if (early) return early;
+  try { return { data: await fetchTimeout(h.snapshot, {}, 4000), source: 'snapshot' }; }
+  catch (e) { console.warn('No snapshot', e.message); }
+  return { data: null, source: 'illustrative' };
+}
+function analyse(h, data) {
+  const H = [h.lat, h.lon];
+  const geoms = new Map(), items = [];
+  for (const e of data.elements) {
+    if (e.geometry) geoms.set(e.id, { tags: e.tags || {}, pts: e.geometry.map((g) => [g.lat, g.lon]) });
+    else items.push(e);
+  }
+  const at = (e) => e.center ? [e.center.lat, e.center.lon] : e.lat != null ? [e.lat, e.lon] : null;
+  const named = (t, fallback) => t.name || t.brand || t.ref || fallback;
+  const pins = [];
+  const heads = [];
+
+  // airport: the nearest runway (geometry), else a terminal; and is the hotel under an approach?
+  let best = null; const approaches = [];
+  for (const [id, g] of geoms) {
+    if (g.tags.aeroway !== 'runway') continue;
+    const n = nearestOnLine(H, g.pts), rel = runwayRelation(H, g.pts);
+    if (!best || n.d < best.d) best = { ...n, name: g.tags.ref ? `Runway ${g.tags.ref}` : 'Runway' };
+    if (rel.side < 900 && rel.past > 0 && rel.past < 6000) approaches.push({ ...rel, ref: g.tags.ref });
+  }
+  const term = items.filter((e) => e.tags?.aeroway === 'terminal').map((e) => ({ e, d: haversine(H, at(e)) })).sort((a, b) => a.d - b.d)[0];
+  if (best) pins.push({ kind: 'flight', title: best.name, sub: term ? `Nearest terminal ${metres(term.d)} · ${named(term.e.tags, 'terminal')}` : 'Airport runway', d: best.d, at: best.at });
+  else if (term) pins.push({ kind: 'flight', title: named(term.e.tags, 'Airport terminal'), sub: 'Airport terminal', d: term.d, at: at(term.e) });
+  else pins.push({ kind: 'flight', title: 'No airport within 2 km', sub: 'Quiet skies', d: null });
+  // a runway's approach passes overhead (under 400 m off the centreline) or alongside; on both sides is "between two flight paths"
+  approaches.sort((a, b) => a.side - b.side);
+  const sides = new Set(approaches.map((a) => a.sign));
+  const flight = approaches[0];
+  if (flight && flight.side < 400) heads.push({ w: 3, text: 'Under the flight path', more: `In line with runway ${flight.ref || ''}, ${metres(flight.past)} past its end` });
+  else if (flight && sides.size > 1) heads.push({ w: 3, text: 'Between two flight paths', more: `Landing planes pass ${approaches.filter((a) => a.sign > 0)[0].side < 1000 ? metres(approaches.filter((a) => a.sign > 0)[0].side) : ''} to one side and ${metres(approaches.filter((a) => a.sign < 0)[0].side)} to the other, ${metres(flight.past)} before the runways` });
+  else if (flight) heads.push({ w: 3, text: 'Beside the flight path', more: `Runway ${flight.ref || ''}'s approach passes ${metres(flight.side)} away, ${metres(flight.past)} before the runway` });
+  else if (best && best.d < 1500) heads.push({ w: 3, text: `Runway ${metres(best.d)} away`, more: 'Expect jet noise, day and night' });
+
+  // freeway or trunk road: nearest line
+  // a freeway or trunk road anywhere in the 2 km wins; only without one does the nearest primary road count
+  const nearestRoad = (re) => {
+    let r = null;
+    for (const [id, g] of geoms) {
+      if (!re.test(g.tags.highway || '')) continue;
+      const n = nearestOnLine(H, g.pts);
+      if (!r || n.d < r.d) r = { ...n, t: g.tags };
+    }
+    if (!r) {   // the geometry query is 1.2 km; fall back to the centres for the rest of the 2 km
+      const c = items.filter((e) => re.test(e.tags?.highway || '')).map((e) => ({ e, d: haversine(H, at(e)) })).sort((a, b) => a.d - b.d)[0];
+      if (c) r = { d: c.d, at: at(c.e), t: c.e.tags };
+    }
+    return r;
+  };
+  const road = nearestRoad(/^(motorway|trunk)$/) || nearestRoad(/^primary$/);
+  if (road) {
+    const t = road.t, label = t.ref && t.name ? `${t.ref.split(';')[0]} · ${t.name}` : (t.ref || t.name || (t.highway === 'motorway' ? 'Freeway' : 'Highway'));
+    pins.push({ kind: 'road', title: label, sub: t.highway === 'motorway' ? 'Freeway: traffic noise' : t.highway === 'trunk' ? 'Highway: through traffic' : 'Main road: through traffic', d: road.d, at: road.at });
+    if (road.d < 400 && t.highway !== 'primary') heads.push({ w: road.d < 200 ? 2.5 : 1.5, text: `${t.highway === 'motorway' ? 'Freeway' : t.highway === 'trunk' ? 'Highway' : 'Main road'} ${metres(road.d)} away`, more: label });
+  } else pins.push({ kind: 'road', title: 'No freeway within 2 km', sub: 'No through traffic nearby', d: null });
+
+  // water: a beach, the coastline, or a named lake's shore
+  let water = null;
+  for (const [id, g] of geoms) {
+    if (g.tags.aeroway || g.tags.highway) continue;   // what is left is the coastline and the lake's shore ways
+    const n = nearestOnLine(H, g.pts);
+    const nm = g.tags.natural === 'coastline' ? 'Ocean shore' : (g.tags.name ? `${g.tags.name} shore` : h.lake ? `${h.lake} shore` : 'Lake shore');
+    if (!water || n.d < water.d) water = { ...n, title: nm, sub: 'Nearest water\'s edge' };
+  }
+  for (const e of items.filter((e) => e.tags?.natural === 'beach')) {
+    const p = at(e); if (!p) continue; const d = haversine(H, p);
+    if (!water || d < water.d + 150) { if (!water || d < water.d || water.sub !== 'Beach') water = { d, at: p, title: named(e.tags, 'Beach'), sub: 'Beach' }; }
+  }
+  if (water) {
+    pins.push({ kind: 'water', title: water.title, sub: water.sub, d: water.d, at: water.at });
+    const w = walkMin(water.d);
+    if (w <= 15) heads.push({ w: 1, text: `${water.sub === 'Beach' ? 'Beach' : 'Water'} ${w} min walk`, more: water.title, good: true });
+  } else pins.push({ kind: 'water', title: `No ${h.water.toLowerCase()} within 2 km`, sub: 'The listing\'s "near the beach" needs a car', d: null });
+
+  // grocery
+  const shop = items.filter((e) => e.tags?.shop === 'supermarket').map((e) => ({ e, d: haversine(H, at(e)) })).sort((a, b) => a.d - b.d)[0];
+  if (shop) pins.push({ kind: 'shop', title: named(shop.e.tags, 'Supermarket'), sub: 'Nearest supermarket', d: shop.d, at: at(shop.e) });
+  else pins.push({ kind: 'shop', title: 'No supermarket within 2 km', sub: 'Stock up before you arrive', d: null });
+
+  // restaurants: the densest cluster (most others within 200 m)
+  const rs = items.filter((e) => e.tags?.amenity === 'restaurant').map((e) => ({ e, p: at(e) })).filter((r) => r.p);
+  if (rs.length) {
+    let top = null;
+    for (const r of rs) { const near = rs.filter((o) => haversine(r.p, o.p) < 200); if (!top || near.length > top.length) top = near; }
+    const c = [top.reduce((s, o) => s + o.p[0], 0) / top.length, top.reduce((s, o) => s + o.p[1], 0) / top.length];
+    const street = top.map((o) => o.e.tags['addr:street']).find(Boolean);
+    pins.push({ kind: 'food', title: top.length > 1 ? `${top.length} restaurants together` : named(top[0].e.tags, 'Restaurant'),
+      sub: `${street ? street + ' · ' : ''}${rs.length} within 2 km`, d: haversine(H, c), at: c });
+  } else pins.push({ kind: 'food', title: 'No restaurants within 2 km', sub: 'Hotel dining only', d: null });
+
+  // parking: the nearest lot, and the biggest surface lot within 500 m by count of mapped lots
+  const lots = items.filter((e) => e.tags?.amenity === 'parking').map((e) => ({ e, p: at(e) })).filter((r) => r.p).map((r) => ({ ...r, d: haversine(H, r.p) })).sort((a, b) => a.d - b.d);
+  if (lots.length) {
+    const near = lots.filter((l) => l.d < 500), multi = near.filter((l) => l.e.tags.parking === 'multi-storey').length;
+    pins.push({ kind: 'park', title: named(lots[0].e.tags, lots[0].e.tags.parking === 'multi-storey' ? 'Parking garage' : 'Parking lot'),
+      sub: `${near.length} car parks within 500 m${multi ? `, ${multi} multi-storey` : ''}`, d: lots[0].d, at: lots[0].p });
+    if (near.length >= 12) heads.push({ w: 0.8, text: `${near.length} car parks within 500 m`, more: 'Mapped surface lots around the hotel' });
+  } else pins.push({ kind: 'park', title: 'No mapped parking nearby', sub: 'Street parking only', d: null });
+
+  heads.sort((a, b) => b.w - a.w);
+  return { pins, heads };
+}
+/* used only when both Overpass servers and the saved snapshot fail: labelled as illustrative on screen */
+function illustrative(h) {
+  const off = (dlat, dlon) => [h.lat + dlat, h.lon + dlon];
+  const pins = h === HOTELS.lax ? [
+    { kind: 'flight', title: 'Runway (illustrative)', sub: 'Airport runway', d: 600, at: off(0.005, -0.004) },
+    { kind: 'road', title: 'Freeway (illustrative)', sub: 'Freeway: traffic noise', d: 700, at: off(0.0, 0.007) },
+    { kind: 'water', title: 'No beach within 2 km', sub: 'Illustrative', d: null },
+    { kind: 'shop', title: 'Supermarket (illustrative)', sub: 'Illustrative', d: 1200, at: off(-0.01, 0.004) },
+    { kind: 'food', title: 'Restaurants (illustrative)', sub: 'Illustrative', d: 400, at: off(-0.002, 0.003) },
+    { kind: 'park', title: 'Parking lot (illustrative)', sub: 'Illustrative', d: 120, at: off(0.001, 0.0005) } ] : [
+    { kind: 'flight', title: 'No airport within 2 km', sub: 'Illustrative', d: null },
+    { kind: 'road', title: 'Highway (illustrative)', sub: 'Illustrative', d: 900, at: off(0.008, 0.0) },
+    { kind: 'water', title: 'Lake shore (illustrative)', sub: 'Illustrative', d: 250, at: off(-0.002, 0.0) },
+    { kind: 'shop', title: 'Supermarket (illustrative)', sub: 'Illustrative', d: 1300, at: off(0.004, 0.012) },
+    { kind: 'food', title: 'Restaurants (illustrative)', sub: 'Illustrative', d: 700, at: off(0.005, 0.004) },
+    { kind: 'park', title: 'Parking lot (illustrative)', sub: 'Illustrative', d: 80, at: off(0.0006, 0.0) } ];
+  return { pins, heads: [{ w: 1, text: 'Illustrative pins', more: 'OpenStreetMap could not be reached' }] };
+}
+function headline(r) { return r.heads.length ? r.heads.slice(0, 2).map((x) => x.text).join(' · ') : 'Nothing loud nearby'; }
+
+/* ---------- the card ---------- */
+const S = { hotel: 'lax', view: 'map', engine: null, map: null, viewer: null, orbit: false, raf: 0, lastT: 0, truth: null, tiles: 0, t0: 0, firstFrame: null, idle: null, heap: {}, markers: [], openedAt: 0, ro: null };
+const TEASERS = {};   // filled from the last pins found for each hotel (sessionStorage), else a neutral line
+function thumbSvg(k) {
+  // a drawn schematic, not imagery: blocks, a road, and the thing that matters here
+  const water = k === 'tahoe' ? '<path d="M0 62 C30 54 60 66 104 56 V80 H0Z" fill="var(--wx)" opacity=".35"/>' : '';
+  const plane = k === 'lax' ? '<path d="M8 14 L98 34" stroke="var(--flight)" stroke-width="1.5" stroke-dasharray="3 3"/><use href="#i-plane" x="70" y="18" width="14" height="14" style="color:var(--flight)" transform="rotate(12 77 25)"/>' : '';
+  const road = k === 'lax' ? '<path d="M78 0 L92 80" stroke="var(--tix)" stroke-width="6" opacity=".55"/>' : '<path d="M0 30 C30 26 70 34 104 22" stroke="var(--tix)" stroke-width="4" opacity=".45"/>';
+  return `<svg viewBox="0 0 104 80" fill="none">${water}${road}
+    <path d="M30 52 L50 42 L70 52 L50 62Z" fill="var(--bld-top)"/><path d="M30 52 V36 L50 26 V42Z" fill="var(--bld)"/><path d="M70 52 V36 L50 26 V42Z" fill="var(--bld-top)" opacity=".8"/>
+    <path d="M30 36 L50 26 L70 36 L50 46Z" fill="var(--card-solid)" opacity=".9"/>
+    <rect x="10" y="56" width="16" height="10" rx="2" fill="var(--stay)" opacity=".25"/>${plane}</svg>`;
+}
+function renderHotel() {
+  const h = HOTELS[S.hotel];
+  $('#hname').textContent = h.name; $('#haddr').textContent = h.addr;
+  $('#hfacts').innerHTML = h.facts.map((f) => `<li>${esc(f)}</li>`).join('');
+  $('#thumb').innerHTML = thumbSvg(S.hotel);
+  let saved = null; try { saved = sessionStorage.getItem('fly-teaser-' + S.hotel); } catch {}
+  $('#teaser').textContent = saved || (S.hotel === 'lax' ? 'Runways, freeways and lots around the hotel' : 'How far the lake really is');
+  document.querySelectorAll('.hotels button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.h === S.hotel)));
+}
+
+/* ---------- lazy loading: nothing heavy before the tap ---------- */
+const loaded = {};
+function loadScript(src) { return loaded[src] ||= new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.append(s); }); }
+function loadCss(href) { if (loaded[href]) return; loaded[href] = 1; const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.append(l); }
+
+/* ---------- debug readout: time to first frame, JS heap, tile requests ---------- */
+const mb = (b) => b == null ? 'n/a' : (b / 1048576).toFixed(1) + ' MB';
+const heapNow = () => performance.memory ? performance.memory.usedJSHeapSize : null;
+const TILE_RE = /tiles\.openfreemap\.org\/(planet|natural_earth)|arcgisonline\.com\/.*\/tile\/|tile\.googleapis\.com/;
+new PerformanceObserver((list) => { for (const e of list.getEntries()) if (S.engine === 'cesium' && TILE_RE.test(e.name)) { S.tiles++; } }).observe({ type: 'resource', buffered: false });
+function debug() {
+  const d = $('#debug'), h = S.heap;
+  d.innerHTML = `${esc(S.engine || 'closed')} · 1st frame ${S.firstFrame != null ? Math.round(S.firstFrame) + ' ms' : '…'}<br>heap ${mb(h.before)} → ${mb(heapNow())} · tiles ${S.tiles}`;
+  window.__fly = { engine: S.engine, firstFrame: S.firstFrame, idle: S.idle, tiles: S.tiles, heap: { ...h, now: heapNow() }, truth: S.truth, orbit: S.orbit };
+}
+let debugTimer = 0;
+
+/* ---------- open and close: the card grows into the sheet and folds back ---------- */
+let opener = null;
+function rectInset(from) {
+  const s = $('#sheet').getBoundingClientRect();
+  return `inset(${from.top - s.top}px ${s.right - from.right}px ${s.bottom - from.bottom}px ${from.left - s.left}px round 1.25rem)`;
+}
+async function openSheet() {
+  opener = $('#open');
+  S.t0 = performance.now(); S.firstFrame = null; S.idle = null; S.tiles = 0;
+  if (window.gc) window.gc();
+  S.heap = { before: heapNow() };
+  const sheet = $('#sheet'), h = HOTELS[S.hotel];
+  $('#sheetTitle').textContent = h.name;
+  sheet.classList.add('open'); $('#scrim').classList.add('on');
+  sheet.style.clipPath = rectInset(opener.getBoundingClientRect()); sheet.style.opacity = REDUCED.matches ? '0' : '1';
+  sheet.getBoundingClientRect();
+  sheet.classList.add('anim'); sheet.classList.remove('closing');
+  sheet.style.clipPath = `inset(0 0 0 0 round ${MQ_DESK.matches ? '1.5rem' : '0'})`; sheet.style.opacity = '1';
+  document.body.style.overflow = 'hidden';
+  $('#close').focus({ preventScroll: true });
+  debug(); debugTimer = setInterval(debug, 500);
+  truthFor(h);
+  await setView(S.view, true);
+}
+async function closeSheet() {
+  const sheet = $('#sheet');
+  sheet.classList.add('closing');
+  sheet.style.clipPath = rectInset(opener.getBoundingClientRect());
+  if (REDUCED.matches) sheet.style.opacity = '0';
+  $('#scrim').classList.remove('on');
+  const done = () => { sheet.classList.remove('open', 'anim', 'closing'); sheet.style.clipPath = ''; teardown();
+    document.body.style.overflow = ''; opener.focus({ preventScroll: true });
+    setTimeout(() => { if (window.gc) window.gc(); S.heap.afterClose = heapNow(); debug(); clearInterval(debugTimer); }, 300); };
+  setTimeout(done, REDUCED.matches ? 200 : 320);
+}
+function teardown() {
+  stopOrbit(true);
+  if (S.ro) { S.ro.disconnect(); S.ro = null; }
+  S.markers.forEach((m) => m.remove()); S.markers = [];
+  if (S.map) {
+    const gl = S.map.getCanvas().getContext('webgl2') || S.map.getCanvas().getContext('webgl');
+    S.map.remove(); gl?.getExtension('WEBGL_lose_context')?.loseContext(); S.map = null;
+  }
+  if (S.viewer) {
+    const gl = S.viewer.scene.context._gl;
+    S.viewer.destroy(); gl?.getExtension('WEBGL_lose_context')?.loseContext(); S.viewer = null;
+  }
+  S.engine = null;
+  $('#mapbox').replaceChildren();
+  $('#resume').classList.remove('on');
+}
+
+/* ---------- views ---------- */
+async function setView(v, first = false) {
+  S.view = v;
+  document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  $('#nokey').classList.remove('on'); $('#sheet').classList.remove('nokey-on');
+  if (v === 'photo') {
+    const key = store.get('fly-gkey');
+    if (S.engine === 'maplibre') teardown();
+    if (!key) { teardown(); $('#loading').style.display = 'none'; $('#nokey').classList.add('on'); $('#sheet').classList.add('nokey-on'); $('#forget').hidden = true; attribution(); return; }
+    return startCesium(key);
+  }
+  if (S.engine === 'maplibre' && S.map) { applySatellite(); attribution(); return; }
+  teardown(); return startMapLibre();
+}
+function attribution() {
+  const osm = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+  const ofm = '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">© OpenMapTiles</a>';
+  const esri = 'Imagery © <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>, Maxar, Earthstar Geographics, and the GIS User Community';
+  const a = S.view === 'photo' ? (S.engine === 'cesium' ? 'Map data ©Google · pins ' + osm : 'Truth pins ' + osm)
+    : S.view === 'sat' ? `${esri} · ${ofm} · ${osm}` : `${ofm} · ${osm}`;
+  $('#attr').innerHTML = a;
+}
+function styleUrl() { return `https://tiles.openfreemap.org/styles/${document.documentElement.dataset.mode === 'dark' ? 'dark' : 'liberty'}`; }
+function camera(h) { return { center: [h.lon, h.lat], zoom: MQ_DESK.matches ? 16.4 : 15.9, pitch: 55, bearing: S.bearing || -20 }; }
+
+async function startMapLibre() {
+  $('#loading').style.display = '';
+  loadCss(`https://unpkg.com/maplibre-gl@${VERSIONS.maplibre}/dist/maplibre-gl.css`);
+  await loadScript(`https://unpkg.com/maplibre-gl@${VERSIONS.maplibre}/dist/maplibre-gl.js`);
+  if (!$('#sheet').classList.contains('open') || S.view === 'photo') return;
+  const h = HOTELS[S.hotel], phone = !MQ_DESK.matches;
+  const el = document.createElement('div'); el.style.cssText = 'position:absolute;inset:0'; $('#mapbox').append(el);
+  const map = new maplibregl.Map({
+    container: el, style: styleUrl(), ...camera(h), maxPitch: 65, attributionControl: false,
+    pixelRatio: Math.min(devicePixelRatio || 1, phone ? 1.5 : 2), maxTileCacheSize: phone ? 60 : 120, fadeDuration: 0, antialias: false,
+  });
+  S.map = map; S.engine = 'maplibre'; attribution();
+  S.ro = new ResizeObserver(() => map.resize()); S.ro.observe(el);
+  map.once('render', () => {});
+  map.on('style.load', () => { decorate(); applySatellite(); });
+  map.on('dataloading', (e) => { if (e.tile && e.dataType === 'source') S.tiles++; });
+  map.once('load', () => {
+    map.once('render', () => { if (S.firstFrame == null) S.firstFrame = performance.now() - S.t0; $('#loading').style.display = 'none'; });
+    map.once('idle', () => { if (S.idle == null) S.idle = performance.now() - S.t0; debug(); });
+    if (!REDUCED.matches) startOrbit(); else $('#resume').classList.add('on');
+  });
+  const takeOver = (e) => { if (e.originalEvent) stopOrbit(); };
+  ['dragstart', 'rotatestart', 'pitchstart', 'zoomstart'].forEach((t) => map.on(t, takeOver));
+  el.addEventListener('pointerdown', () => stopOrbit(), { passive: true });
+  el.addEventListener('wheel', () => stopOrbit(), { passive: true });
+}
+function restyle() {
+  const m = S.map; S.bearing = m.getBearing();
+  m.setStyle(styleUrl());
+}
+function decorate() {
+  const m = S.map, h = HOTELS[S.hotel], dark = document.documentElement.dataset.mode === 'dark';
+  if (m.getLayer('building-3d')) m.removeLayer('building-3d');
+  // the labels on top: the first layer after the last non-label layer (dark interleaves a few labels early)
+  const ls = m.getStyle().layers.filter((l) => !l.id.startsWith('fly-') && l.id !== 'esri');
+  let last = -1; ls.forEach((l, i) => { if (l.type !== 'symbol') last = i; });
+  const firstSymbol = ls[last + 1]?.id;
+  if (!m.getLayer('fly-3d')) m.addLayer({ id: 'fly-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building', minzoom: 13,
+    paint: { 'fill-extrusion-color': dark ? '#3A3F6B' : '#D9D6F0', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
+      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.9 } }, firstSymbol);
+  if (!m.getSource('fly-lines')) m.addSource('fly-lines', { type: 'geojson', data: lines() });
+  if (!m.getLayer('fly-lines')) m.addLayer({ id: 'fly-lines', type: 'line', source: 'fly-lines', paint: { 'line-color': dark ? '#9A94FF' : '#372DB0', 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': 0.8 } }, firstSymbol);
+  drawMarkers();
+}
+function applySatellite() {
+  const m = S.map; if (!m || !m.isStyleLoaded()) return;
+  const on = S.view === 'sat';
+  if (on && !m.getSource('esri')) {
+    m.addSource('esri', { type: 'raster', tileSize: 256, maxzoom: 19, tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'] });
+    m.addLayer({ id: 'esri', type: 'raster', source: 'esri' }, 'fly-3d');
+  }
+  if (m.getLayer('esri')) m.setLayoutProperty('esri', 'visibility', on ? 'visible' : 'none');
+  if (m.getLayer('fly-3d')) {
+    m.setLayoutProperty('fly-3d', 'visibility', on ? 'none' : 'visible');   // the photo already shows the roofs; extruded blocks over it hid the truth
+  }
+  attribution();
+}
+function lines() {
+  const h = HOTELS[S.hotel], pins = S.truth?.pins || [];
+  return { type: 'FeatureCollection', features: pins.filter((p) => p.at).map((p) => ({ type: 'Feature', properties: { kind: p.kind }, geometry: { type: 'LineString', coordinates: [[h.lon, h.lat], [p.at[1], p.at[0]]] } })) };
+}
+function drawMarkers() {
+  const m = S.map; if (!m || !window.maplibregl) return;
+  S.markers.forEach((x) => x.remove()); S.markers = [];
+  const h = HOTELS[S.hotel];
+  const hk = document.createElement('div'); hk.className = 'mk hotel'; hk.innerHTML = svgUse('i-bed'); hk.title = h.name;
+  S.markers.push(new maplibregl.Marker({ element: hk }).setLngLat([h.lon, h.lat]).addTo(m));
+  for (const p of S.truth?.pins || []) {
+    if (!p.at) continue;
+    const el = document.createElement('div'); el.className = `mk c-${p.kind === 'flight' ? 'flight' : p.kind}`; el.dataset.kind = p.kind; el.innerHTML = svgUse(ICON[p.kind]); el.title = p.title;
+    S.markers.push(new maplibregl.Marker({ element: el }).setLngLat([p.at[1], p.at[0]]).addTo(m));
+  }
+  m.getSource('fly-lines')?.setData(lines());
+}
+
+/* ---------- the orbit: one turn in 30 s, a drag takes over ---------- */
+const TURN_MS = 30000;
+function startOrbit() {
+  if (S.orbit) return; S.orbit = true; S.lastT = 0; $('#resume').classList.remove('on');
+  const step = (t) => {
+    if (!S.orbit) return;
+    if (S.lastT) {
+      const dDeg = (t - S.lastT) / TURN_MS * 360;
+      if (S.engine === 'maplibre' && S.map) S.map.setBearing((S.map.getBearing() + dDeg) % 360);
+      if (S.engine === 'cesium' && S.viewer) cesiumOrbit(dDeg);
+    }
+    S.lastT = t; S.raf = requestAnimationFrame(step);
+  };
+  S.raf = requestAnimationFrame(step);
+}
+function stopOrbit(silent) { if (!S.orbit && !silent) { return; } S.orbit = false; cancelAnimationFrame(S.raf); if (!silent && S.engine) $('#resume').classList.add('on'); }
+function resume() {
+  const h = HOTELS[S.hotel];
+  if (S.engine === 'maplibre' && S.map) {
+    const c = camera(h); c.bearing = S.map.getBearing();
+    if (REDUCED.matches) { S.map.jumpTo(c); S.map.setBearing((c.bearing + 45) % 360); return; }   // reduced motion: a step, never a spin
+    S.map.easeTo({ ...c, duration: 900 }); S.map.once('moveend', startOrbit);
+  } else if (S.engine === 'cesium') { cesiumHome(); if (!REDUCED.matches) startOrbit(); }
+}
+
+/* ---------- truth panel ---------- */
+let truthToken = 0;
+async function truthFor(h) {
+  const my = ++truthToken; S.truth = null;
+  $('#pins').innerHTML = ''; $('#heads').innerHTML = ''; $('#src').className = 'src'; $('#src').textContent = 'Looking around the hotel in OpenStreetMap…';
+  let shown = null;
+  const got = await loadOsm(h, (early) => { if (my === truthToken && !shown) { shown = early; paintTruth(h, early, true); } });
+  if (my !== truthToken) return;
+  paintTruth(h, got, false);
+}
+function paintTruth(h, got, waiting) {
+  let r, srcText, warn = false;
+  if (got.data) {
+    r = analyse(h, got.data);
+    srcText = got.source === 'live' ? `Live from OpenStreetMap (${got.host}), within 2 km.`
+      : `OpenStreetMap is busy right now, so these are from a copy saved on 16 Nov 2026, within 2 km.${waiting ? ' Still asking for a live answer…' : ''}`;
+    warn = got.source !== 'live';
+  } else { r = illustrative(h); srcText = 'Illustrative pins: OpenStreetMap could not be reached and no saved copy loaded. Not real.'; warn = true; }
+  S.truth = { ...r, source: got.source };
+  const head = r.heads[0];
+  $('#heads').innerHTML = `<div class="heads${head?.good ? ' good' : ''}">${svgUse(head?.good ? 'i-wave' : 'i-alert')}<div><b>${head?.good ? '' : 'Heads up: '}${esc(headline(r))}</b>${head ? `<span>${esc(head.more)}</span>` : ''}</div></div>`;
+  $('#src').textContent = srcText; if (warn) $('#src').classList.add('warn');
+  $('#pins').innerHTML = r.pins.map((p, i) => {
+    const f = p.d != null ? howFar(p.d) : null;
+    return `<li><button class="pin${p.at ? '' : ' none'}" type="button" data-i="${i}" ${p.at ? '' : 'disabled'}>
+      <span class="ic c-${p.kind}">${svgUse(ICON[p.kind])}</span>
+      <span><span class="nm" style="display:block">${esc(p.title)}</span><span class="sub">${esc(p.sub)}</span></span>
+      <span class="d num">${f ? `${esc(f.big)}<small>${esc(f.small)} · ${esc(metres(p.d))}</small>` : '<small>none</small>'}</span></button></li>`;
+  }).join('');
+  if (got.source !== 'illustrative') { try { sessionStorage.setItem('fly-teaser-' + S.hotel, headline(r)); } catch {} renderHotel(); }
+  if (S.engine === 'maplibre') drawMarkers();
+  if (S.engine === 'cesium') cesiumPins();
+  debug();
+}
+function showPin(i) {
+  const p = S.truth?.pins[i], h = HOTELS[S.hotel]; if (!p?.at) return;
+  stopOrbit();
+  if (S.engine === 'maplibre' && S.map) {
+    const b = new maplibregl.LngLatBounds([h.lon, h.lat], [h.lon, h.lat]).extend([p.at[1], p.at[0]]);
+    S.map.fitBounds(b, { padding: MQ_DESK.matches ? 120 : 60, pitch: 50, bearing: S.map.getBearing(), duration: REDUCED.matches ? 0 : 1200, maxZoom: 17 });
+    const mk = $(`.mk[data-kind="${p.kind}"]`); if (mk) { mk.classList.remove('flash'); void mk.offsetWidth; mk.classList.add('flash'); }
+  } else if (S.engine === 'cesium') {
+    const C = window.Cesium;
+    S.viewer.camera.flyToBoundingSphere(new C.BoundingSphere(C.Cartesian3.fromDegrees((h.lon + p.at[1]) / 2, (h.lat + p.at[0]) / 2, h.h), p.d * 0.7 + 150),
+      { offset: new C.HeadingPitchRange(S.heading || 0, C.Math.toRadians(-45), 0), duration: REDUCED.matches ? 0 : 1.5 });
+  }
+  if (!MQ_DESK.matches) $('#sheet .stage').scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+
+/* ---------- photoreal: CesiumJS over Google Photorealistic 3D Tiles, only with a key ---------- */
+async function startCesium(key) {
+  teardown();
+  $('#loading').style.display = '';
+  const base = `https://cdn.jsdelivr.net/npm/cesium@${VERSIONS.cesium}/Build/Cesium/`;
+  window.CESIUM_BASE_URL = base;
+  loadCss(base + 'Widgets/widgets.css');
+  await loadScript(base + 'Cesium.js');
+  if (!$('#sheet').classList.contains('open') || S.view !== 'photo') return;
+  const C = window.Cesium, phone = !MQ_DESK.matches;
+  const el = document.createElement('div'); el.style.cssText = 'position:absolute;inset:0'; $('#mapbox').append(el);
+  const viewer = new C.Viewer(el, { baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false,
+    animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false, globe: false, requestRenderMode: false,
+    useBrowserRecommendedResolution: true, msaaSamples: phone ? 1 : 2 });
+  viewer.resolutionScale = phone ? 0.8 : 1;
+  viewer.scene.skyAtmosphere.show = true;
+  S.viewer = viewer; S.engine = 'cesium'; attribution();
+  try {
+    C.GoogleMaps.defaultApiKey = key;
+    const ts = await C.createGooglePhotorealistic3DTileset(undefined, {
+      maximumScreenSpaceError: phone ? 24 : 12,        // coarser on a phone: fewer, lighter tiles
+      cacheBytes: (phone ? 128 : 384) * 1048576,        // cap the tile cache
+      maximumCacheOverflowBytes: (phone ? 64 : 128) * 1048576,
+      skipLevelOfDetail: true, showCreditsOnScreen: true,
+    });
+    if (S.viewer !== viewer) return;
+    viewer.scene.primitives.add(ts);
+    store.set('fly-gkey', key);
+  } catch (e) {
+    console.warn(e); $('#loading').style.display = 'none';
+    $('#nokey').classList.add('on'); $('#nokey h3').textContent = 'That key did not open Google 3D Tiles'; $('#forget').hidden = false; return;
+  }
+  cesiumHome(); cesiumPins();
+  viewer.scene.postRender.addEventListener(function first() {
+    viewer.scene.postRender.removeEventListener(first);
+    if (S.firstFrame == null) S.firstFrame = performance.now() - S.t0; $('#loading').style.display = 'none';
+  });
+  const hnd = new C.ScreenSpaceEventHandler(viewer.scene.canvas);
+  [C.ScreenSpaceEventType.LEFT_DOWN, C.ScreenSpaceEventType.RIGHT_DOWN, C.ScreenSpaceEventType.WHEEL, C.ScreenSpaceEventType.PINCH_START].forEach((t) => hnd.setInputAction(() => stopOrbit(), t));
+  if (!REDUCED.matches) startOrbit(); else $('#resume').classList.add('on');
+}
+function cesiumHome() {
+  const C = window.Cesium, h = HOTELS[S.hotel];
+  S.heading = S.heading || 0;
+  S.viewer.camera.lookAt(C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 20), new C.HeadingPitchRange(S.heading, C.Math.toRadians(-50), 450));
+}
+function cesiumOrbit(dDeg) {
+  const C = window.Cesium, h = HOTELS[S.hotel];
+  S.heading = (S.heading || 0) + C.Math.toRadians(dDeg);
+  S.viewer.camera.lookAt(C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 20), new C.HeadingPitchRange(S.heading, C.Math.toRadians(-50), 450));
+}
+function cesiumPins() {
+  const C = window.Cesium, v = S.viewer, h = HOTELS[S.hotel]; if (!v || !C) return;
+  v.entities.removeAll();
+  const colour = { flight: '#4338CA', road: '#C2410C', water: '#0369A1', shop: '#0F766E', food: '#C92A5E', park: '#8B2FC9' };
+  v.entities.add({ position: C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 60), point: { pixelSize: 16, color: C.Color.fromCssColorString('#0F1124'), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+    label: { text: h.short, font: '600 14px Inter, sans-serif', pixelOffset: new C.Cartesian2(0, -22), fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
+  for (const p of S.truth?.pins || []) {
+    if (!p.at) continue;
+    v.entities.add({ position: C.Cartesian3.fromDegrees(p.at[1], p.at[0], h.h + 40), point: { pixelSize: 12, color: C.Color.fromCssColorString(colour[p.kind]), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+      label: { text: `${p.title} · ${metres(p.d)}`, font: '500 13px Inter, sans-serif', pixelOffset: new C.Cartesian2(0, -18), fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
+  }
+}
+
+/* ---------- wiring ---------- */
+$('#open').addEventListener('click', openSheet);
+$('#close').addEventListener('click', closeSheet);
+$('#scrim').addEventListener('click', closeSheet);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#sheet').classList.contains('open')) closeSheet(); });
+$('#resume').addEventListener('click', resume);
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.v)));
+$('#pins').addEventListener('click', (e) => { const b = e.target.closest('.pin'); if (b) showPin(+b.dataset.i); });
+document.querySelectorAll('.hotels button').forEach((b) => b.addEventListener('click', () => { S.hotel = b.dataset.h; S.bearing = null; S.heading = 0; renderHotel(); }));
+$('#mode').addEventListener('click', () => setMode(document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark'));
+$('#usekey').addEventListener('click', () => { const k = $('#gkey').value.trim(); if (k) startCesium(k); });
+$('#forget').addEventListener('click', () => { store.set('fly-gkey', null); $('#gkey').value = ''; $('#forget').hidden = true; });
+const Q = new URLSearchParams(location.search);
+if (Q.get('hotel') && HOTELS[Q.get('hotel')]) S.hotel = Q.get('hotel');
+setMode(Q.get('mode') || store.get('fly-mode') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+renderHotel();
+</script>
+</body>
+</html>

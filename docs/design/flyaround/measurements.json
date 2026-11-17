@@ -1,0 +1,743 @@
+{
+ "lax-390": {
+  "firstFrame_ms": 703.1999999880791,
+  "idle_ms": 703.3999999761581,
+  "heap": {
+   "before": 1557884,
+   "now": 29081089
+  },
+  "tile_requests_total": 5,
+  "in_page_tile_loads": 14,
+  "in_page_tile_loads_during_orbit": 7,
+  "tile_requests_in_30s_orbit": 1,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "heap_after_close": 20475098,
+  "canvases_after_close": 0,
+  "engine_after_close": null,
+  "heap_after_close_2": 18091968,
+  "heap_after_close_3": 18526724,
+  "heap_with_library_only": 7905971,
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"ice_rink\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"sports_centre\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"lift_gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "lax-1440": {
+  "firstFrame_ms": 868.9000000059605,
+  "idle_ms": 869,
+  "heap": {
+   "before": 1513604,
+   "now": 47028899
+  },
+  "tile_requests_total": 5,
+  "in_page_tile_loads": 42,
+  "in_page_tile_loads_during_orbit": 29,
+  "tile_requests_in_30s_orbit": 1,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "heap_after_close": null,
+  "canvases_after_close": 0,
+  "engine_after_close": null,
+  "heap_after_close_2": 19945196,
+  "heap_after_close_3": 19964808,
+  "heap_with_library_only": 7684391,
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"atm\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"bollard\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "tahoe-390": {
+  "firstFrame_ms": 633.8000000119209,
+  "idle_ms": 634,
+  "heap": {
+   "before": 1535890,
+   "now": 21515731
+  },
+  "tile_requests_total": 4,
+  "in_page_tile_loads": 10,
+  "in_page_tile_loads_during_orbit": 3,
+  "tile_requests_in_6s_orbit": 0,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Beach 5 min walk",
+   "18 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "No airport within 2 km",
+    "Quiet skies",
+    null
+   ],
+   [
+    "road",
+    "SR 28 \u00b7 Tahoe Boulevard",
+    "Main road: through traffic",
+    669
+   ],
+   [
+    "water",
+    "Ski Beach",
+    "Beach",
+    344
+   ],
+   [
+    "shop",
+    "Raley's",
+    "Nearest supermarket",
+    1265
+   ],
+   [
+    "food",
+    "11 restaurants together",
+    "Tahoe Boulevard \u00b7 22 within 2 km",
+    1246
+   ],
+   [
+    "park",
+    "Parking lot",
+    "18 car parks within 500 m",
+    79
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"recycling\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"running\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "tahoe-1440": {
+  "firstFrame_ms": 701,
+  "idle_ms": 701.5999999940395,
+  "heap": {
+   "before": 1513590,
+   "now": 24983097
+  },
+  "tile_requests_total": 5,
+  "in_page_tile_loads": 25,
+  "in_page_tile_loads_during_orbit": 11,
+  "tile_requests_in_6s_orbit": 1,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Beach 5 min walk",
+   "18 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "No airport within 2 km",
+    "Quiet skies",
+    null
+   ],
+   [
+    "road",
+    "SR 28 \u00b7 Tahoe Boulevard",
+    "Main road: through traffic",
+    669
+   ],
+   [
+    "water",
+    "Ski Beach",
+    "Beach",
+    344
+   ],
+   [
+    "shop",
+    "Raley's",
+    "Nearest supermarket",
+    1265
+   ],
+   [
+    "food",
+    "11 restaurants together",
+    "Tahoe Boulevard \u00b7 22 within 2 km",
+    1246
+   ],
+   [
+    "park",
+    "Parking lot",
+    "18 car parks within 500 m",
+    79
+   ]
+  ],
+  "heap_after_close": 18341832,
+  "canvases_after_close": 0,
+  "engine_after_close": null,
+  "heap_after_close_2": 18593308,
+  "heap_after_close_3": 18786016,
+  "heap_with_library_only": 7413803,
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"running\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"sports_centre\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "tahoe-1440-dark": {
+  "firstFrame_ms": 602.2999999821186,
+  "idle_ms": 618.1999999880791,
+  "heap": {
+   "before": 1491417,
+   "now": 31303636
+  },
+  "tile_requests_total": 5,
+  "in_page_tile_loads": 24,
+  "in_page_tile_loads_during_orbit": 10,
+  "tile_requests_in_5s_orbit": 1,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Beach 5 min walk",
+   "18 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "No airport within 2 km",
+    "Quiet skies",
+    null
+   ],
+   [
+    "road",
+    "SR 28 \u00b7 Tahoe Boulevard",
+    "Main road: through traffic",
+    669
+   ],
+   [
+    "water",
+    "Ski Beach",
+    "Beach",
+    344
+   ],
+   [
+    "shop",
+    "Raley's",
+    "Nearest supermarket",
+    1265
+   ],
+   [
+    "food",
+    "11 restaurants together",
+    "Tahoe Boulevard \u00b7 22 within 2 km",
+    1246
+   ],
+   [
+    "park",
+    "Parking lot",
+    "18 car parks within 500 m",
+    79
+   ]
+  ],
+  "errors": [
+   "warning: Image \"wood-pattern\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "lax-390-dark-sat": {
+  "firstFrame_ms": 598.7999999821186,
+  "idle_ms": 617.3999999761581,
+  "heap": {
+   "before": 1535903,
+   "now": 21754194
+  },
+  "tile_requests_total": 41,
+  "in_page_tile_loads": 44,
+  "in_page_tile_loads_during_orbit": 12,
+  "tile_requests_in_5s_orbit": 37,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "errors": [
+   "warning: Image \"wood-pattern\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "lax-1440-sat": {
+  "firstFrame_ms": 719.8000000119209,
+  "idle_ms": 719.9000000059605,
+  "heap": {
+   "before": 1491424,
+   "now": 18524068
+  },
+  "tile_requests_total": 61,
+  "in_page_tile_loads": 76,
+  "in_page_tile_loads_during_orbit": 31,
+  "tile_requests_in_5s_orbit": 57,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"atm\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"sports_centre\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "pins-lax-1440": {
+  "firstFrame_ms": 839.0999999940395,
+  "idle_ms": 839.3000000119209,
+  "heap": {
+   "before": 1491424,
+   "now": 77611689
+  },
+  "tile_requests_total": 9,
+  "in_page_tile_loads": 72,
+  "in_page_tile_loads_during_orbit": 50,
+  "tile_requests_in_24s_orbit": 4,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"atm\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"sports_centre\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"lift_gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "pins-tahoe-1440": {
+  "firstFrame_ms": 641.5999999940395,
+  "idle_ms": 641.8000000119209,
+  "heap": {
+   "before": 1491410,
+   "now": 25284430
+  },
+  "tile_requests_total": 10,
+  "in_page_tile_loads": 70,
+  "in_page_tile_loads_during_orbit": 49,
+  "tile_requests_in_24s_orbit": 5,
+  "pre_tap_heavy_requests": [],
+  "orbit": true,
+  "source": "snapshot",
+  "heads": [
+   "Beach 5 min walk",
+   "18 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "No airport within 2 km",
+    "Quiet skies",
+    null
+   ],
+   [
+    "road",
+    "SR 28 \u00b7 Tahoe Boulevard",
+    "Main road: through traffic",
+    669
+   ],
+   [
+    "water",
+    "Ski Beach",
+    "Beach",
+    344
+   ],
+   [
+    "shop",
+    "Raley's",
+    "Nearest supermarket",
+    1265
+   ],
+   [
+    "food",
+    "11 restaurants together",
+    "Tahoe Boulevard \u00b7 22 within 2 km",
+    1246
+   ],
+   [
+    "park",
+    "Parking lot",
+    "18 car parks within 500 m",
+    79
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"bicycle_parking\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"recycling\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "photo-nokey-390": {
+  "firstFrame_ms": 572.7999999821186,
+  "idle_ms": 586.1999999880791,
+  "heap": {
+   "before": 1535904,
+   "now": 23293403
+  },
+  "tile_requests_total": 4,
+  "in_page_tile_loads": 7,
+  "in_page_tile_loads_during_orbit": 0,
+  "tile_requests_in_1s_orbit": 0,
+  "pre_tap_heavy_requests": [],
+  "orbit": false,
+  "source": "snapshot",
+  "heads": [
+   "Between two flight paths",
+   "15 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "Runway 07L/25R",
+    "Nearest terminal 1.2 km \u00b7 American Eagle Terminal",
+    717
+   ],
+   [
+    "road",
+    "I 405 \u00b7 San Diego Freeway",
+    "Freeway: traffic noise",
+    1209
+   ],
+   [
+    "water",
+    "No beach within 2 km",
+    "The listing's \"near the beach\" needs a car",
+    null
+   ],
+   [
+    "shop",
+    "Ralphs",
+    "Nearest supermarket",
+    1869
+   ],
+   [
+    "food",
+    "7 restaurants together",
+    "32 within 2 km",
+    1793
+   ],
+   [
+    "park",
+    "Sky Center",
+    "15 car parks within 500 m, 4 multi-storey",
+    92
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"ice_rink\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"sports_centre\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"lift_gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ },
+ "photo-nokey-1440": {
+  "firstFrame_ms": 679.1999999880791,
+  "idle_ms": 679.2999999821186,
+  "heap": {
+   "before": 1491410,
+   "now": 24486368
+  },
+  "tile_requests_total": 4,
+  "in_page_tile_loads": 13,
+  "in_page_tile_loads_during_orbit": 0,
+  "tile_requests_in_1s_orbit": 0,
+  "pre_tap_heavy_requests": [],
+  "orbit": false,
+  "source": "snapshot",
+  "heads": [
+   "Beach 5 min walk",
+   "18 car parks within 500 m"
+  ],
+  "pins": [
+   [
+    "flight",
+    "No airport within 2 km",
+    "Quiet skies",
+    null
+   ],
+   [
+    "road",
+    "SR 28 \u00b7 Tahoe Boulevard",
+    "Main road: through traffic",
+    669
+   ],
+   [
+    "water",
+    "Ski Beach",
+    "Beach",
+    344
+   ],
+   [
+    "shop",
+    "Raley's",
+    "Nearest supermarket",
+    1265
+   ],
+   [
+    "food",
+    "11 restaurants together",
+    "Tahoe Boulevard \u00b7 22 within 2 km",
+    1246
+   ],
+   [
+    "park",
+    "Parking lot",
+    "18 car parks within 500 m",
+    79
+   ]
+  ],
+  "errors": [
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Expected value to be of type number, but found null instead.",
+   "warning: Image \"office\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"gate\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"bicycle_parking\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"reservoir\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event.",
+   "warning: Image \"swimming_pool\" could not be loaded. Please make sure you have added the image with map.addImage() or a \"sprite\" property in your style. You can provide missing images by listening for the \"styleimagemissing\" map event."
+  ]
+ }
+}
