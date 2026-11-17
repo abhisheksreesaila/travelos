@@ -122,3 +122,27 @@ def test_a_reading_page_keeps_its_quiet_sky(browser, base_url):
     assert page.locator(".v2-bg .ridges").count() == 0
     assert "rgb(27, 42, 65)" not in page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundImage")
     page.close()
+
+
+@pytest.mark.parametrize("path", ["/guides", "/plan/ask"])
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
+def test_every_harbour_page_not_only_the_matrix_reads_4_5_to_1(browser, base_url, path, viewport, scheme):
+    """Overnight walk 2026-11-17: the guides hub's headline was --ink on the deep ground in light mode, near invisible, because only the matrix was measured. Every page on the
+    Harbour ground is read the same way: each word against the pixels really painted under it."""
+    page = browser.new_page(viewport=viewport)
+    page.request.post(base_url + "/signin", data={"email": "harbour@example.com", "next": "/", "intent": "save"})
+    page.goto(base_url + "/healthz")
+    page.evaluate(f"localStorage.setItem('ga-mode', '{scheme}')")
+    page.goto(base_url + path)
+    page.wait_for_selector(".v2-bg")
+    assert page.get_attribute(".v2-bg", "data-sky") != "quiet"
+    page.wait_for_timeout(400)
+    ratios = []
+    for y in (0, 700):
+        page.evaluate(f"window.scrollTo(0, {y})")
+        page.wait_for_timeout(150)
+        ratios += painted_ratios(page)
+    low = [r for r in ratios if r[2] < 4.5]
+    page.close()
+    assert ratios and low == [], low

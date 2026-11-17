@@ -35,11 +35,11 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 .v2.is-results .v2-bg .sunball, .v2-bg.is-results .sunball { transform: translateY(-40%) scale(.6); opacity: .85; }      /* the founder: the sun and the moon stay, smaller, while the results take the sky */
 .v2-bg .shore { filter: brightness(.42) saturate(.8); }      /* the foot's cartoon goes down with the light on the Harbour ground, as it did in the dark */
 
-/* the words that sit straight on the Harbour ground are light (--sky-ink, F-281, D-891); a card, a glass widget and a field keep --ink */
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-brand:hover, .ak-h, .ak-into-h, .pl .rail-head b) { color: var(--sky-ink); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.ak-sub, .v2-import, .pl .rail-head span:not(.ic)) { color: var(--sky-ink-2); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-import:hover) { color: var(--sky-ink); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-import):focus-visible { outline-color: var(--sky-ink); }
+/* the words that sit straight on the Harbour ground are light (--ground-ink, F-281, D-891); a card, a glass widget and a field keep --ink */
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-brand:hover, .ak-h, .ak-into-h, .pl .rail-head b) { color: var(--ground-ink); }
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.ak-sub, .v2-import, .pl .rail-head span:not(.ic)) { color: var(--ground-ink-2); }
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-import:hover) { color: var(--ground-ink); }
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-import):focus-visible { outline-color: var(--ground-ink); }
 
 /* ---------- top bar ---------- */
 .v2-top { position: relative; z-index: 20; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 0.75rem; max-width: 90rem; margin: 0 auto; padding: 1.125rem 1.75rem 0; }

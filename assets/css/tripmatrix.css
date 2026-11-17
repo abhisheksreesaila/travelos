@@ -148,7 +148,7 @@
 .mx-fact-k { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
 .mx-fact-t { margin: 0; font-size: 1rem; font-weight: 560; line-height: 1.35; text-wrap: pretty; }
 .mx-fact-src { justify-self: start; color: var(--ink-2); font-size: 1rem; }
-@media (max-width: 719px) { .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; } .mx-isle-ic, .mx-isle-b > p:first-child { display: none; } .mx-fact-t { font-weight: 450; } }
+@media (max-width: 719px) { .mx-isle { grid-template-columns: minmax(0, 1fr); padding: 0.625rem 0.875rem; } .v2:has(.v2-sections) .mx-isle { bottom: calc(4.75rem + env(safe-area-inset-bottom)); } .mx-isle-ic, .mx-isle-b > p:first-child { display: none; } .mx-fact-t { font-weight: 450; } }
 
 /* the rows the booking sheet's pass uses, and the square's own page (the drawer itself is v2drawer.css) */
 .mx-one { max-width: 64rem; margin: 0 auto; padding: 1rem; }
