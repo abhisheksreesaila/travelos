@@ -29,7 +29,8 @@ def main(argv=None) -> int:
     ap.add_argument("--preview", metavar="DIR", help="write booked.html and cancelled.html into DIR and send nothing")
     args = ap.parse_args(argv)
     booked, cancelled = bookingmail.booked_mail(BOOKED), bookingmail.cancelled_mail(CANCELLED)
-    if args.preview:
+    if args.preview:      # what a real booking sends (F-294): the previews are not the sandbox's
+        booked, cancelled = bookingmail.booked_mail({**BOOKED, "sandbox": False}), bookingmail.cancelled_mail({**CANCELLED, "sandbox": False})
         out = Path(args.preview)
         out.mkdir(parents=True, exist_ok=True)
         (out / "booked.html").write_text(booked.html, encoding="utf-8")

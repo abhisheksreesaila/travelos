@@ -163,10 +163,10 @@ def seo_meta(title: str, description: str = "", image: str = "", og_type: str = 
 
 
 def _footer_line() -> str:
-    """The production footer's one sentence: booking is on the partners' sites, and GitAway takes payment only while Plan it for me is sold (F-199)."""
+    """The production footer's one sentence: stays are booked here through Nuitée (LiteAPI), flights on the airline's or agent's site, and GitAway takes payment only while Plan it for me is sold (F-199)."""
     from gitaway import planforme  # here: planforme reads the community database and imports much of the app
     taken = "GitAway takes payment only for Plan it for me." if planforme.paid() else "GitAway never takes payment."
-    return f"Plan a trip together: flights, stays and days on one calendar. You book on the partners' own sites; {taken}"
+    return f"Plan a trip together: flights, stays and days on one calendar. Stays are booked here through Nuitée (LiteAPI) and flights on the airline's or agent's site; {taken}"
 
 
 def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = True, mood: str = "", quiet: bool = False):
@@ -185,7 +185,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
 
 def pg_foot():
     """The foot of a v2 reading page (F-272, D-800): Privacy and Terms, which the v2 top bar does not carry. The sentence under it is the site footer's, as it was."""
-    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), cls="pg-foot-nav", aria_label="Legal"),
+    return Footer(Nav(A("Privacy", href="/privacy"), A("Terms", href="/terms"), A("How GitAway keeps you safe", href="/trust"), cls="pg-foot-nav", aria_label="Legal"),
                   Span("Sample data only: no real bookings or payments." if showcase.on() else _footer_line(), cls="pg-fine"), cls="pg-foot")
 
 

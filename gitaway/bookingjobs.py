@@ -23,7 +23,7 @@ STUCK_AFTER = timedelta(minutes=10)
 GIVE_UP_AFTER = timedelta(seconds=mb.HOLD) + timedelta(hours=1)      # a form older than the hold and an hour that LiteAPI says is unpaid or gone is given up on (D-851)
 BUSY_WAIT_MINUTES = 5      # a busy gate: try again in a few minutes, no try counted
 BACKOFF_BASE = timedelta(minutes=10)      # 10, 20, 40 minutes ... at most a day between two tries of one payment
-PURGE_EVERY = timedelta(days=1)
+PURGE_EVERY = timedelta(hours=1)      # the purge blanks a guest after 7 days (mb.PURGE_GUEST); run hourly, a guest is gone within 7 days and an hour (/trust says "within 7 days")
 _state = {"purged": None}
 _thread = None
 _lock = threading.Lock()
@@ -124,7 +124,7 @@ def resolve(tenant_id: str, token: str) -> bool:
 
 
 def run_once(now=None) -> int:
-    """Finish the stuck payments of every family and, once a day, purge every family's kept data (its own try: a worker error never skips it). The number of stays booked."""
+    """Finish the stuck payments of every family and, once an hour, purge every family's kept data (its own try: a worker error never skips it). The number of stays booked."""
     now = now or datetime.now(timezone.utc)
     cut, booked = _before(now), 0
     purge = _state["purged"] is None or now - _state["purged"] >= PURGE_EVERY

@@ -102,7 +102,7 @@ def test_the_sitemap_lists_the_indexable_pages_and_leaves_out_copies_takedowns_a
     r = client.__class__(client.app).get("/sitemap.xml")
     assert r.status_code == 200 and r.headers["content-type"].startswith("application/xml")
     urls = re.findall(r"<loc>([^<]+)</loc>", r.text)
-    assert urls[:5] == ["https://gitaway.me/", "https://gitaway.me/guides", "https://gitaway.me/guides/make", "https://gitaway.me/privacy", "https://gitaway.me/terms"]
+    assert urls[:6] == ["https://gitaway.me/", "https://gitaway.me/guides", "https://gitaway.me/guides/make", "https://gitaway.me/privacy", "https://gitaway.me/terms", "https://gitaway.me/trust"]
     assert f"https://gitaway.me/trips/{own['slug']}" in urls
     assert not any(copy in u or gone["slug"] in u for u in urls)
     assert not any(p in u for u in urls for p in ("/admin", "/claim", "/go/", "/trip/", "/family"))
@@ -112,7 +112,7 @@ def test_the_sitemap_lists_the_indexable_pages_and_leaves_out_copies_takedowns_a
 
 def test_the_sitemap_with_nothing_published_still_lists_the_static_pages(client):
     urls = re.findall(r"<loc>([^<]+)</loc>", client.get("/sitemap.xml").text)
-    assert urls == ["https://gitaway.me/", "https://gitaway.me/guides", "https://gitaway.me/guides/make", "https://gitaway.me/privacy", "https://gitaway.me/terms"]
+    assert urls == ["https://gitaway.me/", "https://gitaway.me/guides", "https://gitaway.me/guides/make", "https://gitaway.me/privacy", "https://gitaway.me/terms", "https://gitaway.me/trust"]
 
 
 def test_both_files_are_open_signed_out_in_the_live_site_mode(client, monkeypatch):

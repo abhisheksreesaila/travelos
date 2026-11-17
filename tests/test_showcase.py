@@ -118,7 +118,7 @@ def test_footer_links_are_only_real_destinations(real, client):
     assert re.findall(r'href="([^"]*)"', footer) == ["/guides", "/signin", "/privacy", "/terms"]  # the cover's footer (F-227: no screenshots of map data any more, so no map credit)
     sign_in(client)
     footer = re.search(r"<footer.*?</footer>", client.get("/trips/import").text, re.S).group(0)      # F-231: a signed-in person has no landing, and no page of theirs adds links to the footer
-    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms"]      # F-272: a v2 reading page's foot is the legal pair and nothing else
+    assert re.findall(r'href="([^"]*)"', footer) == ["/privacy", "/terms", "/trust"]      # F-272: a v2 reading page's foot is the legal pair; F-292 adds how GitAway keeps you safe
 
 
 def test_a_new_family_sees_two_ways_in_not_community(real, client):

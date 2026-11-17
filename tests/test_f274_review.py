@@ -82,7 +82,7 @@ def test_an_eight_day_old_guest_is_blanked_for_a_family_that_never_prebooks_agai
     assert bookingjobs._state["purged"] is not None
 
 
-def test_the_purge_runs_once_a_day_not_every_pass(live, family, monkeypatch):
+def test_the_purge_runs_once_an_hour_not_every_pass(live, family, monkeypatch):
     db, user = family
     calls = []
     monkeypatch.setattr(mb, "purge", lambda d: calls.append(1))
@@ -91,9 +91,9 @@ def test_the_purge_runs_once_a_day_not_every_pass(live, family, monkeypatch):
     bookingjobs.run_once(now)
     first = len(calls)      # one purge a family the test data folder holds
     assert first >= 1
-    bookingjobs.run_once(now + timedelta(hours=1))
+    bookingjobs.run_once(now + timedelta(minutes=30))
     assert len(calls) == first
-    bookingjobs.run_once(now + timedelta(days=1, minutes=1))
+    bookingjobs.run_once(now + timedelta(hours=1, minutes=1))
     assert len(calls) == 2 * first
 
 

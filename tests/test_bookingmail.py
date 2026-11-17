@@ -71,7 +71,7 @@ def test_a_booked_stay_sends_one_email_to_the_lead_guest_with_everything_the_gue
     done, pay = res.done[0], mb.payment(db, prep.token)
     assert to == "anne.oneil@example.com"
     assert subject == f"Booked: {done.hotel}, Dec 16 to 19"
-    for line in (done.hotel, ADDRESS, "Wed, Dec 16, 2026", "Sat, Dec 19, 2026", "2 adults", done.room, done.booking_id, "$340.10", "$120", "Sold by Nuitée through LiteAPI",
+    for line in (done.hotel, ADDRESS, "Wed, Dec 16, 2026", "Sat, Dec 19, 2026", "2 adults", done.room, done.booking_id, "$340.10", "$120", mb.MERCHANT,
                  pay["policy"], "Hi Anne-Marie"):
         assert line in text, line
         assert line.replace("’", "’") in body(html), line
@@ -230,7 +230,7 @@ def test_cancelling_sends_one_email_with_what_liteapi_reported_to_the_person_who
     assert to == "traveler@example.com" and subject == f"Cancelled: {done.hotel}, Dec 16 to 19"
     for words in ("$191.22 comes back to the card you paid with", "LiteAPI charged $148.88 for cancelling"):
         assert words in text and words in body(html), words
-    for line in (done.hotel, done.booking_id, "Sold by Nuitée through LiteAPI"):
+    for line in (done.hotel, done.booking_id, mb.MERCHANT):
         assert line in text and line in body(html)
     assert booking_row(db)["cancel_email_at"] != ""
     bookingmail.cancelled(db, done.booking_id, "traveler@example.com", 19122, 14888)      # a second press of Cancel
