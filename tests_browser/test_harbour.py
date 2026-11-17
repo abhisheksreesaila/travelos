@@ -21,7 +21,7 @@ from tests_browser.test_moods import WORDS_JS, lum
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
 
 REPORT = Path(__file__).resolve().parent.parent / "docs" / "report"
-GROUND = {"light": ("rgb(27, 42, 65)", "rgb(58, 69, 88)", "rgb(122, 76, 48)"), "dark": ("rgb(13, 20, 32)", "rgb(31, 36, 48)", "rgb(74, 46, 30)")}      # --hb-a, --hb-b, --hb-c
+GROUND = {"light": ("rgb(27, 42, 65)", "rgb(58, 69, 88)", "rgb(122, 76, 48)"), "dark": ("rgb(7, 11, 18)", "rgb(17, 22, 33)", "rgb(58, 36, 22)")}      # --hb-a, --hb-b, --hb-c
 KINDS_JS = """() => [...document.querySelectorAll('.v2-top *, #main *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => {
   const r = e.getBoundingClientRect(), s = getComputedStyle(e);
   const kind = e.closest('.rl-tray') ? 'tray' : e.closest('.v2-glass') ? 'glass' : e.closest('.mx-card, .sentence, .v2-card, [class*=card]') ? 'card' : 'ground';
@@ -108,7 +108,7 @@ def test_the_chips_are_filled_a_title_a_teaser_a_count_and_48px(matrix, viewport
     assert page.locator("#mx-rail .wchip[data-wg='where'] .ct").count() == 0      # a count only where there is one
     weather.click()
     expect(page.locator("#wg-weather")).to_be_visible()
-    assert weather.evaluate("e => getComputedStyle(e).backgroundColor") == ("rgb(255, 255, 255)" if scheme == "light" else "rgb(23, 26, 51)")      # opened: a card
+    assert weather.evaluate("e => getComputedStyle(e).backgroundColor") == ("rgb(255, 255, 255)" if scheme == "light" else "rgb(43, 52, 66)")      # opened: a card (dark: the slate card, founder 2026-11-17)
     shot(page, "chips", viewport, scheme)
     assert [r for r in painted_ratios(page) if r[2] < 4.5] == []
     assert page.errors == []

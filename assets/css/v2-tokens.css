@@ -138,31 +138,31 @@
   color-scheme: light;
 }
 :root[data-mode="dark"]:has(.v2) {
-  --frost: rgb(8 6 14 / .62);
-  --hb-a: #0D1420; --hb-b: #1F2430; --hb-c: #4A2E1E; --hb-glow: #B7713F; --hb-ridge: #070A10; --hb-ridge-2: #140F10;
-  --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F;
-  --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4; --on-ink: #0F1124;
-  --card-t: rgb(20 22 44 / .92); --card-solid: #171A33; --card-2: #22264A; --lead-bg: #1A1D39;
+  --frost: rgb(8 10 14 / .62);
+  --hb-a: #070B12; --hb-b: #111621; --hb-c: #3A2416; --hb-glow: #A8673A; --hb-ridge: #04060A; --hb-ridge-2: #0D0A0B;      /* a deeper night, so the slate cards stand off it */
+  --sky-1: #0D1420; --sky-2: #1A2130; --sky-3: #2A2320;      /* founder 2026-11-17: dark was too purplish to read; surfaces are neutral slate now, the indigo is only the bold action */
+  --ink: #F5F7FA; --ink-2: #D0D6DF; --ink-3: #B3BBC7; --on-ink: #0E1218;
+  --card-t: rgb(43 52 66 / .96); --card-solid: #2B3442; --card-2: #374152; --lead-bg: #303948;      /* a step lighter than the deep sky, so a card reads as a card (founder: "cannot have 2 darks, cannot be light") */
   --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
-  --glass: rgb(26 28 56 / .80);      /* dark glass a step more solid: the dark sand showed through at .60 (rail words 3.8:1) */ --glass-line: rgb(255 255 255 / .10);
-  --word: #9A94FF;
-  --flight: #7B73FF; --flight-t: #24215A; --flight-i: #D2CFFF;
-  --stay: #C084FC; --stay-t: #321A4A; --stay-i: #EBD4FD;
+  --glass: rgb(46 55 70 / .9);      /* dark glass a step more solid: the dark sand showed through at .60 (rail words 3.8:1) */ --glass-line: rgb(255 255 255 / .10);
+  --word: #93B4FF;
+  --flight: #8A9BFF; --flight-t: #2E3A5E; --flight-i: #D2CFFF;
+  --stay: #C9A2F5; --stay-t: #363246; --stay-i: #EBD4FD;
   --food: #FF6B9A; --food-t: #401528; --food-i: #FFD0DF;
   --see: #2DD4BF; --see-t: #0E302D; --see-i: #BCF0E8;
   --tix: #FB923C; --tix-t: #3D1E0E; --tix-i: #FFD6BC;
   --wx: #38BDF8; --wx-t: #0C2A3E; --wx-i: #C6EAFC;
   --ride-t: #3A300C; --ride-i: #FFE89A;
   --sun-ink: #FBBF24; --pill-on: #F4F5FB; --pill-fg: #0F1124;
-  --cell: rgb(52 50 120 / .55); --cell-hover: rgb(70 66 150 / .75); --pick: #4F46E5; --pick-band: #9333EA; --band-label: #9333EA;
-  --hatch: rgb(255 255 255 / .06); --scrim: rgb(10 10 30 / .5);
+  --cell: rgb(66 79 99 / .8); --cell-hover: rgb(84 100 124 / .9); --pick: #4F46E5; --pick-band: #6E8BF5; --band-label: #8EA6FF;
+  --hatch: rgb(255 255 255 / .06); --scrim: rgb(6 8 12 / .55);
   --sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
   --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
   --cta-bg: #4F46E5; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .7); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(0 0 0 / .75);
-  --pass-bg: #2A2670;
-  --quiet-edge: #0C1128; --quiet-mid: #151A3A; --quiet-glow: #1F2550;
+  --pass-bg: #2A3756;
+  --quiet-edge: #0D121A; --quiet-mid: #151B25; --quiet-glow: #1E2632;
   --cloud: rgb(255 255 255 / .06);
-  --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A3F5C;
+  --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A4250;
   --bk-paper: #EDE4D1; --bk-paper-2: #E2D7C1; --bk-card: #F5EFE2;
   /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); v2's own bright kind colours above are for text and rings on the dark sky */
   --k-flight: #4338CA; --k-stay: #8B2FC9; --k-food: #C92A5E; --k-see: #0F766E; --k-tix: #C2410C; --k-wx: #0369A1;

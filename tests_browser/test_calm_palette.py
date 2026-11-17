@@ -128,7 +128,7 @@ def test_book_my_trip_the_sheet_and_the_pass_are_solid_indigo(matrix, sandbox, v
     sheet = page.evaluate("""() => { const e = document.querySelector('.mxb-b1, [data-cont]'); const s = e && getComputedStyle(e); return s && {image: s.backgroundImage}; }""")
     assert sheet is None or "gradient" not in sheet["image"]
     pass_bg = page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--pass-bg').trim()")
-    assert pass_bg == ("#1E1B4B" if scheme == "light" else "#2A2670") and ratio([255, 255, 255], [int(pass_bg[i:i + 2], 16) for i in (1, 3, 5)]) >= 4.5
+    assert pass_bg == ("#1E1B4B" if scheme == "light" else "#2A3756") and ratio([255, 255, 255], [int(pass_bg[i:i + 2], 16) for i in (1, 3, 5)]) >= 4.5
 
 
 @pytest.mark.skipif(not os.environ.get("F261_SHOTS"), reason="screenshots only on request")

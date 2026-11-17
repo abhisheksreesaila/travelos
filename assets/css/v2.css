@@ -37,8 +37,8 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 
 /* the words that sit straight on the Harbour ground are light (--ground-ink, F-281, D-891); a card, a glass widget and a field keep --ink */
 .v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-brand:hover, .ak-h, .ak-into-h, .pl .rail-head b) { color: var(--ground-ink); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.ak-sub, .v2-import, .pl .rail-head span:not(.ic)) { color: var(--ground-ink-2); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-import:hover) { color: var(--ground-ink); }
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.ak-sub, .v2-import, .pl .rail-head span:not(.ic)):not(.sd-sec *) { color: var(--ground-ink-2); }      /* only words straight on the ground: a link inside a card (the planner drawer's Invite someone) keeps --ink-2 */
+.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-import:hover):not(.sd-sec *) { color: var(--ground-ink); }
 .v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-import):focus-visible { outline-color: var(--ground-ink); }
 
 /* ---------- top bar ---------- */
@@ -135,7 +135,7 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 .v2-cal span { font: 600 max(var(--label-min), 0.8125rem)/2 var(--f-ui); color: var(--ink-3); letter-spacing: .05em; }
 .v2-cal button { aspect-ratio: 1; border: 0; border-radius: 0.75rem; background: var(--card-2); cursor: pointer; font: 600 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
 .v2-cal button:disabled { background: none; color: var(--ink-3); opacity: .5; cursor: default; }
-.v2-cal button[aria-pressed="true"] { background: var(--flight); color: var(--on); }
+.v2-cal button[aria-pressed="true"] { background: var(--k-flight); color: var(--on); }
 .v2-cal button.wk:not([aria-pressed="true"]):not(:disabled) { background: color-mix(in srgb, var(--flight-t) 70%, var(--card-2)); }
 .v2-range { width: 100%; margin: 0.5rem 0 0.25rem; accent-color: var(--flight); height: 2.25rem; }
 .v2-ticks { display: flex; justify-content: space-between; color: var(--ink-3); font: 500 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }

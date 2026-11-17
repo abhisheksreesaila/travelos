@@ -17,7 +17,7 @@ def test_the_harbour_ground_is_tokens_for_light_and_for_dark():
         assert f"{token}:" in LIGHT and f"{token}:" in DARK, token
     assert "--ground-ink: #F4F7FB" in LIGHT and "--ground-ink-2:" in LIGHT      # the words on the ground are one colour in both modes
     assert "--hb-a: #1B2A41" in LIGHT and "--hb-c: #7A4C30" in LIGHT and "--hb-glow: #F2B47A" in LIGHT      # the approved prototype's values (docs/design/matrix-v5)
-    assert "--hb-a: #0D1420" in DARK and "--hb-c: #4A2E1E" in DARK
+    assert "--hb-a: #070B12" in DARK and "--hb-c: #3A2416" in DARK      # founder 2026-11-17: a deeper night so the slate cards stand off it
 
 
 def test_the_busy_sky_draws_the_ridges_and_the_quiet_sky_does_not():
