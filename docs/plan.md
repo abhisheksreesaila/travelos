@@ -1738,22 +1738,23 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hot
   - what guests complain about, opening the matching reviews;
   - unusual items flagged "Heads up", ordinary amenities in one "The usual" line;
   - anything absent says "not listed"
+- [ ] the map's truth feeds the dashboard (founder 2026-11-16: "important things highlighted like a dashboard … now with maps, important pin points"): "Getting there and around" leads with F-284's heads-up line and the top pins (flight path, freeway, water, grocery, parking) with distance and time, and holds the "See it from above" card; an unusual pin (flight path overhead, freeway under 300 m) wears the same "Heads up" flag as a fee
 - [ ] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
 - [ ] the showcase shows labelled sample data; tests over the recorded fixtures
 
-## F-283 Stay and flights apart, a rooms row and the photo scrubber [todo]
+## F-283 Stay and flights apart, and a rooms row [todo]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html · Decisions D-900..D-904 · Needs: F-282
 - [ ] Stay and Flights each have their own band (icon, accent, a label such as "Your flights · SFO ⇄ LAX · 4 people") and a sticky mini-nav (Stay · Flights · Total · Book) shows where you are
 - [ ] every room type the source gave sits in a scroll-snap row with count and arrows (laptop), swipe (phone), the chosen room marked; choosing still goes through `tm.pick` indexes
-- [ ] the photo scrubber: drag across a thumbnail strip swaps the big photo; only thumbnails in view are rendered and about 6 full photos are kept; wheel, arrows and keyboard work
+- [ ] no photo scrubber (founder 2026-11-16: "might not be needed, too much stress on the page"): the gallery stays the mosaic and lightbox (F-275)
 
-## F-284 See it from above: satellite, truth pins, photoreal on tap [todo]
+## F-284 See it from above: satellite, truth pins, photoreal on tap [done]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · Decisions D-905..D-909 · Needs: none (Google key on Railway for photoreal on gitaway.me)
-- [ ] a "See it from above" card in the opened square's hotel (one line of the top heads-up), opening a full-screen sheet (phone) or panel (laptop) that loads nothing 3D before the tap and frees it on close
-- [ ] Map view keyless (MapLibre + OpenFreeMap, 3D buildings); satellite and photoreal through Google Map Tiles with `GOOGLE_MAPS_API_KEY` (browser key, referrer-restricted), handed to the page only by a server route that counts opens per day (`GOOGLE_3D_A_DAY`, default 100) and says "Back tomorrow" past it; without the key those views are not offered
-- [ ] truth pins from OpenStreetMap asked by the server (fixed Overpass hosts, timeout, cached per hotel for days), distances on the server, a heads-up line chosen from them; the showcase uses a recorded fixture
-- [ ] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
-- [ ] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
+- [x] a "See it from above" card in the opened square's hotel (one line of the top heads-up), opening a full-screen sheet (phone) or panel (laptop) that loads nothing 3D before the tap and frees it on close
+- [x] Map view keyless (MapLibre + OpenFreeMap, 3D buildings); satellite and photoreal through Google Map Tiles with `GOOGLE_MAPS_API_KEY` (browser key, referrer-restricted), handed to the page only by a server route that counts opens per day (`GOOGLE_3D_A_DAY`, default 100) and says "Back tomorrow" past it; without the key those views are not offered
+- [x] truth pins from OpenStreetMap asked by the server (fixed Overpass hosts, timeout, cached per hotel for days), distances on the server, a heads-up line chosen from them; the showcase uses a recorded fixture
+- [x] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
+- [x] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
 
 ## F-285 Booking emails through Resend [todo]
 Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910..D-914 · Needs: SMTP settings for Resend on Railway for gitaway.me
@@ -1762,3 +1763,11 @@ Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910.
 - [x] sent with smtplib through fh-saas `get_smtp_config` (SMTP_* env: Resend's SMTP; not `send_email`, which logs the recipient), on its own thread, sent before the guest's address is blanked, never twice for one booking (kept on the row), never logging the address or names; no SMTP settings means no email and no error
 - [x] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
 - [x] security review (personal data; security auditor: ship)
+
+## F-286 Pins that are there when you look [todo]
+Brief: docs/briefs/matrix-v5.md · Decisions D-915..D-917 · Needs: F-284
+Live check 2026-11-16: the public Overpass servers did not answer, so Forest Suites at Heavenly showed no pins.
+- [ ] more Overpass mirrors, tried in turn, each with a short deadline; a failing mirror sits out for a few minutes
+- [ ] pins are asked in the background when a square opens (not only on the card's tap), so they are kept by the time anyone looks; the same per-visitor limits apply and a cached hotel costs nothing
+- [ ] the card's teaser shows the heads-up as soon as it is kept
+- [ ] tests over recorded answers; no live network in tests

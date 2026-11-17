@@ -79,6 +79,11 @@ def _gallery(slides):
                Div(*[Span(cls="on" if i == 0 else "") for i in range(len(slides))], cls="dr-dots") if many else "", cls="dr-gal")
 
 
+def _sample_card(place_name):      # F-284: a sample hotel has no place on a map; its card opens a recorded real hotel, labelled a sample (gitaway/pages/aerialview.py)
+    from gitaway.pages import aerialview
+    return aerialview.sample_card(place_name)
+
+
 def _hotel(sq, st: tm.StayPart, place, i: int, j: int, on: bool):
     """One hotel of a stay: the gallery, its name, rating and address, what the source says about it (breakfast, refundable, the drive from the airport)."""
     feats = []
@@ -91,7 +96,7 @@ def _hotel(sq, st: tm.StayPart, place, i: int, j: int, on: bool):
     meta = [Span(icon("star", 15, 2), st.rating.split(" · ")[0], cls="dr-star") if st.rating else "", Span(st.rating.split(" · ", 1)[1]) if " · " in st.rating else "",
             Span("· " + st.address) if st.address else ""]
     return Div(_gallery(_stay_media(st, place, sq.sample)), H3(st.name, cls="dr-hname"), P(*[m for m in meta if m != ""], cls="dr-hmeta") if st.rating or st.address else "",
-               Div(*feats, cls="dr-feats") if feats else "", cls="dr-hotel", data_hotel_i=str(j), data_name=st.name, hidden=not on)
+               Div(*feats, cls="dr-feats") if feats else "", _sample_card(place.name) if sq.sample else "", cls="dr-hotel", data_hotel_i=str(j), data_name=st.name, hidden=not on)
 
 
 def _room_btn(r: tm.RoomPart, k: int, chosen: tm.RoomPart, on: bool):
