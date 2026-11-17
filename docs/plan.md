@@ -1741,11 +1741,11 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hot
 - [ ] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
 - [ ] the showcase shows labelled sample data; tests over the recorded fixtures
 
-## F-283 Stay and flights apart, a rooms row and the photo scrubber [todo]
+## F-283 Stay and flights apart, and a rooms row [todo]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html · Decisions D-900..D-904 · Needs: F-282
 - [ ] Stay and Flights each have their own band (icon, accent, a label such as "Your flights · SFO ⇄ LAX · 4 people") and a sticky mini-nav (Stay · Flights · Total · Book) shows where you are
 - [ ] every room type the source gave sits in a scroll-snap row with count and arrows (laptop), swipe (phone), the chosen room marked; choosing still goes through `tm.pick` indexes
-- [ ] the photo scrubber: drag across a thumbnail strip swaps the big photo; only thumbnails in view are rendered and about 6 full photos are kept; wheel, arrows and keyboard work
+- [ ] no photo scrubber (founder 2026-11-16: "might not be needed, too much stress on the page"): the gallery stays the mosaic and lightbox (F-275)
 
 ## F-284 See it from above: satellite, truth pins, photoreal on tap [todo]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · Decisions D-905..D-909 · Needs: none (Google key on Railway for photoreal on gitaway.me)
