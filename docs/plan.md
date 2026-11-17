@@ -1693,6 +1693,8 @@ Founder, 2026-11-16: one person's experience first; "it has to be a little faste
 ## Backlog (founder, 2026-11-16)
 - Shared results between visitors for a few minutes; pre-search popular trips ahead of time (when there are visitors).
 - Memory and resource telemetry on the server (Railway is memory-hungry), and an alternative host to keep bills down once popular.
+- (founder, 2026-11-17, "keep in mind, not today") **More immersion with Google Maps:** novel ideas beyond the fly-around (for example Street View of the walk from parking to the lobby, the Aerial View drone video, the view from the room's side of the building, sunset and shadow at your dates on the 3D model). Bring a short options page first.
+- (founder, 2026-11-17, same) **Our own 3D of the hotel and its rooms from the listing's photos.** Recent methods can make a walkable 3D scene from a set of ordinary photos (Gaussian splatting, single-image depth to parallax). Check first: the image rights (LiteAPI's and the hotels' terms for derived works), quality from ~16 to 100 unordered photos, and the GPU cost per hotel. Any result is labelled as made from the hotel's photos, never presented as the real room.
 
 ## F-274 Real hotel booking with LiteAPI's payment form, our margin and a promo code [done]
 Brief: docs/briefs/live-booking.md (approved). Risk: high (money, personal data): security-and-hardening while building, security-auditor with the reviewer. With a live key, Book on an opened square:
