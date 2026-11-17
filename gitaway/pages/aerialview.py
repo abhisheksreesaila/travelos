@@ -118,7 +118,7 @@ def register(app):
             from gitaway import session as ses
             back = request.headers.get("referer", "")
             here = back.split(str(request.base_url).rstrip("/"), 1)[1] if back.startswith(str(request.base_url).rstrip("/")) else None      # back to the same page after signing in, only ever our own path
-            return JSONResponse({"ok": False, "signin": True, "message": SIGN_IN, "more": SIGN_IN_MORE, "href": ses.signin_href(here if here and here.startswith("/") and not here.startswith("//") else None)},
+            return JSONResponse({"ok": False, "signin": True, "message": SIGN_IN, "more": SIGN_IN_MORE, "href": ses.signin_href(here if here and here.startswith("/") and not here.startswith("//") else "/")},
                                 status_code=401, headers=HEADERS)
         if not unsign(id) or view not in ("sat", "photo"):
             return JSONResponse({"ok": False}, status_code=400, headers=HEADERS)

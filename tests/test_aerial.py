@@ -530,8 +530,10 @@ def test_the_sign_in_invitation_brings_the_visitor_back_to_the_same_page_and_nev
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
     here = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}, headers={"referer": "http://testserver/plan/matrix?to=San+Diego"}).json()["href"]
     away = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}, headers={"referer": "https://evil.example/plan/matrix"}).json()["href"]
-    assert "plan%2Fmatrix" in here or "plan/matrix" in here
+    assert here.startswith("/signin?next=%2Fplan%2Fmatrix")      # back to the same page, our own path only
     assert "evil" not in away
+    lookalike = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}, headers={"referer": "http://testserver.evil.com/plan/matrix"}).json()["href"]
+    assert "evil" not in lookalike and lookalike == "/signin"      # a host that only starts like ours falls back to plain sign-in
 
 
 def test_a_viewer_may_open_the_views_because_they_only_look(client, monkeypatch):

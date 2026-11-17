@@ -65,3 +65,12 @@ def test_with_a_trip_the_avatar_menu_has_help_who_to_call_and_it_opens(client):
     _, menu, _ = parts(client.get(PLAN).text)
     assert ("Help · who to call", "/trip/booking?sos=1") in menu
     assert 'href="tel:911"' in client.get("/trip/booking?sos=1").text
+
+
+
+def test_my_trip_is_titled_your_itinerary(client):
+    """F-289: the booked trip's page is the itinerary, so the bar's "My trip" lands on a page that says so."""
+    import re as _re
+    from tests.test_calendar import book
+    book(client)
+    assert _re.search(r"<title>[^<]*Your itinerary", client.get("/trip/plan").text)
