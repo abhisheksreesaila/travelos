@@ -1774,15 +1774,15 @@ Live check 2026-11-16: the public Overpass servers did not answer, so Forest Sui
 - [x] the card's teaser shows the heads-up as soon as it is kept
 - [x] tests over recorded answers; no live network in tests
 
-## F-287 Today: the next thing, on the day [todo]
+## F-287 Today: the next thing, on the day [done]
 Brief: docs/briefs/trip-day.md · Decisions D-926..D-930 · Needs: none
-- [ ] `/trip/today` and a Today card at the top of My trip while the trip is within 3 days or under way: before (countdown, check-in-opens link, packing weather), travel day (flight with leave-by estimate, then the hotel: address, check-in, code, directions link, ride, weather, who to call), during (today's plans, hotel, check-out)
-- [ ] "Use my location" only on a tap: distance and time to the hotel while open; nothing stored or logged
-- [ ] the day's page works offline once opened (service worker), codes and addresses included
-- [ ] never invented: a phone only from a source, leave-by labelled an estimate; the showcase shows a labelled sample day (`?day=` to preview a date there only)
-- [ ] phone first, 390 and 1440, both modes, 48px targets; tests (unit + browser)
+- [x] `/trip/today` and a Today card at the top of My trip while the trip is within 3 days or under way: before (countdown, check-in-opens link, packing weather), travel day (flight with leave-by estimate, then the hotel: address, check-in, code, directions link, ride, weather, who to call), during (today's plans, hotel, check-out)
+- [x] "Use my location" only on a tap: distance and time to the hotel while open; nothing stored or logged
+- [x] the day's page works offline once opened (service worker), codes and addresses included
+- [x] never invented: a phone only from a source, leave-by labelled an estimate; the showcase shows a labelled sample day (`?day=` to preview a date there only)
+- [x] phone first, 390 and 1440, both modes, 48px targets; tests (unit + browser)
 
-## F-288 The stay in Apple and Google Wallet [todo]
+## F-288 The stay in Apple and Google Wallet [done] (live check pending: one real pass on an iPhone and in Google Wallet once the founder runs scripts/wallet_setup.sh)
 Brief: docs/briefs/trip-day.md · Decisions D-931..D-935 · Needs: Apple Pass Type ID certificate; Google Wallet issuer id and service account (names only: APPLE_PASS_*, GOOGLE_WALLET_*)
 - [x] an Apple `.pkpass` (pass.json, images, manifest, PKCS#7 signature) for a booked stay: hotel, address, dates, guests, confirmation code (QR of the code), check-in/out, relevantDate and the hotel's location
 - [x] a "Save to Google Wallet" link (signed JWT, generic pass) with the same facts
