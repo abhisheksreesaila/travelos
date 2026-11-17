@@ -11,7 +11,7 @@ from tests.test_signin import sign_in
 from tests.test_trip_import import imported
 
 NEW = "first.run@example.com"
-PATHS = ("Plan a trip", "Import a trip you booked", "Browse community trips")
+PATHS = ("Find a trip", "Import a trip you booked", "Browse community trips")      # F-289
 
 
 def links(html):

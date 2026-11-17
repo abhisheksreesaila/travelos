@@ -215,3 +215,26 @@ def test_with_a_google_key_satellite_and_photoreal_are_offered_each_open_is_coun
     assert "AIza" not in refused.inner_text() and aerial.opens_today() == 2      # a refused open is not counted and hands out no key
     expect(page.locator(".av-seg button[data-v='map']")).to_have_attribute("aria-pressed", "true")
     shot(page, "back-tomorrow-1440")
+
+
+@pytest.mark.parametrize("viewport", [DESKTOP, PHONE], ids=["1440", "390"])
+def test_a_visitor_who_taps_3d_is_invited_to_sign_in_with_a_clear_button_and_no_key(matrix, sample, monkeypatch, viewport):  # noqa: F811
+    """F-289 (founder 2026-11-17: "we can put a big sign in to check 3D view and immersive experience"): signed out, Photoreal shows an invitation card with one bold
+    "Sign in to see it in 3D" that brings the visitor back here; no key is handed out and nothing is counted."""
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", KEY)
+    page = matrix(viewport, signed_in=False)
+    stubs, drawer, card = opened(page, viewport)
+    card.click()
+    page.locator(".av-seg button").nth(2).click()
+    msg = page.locator(".av-msg")
+    expect(msg).to_be_visible()
+    expect(msg).to_contain_text("Fly around the hotel in 3D")
+    go = msg.locator("a.av-signin")
+    expect(go).to_have_text("Sign in to see it in 3D")
+    assert go.get_attribute("href").startswith("/signin") and "plan" in go.get_attribute("href")
+    go.scroll_into_view_if_needed()
+    expect(go).to_be_visible()
+    box = go.bounding_box()
+    assert box and box["height"] >= 47.5
+    assert "AIza" not in page.content() and aerial.opens_today() == 0
+    shot(page, f"signin-3d-{viewport['width']}")

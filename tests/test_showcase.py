@@ -131,7 +131,7 @@ def test_a_new_family_sees_two_ways_in_not_community(real, client):
     from fasthtml.common import to_xml
     from gitaway import firstrun
     ways = to_xml(firstrun.paths())
-    assert "fr-two" in ways and "Import a trip you booked" in ways and "Plan a trip" not in ways and "community" not in ways
+    assert "fr-two" in ways and "Import a trip you booked" in ways and "Find a trip" not in ways and "community" not in ways
 
 
 def booked_then_real(client, monkeypatch):

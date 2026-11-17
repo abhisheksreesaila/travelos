@@ -72,7 +72,7 @@ def make_panel(session) -> Div:
                                 icon("chev-right", 20, 2.2), type="submit", cls="mk"), action="/guides/make/trip", method="post", id="mk-trip")
     else:
         from_trip = A(Span(icon("calendar", 22, 2), cls="mk-ic"), Span(Span("From your planned trip", cls="mk-t"),
-                                                                       Span("Plan a trip first: its calendar becomes the draft." if me else "Sign in, plan a trip, and its calendar becomes the draft.", cls="mk-s")),
+                                                                       Span("Book a trip first: its itinerary becomes the draft." if me else "Sign in, book a trip, and its itinerary becomes the draft.", cls="mk-s")),
                       icon("chev-right", 20, 2.2), href=showcase.planning_path() if me else ses.signin_href(PATH), cls="mk", id="mk-trip")
     paste = A(Span(icon("link", 22, 2), cls="mk-ic"), Span(Span("Paste your blog post", cls="mk-t"), Span("We lay it out; your words and your affiliate links stay yours.", cls="mk-s")),
               icon("chev-right", 20, 2.2), href=PATH + "/make", cls="mk", id="mk-paste")

@@ -158,7 +158,10 @@
       .then(function (x) {
         if (S !== s) return Promise.reject(new Error('closed'));
         if (x.j && x.j.ok && x.j.key) { s.gkey[view] = x.j.key; return x.j.key; }
-        if (x.j && x.j.signin) { message('<a href="/signin">Sign in</a> to see satellite and 3D. The map view works without it.', x.j.message); return Promise.reject(new Error('signin')); }
+        if (x.j && x.j.signin) {      // F-289: an invitation, not an error: the 3D view is a reason to sign in
+          message(esc(x.j.more || '') + '</p><p class="av-signin-row"><a class="av-signin" href="' + esc(x.j.href || '/signin') + '">Sign in to see it in 3D</a>', x.j.message);
+          return Promise.reject(new Error('signin'));
+        }
         message(esc((x.j && x.j.more) || (x.j && x.j.message) || 'That view is not available right now.'), (x.j && x.j.full) ? x.j.message : 'Not available');
         return Promise.reject(new Error('refused'));
       }, function (e) { if (S === s) message('That view could not be reached. The map is still here.', 'No connection'); return Promise.reject(e); });

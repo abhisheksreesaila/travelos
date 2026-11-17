@@ -297,7 +297,7 @@ def _sky():
 
 
 def _close():
-    return Section(Div(P("Book · Plan · Guides", cls="label"), H2("Go somewhere, ", Em("together.")),
+    return Section(Div(P("Find · Book · My trip · Guides", cls="label"), H2("Go somewhere, ", Em("together.")),
                        P("Choose the whole trip in one view, plan it with your people, and pass it on as a guide."),
                        Div(A("Start a trip", icon("arrow-right", 18, 2.2), href=plan_href(), cls="btn"), A("Browse guides", href="/guides", cls="btn soft"), cls="acts cv-ctas"),
                        P(DISCLOSURE, cls="small"), cls="endcard"), cls="cv-close end", id="your-turn")

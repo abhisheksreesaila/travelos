@@ -52,6 +52,8 @@ body.av-open { overflow: hidden; }
 .av-card2 { max-width: 30rem; padding: 1.25rem; border-radius: 1.25rem; border: 1px solid var(--line); background: var(--card-solid); box-shadow: var(--sh2); }
 .av-card2 b { display: block; font: 560 1.4rem/1.15 var(--f-display); margin-bottom: 0.5rem; }
 .av-card2 p { margin: 0; color: var(--ink-2); }
+.av-card2 .av-signin-row { margin-top: 1rem; }
+.av-signin { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--cta-bg); color: var(--cta-fg); font: 680 1.0625rem/1 var(--f-ui); text-decoration: none; box-shadow: var(--cta-sh); }
 
 /* the truth panel */
 .av-truth { overflow: auto; max-height: 44svh; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card-solid); }
