@@ -444,3 +444,17 @@ def test_a_person_has_a_limit_on_fresh_pins_but_kept_answers_are_free(client, li
         assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lpa")}).json()["source"] == "kept"
     j = client.get("/plan/matrix/aerial/pins", params={"id": tok("lpc")}).json()
     assert j["ok"] is False and j["message"].startswith("You have looked at a lot of places today") and len(f.calls) == 2
+
+
+def test_a_busy_answer_does_not_use_up_one_of_the_persons_fresh_pins(client, live, monkeypatch):
+    """Security re-check: told "busy" asked nothing, so the person's daily pin is given back."""
+    monkeypatch.setattr(aerial, "PINS_PER_PERSON_A_DAY", 1)
+    live(recorded("osm-lax.json"))
+    taken = [aerial._SLOTS.acquire(blocking=False) for _ in range(aerial.AT_ONCE)]
+    try:
+        for _ in range(3):
+            assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lpbusy")}).json()["message"] == "Pins are busy, try again in a moment"
+    finally:
+        for _ in taken:
+            aerial._SLOTS.release()
+    assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lpbusy")}).json()["ok"] is True      # the one allowed fresh ask is still there

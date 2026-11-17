@@ -431,7 +431,9 @@ def pins(key: str, lat: float, lon: float, name: str, who: str = "") -> dict | N
         if who and not _take("pins:" + who, PINS_PER_PERSON_A_DAY):
             return LIMIT
         got = ask(lat, lon)
-        if got is BUSY:
+        if got is BUSY:      # no slot free: nothing was asked, so the person's pin is given back
+            if who:
+                _give("pins:" + who)
             return BUSY
         if got:
             _failed.pop(key, None)
@@ -504,6 +506,13 @@ def _take(who: str, limit: int) -> bool:
         ok = db.conn.execute(text("UPDATE aerial_person SET n = n + 1 WHERE day = :d AND who = :w AND n < :c"), {"d": day, "w": who, "c": limit}).rowcount == 1
         db.conn.commit()
     return ok
+
+
+def _give(who: str) -> None:
+    """Give back one taken today (a refusal that asked nothing)."""
+    with community.connect() as db:
+        db.conn.execute(text("UPDATE aerial_person SET n = n - 1 WHERE day = :d AND who = :w AND n > 0"), {"d": _today(), "w": who})
+        db.conn.commit()
 
 
 def open_google(who: str = "") -> tuple:
