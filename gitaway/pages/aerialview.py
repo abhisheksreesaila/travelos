@@ -39,7 +39,7 @@ def _card(token: str, name: str, kicker: str, line: str):
     return Button(Span(_thumb(), cls="av-thumb"),
                   Span(Span(kicker, cls="av-k"), Span(TITLE, cls="av-t"), Span(line, cls="av-l"), cls="av-tx"),
                   Span(icon("arrow-right", 20, 2), cls="av-go", aria_hidden="true"),
-                  type="button", cls="av-card", data_aerial=token, data_hotel=name, data_keyed="1" if aerial.offered() else "", aria_haspopup="dialog")
+                  type="button", cls="av-card", data_aerial=token, data_av_name=name, data_keyed="1" if aerial.offered() else "", data_sri_maplibre=aerial.SRI["maplibre"], data_sri_cesium=aerial.SRI["cesium"], aria_haspopup="dialog")
 
 
 def card(h):

@@ -366,3 +366,12 @@ def test_a_sample_squares_drawer_has_the_sample_card_for_each_of_its_hotels_and_
     html = client.get(square).text
     assert html.count('class="av-card"') == 3 and html.count("Sample view") == 3 and "Hilton Los Angeles Airport" in html      # three sample hotels, each opening the recorded real one
     assert len(re.findall(r'data-aerial="sample-lax\.[0-9a-f]{24}"', html)) == 3
+
+
+def test_the_card_uses_none_of_the_data_names_the_drawers_clicks_read(monkeypatch):
+    """assets/js/v2drawer.js treats any button in the drawer with data-hotel, data-room, data-tab, data-fl or data-act as its own: a card named data-hotel hid the hotel it sat in (F-284 browser run)."""
+    from fasthtml.common import to_xml
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    html = to_xml(aerialview.sample_card("San Diego"))
+    for name in ("data-hotel", "data-room", "data-tab", "data-fl", "data-act", "data-gal-go", "data-show"):
+        assert name + "=" not in html, name

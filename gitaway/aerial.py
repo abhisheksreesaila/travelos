@@ -50,6 +50,7 @@ DEFAULT_A_DAY = 100
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "aerial"
 SAMPLES = {"lax": ("Hilton Los Angeles Airport", 33.9461921, -118.3816538, "osm-lax.json"),
            "tahoe": ("Hyatt Regency Lake Tahoe", 39.2407285, -119.9426988, "osm-tahoe.json")}
+SRI = {"maplibre": "sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj", "cesium": "sha384-xAdxnnaIzRit+cIXQWeImuZHfoK0MA0EaxSb8rlO3RaT9NWVqgvICnDMtPUI/aar"}      # integrity hashes of maplibre-gl@4.7.1/dist/maplibre-gl.js and cesium@1.123.0/Build/Cesium/Cesium.js, checked 16 Nov 2026 (assets/js/aerial.js VERSIONS)
 NEUTRAL = "Freeways, flight paths, water and parking around the hotel"
 _BAD = ("runtime error", "timed out", "out of memory", "too many requests", "dispatcher_client")      # Overpass's own words for a partial answer (`remark`)
 _LOCK = threading.Lock()

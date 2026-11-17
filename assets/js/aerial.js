@@ -8,7 +8,7 @@
   'use strict';
   var VERSIONS = { maplibre: '4.7.1', cesium: '1.123.0' };
   var HOSTS = { maplibre: 'https://unpkg.com/maplibre-gl@' + VERSIONS.maplibre + '/dist/', cesium: 'https://cdn.jsdelivr.net/npm/cesium@' + VERSIONS.cesium + '/Build/Cesium/' };
-  var SRI = { 'maplibre-gl.js': 'sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj', 'Cesium.js': 'sha384-xAdxnnaIzRit+cIXQWeImuZHfoK0MA0EaxSb8rlO3RaT9NWVqgvICnDMtPUI/aar' };      // the exact files of the pinned versions (checked 16 Nov 2026): a changed file does not run
+  var SRI = {};      // file name -> its integrity hash, from the card (gitaway/aerial.py SRI, next to the pinned versions): a changed file at the pinned address does not run
   var PINS = '/plan/matrix/aerial/pins', OPEN = '/plan/matrix/aerial/open';
   var TILES = { sat: 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}', session: 'https://tile.googleapis.com/v1/createSession' };
   var TURN_MS = 30000, RESUME_MS = 900, FIT_MS = 1200, FLY_S = 1.5;      // camera moves of the map itself (not the page's motion tokens)
@@ -54,7 +54,7 @@
     var keyed = !!card.dataset.keyed;
     var scrim = document.createElement('div'); scrim.className = 'av-scrim';
     var sheet = document.createElement('div'); sheet.className = 'av-sheet'; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
-    sheet.setAttribute('aria-label', 'See it from above: ' + (card.dataset.hotel || 'the hotel'));
+    sheet.setAttribute('aria-label', 'See it from above: ' + (card.dataset.avName || 'the hotel'));
     sheet.innerHTML =
       '<div class="av-stage"><div class="av-map"></div><div class="av-loading"><span class="v2-glass">Loading the view…</span></div>' +
       '<div class="av-msg" hidden></div>' +
@@ -65,13 +65,14 @@
       '<section class="av-truth" aria-labelledby="av-title"><div class="av-kk">What the photos don’t show</div><h2 id="av-title"></h2><div class="av-heads"></div>' +
       '<p class="av-src">Looking around the hotel in OpenStreetMap…</p><ul class="av-pins"></ul>' +
       '<p class="av-note">Distances are straight-line from the hotel; walking adds a quarter for real streets at 80 m a minute, driving assumes city speeds plus two minutes to park.</p></section>';
-    q('#av-title', sheet).textContent = card.dataset.hotel || '';
+    q('#av-title', sheet).textContent = card.dataset.avName || '';
     document.body.appendChild(scrim); document.body.appendChild(sheet);
     return { scrim: scrim, sheet: sheet };
   }
 
   function openFrom(card) {
     if (S) return;
+    SRI = { 'maplibre-gl.js': card.dataset.sriMaplibre || '', 'Cesium.js': card.dataset.sriCesium || '' };
     var parts = build(card);
     S = { card: card, tok: card.dataset.aerial, keyed: !!card.dataset.keyed, view: 'map', engine: null, map: null, viewer: null, truth: null, orbit: false, raf: 0, last: 0, markers: [], ro: null,
           heading: 0, bearing: -20, groundH: 0, pinH: null, gkey: {}, satSession: '', scrim: parts.scrim, sheet: parts.sheet, closing: false, up: true };
