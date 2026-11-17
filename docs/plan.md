@@ -1756,7 +1756,7 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · D
 - [x] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
 - [x] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
 
-## F-285 Booking emails through Resend [todo]
+## F-285 Booking emails through Resend [done]
 Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910..D-914 · Needs: SMTP settings for Resend on Railway for gitaway.me
 - [x] when a stay is booked (`matrixbook.finish`, also the worker's late finish), one email goes to the lead guest's email: hotel, address, dates, guests, room, LiteAPI booking id and hotel confirmation code, total charged, fees paid at the hotel, the refund policy word for word, "Sold by Nuitée through LiteAPI", links to the booking page and Plan this trip
 - [x] when a stay is cancelled in-app, one email with the refund LiteAPI reported, to the person who cancelled
