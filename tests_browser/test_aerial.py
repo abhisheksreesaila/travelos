@@ -105,7 +105,7 @@ def sample(monkeypatch, stand):  # noqa: F811
 def opened(page, viewport):
     stubs = Stubs(page)
     drawer = open_square(page, viewport)
-    return stubs, drawer, drawer.locator(".dr-hotel:not([hidden]) .av-card")
+    return stubs, drawer, drawer.locator(".dr-sampleslot .av-card")
 
 
 def av(page, field):

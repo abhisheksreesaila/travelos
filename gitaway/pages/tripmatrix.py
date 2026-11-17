@@ -40,7 +40,8 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="style
         Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
         Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True),
         Script(src="/assets/js/v2rail.js", defer=True), Script(src="/assets/js/tripmatrix.js", defer=True), Script(src="/assets/js/v2drawer.js", defer=True), Script(src="/assets/js/matrixbook.js", defer=True),
-        Link(rel="stylesheet", href="/assets/css/aerial.css"), Script(src="/assets/js/aerial.js", defer=True))
+        Link(rel="stylesheet", href="/assets/css/aerial.css"), Script(src="/assets/js/aerial.js", defer=True),
+        Link(rel="stylesheet", href="/assets/css/hotelfine.css"), Script(src="/assets/js/hotelfine.js", defer=True))
 DEFAULT_PLACE, DEFAULT_HOME, DEFAULT_FLEX, DEFAULT_NIGHTS, DEFAULT_KIDS = "San Diego", "SFO", 2, 4, (7, 10)
 NIGHTS_MIN, NIGHTS_MAX = 2, 7       # the nights slider's ends (F-237); a trip already longer or shorter in the address widens the range to hold it
 LEAD_DAYS = 28                     # the default trip leaves on the first Saturday at least this far ahead

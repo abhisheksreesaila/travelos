@@ -113,7 +113,7 @@ def test_the_fragment_draws_the_strip_the_words_the_cards_and_the_source(hundred
     assert "The last 10 averaged 9.1, above the hotel’s 7.6." in html and "The last 10 were all 8 or more." in html
     assert "Families with children: 7.8 on average, from 8 of the last 100 reviews." in html
     assert "What guests wrote, families first" in html and "Reviews from Nuitée (LiteAPI)" in html
-    assert html.count('class="dr-rev"') == 12 and "Plus 36 scores without words." in html
+    assert html.split("<aside")[0].count('class="dr-rev"') == 4 and "Read all 100 reviews" in html and "Plus 36 scores without words." in html      # F-282: four cards on the page; the drawer after them holds all 100
     assert "8 or more · 53" in html and "6 or 7 · 22" in html and "5 or less · 25" in html
     assert 'aria-label="The last 100 reviews, oldest to newest: 53 good, 22 mixed, 25 poor"' in html
 

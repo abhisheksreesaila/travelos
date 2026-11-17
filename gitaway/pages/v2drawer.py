@@ -79,11 +79,6 @@ def _gallery(slides):
                Div(*[Span(cls="on" if i == 0 else "") for i in range(len(slides))], cls="dr-dots") if many else "", cls="dr-gal")
 
 
-def _sample_card(place_name):      # F-284: a sample hotel has no place on a map; its card opens a recorded real hotel, labelled a sample (gitaway/pages/aerialview.py)
-    from gitaway.pages import aerialview
-    return aerialview.sample_card(place_name)
-
-
 def _hotel(sq, st: tm.StayPart, place, i: int, j: int, on: bool):
     """One hotel of a stay: the gallery, its name, rating and address, what the source says about it (breakfast, refundable, the drive from the airport)."""
     feats = []
@@ -96,7 +91,7 @@ def _hotel(sq, st: tm.StayPart, place, i: int, j: int, on: bool):
     meta = [Span(icon("star", 15, 2), st.rating.split(" · ")[0], cls="dr-star") if st.rating else "", Span(st.rating.split(" · ", 1)[1]) if " · " in st.rating else "",
             Span("· " + st.address) if st.address else ""]
     return Div(_gallery(_stay_media(st, place, sq.sample)), H3(st.name, cls="dr-hname"), P(*[m for m in meta if m != ""], cls="dr-hmeta") if st.rating or st.address else "",
-               Div(*feats, cls="dr-feats") if feats else "", _sample_card(place.name) if sq.sample else "", cls="dr-hotel", data_hotel_i=str(j), data_name=st.name, hidden=not on)
+               Div(*feats, cls="dr-feats") if feats else "", cls="dr-hotel", data_hotel_i=str(j), data_name=st.name, hidden=not on)
 
 
 def _room_btn(r: tm.RoomPart, k: int, chosen: tm.RoomPart, on: bool):
@@ -105,7 +100,7 @@ def _room_btn(r: tm.RoomPart, k: int, chosen: tm.RoomPart, on: bool):
     diff = r.cents - chosen.cents
     return Button(Span(cls="dr-rad"), Span(Span(r.room, cls="dr-t"), Small(" · ".join(w for w in words if w) + (f" · {due}" if due else "")), cls="dr-tx"),
                   Span("Chosen" if on else signed(diff), cls="dr-d num" + (" is-minus" if diff < 0 and not on else ""), data_d="1"), type="button", cls="dr-opt", role="radio", aria_checked="true" if on else "false",
-                  data_room=str(k), data_c=str(r.cents), data_roomname=r.room)
+                  data_room=str(k), data_c=str(r.cents), data_roomname=r.room, data_due=str(r.due_at_stay_cents), data_refund="1" if r.refundable else "", data_board=r.board)
 
 
 def _alt_btn(sq, st: tm.StayPart, place, j: int, on: bool, base: int):
@@ -125,8 +120,11 @@ def _stay_pane(sq, i: int, place, alts: tuple, active: bool, party: int, ptype: 
     nights = shown.nights
     sub = Div(f"Rooms for {party} · {nights} night{'s' if nights != 1 else ''}", cls="dr-sub")
     from gitaway.pages import hotelview
-    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), data_pt=ptype, hidden=j != 0,
-                 role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
+    drive = str(sq.drive) if sq.drive and i == 0 else ""      # the drive is from the first airport to the first stay's town (as in _hotel)
+    slots = [Div(P(icon("image", 16, 2), "Loading the hotel’s photos and reviews…", cls="dr-fine"), cls="dr-rich", data_state="idle", data_for=str(j), data_hid=hotelview.token(st.hotel_id), data_pt=ptype, data_drive=drive,
+                 hidden=j != 0, role="region", aria_label=f"About {st.name}") for j, st in enumerate(alts) if st.hotel_id and not sq.sample]
+    if sq.sample and (dash := hotelview.sample_fragment(place.name)):      # F-282: the showcase's dashboard and fine print, a recorded real hotel's, said to be a sample in the section
+        slots = [Div(dash, cls="dr-sampleslot", data_state="done", data_drive=drive, role="region", aria_label="Sample hotel dashboard and fine print")]
     return Div(Div(*hotels, cls="dr-hl"),
                Div(sub, *room_lists,
                    Div(f"Other stays in {place.name}", cls="dr-sub") if len(alts) > 1 else "",
@@ -162,14 +160,21 @@ def _clock(words: str, first=True) -> str:
     return parts[0 if first else -1].split(" ", 1)[-1] if len(parts) == 2 else ""
 
 
+def _landing(f: tm.FlightPart) -> tuple:
+    """("9:32 AM", True when it lands the next day) of the outbound flight, from its own words; ("", False) when they do not read as a leg (the fine print then says not listed)."""
+    m = LEG.match(f.out or "")
+    return (m["at"], bool(m["next"])) if m else ("", False)
+
+
 def _flight_btn(f: tm.FlightPart, k: int, base: int, on: bool):
     out, back = times(f.out), times(f.back)
+    land, next_day = _landing(f)
     head = _plus(f"{_clock(out)} → {_clock(out, False)}") if " → " in out else out
     tail = _plus(f"back {_clock(back)} · ") if " → " in back else ""
     return Button(Span(cls="dr-rad"), Span(Span(head, cls="dr-t num"), Small(f"{tail}{f.airline} · {stops_words(f.stops).lower()}"), cls="dr-tx"),
                   Span("Chosen" if on else signed(f.cents - base), cls="dr-d num" + (" is-minus" if f.cents < base and not on else ""), data_d="1"), type="button", cls="dr-opt", role="radio",
                   aria_checked="true" if on else "false", data_fl=str(k), data_c=str(f.cents), data_al=f.airline, data_stops=stops_words(f.stops).lower(),
-                  data_times=_plus(f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "")))
+                  data_times=_plus(f"{_clock(out)} out" + (f" · {_clock(back)} back" if " → " in back else "")), data_land=land, data_land_next="1" if next_day else "")
 
 
 ADJ = {"sun": "sunny", "cloud": "cloudy", "rain": "rainy", "snow": "snowy", "wind": "windy"}

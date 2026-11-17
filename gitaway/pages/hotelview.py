@@ -18,6 +18,8 @@ import secrets
 from fasthtml.common import Button, Details, Div, H4, Img, Li, P, Small, Span, Summary, Ul, to_xml
 from starlette.responses import JSONResponse
 
+from pathlib import Path
+
 from gitaway import aerial, liteapi, reviewtrend, showcase
 from gitaway.icons import icon
 
@@ -89,22 +91,20 @@ def _paragraphs(h):
     return Div(*[para(p) for p in first], Details(Summary("More about the hotel"), *[para(p) for p in rest], cls="dr-more") if rest else "", cls="dr-about")
 
 
-def _facilities(h):
-    if not h.facilities:
-        return ""
-    head, tail = h.facilities[:FACILITIES_SHOWN], h.facilities[FACILITIES_SHOWN:]
-    return Div(H4("Facilities", cls="dr-sub"), Ul(*[Li(f) for f in head], cls="dr-fac"),
-               Details(Summary(f"All {len(h.facilities)} amenities"), Ul(*[Li(f) for f in tail], cls="dr-fac"), cls="dr-more") if tail else "", cls="dr-facs")
-
-
 def _rating(h, rv):
+    """The score with its words and count: a button that opens the review drawer when LiteAPI gave reviews (F-282), the AI's pros and cons under it."""
     if h.rating is None:
         return ""
     count = rv.total if rv and rv.total else h.review_count
     pros = Ul(*[Li(icon("check", 15, 2.4), t) for t in rv.pros[:4]], cls="dr-pros") if rv and rv.pros else ""
     cons = Ul(*[Li(icon("flag", 15, 2.2), t) for t in rv.cons[:4]], cls="dr-cons") if rv and rv.cons else ""
-    return Div(Div(Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews" + (f" · {AI_NOTE_LOW}" if pros or cons else "")), cls="dr-rt"), cls="dr-rate"),
-               Div(pros, cons, cls="dr-pc") if pros or cons else "", cls="dr-rating")
+    head = [Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews" + (f" · {AI_NOTE_LOW}" if pros or cons else "")), cls="dr-rt")]
+    if rv and rv.items:
+        rate = Button(*head, Span(icon("chev-right", 18, 2.2), cls="dr-go", aria_hidden="true"), type="button", cls="dr-rate dr-scorebtn", data_rv_open="all",
+                      aria_label=f"Rated {score_text(h.rating)} out of 10, {rating_word(h.rating)}, from {count:,} reviews. Read the guests’ reviews")
+    else:
+        rate = Div(*head, cls="dr-rate")
+    return Div(rate, Div(pros, cons, cls="dr-pc") if pros or cons else "", cls="dr-rating")
 
 
 def _categories(rv):
@@ -135,10 +135,11 @@ def _strip(t):
     computed (reviewtrend): the recent average against the hotel's rating, a streak, and the average for travellers like you. Every dot is aria-hidden; the strip says its counts once."""
     n = len(t.dots)
     said = f"The last {n} reviews, oldest to newest: {t.good} good, {t.mixed} mixed, {t.poor} poor"
-    dots = Div(*[Span(cls=f"tr-d is-{d.kind}", title=f"{score_text(d.score)}/10" + (f" · {d.date}" if d.date else ""), aria_hidden="true") for d in t.dots], cls="tr-dots", role="img", aria_label=said)
+    dots = Div(*[Span(cls=f"tr-d is-{d.kind}", title=f"{score_text(d.score)}/10" + (f" · {d.date}" if d.date else ""), aria_hidden="true") for d in t.dots], cls="tr-dots", role="img", aria_label=said, data_rv_open="all")
     legend = Div(*[Span(Span(cls=f"tr-d is-{k}", aria_hidden="true"), f"{SHAPES[k]} · {getattr(t, k)}", cls="tr-key") for k in SHAPES], cls="tr-legend")
     words = [P(w, cls="tr-w") for w in (t.recent, t.streak, t.like_you) if w]
-    return Div(H4(f"How the last {n} reviews went" + (f" · {t.span}" if t.span else ""), cls="dr-sub"), dots,
+    head = Div(H4(f"How the last {n} reviews went" + (f" · {t.span}" if t.span else ""), cls="dr-sub"), Button("Read them", icon("arrow-right", 16, 2.2), type="button", cls="tr-read", data_rv_open="all"), cls="tr-head")
+    return Div(head, dots,
                Div(Span("Oldest"), Span("Newest"), cls="tr-ends", aria_hidden="true"), legend, *words, cls="tr-strip")
 
 
@@ -160,14 +161,14 @@ def _reviews(rv, ptype=""):
         return ""
     cards = reviewtrend.order(rv.items, ptype)
     bare = len(rv.items) - sum(1 for r in rv.items if _wordy(r))
-    shown, rest = cards[:REVIEWS_SHOWN], cards[REVIEWS_SHOWN:]
+    shown = cards[:REVIEWS_SHOWN]
     note = P(f"Plus {bare} score{'' if bare == 1 else 's'} without words.", cls="dr-fine") if bare else ""
     src = P(source_line(rv), cls="dr-fine tr-src")
     if not cards:
         return Div(H4("Reviews", cls="dr-sub"), P(f"{bare} score{'' if bare == 1 else 's'}, no words.", cls="dr-fine"), src, cls="dr-reviews")
     first = f", {TYPE_LOWER[ptype]} first" if ptype in TYPE_LOWER and any(r.type == ptype for r in cards) else ""
     return Div(H4("What guests wrote" + first, cls="dr-sub"), Div(*[_review(r) for r in shown], cls="dr-revs"),
-               Details(Summary("Read more reviews"), Div(*[_review(r) for r in rest], cls="dr-revs"), cls="dr-more") if rest else "", note, src, cls="dr-reviews")
+               Button(f"Read all {len(rv.items)} reviews", icon("arrow-right", 16, 2.2), type="button", cls="tr-read", data_rv_open="all"), note, src, cls="dr-reviews")
 
 
 def _rooms(h):
@@ -186,13 +187,45 @@ def room_photos(h) -> dict:
     return {r.name.lower(): r.photos[0] for r in h.rooms if r.photos}
 
 
+def dashboard(h, rv, ptype=""):
+    """The score with its words and count, the last-100 strip with its streaks, and the category bars: one card, beside the photos on a laptop and under them on a phone (F-282)."""
+    parts = [_rating(h, rv), _trend(rv, h.rating, ptype), _categories(rv)]
+    return Div(*parts, cls="dr-dash") if any(parts) else ""
+
+
 def rich(h, rv=None, ptype=""):
-    """The fragment: everything the hotel and its guests say, as one element for the hotel's slot. `h` is liteapi.HotelDetails, `rv` liteapi.HotelReviews or None."""
+    """The fragment: everything the hotel and its guests say, as one element for the hotel's slot. `h` is liteapi.HotelDetails, `rv` liteapi.HotelReviews or None.
+    The photos (and what the hotel says under them) and the dashboard sit side by side, then the fine print up front (with F-284's "See it from above" card), the newest cards, the rooms, the drawer of every review."""
+    from gitaway.pages import aerialview, fineprint, reviewdrawer      # the card, the fine print and the drawer are their own modules (F-284, F-282)
     mos = mosaic([(p.url, p.caption) for p in h.photos], h.name)
-    times = P(Span(icon("calendar", 15, 2), f"Check-in from {h.checkin}") if h.checkin else "", Span(icon("calendar", 15, 2), f"Check-out by {h.checkout}") if h.checkout else "", cls="dr-times") if h.checkin or h.checkout else ""
-    info = Div(Div(_paragraphs(h), _facilities(h), times, cls="dr-ic-l"), Div(_rating(h, rv), cls="dr-ic-r"), cls="dr-info")
-    from gitaway.pages import aerialview      # F-284: the "See it from above" card, under the photos (its own module)
-    return Div(mos, aerialview.card(h), info, _trend(rv, h.rating, ptype), _categories(rv), _reviews(rv, ptype), _rooms(h), Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), cls="dr-richin")
+    dash = dashboard(h, rv, ptype)
+    top = Div(Div(mos, Div(_paragraphs(h), cls="dr-info"), cls="dr-left"), dash, cls="dr-top" + (" has-dash" if dash else ""))
+    return Div(top, fineprint.section(h, rv, aerialview.card(h)), _reviews(rv, ptype), _rooms(h),
+               Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), reviewdrawer.drawer(h, rv), cls="dr-richin")
+
+
+SAMPLE_DIR = Path(__file__).resolve().parent.parent.parent / "tests" / "fixtures" / "liteapi_hotel"
+SAMPLE_NOTE = ("Sample: this is a real hotel’s recorded data (Hilton Los Angeles Airport, from LiteAPI on 16 Nov 2026), shown so you can try the view. "
+               "The hotels in this square are made up, so their prices, rooms and photos are samples.")
+
+
+SAMPLE_DASH = "Sample: these scores and reviews are a real hotel’s (Hilton Los Angeles Airport), shown so you can see how it reads"
+
+
+def sample_fragment(place_name: str = ""):
+    """The showcase's dashboard and fine print: Hilton Los Angeles Airport's recorded LiteAPI answers (tests/fixtures/liteapi_hotel), said to be a sample in the section itself; "" off the showcase
+    or when the recording is not there. Its "See it from above" card is the sample card (aerialview.sample_card), and its pins are the recorded ones."""
+    if not showcase.on():
+        return ""
+    try:
+        h = liteapi.read_hotel(json.loads((SAMPLE_DIR / "hotel.json").read_text(encoding="utf-8")))
+        rv = liteapi.read_reviews(json.loads((SAMPLE_DIR / "reviews100.json").read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return ""
+    if h is None:
+        return ""
+    from gitaway.pages import aerialview, fineprint, reviewdrawer
+    return Div(P(SAMPLE_DASH, cls="fp-sample"), Div(dashboard(h, rv), cls="dr-top"), fineprint.section(h, rv, aerialview.sample_card(place_name), SAMPLE_NOTE), reviewdrawer.drawer(h, rv), cls="dr-richin dr-sample")
 
 
 def fragment(hotel_id: str, family: str = "", ptype: str = ""):

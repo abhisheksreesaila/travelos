@@ -897,6 +897,7 @@ class HotelDetails:
     checkout: str
     lat: float | None = None     # F-284: where the hotel is, from LiteAPI's `location` (the aerial view's centre); None when the answer has none
     lng: float | None = None
+    important: tuple = ()        # F-282: the hotel's own "important information" (`hotelImportantInformation`), one plain-text line each; () when it gave none
 
     @property
     def description(self) -> str:
@@ -963,6 +964,16 @@ def _where(d) -> tuple:
     return (lat, lng) if lat is not None and lng is not None and -90 <= lat <= 90 and -180 <= lng <= 180 and (lat or lng) else (None, None)
 
 
+IMPORTANT_FIELD = "hotelImportantInformation"      # the one place LiteAPI's name for the hotel's important information is read (assumed from its docs, not in the recorded answer: correct it here)
+IMPORTANT_MAX, IMPORTANT_LINE = 12, 400
+
+
+def _important(html) -> tuple:
+    """The hotel's important information as plain lines (tags and scripts gone), at most IMPORTANT_MAX lines of IMPORTANT_LINE characters."""
+    lines = (" ".join(x.split()) for x in strip_html(html if isinstance(html, str) else "").split("\n"))
+    return tuple(x[:IMPORTANT_LINE] for x in lines if x)[:IMPORTANT_MAX]
+
+
 def read_hotel(answer) -> HotelDetails | None:
     d = answer.get("data") if isinstance(answer, dict) else None
     if not isinstance(d, dict) or not d.get("name"):
@@ -979,7 +990,7 @@ def read_hotel(answer) -> HotelDetails | None:
     times = d.get("checkinCheckoutTimes") if isinstance(d.get("checkinCheckoutTimes"), dict) else {}
     return HotelDetails(_str(d.get("id")), _str(d["name"]), _str(d.get("address")), _num(d.get("starRating")), _num(d.get("rating")), int(_num(d.get("reviewCount")) or 0),
                         _paragraphs(d.get("hotelDescription")), photos, tuple(_str(f) for f in d.get("hotelFacilities") or () if _str(f)), tuple(rooms),
-                        _str(times.get("checkinStart") or times.get("checkin")), _str(times.get("checkout")), *_where(d))
+                        _str(times.get("checkinStart") or times.get("checkin")), _str(times.get("checkout")), *_where(d), _important(d.get(IMPORTANT_FIELD)))
 
 
 def read_reviews(answer) -> HotelReviews | None:
