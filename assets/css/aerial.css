@@ -27,7 +27,7 @@ body.av-open { overflow: hidden; }
 }
 .av-stage { position: relative; min-height: 0; background: var(--card-2); }
 .av-map { position: absolute; inset: 0; }
-.av-canvas { position: absolute; inset: 0; }
+.av-map > .av-canvas { position: absolute; inset: 0; }      /* two classes: maplibre-gl.css makes its container position: relative, and loads later */
 .av-canvas canvas:focus { outline: none; }
 .av-loading { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: var(--ink-2); font-weight: 560; pointer-events: none; }
 .av-loading[hidden], .av-msg[hidden], .av-resume[hidden] { display: none; }

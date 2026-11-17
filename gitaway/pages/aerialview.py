@@ -51,9 +51,11 @@ def card(h):
 
 def sample_card(place_name: str):
     """The showcase's card inside a sample square (its hotels are made up, with no place on a map): a recorded real hotel stands in, labelled a sample."""
+    if not showcase.on():
+        return ""
     which = "tahoe" if "tahoe" in str(place_name).lower() else "lax"
     got = aerial.sample(which)
-    if not showcase.on() or got is None:
+    if got is None:
         return ""
     return _card(hotelview.token(SAMPLE_PREFIX + which), got["name"], SAMPLE_KICKER, got["headline"])
 
