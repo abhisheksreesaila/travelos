@@ -126,6 +126,9 @@ main { max-width: 72rem; margin: 0 auto; padding: 0 1rem 4rem; }
 @media (max-width: 40rem) { .debug { top: 4.25rem; bottom: auto; right: .75rem; opacity: .9; } .resume { bottom: 3.25rem; } }
 .attr { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: .35rem .75rem; font-size: .8125rem; color: var(--ink-2); background: var(--card-t); border-top: 1px solid var(--line); }
 .attr a { color: inherit; }
+.sheet.cesium-on .attr { bottom: auto; top: 4.5rem; left: .75rem; right: auto; border-radius: .6rem; border: 1px solid var(--line); padding: .2rem .55rem; }
+@media (max-width: 40rem) { .sheet.cesium-on .attr { top: auto; bottom: 4.4rem; } }
+.cesium-widget-credits { padding: .2rem .5rem !important; background: rgb(0 0 0 / .45); border-radius: .4rem; color: #fff !important; }
 .loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; color: var(--ink-2); font-weight: 560; }
 .loading span { padding: .6rem 1rem; border-radius: 999px; }
 
@@ -539,7 +542,7 @@ new PerformanceObserver((list) => { for (const e of list.getEntries()) if (S.eng
 function debug() {
   const d = $('#debug'), h = S.heap;
   d.innerHTML = `${esc(S.engine || 'closed')} · 1st frame ${S.firstFrame != null ? Math.round(S.firstFrame) + ' ms' : '…'}<br>heap ${mb(h.before)} → ${mb(heapNow())} · tiles ${S.tiles}`;
-  window.__fly = { engine: S.engine, firstFrame: S.firstFrame, idle: S.idle, tiles: S.tiles, heap: { ...h, now: heapNow() }, truth: S.truth, orbit: S.orbit };
+  window.__fly = { engine: S.engine, firstFrame: S.firstFrame, idle: S.idle, tiles: S.tiles, heap: { ...h, now: heapNow() }, truth: S.truth, orbit: S.orbit, tilesLoaded: !!S.tilesLoaded, groundH: S.groundH };
 }
 let debugTimer = 0;
 
@@ -588,9 +591,10 @@ function teardown() {
   }
   if (S.viewer) {
     const gl = S.viewer.scene.context._gl;
-    S.viewer.destroy(); gl?.getExtension('WEBGL_lose_context')?.loseContext(); S.viewer = null;
+    S.viewer.destroy(); gl?.getExtension('WEBGL_lose_context')?.loseContext(); S.viewer = null; S.tileset = null; S.pinH = null;
   }
   S.engine = null;
+  $('#sheet').classList.remove('cesium-on');
   $('#mapbox').replaceChildren();
   $('#resume').classList.remove('on');
 }
@@ -613,7 +617,7 @@ function attribution() {
   const osm = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
   const ofm = '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">© OpenMapTiles</a>';
   const esri = 'Imagery © <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>, Maxar, Earthstar Geographics, and the GIS User Community';
-  const a = S.view === 'photo' ? (S.engine === 'cesium' ? 'Map data ©Google · pins ' + osm : 'Truth pins ' + osm)
+  const a = S.view === 'photo' ? (S.engine === 'cesium' ? 'Pins ' + osm : 'Truth pins ' + osm)
     : S.view === 'sat' ? `${esri} · ${ofm} · ${osm}` : `${ofm} · ${osm}`;
   $('#attr').innerHTML = a;
 }
@@ -751,7 +755,7 @@ function paintTruth(h, got, waiting) {
   }).join('');
   if (got.source !== 'illustrative') { try { sessionStorage.setItem('fly-teaser-' + S.hotel, headline(r)); } catch {} renderHotel(); }
   if (S.engine === 'maplibre') drawMarkers();
-  if (S.engine === 'cesium') cesiumPins();
+  if (S.engine === 'cesium') { cesiumPins(); sampleGround(S.viewer); }
   debug();
 }
 function showPin(i) {
@@ -778,27 +782,31 @@ async function startCesium(key) {
   loadCss(base + 'Widgets/widgets.css');
   await loadScript(base + 'Cesium.js');
   if (!$('#sheet').classList.contains('open') || S.view !== 'photo') return;
-  const C = window.Cesium, phone = !MQ_DESK.matches;
+  const C = window.Cesium, phone = !MQ_DESK.matches, h = HOTELS[S.hotel];
   const el = document.createElement('div'); el.style.cssText = 'position:absolute;inset:0'; $('#mapbox').append(el);
+  // no globe under Google's tiles (Google's advice: a low-res globe z-fights with the mesh), no imagery layer, no widgets
   const viewer = new C.Viewer(el, { baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false,
-    animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false, globe: false, requestRenderMode: false,
-    useBrowserRecommendedResolution: true, msaaSamples: phone ? 1 : 2 });
-  viewer.resolutionScale = phone ? 0.8 : 1;
+    animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false, globe: false,
+    useBrowserRecommendedResolution: true, msaaSamples: phone ? 1 : 4 });
   viewer.scene.skyAtmosphere.show = true;
-  S.viewer = viewer; S.engine = 'cesium'; attribution();
+  if (viewer.scene.globe) viewer.scene.globe.show = false;
+  S.viewer = viewer; S.engine = 'cesium'; S.tilesLoaded = false; S.groundH = h.h; attribution();
+  $('#sheet').classList.add('cesium-on');
+  let ts;
   try {
     C.GoogleMaps.defaultApiKey = key;
-    const ts = await C.createGooglePhotorealistic3DTileset(undefined, {
-      maximumScreenSpaceError: phone ? 24 : 12,        // coarser on a phone: fewer, lighter tiles
-      cacheBytes: (phone ? 128 : 384) * 1048576,        // cap the tile cache
-      maximumCacheOverflowBytes: (phone ? 64 : 128) * 1048576,
-      skipLevelOfDetail: true, showCreditsOnScreen: true,
-    });
+    // Cesium's Google defaults (screen-space error 16, a 1.5 GB cache) on a laptop; a phone gets coarser tiles and a smaller cache that still holds the view.
+    // Requests are not culled or deferred while the camera moves: the orbit never stops, so with those on, detail never arrived.
+    const opts = { cullRequestsWhileMoving: false, foveatedScreenSpaceError: false, showCreditsOnScreen: true };
+    if (phone) Object.assign(opts, { maximumScreenSpaceError: 24, cacheBytes: 512 * 1048576, maximumCacheOverflowBytes: 256 * 1048576 });
+    ts = await C.createGooglePhotorealistic3DTileset(undefined, opts);
     if (S.viewer !== viewer) return;
     viewer.scene.primitives.add(ts);
+    S.tileset = ts;
+    ts.allTilesLoaded.addEventListener(() => { S.tilesLoaded = true; if (S.idle == null) S.idle = performance.now() - S.t0; });
     store.set('fly-gkey', key);
   } catch (e) {
-    console.warn(e); $('#loading').style.display = 'none';
+    console.warn('Google 3D Tiles refused', e?.message || e); $('#loading').style.display = 'none';
     $('#nokey').classList.add('on'); $('#nokey h3').textContent = 'That key did not open Google 3D Tiles'; $('#forget').hidden = false; return;
   }
   cesiumHome(); cesiumPins();
@@ -809,27 +817,48 @@ async function startCesium(key) {
   const hnd = new C.ScreenSpaceEventHandler(viewer.scene.canvas);
   [C.ScreenSpaceEventType.LEFT_DOWN, C.ScreenSpaceEventType.RIGHT_DOWN, C.ScreenSpaceEventType.WHEEL, C.ScreenSpaceEventType.PINCH_START].forEach((t) => hnd.setInputAction(() => stopOrbit(), t));
   if (!REDUCED.matches) startOrbit(); else $('#resume').classList.add('on');
+  // the ground at the hotel and under each pin, read from Google's mesh itself (not the ellipsoid): the camera and the pins move onto it
+  sampleGround(viewer);
 }
-function cesiumHome() {
+async function sampleGround(viewer) {
   const C = window.Cesium, h = HOTELS[S.hotel];
+  const spots = [[h.lon, h.lat], ...(S.truth?.pins || []).filter((p) => p.at).map((p) => [p.at[1], p.at[0]])];
+  try {
+    const got = await viewer.scene.sampleHeightMostDetailed(spots.map(([lon, lat]) => C.Cartographic.fromDegrees(lon, lat)));
+    if (S.viewer !== viewer) return;
+    const hs = got.map((c) => c?.height).filter((x) => Number.isFinite(x));
+    if (Number.isFinite(got[0]?.height)) S.groundH = Math.min(got[0].height, Math.min(...hs) + 120);   // a rooftop sample stays near the ground
+    S.pinH = got.map((c) => Number.isFinite(c?.height) ? c.height : null);
+    if (!S.orbit) cesiumHome();
+    cesiumPins();
+  } catch (e) { console.warn('height sample failed', e?.message || e); }
+}
+const ORBIT = { pitch: -35, range: 620 };
+function cesiumTarget() { const h = HOTELS[S.hotel]; return window.Cesium.Cartesian3.fromDegrees(h.lon, h.lat, (S.groundH ?? h.h) + 25); }
+function cesiumHome() {
+  const C = window.Cesium;
   S.heading = S.heading || 0;
-  S.viewer.camera.lookAt(C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 20), new C.HeadingPitchRange(S.heading, C.Math.toRadians(-50), 450));
+  S.viewer.camera.lookAt(cesiumTarget(), new C.HeadingPitchRange(S.heading, C.Math.toRadians(ORBIT.pitch), MQ_DESK.matches ? ORBIT.range : ORBIT.range * 1.1));
 }
 function cesiumOrbit(dDeg) {
-  const C = window.Cesium, h = HOTELS[S.hotel];
-  S.heading = (S.heading || 0) + C.Math.toRadians(dDeg);
-  S.viewer.camera.lookAt(C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 20), new C.HeadingPitchRange(S.heading, C.Math.toRadians(-50), 450));
+  S.heading = (S.heading || 0) + window.Cesium.Math.toRadians(dDeg);
+  cesiumHome();
 }
 function cesiumPins() {
   const C = window.Cesium, v = S.viewer, h = HOTELS[S.hotel]; if (!v || !C) return;
   v.entities.removeAll();
   const colour = { flight: '#4338CA', road: '#C2410C', water: '#0369A1', shop: '#0F766E', food: '#C92A5E', park: '#8B2FC9' };
-  v.entities.add({ position: C.Cartesian3.fromDegrees(h.lon, h.lat, h.h + 60), point: { pixelSize: 16, color: C.Color.fromCssColorString('#0F1124'), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
-    label: { text: h.short, font: '600 14px Inter, sans-serif', pixelOffset: new C.Cartesian2(0, -22), fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
+  const ground = (i) => (S.pinH?.[i] ?? S.groundH ?? h.h);
+  // points and labels only, lifted a little over the sampled mesh and never hidden behind it: no polygons, walls or corridors
+  const mark = (lon, lat, z, text, css, size, font) => v.entities.add({ position: C.Cartesian3.fromDegrees(lon, lat, z),
+    point: { pixelSize: size, color: C.Color.fromCssColorString(css), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+    label: { text, font, pixelOffset: new C.Cartesian2(0, -(size + 6)), fillColor: C.Color.WHITE, outlineColor: C.Color.fromCssColorString('#0F1124'), outlineWidth: 4,
+      style: C.LabelStyle.FILL_AND_OUTLINE, showBackground: false, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
+  mark(h.lon, h.lat, ground(0) + 45, h.short, '#0F1124', 16, '600 15px Inter, sans-serif');
+  let i = 1;
   for (const p of S.truth?.pins || []) {
     if (!p.at) continue;
-    v.entities.add({ position: C.Cartesian3.fromDegrees(p.at[1], p.at[0], h.h + 40), point: { pixelSize: 12, color: C.Color.fromCssColorString(colour[p.kind]), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
-      label: { text: `${p.title} · ${metres(p.d)}`, font: '500 13px Inter, sans-serif', pixelOffset: new C.Cartesian2(0, -18), fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
+    mark(p.at[1], p.at[0], ground(i++) + 20, `${p.title} · ${metres(p.d)}`, colour[p.kind], 12, '500 13px Inter, sans-serif');
   }
 }
 
@@ -847,6 +876,7 @@ $('#usekey').addEventListener('click', () => { const k = $('#gkey').value.trim()
 $('#forget').addEventListener('click', () => { store.set('fly-gkey', null); $('#gkey').value = ''; $('#forget').hidden = true; });
 const Q = new URLSearchParams(location.search);
 if (Q.get('hotel') && HOTELS[Q.get('hotel')]) S.hotel = Q.get('hotel');
+if (['map', 'sat', 'photo'].includes(Q.get('view'))) S.view = Q.get('view');
 setMode(Q.get('mode') || store.get('fly-mode') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 renderHotel();
 </script>
