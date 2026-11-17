@@ -7,7 +7,7 @@ from tests.test_signin import sign_in
 OWN_SHELL = {"/"}      # the cover (its own shell, tests/test_cover.py)
 NOT_PAGES = {"/auth/callback", "/logout", "/healthz", "/manifest.webmanifest", "/sw.js", "/robots.txt", "/sitemap.xml", "/trips/import/template", "/plan/explore", "/plan/quote",
              "/badge/plan-this-trip.svg", "/badge/plan-this-trip-dark.svg", "/trip/family/thread", "/trip/talk/items", "/trip/family/list", "/trip/family/panel", "/trip/cockpit/map",
-             "/plan/matrix/tile", "/plan/matrix/peek", "/plan/matrix/rail", "/guides/sheet", "/plan/ask/suggest"}      # fragments, JSON, files, the OAuth return
+             "/plan/matrix/tile", "/plan/matrix/rail", "/guides/sheet", "/plan/ask/suggest"}      # fragments, JSON, files, the OAuth return
 PENDING_F272: set[str] = set()      # empty since parts A and C merged (F-272); a page still in Direction A would be listed here, with the reason
 
 

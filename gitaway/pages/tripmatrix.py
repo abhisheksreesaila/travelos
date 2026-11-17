@@ -5,7 +5,6 @@ GET  /plan/matrix          the results of the v2 design (F-250): the sentence on
                            status ("Pricing 3 of 25 trips"), the legend, the pick bar (the find) and the grid, a place a row, a start day a column, each square the whole trip
                            with its start day's sky above its total; the opened square's trip view under it on a laptop, in a sheet on a phone. `q=` is a retyped sentence.
 GET  /plan/matrix/tile     one square as JSON for assets/js/tripmatrix.js: its words, its total and its panel. Plain `def`: a search can wait seconds.
-GET  /plan/matrix/peek     what is known for the nights asked (F-237), every square at once, no search: the script asks it when the nights slider is let go.
 GET  /plan/matrix/square   one square as its own page: the panel, for a link and for a page without the script. Plain `def` too.
 POST /plan/matrix/warm     the head start (F-229): the page's script asks once; the first squares start searching on worker threads. A plain GET starts none.
 POST /plan/matrix/save     Save to trip: the square is saved to the family's trip (made if it is new), never booked; the price is read again here, never trusted from the form.
@@ -35,7 +34,7 @@ from gitaway.pages.skystrip import WET, WORDS, weather_for
 from gitaway.partners import places
 
 PATH = "/plan/matrix"
-TILE, SQUARE, SAVE, WARM, BOOK, PEEK, RAIL = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/peek", PATH + "/rail"
+TILE, SQUARE, SAVE, WARM, BOOK, RAIL = PATH + "/tile", PATH + "/square", PATH + "/save", PATH + "/warm", PATH + "/book", PATH + "/rail"
 HEAD = (Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/skystrip.css"),
         Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="stylesheet", href="/assets/css/v2rail.css"), Link(rel="stylesheet", href="/assets/css/v2drawer.css"),
         Link(rel="stylesheet", href="/assets/css/matrixbook.css"),
@@ -377,7 +376,7 @@ def page_data(s: State, lanes, windows, known) -> str:
             "returns": {n: (s.depart + timedelta(days=n)).isoformat() for n in by}, "whens": {n: [tm.when(w) for w in ws] for n, ws in by.items()},
             "known": {k: {"c": sq.cents, "s": sq.status, "e": estimate_of(sq), "i": inner(sq), "l": label(*cell[k], sq)}
                       for k, sq in known.items()},
-            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "at_once": liteapi.at_once(), "tile": href(s, TILE), "warm": href(s, WARM), "peek": href(s, PEEK), "rail": href(s, RAIL)}
+            "order": tm.order(lanes, windows), "budget": s.budget_cents, "nearly": tm.NEARLY_CENTS, "at_once": liteapi.at_once(), "tile": href(s, TILE), "warm": href(s, WARM), "rail": href(s, RAIL)}
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
@@ -523,17 +522,6 @@ def register(app):
             return JSONResponse({"error": "No such square."}, status_code=404)
         return JSONResponse({**square_json(lane_, w_, sq), "age": age_words(sq.fetched), "drawer": to_xml(panel(s, lane_, w_, sq, asked_sq))},
                             headers={"Cache-Control": "no-store"})
-
-    @app.get(PEEK)
-    def trip_matrix_peek(session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
-        """Every square already known for these dates (F-237): the showcase's samples, or LiteAPI's cache. A plain GET that searches nothing and spends no budget."""
-        s = state(to, home, d, r, a, k, x, nb, b)
-        lanes, windows = lanes_of(s), windows_of(s)
-        if s.problems or not windows:
-            return JSONResponse({"error": " ".join(s.problems) or MISSING["dates"]}, status_code=400)
-        known = peek_all(s, lanes, windows, _family(session))
-        cell = {tm.key(x.key, w.key): (x, w) for x in lanes for w in windows}
-        return JSONResponse({"known": {k: square_json(*cell[k], sq) for k, sq in known.items()}}, headers={"Cache-Control": "no-store"})
 
     @app.get(RAIL)
     def trip_matrix_rail(session, lane: str = "", w: str = "", to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = "", wg: str = ""):

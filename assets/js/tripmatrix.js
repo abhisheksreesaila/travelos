@@ -273,6 +273,7 @@
     estFlag();
   }
   function next() {
+    if (sliding) return null;      // F-280: nights are staged, not searched: nothing is asked (the squares in flight finish for the nights they were asked for)
     for (var i = 0; i < data.order.length; i++) {
       var k = data.order[i];
       if (seen[k] && !known[k] && !asked[k]) return k;
@@ -443,7 +444,6 @@
     document.querySelectorAll('[data-nights-out]').forEach(function (el) { el.textContent = nightsWords(n); });
     var pct = Math.round((n - data.lo) * 100 / (data.hi - data.lo)) + '%';
     document.querySelectorAll('input[data-nights]').forEach(function (r) { r.value = n; r.setAttribute('aria-valuetext', nightsWords(n)); r.style.setProperty('--fill', pct); });
-    root.querySelectorAll('a[href^="/plan/matrix"]').forEach(function (a) { var h = a.getAttribute('href'); if (/[?&]r=/.test(h)) a.setAttribute('href', withNights(h, n)); });
     root.querySelectorAll('.mx-sq[data-sq]').forEach(function (el) { paint(el, el.dataset.sq); });
     remark();
     if (opened) show(opened, null, true); else followDefault();
@@ -454,7 +454,7 @@
   function moved(n) {
     sliding = n !== N0;      // back at the nights the page was searched for: the real answers again
     if (n !== N) setNights(n);
-    if (!sliding) { if (opened) show(opened, null, true); estFlag(); }
+    if (!sliding) { if (opened) show(opened, null, true); estFlag(); pump(); }
     else root.dataset.busy = '0';
   }
   root.addEventListener('input', function (e) { var t = e.target; if (t.matches && t.matches('input[data-nights]')) moved(+t.value); });
