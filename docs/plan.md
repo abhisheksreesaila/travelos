@@ -1771,3 +1771,26 @@ Live check 2026-11-16: the public Overpass servers did not answer, so Forest Sui
 - [x] pins are asked in the background when a square opens (not only on the card's tap), so they are kept by the time anyone looks; the same per-visitor limits apply and a cached hotel costs nothing
 - [x] the card's teaser shows the heads-up as soon as it is kept
 - [x] tests over recorded answers; no live network in tests
+
+## F-287 Today: the next thing, on the day [todo]
+Brief: docs/briefs/trip-day.md · Decisions D-926..D-930 · Needs: none
+- [ ] `/trip/today` and a Today card at the top of My trip while the trip is within 3 days or under way: before (countdown, check-in-opens link, packing weather), travel day (flight with leave-by estimate, then the hotel: address, check-in, code, directions link, ride, weather, who to call), during (today's plans, hotel, check-out)
+- [ ] "Use my location" only on a tap: distance and time to the hotel while open; nothing stored or logged
+- [ ] the day's page works offline once opened (service worker), codes and addresses included
+- [ ] never invented: a phone only from a source, leave-by labelled an estimate; the showcase shows a labelled sample day (`?day=` to preview a date there only)
+- [ ] phone first, 390 and 1440, both modes, 48px targets; tests (unit + browser)
+
+## F-288 The stay in Apple and Google Wallet [todo]
+Brief: docs/briefs/trip-day.md · Decisions D-931..D-935 · Needs: Apple Pass Type ID certificate; Google Wallet issuer id and service account (names only: APPLE_PASS_*, GOOGLE_WALLET_*)
+- [ ] an Apple `.pkpass` (pass.json, images, manifest, PKCS#7 signature) for a booked stay: hotel, address, dates, guests, confirmation code (QR of the code), check-in/out, relevantDate and the hotel's location
+- [ ] a "Save to Google Wallet" link (signed JWT, generic pass) with the same facts
+- [ ] buttons on the booking page, the booked pass, the confirmation email and Today; hidden until the credentials are set
+- [ ] downloads only for the booking's own family, signed per booking; no guessable address; nothing logged but the booking id
+- [ ] tested with test keys made in the tests; `scripts/wallet_setup.sh` walks the founder through both accounts
+- [ ] security review (personal data)
+
+## F-289 "My trip", "Find a trip", and sign in for 3D [todo]
+Founder 2026-11-17: "the word plan means different things to different people … it should mean you have finished booking, now plan your itinerary"; "we can put a big sign in to check 3D view and immersive experience".
+- [ ] the bar's Plan reads "My trip" (the calendar, titled "Your itinerary"); a visitor's "Plan a trip" reads "Find a trip"
+- [ ] a signed-out tap on satellite or 3D in See it from above shows a clear "Sign in to fly around the hotel in 3D" card with the sign-in way
+- [ ] the cover's dark sky is the deep night of the Harbour ground, not purple (D-925)
