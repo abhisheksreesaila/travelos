@@ -1738,6 +1738,7 @@ Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hot
   - what guests complain about, opening the matching reviews;
   - unusual items flagged "Heads up", ordinary amenities in one "The usual" line;
   - anything absent says "not listed"
+- [ ] the map's truth feeds the dashboard (founder 2026-11-16: "important things highlighted like a dashboard … now with maps, important pin points"): "Getting there and around" leads with F-284's heads-up line and the top pins (flight path, freeway, water, grocery, parking) with distance and time, and holds the "See it from above" card; an unusual pin (flight path overhead, freeway under 300 m) wears the same "Heads up" flag as a fee
 - [ ] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
 - [ ] the showcase shows labelled sample data; tests over the recorded fixtures
 
@@ -1762,3 +1763,11 @@ Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910.
 - [ ] sent through fh-saas `send_email` (SMTP_* env: Resend's SMTP), on its own thread, sent before the guest's address is blanked, never twice for one booking (kept on the row), never logging the address or names; no SMTP settings means no email and no error
 - [ ] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
 - [ ] security review (personal data)
+
+## F-286 Pins that are there when you look [todo]
+Brief: docs/briefs/matrix-v5.md · Decisions D-915..D-917 · Needs: F-284
+Live check 2026-11-16: the public Overpass servers did not answer, so Forest Suites at Heavenly showed no pins.
+- [ ] more Overpass mirrors, tried in turn, each with a short deadline; a failing mirror sits out for a few minutes
+- [ ] pins are asked in the background when a square opens (not only on the card's tap), so they are kept by the time anyone looks; the same per-visitor limits apply and a cached hotel costs nothing
+- [ ] the card's teaser shows the heads-up as soon as it is kept
+- [ ] tests over recorded answers; no live network in tests
