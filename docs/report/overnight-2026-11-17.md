@@ -26,7 +26,7 @@ The full text is in `docs/report/journey-2026-11-17.md`.
 | M3 F-283 stay and flights apart, rooms row | PASS |
 | M4 the soul and the walk, with screenshots | PASS |
 | M5 at least 6 fixes from the walk | PASS (10 fixed) |
-| M6 unit suite and tonight's browser files green | see the end |
+| M6 unit suite and tonight's browser files green | PASS (the whole unit suite and 10 browser files) |
 | M7 this report | PASS |
 
 ## Matrix v5 is complete (F-281 to F-286, all reviewed and merged)
