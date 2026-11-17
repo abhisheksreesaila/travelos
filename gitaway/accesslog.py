@@ -5,7 +5,7 @@ import logging
 import re
 
 _TOKEN = re.compile(r"/claim/[A-Za-z0-9_-]{20,}")
-_WALLET = re.compile(r"(/wallet/(?:apple|google)/)[A-Za-z0-9_.=-]{20,}")      # F-288: a wallet link names a booking and a family, so the log keeps neither
+_WALLET = re.compile(r"((?:/|%2F)wallet(?:/|%2F)(?:apple|google)(?:/|%2F))[A-Za-z0-9_.=-]{20,}", re.I)      # F-288: a wallet link names a booking and a family, so the log keeps neither, also inside the sign-in redirect's `next=` (slashes as %2F)
 
 
 class Redact(logging.Filter):

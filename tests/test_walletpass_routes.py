@@ -122,3 +122,13 @@ def test_the_access_log_never_carries_a_wallet_link():
     rec = logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d', ("1.2.3.4:5", "GET", wp.APPLE_PATH + t, "1.1", 200), None)
     accesslog.Redact().filter(rec)
     assert t not in rec.getMessage() and "/wallet/apple/[link]" in rec.getMessage()
+
+
+def test_the_access_log_never_carries_a_wallet_link_inside_the_sign_in_redirect():
+    from urllib.parse import quote
+    from gitaway import accesslog
+    t = wp.sign("google", BOOKING, "fam1")
+    for path in (f"/signin?next={quote(wp.GOOGLE_PATH + t, safe='')}", f"/login?next={quote(wp.APPLE_PATH + t, safe='').lower()}&intent=save", f"/signin?next=%2FWALLET%2FApple%2F{t}"):
+        rec = logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d', ("1.2.3.4:5", "GET", path, "1.1", 303), None)
+        accesslog.Redact().filter(rec)
+        assert t not in rec.getMessage() and t.lower() not in rec.getMessage() and "[link]" in rec.getMessage()
