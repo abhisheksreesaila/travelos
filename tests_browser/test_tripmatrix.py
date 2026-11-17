@@ -348,6 +348,9 @@ def test_while_the_first_squares_load_a_fact_floats_in_and_leaves_once_they_land
               const r = e.getBoundingClientRect(); return r.left < n.right && r.right > n.left && r.top < n.bottom && r.bottom > n.top; }).map(e => e.textContent.trim()); }""")
         assert hit == [], (viewport["width"], hit)
         page.evaluate("window.scrollTo(0, 0)")
+        over = page.evaluate("""() => { const n = document.getElementById('mx-fact').getBoundingClientRect(), b = document.querySelector('.v2-sections');
+            if (!b || getComputedStyle(b).position !== 'fixed') return false; const r = b.getBoundingClientRect(); return n.bottom > r.top && n.top < r.bottom && n.left < r.right && n.right > n.left; }""")
+        assert not over, viewport["width"]      # overnight walk 2026-11-17: on a phone the fact sat on the floating Book · Guides bar
         assert page.evaluate("() => GA.motion.log.some(m => m.kind === 'settle')")            # it settled in (liquid)
         expect(isle).to_be_hidden(timeout=8000)                                              # the asked square landed: it leaves
         assert page.errors == []
