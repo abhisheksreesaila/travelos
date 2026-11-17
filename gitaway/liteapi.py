@@ -973,7 +973,7 @@ def _important(html) -> tuple:
     words together across a lost line break ("entertainmentGuests") and give a list under a heading ("The resort fee includes:" then "- Live music"): the break is put back,
     a heading's items join it ("The resort fee includes: Live music & onsite entertainment"), and a heading with nothing after it is dropped."""
     text = strip_html(html if isinstance(html, str) else "")
-    text = re.sub(r"(?<=[a-z])(?=[A-Z][a-z])", "\n", text)      # a lost break between two sentences: "entertainmentGuests" -> "entertainment" / "Guests"
+    text = re.sub(r"(?<=[a-z]{4})(?=[A-Z][a-z]+\s)", "\n", text)      # a lost break between two sentences ("entertainmentGuests are" -> "entertainment" / "Guests are"); "WiFi", "iPhone", "McDonald's" stay whole
     lines = [" ".join(x.split()) for x in text.split("\n")]
     out: list = []
     for line in (x for x in lines if x):

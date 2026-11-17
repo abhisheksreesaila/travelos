@@ -763,3 +763,10 @@ def test_the_hotels_important_information_reads_as_clean_sentences_from_a_live_s
          "Special Requests are subject to availability and additional charges may apply.</p><p>A deposit may be required at the property.</p><p>The resort fee includes:</p>")
     assert liteapi._important(t) == ("The resort fee includes: Live music&onsite entertainment", "Guests are required to show a photo ID and credit card upon check-in.",
                                      "Please note that all Special Requests are subject to availability and additional charges may apply.", "A deposit may be required at the property.")
+
+
+
+def test_a_brand_written_in_camel_case_is_never_split_as_a_lost_break():
+    """Live 2026-11-17: "Basic WiFi" came out as "Basic Wi" when every lower-to-upper join was read as a lost line break."""
+    got = liteapi._important("<p>The resort fee includes: Basic WiFi, parking and an iPhone charger at McDonald's corner.</p>")
+    assert got == ("The resort fee includes: Basic WiFi, parking and an iPhone charger at McDonald's corner.",)
