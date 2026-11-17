@@ -467,11 +467,13 @@ def purge(db) -> None:
         familydb.run(db, "DELETE FROM matrix_payments WHERE status = 'prebooked' AND created_at < :t", t=(at - timedelta(days=PURGE_UNPAID)).isoformat(timespec="seconds"))
         familydb.run(db, "UPDATE matrix_payments SET guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '' WHERE created_at < :t AND guest_email != ''",
                      t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
+        familydb.run(db, "UPDATE matrix_payments SET guests = '', hotel_address = '' WHERE created_at < :t AND (guests != '' OR hotel_address != '')",      # kept only for the booked email (F-285)
+                     t=(at - timedelta(days=PURGE_GUEST)).isoformat(timespec="seconds"))
 
 
-def save_prebook(db, token: str, user_id: str, row: Row) -> None:
+def save_prebook(db, token: str, user_id: str, row: Row, guests: str = "") -> None:
     """Save the prebook the moment it answers: LiteAPI cannot give its `prebookId` and `transactionId` back later. The same token twice keeps the first row. The form's `secretKey` is
-    not saved (only the page that shows the form needs it)."""
+    not saved (only the page that shows the form needs it). The hotel's address and the party ("2 adults, 1 kid") are kept for the booked email (F-285)."""
     purge(db)
     pre = row.prebook
     with familydb.transaction(db):
@@ -479,6 +481,7 @@ def save_prebook(db, token: str, user_id: str, row: Row) -> None:
                          "refundable, voucher_code, discount_cents, policy, status, created_at, updated_at) VALUES (:i, :u, :p, :h, :r, :a, :o, :pb, :tx, :c, :d, :f, :v, :x, :pol, 'prebooked', :now, :now)",
                      i=token, u=user_id, p=row.place, h=row.part.name[:120], r=pre.room[:120], a=pre.checkin.isoformat(), o=pre.checkout.isoformat(), pb=pre.prebook_id, tx=pre.transaction_id,
                      c=pre.charge_cents, d=pre.due_at_stay_cents, f=1 if pre.refundable else 0, v=pre.voucher_code, x=pre.discount_cents, pol=policy_words(pre)[:300], now=familydb.now())
+        familydb.run(db, "UPDATE matrix_payments SET hotel_address = :a, guests = :g WHERE id = :i", a=row.part.address[:200], g=guests[:80], i=token)
 
 
 def payment(db, token: str) -> dict | None:
@@ -525,6 +528,10 @@ def finish(db, family: str, token: str, user_id: str, budget: str = "") -> Resul
         except IntegrityError:      # a second call stored it first
             pass
         mine = familydb.rows(db, "SELECT * FROM matrix_bookings WHERE id = :i", i=ref)
+    from gitaway import bookingmail      # the guest's address is still on the row: the booked email is composed before it is blanked below (F-285)
+    lead, _ = clean_guest(pay["guest_first"], pay["guest_last"], pay["guest_email"])
+    if lead:
+        bookingmail.booked(db, mine[0], pay, lead)
     with familydb.transaction(db):
         familydb.run(db, "UPDATE matrix_payments SET status = 'booked', booking_id = :b, guest_first = '', guest_last = '', guest_email = '', guest_phone = '', guest_remarks = '', updated_at = :now WHERE id = :i",
                      b=mine[0]["booking_id"], i=token, now=familydb.now())

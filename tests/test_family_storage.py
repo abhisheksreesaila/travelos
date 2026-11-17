@@ -250,10 +250,10 @@ def test_a_migration_is_applied_to_each_family_the_first_time_it_is_opened(tmp_p
     ses.book(s, catalog.quote("f1", "h1", "c1"))
     with familydb.using(s) as db:
         assert db.conn.execute(text("SELECT pinned FROM trips")).scalar() == 0
-        assert db.conn.execute(text("SELECT version FROM _migrations ORDER BY version")).scalars().all() == [1, 2, 3, 4, 5, 900]
+        assert db.conn.execute(text("SELECT version FROM _migrations ORDER BY version")).scalars().all() == [1, 2, 3, 4, 5, 6, 7, 8, 9, 900]
     familydb.forget_schema_cache()
     with familydb.using(s) as db:  # opened again: not applied twice
-        assert db.conn.execute(text("SELECT COUNT(*) FROM _migrations")).scalar() == 6
+        assert db.conn.execute(text("SELECT COUNT(*) FROM _migrations")).scalar() == 10
     with familydb.using(s) as db:  # leave this family's file as the rest of the suite expects it
         db.conn.execute(text("ALTER TABLE trips DROP COLUMN pinned"))
         db.conn.execute(text("DELETE FROM _migrations WHERE version = 900"))

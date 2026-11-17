@@ -147,6 +147,7 @@ def test_only_squares_in_view_are_asked_for_and_the_rest_wait_as_skeletons(matri
     assert not any(k.endswith("2026-12-14") for k in asked), asked                           # the last column is off the screen to the right: not asked for
     last = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq").last
     assert "is-wait" in last.get_attribute("class")
+    page.locator(".mx-lane[data-lane='sandiego']").scroll_into_view_if_needed()      # F-281: the lane is as far down the page as the sentence and the chips' tray make it
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 9999")
     expect(last).not_to_have_class(re.compile("is-wait"))
     assert any(k.endswith("2026-12-14") for k in stand.asked)
@@ -752,7 +753,9 @@ def test_a_word_opened_from_the_keyboard_puts_focus_inside_its_picker_and_escape
 WORDS_JS = """() => [...document.querySelectorAll('#mx *')].filter(e => !(e instanceof SVGElement) && e.closest('.mx-sr') === null &&
   [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
   return {t: e.textContent.trim().slice(0, 24), k: (e.closest('.mx-sq, .mx-find, .v2-sent, .mx-top') || e).className, c: s.color, x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height,
-          shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && !e.closest('.mx-pop, .mx-isle, .mx-side, .is-off') }; })"""
+          shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && !e.closest('.mx-pop, .mx-isle, .mx-side, .is-off'),
+          vis: (() => { let l = r.left, rt = r.right; for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) { if (getComputedStyle(a).overflowX !== 'visible') { const b = a.getBoundingClientRect(); l = Math.max(l, b.left); rt = Math.min(rt, b.right); } } return {x: l + scrollX, w: Math.max(0, rt - l)}; })(),
+          under: (() => { const p = document.querySelector('.v2-sections'); if (!p || getComputedStyle(p).position !== 'fixed') return false; const b = p.getBoundingClientRect(); return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; })() }; })"""      # F-281: `vis` is the part of a word the grid's scroller still paints (only that part is read; review: a half-clipped word is measured, not skipped), `under` one the phone's floating sections pill covers
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
@@ -768,7 +771,7 @@ def test_every_word_on_the_translucent_card_is_4_5_to_1_on_what_is_really_painte
     page.wait_for_selector("#mx.is-live")
     page.wait_for_function("() => document.getElementById('mx').dataset.busy === '0'")
     page.wait_for_timeout(700)
-    words = [w for w in page.evaluate(WORDS_JS) if w["shown"]]
+    words = [dict(w, x=w["vis"]["x"], w=w["vis"]["w"]) for w in page.evaluate(WORDS_JS) if w["shown"] and not w["under"] and w["vis"]["w"] >= 6]
     assert len(words) > 30
     page.add_style_tag(content="#mx, #mx * { color: transparent !important; text-decoration-color: transparent !important; text-shadow: none !important; }")
     shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")

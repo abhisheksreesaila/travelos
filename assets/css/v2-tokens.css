@@ -1,5 +1,5 @@
 /* GitAway design language v2 (F-250, D-610): the booking prototype's look, docs/design/booking-v2/index.html, which the founder approved ("it just felt like water").
-   A sky gradient with a sun and clouds behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
+   The Harbour ground (F-281: a deep gradient, a sun or moon, two ridges) behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
    accent; the kinds' colours; Newsreader for the display and Inter for everything you read and every price (tabular figures). It supersedes Direction A's grey canvas
    and Geist, and omxqua's "no glass or blur", for the pages that opt in. A page opts in with ONE class: `v2` on its wrapper (layout.page(v2=True)).
    These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
@@ -15,11 +15,16 @@
   --d-wt: 560; --d-track: -0.022em; --d-lh: 1.08;
   --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
 
+  /* the Harbour ground (F-281, D-890; docs/design/matrix-v5, "harbour"): a deep navy sky, a warm glow low on the horizon, two ridges. Deep in light mode too, so the glass has something to frost;
+     --sky-ink is the text that sits straight on it (a card, a glass widget and every field keep --ink). The reading pages keep the quiet sky above. */
+  --hb-a: #1B2A41; --hb-b: #3A4558; --hb-c: #7A4C30; --hb-glow: #F2B47A; --hb-ridge: #141C2A; --hb-ridge-2: #241F24;
+  --sky-ink: #F4F7FB; --sky-ink-2: rgb(244 247 251 / .88);
+  --frost: rgb(16 12 24 / .6); --sky-pill: rgb(255 255 255 / .9); --sky-pill-fg: #0F1124;      /* a dark tray over the ground (the extra-info chips) and the count pill on it */
   --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
   --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73; --on-ink: #FFFFFF;
-  --card-t: rgb(255 255 255 / .86); --card-solid: #FFFFFF; --card-2: #F2F3FA; --lead-bg: #F8F8FD;
+  --card-t: rgb(255 255 255 / .95); --card-solid: #FFFFFF; --card-2: #F2F3FA; --lead-bg: #F8F8FD;
   --line: rgb(15 17 36 / .10); --line-2: rgb(15 17 36 / .18);
-  --glass: rgb(255 255 255 / .62); --glass-line: rgb(255 255 255 / .75);
+  --glass: rgb(255 255 255 / .80); --glass-line: rgb(255 255 255 / .75);      /* over the Harbour ground: paper-white enough that ink reads 4.5:1 on its darkest stop (F-281, D-891) */
   --word: #372DB0;      /* the sentence's tappable words: the indigo a little deeper, so each stays 4.5:1 on the sky */
   --flight: #4338CA; --flight-t: #E4E3FB; --flight-i: #2A2185;
   --stay: #8B2FC9; --stay-t: #F1E3FA; --stay-i: #5A1785;
@@ -62,7 +67,6 @@
   --v2-shimmer: 1300ms;    /* one pass of a waiting square's shimmer */
   --v2-flash: 700ms;       /* the flash on a word that just changed */
   --v2-spin-t: 800ms;      /* one turn of the spinner */
-  --v2-drift: 60s;         /* a cloud drifting */
   --v2-drawer: 820ms;      /* the drawer growing down out of its square's column (F-251) */
   --v2-drawer-again: 520ms;      /* the drawer, already open, taking another square */
   --v2-drawer-in: 460ms;   /* what is in the drawer arriving, one part after another */
@@ -134,9 +138,11 @@
   color-scheme: light;
 }
 :root[data-mode="dark"]:has(.v2) {
+  --frost: rgb(8 6 14 / .62);
+  --hb-a: #0D1420; --hb-b: #1F2430; --hb-c: #4A2E1E; --hb-glow: #B7713F; --hb-ridge: #070A10; --hb-ridge-2: #140F10;
   --sky-1: #0B1430; --sky-2: #1D1D44; --sky-3: #33203F;
   --ink: #F4F5FB; --ink-2: #C3C6DA; --ink-3: #A9ADC4; --on-ink: #0F1124;
-  --card-t: rgb(20 22 44 / .80); --card-solid: #171A33; --card-2: #22264A; --lead-bg: #1A1D39;
+  --card-t: rgb(20 22 44 / .92); --card-solid: #171A33; --card-2: #22264A; --lead-bg: #1A1D39;
   --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
   --glass: rgb(26 28 56 / .80);      /* dark glass a step more solid: the dark sand showed through at .60 (rail words 3.8:1) */ --glass-line: rgb(255 255 255 / .10);
   --word: #9A94FF;

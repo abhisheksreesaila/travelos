@@ -410,7 +410,7 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     card = Div(Div(status_el(s, total), legend_el(s), about_el(s, skies, sample), P(sky_note(skies), cls="mx-ah-n"), P(SLOW, cls="mx-slow", role="status"), P(ESTIMATES, cls="mx-est-note", id="mx-est", role="status"), cls="mx-top"),
                find_el(), lanes_el(s, lanes, windows, skies), credit_el(skies), cls="mx-card")
     drawer = Div(id="mx-drawer", cls="dr-wrap", aria_label="The square you opened", aria_live="polite", hidden=True)      # the drawer grows into it (assets/js/tripmatrix.js, v2drawer.js)
-    rail = Aside(Div(Div(*[Span(Span(cls="ic"), "Looking around…", cls="wchip v2-glass is-skel") for _ in range(3)], cls="rl-chips"), cls="rl-in"), id="mx-rail", cls="rl", aria_label="Around the place", aria_live="polite")
+    rail = Aside(Div(Div(Div(Span(v2rail.EXTRA, cls="rl-lab"), cls="rl-top"), Div(*[Span(Span(cls="ic"), Span(Span("Looking around…"), cls="tx"), cls="wchip is-skel") for _ in range(3)], cls="rl-chips"), cls="rl-tray v2-glass"), cls="rl-in"), id="mx-rail", cls="rl", aria_label="Around the place", aria_live="polite")
     results = Div(Div(card, drawer, cls="mx-main"), cls="mx-results")
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), rail, results,
                Script(NotStr(page_data(s, lanes, windows, {})), type="application/json", id="mx-data"), fact_el(s), *machinery,
