@@ -41,3 +41,4 @@
 - Not done on purpose: deploy, Railway variables, real bookings (founder: autopilot is development and testing only).
 ## 2026-11-17 overnight
 - Goal and checker committed (docs/overnight-goal-2026-11-17.md, scripts/check_overnight2.py). F-281, F-284, F-285 merged earlier; F-286 in review; F-282 building.
+- F-286 merged and done (M1); test_aerial clean 3x on master.
