@@ -80,6 +80,8 @@ def test_choosing_a_flight_a_hotel_and_a_room_in_place_moves_the_total_by_the_di
     page.wait_for_function(f"() => document.querySelector('[data-slot=total]').textContent === '${(first - 20_000 + 50_000 + 50) // 100:,}'")
     view.locator(".dr-rooms:not([hidden]) .dr-opt[data-room='2']").click()      # that hotel's third room: $300 more
     page.wait_for_function(f"() => document.querySelector('[data-slot=total]').textContent === '${(first - 20_000 + 50_000 + 30_000 + 50) // 100:,}'")
+    assert cents(view.locator("[data-znav-total]").inner_text()) == first - 20_000 + 50_000 + 30_000      # F-283 review: the sticky nav's Total follows every choice too
+    assert cents(view.locator("[data-mirror='total']").inner_text()) == first - 20_000 + 50_000 + 30_000
     assert [view.locator(f"input[data-pick='{k}']").first.input_value() for k in ("fl", "st", "rm")] == ["1", "2", "2"]      # only indexes travel
     assert view.locator("[data-vs]").count() == 0 or view.locator("[data-vs]").first.is_hidden()           # "vs San Diego" was for the trip shown first
     shot(page, f"{viewport['width']}-switched")
