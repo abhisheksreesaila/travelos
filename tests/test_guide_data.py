@@ -52,8 +52,8 @@ def test_a_tip_badge_only_where_a_creator_tip_names_the_stop(lisbon):
 
 def test_the_tiles_are_only_what_the_guide_knows(lisbon):
     g = gd.from_trip(trip_of(lisbon))
-    assert [(t.label, t.value) for t in g.tiles] == [("Days", "3 days"), ("Tips", "4 tips"), ("From the blog", "theplanetd.com")]      # no season, budget, "getting around" or stay: the post's draft does not say
-    assert g.tiles[0].sub == "17 stops"
+    assert [(t.label, t.value) for t in g.tiles] == [("From the blog", "theplanetd.com"), ("Days", "3 days"), ("Tips", "4 tips")]      # no season, budget, "getting around" or stay: the post's draft does not say
+    assert g.tiles[1].sub == "17 stops"
 
 
 def test_a_cost_is_only_a_price_the_creators_sentence_says():

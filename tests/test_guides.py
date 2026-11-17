@@ -122,7 +122,7 @@ def test_the_guide_is_the_run_sheet_of_the_posts_own_words(lisbon):
     html = stranger(client).get(f"/trips/{d['slug']}").text
     assert 'id="gpage"' in html and 'data-mode="reader"' in html
     assert 'data-sky="quiet"' in html      # F-261: a guide is a reading page, its sky quiet (review of F-261/F-262)
-    assert [t for t in re.findall(r'<small>(Days|Suits|Tips|From[^<]*)</small><span class="gl-v">(.*?)</span>', html)] == [("Days", "3 days"), ("Tips", "4 tips"), ("From the blog", "theplanetd.com")]
+    assert [t for t in re.findall(r'<small>(Days|Suits|Tips|From[^<]*)</small><span class="gl-v">(.*?)</span>', html)] == [("From the blog", "theplanetd.com"), ("Days", "3 days"), ("Tips", "4 tips")]
     assert re.findall(r'<span class="dn">(Day \d)</span>', html) == ["Day 1", "Day 2", "Day 3"]      # the sticky day strip
     first = re.search(r'<li [^>]*id="g-d0s0"[^>]*>.*?</li>', html, re.S).group(0)
     assert "Belem Tower" in first and f'<p class="g-why">{BELEM}</p>' in unescape(first) and ">Tip<" in first

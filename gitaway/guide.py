@@ -125,7 +125,7 @@ def _stops(day, i, trip, first, tips, used) -> list:
 
 
 def tiles(trip: Itinerary, days: list, tips: list, host: str, url: str = "") -> list:
-    """The at-a-glance tiles: only for what the guide knows (days always; who it suits when the creator marked it; tips when it has any; the post when it came from one)."""
+    """The at-a-glance tiles: only for what the guide knows (the post first when there is one, days always; who it suits when the creator marked it; tips when it has any; the post when it came from one)."""
     n, stops = len(days), sum(len(d.stops) for d in days)
     out = [Tile("calendar", "Days", f"{n} day{'s' if n != 1 else ''}", f"{stops} stop{'s' if stops != 1 else ''}")]
     kinds = hub.tag_keys(trip)
@@ -137,8 +137,8 @@ def tiles(trip: Itinerary, days: list, tips: list, host: str, url: str = "") -> 
         out.append(Tile("sun", "Best season", season.capitalize(), "As the creator says"))
     if tips:
         out.append(Tile("spark", "Tips", f"{len(tips)} tip{'s' if len(tips) != 1 else ''}", "In the creator's words"))
-    if host:
-        out.append(Tile("link", (trip.source.kicker if trip.source else "") or "From", host, (trip.source.link_label if trip.source else "") or "Read the original post", url, trip.source.byline if trip.source else ""))
+    if host:      # the creator's credit leads: whose post this is, and the link back to it (F-295, D-952)
+        out.insert(0, Tile("link", (trip.source.kicker if trip.source else "") or "From", host, (trip.source.link_label if trip.source else "") or "Read the original post", url, trip.source.byline if trip.source else ""))
     return out
 
 

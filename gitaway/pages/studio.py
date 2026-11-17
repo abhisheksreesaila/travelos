@@ -14,9 +14,10 @@ EXAMPLE = ("https://theplanetd.com/48-hours-in-lisbon-itinerary/", "The Planet D
 STEPS = ("Reading your post", "Finding days and stops", "Laying out your guide")
 
 
-def example_chips() -> Div:
-    link, label, fav = EXAMPLE
-    return Div(Span("Try one:"), Button(Span(fav, cls="fav", style="background:var(--k-wx)"), label, type="button", cls="ex", id="fc-example-chip", data_fill=link),
+def example_chips(link=True) -> Div:
+    """"Try one" fills the box with a real post's link; `link` False (no AI key, so a link is not read) leaves only "write it yourself"."""
+    url, label, fav = EXAMPLE
+    return Div(Span("Try one:") if link else "", Button(Span(fav, cls="fav", style="background:var(--k-wx)"), label, type="button", cls="ex", id="fc-example-chip", data_fill=url) if link else "",
                Button("Or write it yourself", type="submit", name="do", value="manual", form="fc-paste", formnovalidate=True, cls="ex", id="fc-manual"), cls="examples")
 
 

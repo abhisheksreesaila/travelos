@@ -22,7 +22,7 @@ def words(html):
 
 def test_the_make_a_guide_page_says_it(client):
     text = words(client.get("/guides/make").text)
-    assert NO_MARKER in text and "Flights from your trips pay you" in text
+    assert NO_MARKER in text and "The links stay yours" in text
     assert not [o for o in OLD if o in text]
 
 

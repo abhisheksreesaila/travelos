@@ -449,6 +449,8 @@
 .cv .paste textarea { flex: 1; min-width: 0; min-height: 3.5rem; max-height: 9rem; border: 0; background: none; outline: none; resize: none; font: 500 1.125rem/1.35 var(--f-ui); color: var(--ink); padding: 0.9375rem 0; field-sizing: content; }
 .cv .paste textarea::placeholder { color: var(--ink-3); }
 .cv .fc-alt { margin: -0.625rem 0 0; }
+.cv .fc-off { margin: 0; max-width: 34rem; color: var(--ink); font-size: 1rem; line-height: 1.5; }
+.cv .fc-off a { color: inherit; text-decoration: underline; }
 .cv .fc-fine { margin: 0; color: var(--ink-2); font-size: 1rem; max-width: 34rem; }
 .cv .ex .fav { color: var(--on); }
 .cv .postcard .t { display: block; margin-top: 0.625rem; font: 560 1.1875rem/1.15 var(--f-display); }
@@ -551,3 +553,8 @@
 .cv[data-view="import"] .cb-foot { display: none; }
 @media (max-width: 719px) { .cv .post-pic .cap { display: none; } .cv .fc-ex-body h3 a { display: inline-flex; align-items: center; min-height: var(--target); } }
 .cv [hidden] { display: none !important; }
+
+/* F-295 (D-953): the creator's landing stands on the Harbour ground (deep navy), so the words straight on it are the ground's light ink; a card, a glass chip and a field keep --ink (the guides hub does the same, guides.css) */
+.v2.cv:has(> .v2-bg:not(.is-quiet)) :is(.land-h, .fc-sec-head h2, .fc-off) { color: var(--ground-ink); }
+.v2.cv:has(> .v2-bg:not(.is-quiet)) :is(.land-h em, .land-sub, .examples > span, .fc-sec > .fc-fine, .cb-foot) { color: var(--ground-ink-2); }
+.v2.cv:has(> .v2-bg:not(.is-quiet)) :is(.fc-sec > .fc-fine a, .cb-foot a, .fc-off a) { color: var(--ground-ink); }

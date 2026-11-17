@@ -9,7 +9,7 @@ Open to everyone, in both showcase modes, with no sample content in it: every wo
 
 from fasthtml.common import A, Button, Details, Div, Em, Form, I, H1, H2, H3, Img, Label, Li, Link, Ol, P, Section, Span, Summary, Textarea, Ul
 
-from gitaway import affiliate, community, session as ses
+from gitaway import affiliate, community, creatordraft as cd, planforme, session as ses
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
@@ -17,12 +17,15 @@ from gitaway.pages import bookview, studio
 
 IMPORT = "/creators/import"
 FREE = "Free. Terms shown on day one."
-LEDE = "Paste your blog link, YouTube video or Instagram caption. GitAway drafts the days, you fix what is off, and families can fork your trip into their own plans."
+HEAD_LINE = "Your post becomes a guide people can plan and book from."
+SUB = "Your words and your links stay yours."
+LEDE = f"{HEAD_LINE} {SUB} Paste it once: a blog link, a YouTube video or an Instagram caption."
 
 PROMISES = (
-    ("spark", "fc-p1", "Under a minute", "Paste your post, glance at the draft, publish. The days, stops and tips are drafted for you; you only fix what is off."),
-    ("link", "fc-p2", "Flights from your trips pay you", f"{affiliate.pays_you()} We say on every trip who earns."),
-    ("ext", "fc-p3", "It links back to your post", "Every trip opens with a source card that sends readers to your original post, with your name on it."),
+    ("ext", "fc-p1", "Another place your post travels", "Your guide has a page and a link of its own, a card for Instagram and a badge for your blog. It opens with your name and a link back to your post."),
+    ("spark", "fc-p2", "Readers can plan the trip", "\"Plan this trip\" starts a search at the guide's place, and \"Add to my plan\" drops your stops into their calendar."),
+    ("link", "fc-p3", "The links stay yours", f"Each stop shows your own link, labelled as yours; GitAway adds nothing to its price. {affiliate.pays_you()}"),
+    ("users", "fc-p4", "You can see who reads it", "Your stats page counts readers, plans started and clicks from your guides, with no cookies and no tracking of who they are."),
 )
 TERMS = (
     ("What we show", "Your name, the days, stops and tips you approve, up to two photos you pick (copied without where they were taken) and a link to your post. Never anything else."),
@@ -71,30 +74,39 @@ def example():
         cls="fc-ex fc-ex-draw", id="fc-example", data_kind="drawn")
 
 
+def off_note():
+    """What a creator is told while no AI key is set (production today): the link cannot be read yet, so the paste box takes the text and the captain can draft it from the post (/admin/draft, then a claim link). "" when drafting is on."""
+    if cd.mode() != "manual":
+        return ""
+    mail = planforme.contact_email()
+    ask = (" Or send your post to ", A(mail, href=f"mailto:{mail}?subject=My%20post%20as%20a%20guide"), " and we will draft it for you to check and publish.") if mail else ()
+    return P("Reading a link is not switched on yet. Paste the text of your post and lay it out yourself.", *ask, role="status", cls="fc-off", id="fc-off")
+
+
 def _paste(signed_in):
     """The landing's one paste box (the prototype's pill): a link, or the text of the post. Posts to the import; assets/js/creatorimport.js runs it in place."""
     return Form(
         bookview.ico("link"),
         Label("A link to your blog post, YouTube video or Instagram post, or the text itself", fr="fc-text", cls="v2-sr"),
-        Textarea(id="fc-text", name="text", rows="1", maxlength="100000", placeholder="Paste your blog, YouTube or Instagram link", autocomplete="off", spellcheck="false"),
-        Button("Make my guide", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
+        Textarea(id="fc-text", name="text", rows="1", maxlength="100000", placeholder="Paste the text of your post" if cd.mode() == "manual" else "Paste your blog, YouTube or Instagram link", autocomplete="off", spellcheck="false"),
+        Button("Start my guide" if cd.mode() == "manual" else "Make my guide", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
         action=IMPORT, method="post", id="fc-paste", cls="paste", data_signed_in="1" if signed_in else "0")
 
 
 def hero(signed_in):
     return Section(
-        Div(Div(Span(I(), "Make a guide", cls="kicker"), H1("Paste your post. ", Em("It becomes a guide"), " families can plan from.", cls="disp land-h"),
-                P("Your days, your stops and your own sentences, laid out stop by stop so anyone can scan it and plan from it. Your name on it, your links inside.", cls="land-sub"),
-                _paste(signed_in), studio.example_chips(),
+        Div(Div(Span(I(), "Make a guide", cls="kicker"), H1("Your post becomes ", Em("a guide"), " people can plan and book from.", cls="disp land-h"),
+                P(SUB, " Your days, stops and sentences, laid out stop by stop, with your name on it and your links inside.", cls="land-sub"),
+                _paste(signed_in), off_note(), studio.example_chips(link=cd.mode() != "manual"),
                 studio.points(Span(Span(icon("check", 17, 2.4), cls="ic", style="--k:var(--bk-tix)"), FREE, " You tick \"This is my post\" before anything goes public.", cls="point v2-glass", id="fc-free")), cls="land-copy"), studio.art(), cls="land"))
 
 
 def page_body(signed_in):
     return Div(
         Div(hero(signed_in),
-            Section(example(), cls="fc-sec ga-wrap", aria_label="An example"),
             Section(*[Div(Span(_icon(ic, 24, 2.2), cls=f"fc-pi {cls}", aria_hidden="true"), H3(title), P(text), cls="fc-promise") for ic, cls, title, text in PROMISES],
                     cls="fc-promises ga-wrap", aria_label="What you get"),
+            Section(example(), cls="fc-sec ga-wrap", aria_label="An example"),
             Section(Div(Span(FREE, cls="fc-eyebrow", id="fc-terms-free"), H2("The terms, in plain words"), cls="fc-sec-head"),
                     Ul(*[Li(H3(h), P(t), cls="fc-term") for h, t in TERMS], cls="fc-terms"),
                     P("Your post stays yours. We never claim it, and you confirm it is yours before it is public. ", A("Privacy", href="/privacy"), " · ", A("Terms", href="/terms"), cls="fc-fine"),
