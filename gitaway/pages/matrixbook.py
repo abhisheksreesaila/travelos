@@ -104,6 +104,12 @@ def _chips(name, options, picked, attr):
     return Div(*[Button(v, type="button", cls="v2-chip", aria_pressed="true" if v in picked else "false", **{attr: v}) for v in options], cls="v2-chips")
 
 
+def _party(s) -> str:
+    """The party in words ("2 adults, 1 kid (ages 7)"): the review's line, and kept with the prebook for the booked email (F-285)."""
+    kids = len(s.kid_ages)
+    return f"{s.adults} adult{'' if s.adults == 1 else 's'}" + (f", {kids} kid{'' if kids == 1 else 's'} (ages {', '.join(map(str, s.kid_ages))})" if kids else "")
+
+
 def _rv(k, v, small="", edit=None, mark=None):
     """One line of the review: what, its answer, and an Edit link that goes back to the question (`data-go`)."""
     return Div(Span(k, cls="mxb-rk"), Span(Span(v, **({"data_rv": mark} if mark else {})), Small(small, **({"data_rv": mark + "-s"} if mark else {})) if (small or mark) else "", cls="mxb-rv-v"),
@@ -118,8 +124,7 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     form, live = mb.pays_by_form() and not prep.sample, mb.mode() == mb.LIVE
     values, errors = values or ({} if live else dict(zip(("first", "last", "email"), MADE_UP))), errors or {}
     sample = prep.sample
-    kids = len(s.kid_ages)
-    who = f"{s.adults} adult{'' if s.adults == 1 else 's'}" + (f", {kids} kid{'' if kids == 1 else 's'} (ages {', '.join(map(str, s.kid_ages))})" if kids else "")
+    who = _party(s)
     held = P(icon("lock", 16, 2.2), f"Your room is held for {mb.HOLD // 60} minutes while you answer.", cls="mxb-held")
     guest = (P("The name on the hotel booking. It must match an ID at check-in." + ("" if live else " A made-up guest is filled in: this is the sandbox, so there is no need to type a real name."), cls="mxb-lede"),
              Div(_field("first", "First name", values.get("first", ""), errors.get("first"), autocomplete="given-name", maxlength=mb.NAME_MAX),
@@ -366,7 +371,7 @@ def _first_step(request, session, s, lane, w, sq, pk, user_id, note=""):
         with ses.family(session) as fam:
             if not fam:
                 return _answer(request, s, lane, w, sheet(s, lane, w, problem=SIGNIN, sample=False))
-            mb.save_prebook(fam.db, prep.token, user_id, prep.rows[0])
+            mb.save_prebook(fam.db, prep.token, user_id, prep.rows[0], guests=_party(s))
     return _answer(request, s, lane, w, sheet(s, lane, w, sq=sq, prep=prep, pk=pk, note=note))
 
 
@@ -495,7 +500,7 @@ def register(app):
         with ses.family(session) as fam:
             if not fam:
                 return refuse(SIGNIN, 401)
-            mb.save_prebook(fam.db, prep.token, me.id, prep.rows[0])
+            mb.save_prebook(fam.db, prep.token, me.id, prep.rows[0], guests=_party(s))
         f = sq.flight
         discount = sum(r_.prebook.discount_cents for r_ in prep.rows)
         return JSONResponse({"token": prep.token, "code": voucher, "stay": catalog.money(prep.total_cents), "total": catalog.money(f.cents + prep.total_cents), "discount": catalog.money(discount) if discount else "",

@@ -11,7 +11,7 @@ A refundable stay's cancel gives the money back, a non-refundable one's charges 
 from fasthtml.common import Button, Div, Form, Input, Label, P, Span
 from starlette.responses import RedirectResponse, Response
 
-from gitaway import access, catalog, familydb, liteapi, matrixbook as mb, reports, session as ses
+from gitaway import access, bookingmail, catalog, familydb, liteapi, matrixbook as mb, reports, session as ses
 from gitaway.icons import icon
 from gitaway.pages import passes as passes_ui
 
@@ -74,6 +74,8 @@ def register(app):
                 return RedirectResponse(ses.signin_href(back), status_code=303)
             status, got = mb.cancel(fam.db, family, booking, me.id)
             trip_id = (familydb.row(fam.db, "SELECT trip_id FROM matrix_bookings WHERE booking_id = :b", b=booking) or {}).get("trip_id", "")
+            if status == liteapi.OK:      # F-285: the person who cancelled is told what LiteAPI reported (once: the marker on the booking), the refund never above what the card paid
+                bookingmail.cancelled(fam.db, booking, session.get("email") or "", got.refund_cents, got.fee_cents)
         if status != liteapi.OK:
             return RedirectResponse(f"{back}{sep}err=cancel", status_code=303)
         mb.mark_cancelled(session, trip_id, booking)
