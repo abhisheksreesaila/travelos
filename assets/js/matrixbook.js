@@ -128,6 +128,12 @@
     set('requests-s', arrive ? 'Arriving in the ' + arrive.dataset.arr.toLowerCase() : '');
   }
   function ready(form) { var go = form.querySelector('.mxb-go'), tick = form.querySelector('.mxb-tick'); if (go && tick) go.disabled = !tick.checked; }
+  document.addEventListener('click', function (e) {      // "Tick the rules to book": bring the box into view and put focus on it; never tick it for the person
+    var need = e.target.closest && e.target.closest('[data-need]'); if (!need) return;
+    var f = need.closest('form'), box = f && f.querySelector('.mxb-agree'), tick = f && f.querySelector('.mxb-tick');
+    if (box) box.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (tick) tick.focus({ preventScroll: true });
+  });
   function go(form, i, dir, quiet) {
     var ps = panes(form);
     i = Math.max(0, Math.min(LAST, i));

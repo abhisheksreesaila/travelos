@@ -166,7 +166,9 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
               agree, P(errors["agree"], id="mxb-agree-e", cls="mxb-err", role="alert") if errors.get("agree") else "", last)
     panes = [Div(H3(STEPS[i][1], cls="mxb-q"), *body, cls="mxb-pane", data_pane=str(i), data_small=STEPS[i][0]) for i, body in enumerate((guest, contact, requests, review))]
     prog = Div(*[Span(cls="on" if i == 0 else "") for i in range(len(STEPS))], cls="mxb-prog", aria_hidden="true")
-    foot = Div(Button("Back", type="button", cls="mxb-b2", data_back="1"), Span("Step 1 of 4", cls="mxb-stepn"), Button(Span("Continue"), icon("arrow-right", 20, 2.4), type="button", cls="mxb-b1", data_cont="1"),
+    foot = Div(Button("Back", type="button", cls="mxb-b2", data_back="1"), Span("Step 1 of 4", cls="mxb-stepn"),
+               Button("Tick the rules to book", type="button", cls="mxb-need", data_need="1"),      # overnight walk 2026-11-17: the greyed Book said nothing; this says why and shows the box (it never ticks it)
+               Button(Span("Continue"), icon("arrow-right", 20, 2.4), type="button", cls="mxb-b1", data_cont="1"),
                Button(icon("check", 20, 2.8), Span(f"Continue · {catalog.money(stays_total)}" if form else f"Book for {catalog.money(stays_total)}", data_sum="go"), type="submit",
                       cls="mxb-b1 mxb-go sun"), cls="mxb-foot")
     at = min((i for f, i in (("first", 0), ("last", 0), ("email", 1), ("phone", 1), ("agree", 3)) if f in errors), default=0)      # the question a mistake is in opens first

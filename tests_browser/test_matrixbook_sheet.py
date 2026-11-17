@@ -151,6 +151,11 @@ def test_the_button_spins_the_sheet_grows_out_of_it_four_questions_book_and_the_
     expect(sheet.locator("[data-rv='requests']")).to_have_text("Quiet room")
     expect(sheet.locator("[data-rv='requests-s']")).to_have_text("Arriving in the evening")
     expect(sheet.locator(".mxb-go")).to_be_disabled()                                           # the tick is required
+    need = sheet.locator(".mxb-need")
+    expect(need).to_be_visible()                                                                 # overnight walk 2026-11-17: the greyed button says why
+    need.click()
+    assert page.evaluate("() => document.activeElement.classList.contains('mxb-tick')") and not page.locator(".mxb-tick").is_checked()      # it shows the box, never ticks it
+    page.wait_for_function("""() => { const r = document.querySelector('.mxb-agree').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }""", timeout=3000)      # the box scrolls into view
     shot(page, f"{viewport['width']}-review")
     page.click("[data-go='0']")
     assert step_of(page) == "0" and page.input_value("#mxb-first") == "Anne-Marie"
@@ -159,6 +164,7 @@ def test_the_button_spins_the_sheet_grows_out_of_it_four_questions_book_and_the_
     page.click("[data-cont]")
     page.click(".mxb-agree")
     expect(sheet.locator(".mxb-go")).to_be_enabled()
+    expect(sheet.locator(".mxb-need")).to_be_hidden()                                            # ticked: the hint goes
     page.click(".mxb-go")
     expect(sheet.locator(".mxb-stages li")).to_have_text(["Holding your room", "Paying with the test card", "Booking your stay with LiteAPI", "Putting the trip together"])
     shot(page, f"{viewport['width']}-booking")

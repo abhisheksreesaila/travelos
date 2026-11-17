@@ -106,6 +106,10 @@
 .mxb-f.is-fold:not([data-step="3"]) .mxb-go, .mxb-f.is-fold[data-step="3"] [data-cont], .mxb-f.is-fold[data-step="0"] .mxb-b2 { display: none; }
 .mxb-f.is-fold[data-step="0"] .mxb-stepn { text-align: left; }
 .mxb-f.is-fold[data-step="3"] .mxb-stepn { visibility: hidden; }
+.mxb-need { display: none; min-height: var(--target); padding: 0 0.5rem; border: 0; background: none; color: var(--word); font: 620 1rem/1.2 var(--f-ui); text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.mxb-f.is-fold[data-step="3"] .mxb-foot:has(.mxb-go:disabled) .mxb-need, .mxb-f:not(.is-fold) .mxb-foot:has(.mxb-go:disabled) .mxb-need { display: inline-flex; align-items: center; }
+.mxb-f.is-fold[data-step="3"] .mxb-foot:has(.mxb-go:disabled) .mxb-stepn { display: none; }
+.mxb-f:not(.is-fold) .mxb-foot:has(.mxb-go:disabled) { flex-wrap: wrap; justify-content: center; }
 
 /* the booking plays out: four steps beside the real call, each a spinner and then a tick */
 .mxb-run { display: grid; gap: 1rem; padding: 1rem 1.5rem 1.5rem; }
