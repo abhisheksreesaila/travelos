@@ -42,3 +42,4 @@
 ## 2026-11-17 overnight
 - Goal and checker committed (docs/overnight-goal-2026-11-17.md, scripts/check_overnight2.py). F-281, F-284, F-285 merged earlier; F-286 in review; F-282 building.
 - F-286 merged and done (M1); test_aerial clean 3x on master.
+- Full unit suite on master (after F-282, F-286, the complaint fix): 3946 passed. Walk fixes 1-11 committed; checkout hint after that run (its unit + browser files green).
