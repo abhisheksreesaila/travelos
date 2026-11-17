@@ -1719,3 +1719,46 @@ Founder, 2026-11-16 (on the live matrix): "we need a dedicated card for sentence
 
 ## F-280 Edits wait for "Update", so the matrix only searches when the person is done [done]
 Founder, 2026-11-16: "you don't have to keep updating the matrix when the user is changing … once he changes from three nights to four nights … wait for … a trigger … if you keep changing every time, you'll be hitting API calls a lot … give him a dynamic update button or press enter … you don't know when he's going to stop." On the results page, every change to the sentence (a word's picker in assets/js/v2.js, which today posts and navigates at once via `go()`; the nights slider in assets/js/tripmatrix.js, which today searches on letting go after COMMIT_MS; the Try chips) only stages the change: the changed words are marked in the search card (F-279), the matrix stays as it is (dimmed slightly with a quiet "Your changes aren't searched yet"), and a prominent "Update" button appears in the card with the number of changes; pressing it or Enter runs one search (the existing address/`go` path). Undo a staged change by setting it back, or "Reset". The first search from the landing (/plan/ask) still searches at once. No search on a timer or pause. The nights slider's labelled estimates while sliding may stay (they make no call); letting go no longer asks for tiles until Update. Checks: changing three words then pressing Update makes exactly one navigation and no tile/peek/warm request before it (browser test counts requests); Enter triggers it; the first search unchanged; staged words marked; phone and laptop, both modes, 48px.
+
+## F-281 Matrix v5 ground and chips: Harbour art sky, Fill chips [todo]
+Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (ground "harbour", chips "fill", light by default) · Decisions D-890..D-894 · Needs: none
+- [ ] the v2 pages' sky becomes the Harbour art ground in light and dark (tokens in assets/css/v2-tokens.css, art as CSS or inline SVG, no images to fetch); the other grounds are not built
+- [ ] text passes WCAG AA on the ground, on glass and on cards (`tests_browser/test_direction_a_pages.py` and the existing contrast checks stay green); no pink-to-violet (tests/test_calm_palette.py)
+- [ ] the extra-info row is the Fill treatment: a dark-frost tray titled "More to know before you pick", chips with a gradient icon, a teaser line and a count, on matrix and opened square; still loads on demand (F-277)
+- [ ] phone and laptop, both modes, 48px targets, reduced motion respected
+
+## F-282 The hotel as a decision dashboard, with the fine print up front [todo]
+Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hotel, fine print, drawer) · Decisions D-895..D-899 · Needs: F-281
+- [ ] beside the gallery (laptop) or below it (phone): score with words and count, the last-100 dot strip and streaks (reviewtrend), category bars from LiteAPI's sentiment categories
+- [ ] "The fine print, up front", built only from LiteAPI's data (fees paid at the hotel, `hotelImportantInformation`, check-in/out times, cancellation policy, facilities, sentiment cons):
+  - costs not in the price, with "what the stay really costs";
+  - policies that bite, with check-in time against the flight's landing time;
+  - fits your family;
+  - getting there and around;
+  - what guests complain about, opening the matching reviews;
+  - unusual items flagged "Heads up", ordinary amenities in one "The usual" line;
+  - anything absent says "not listed"
+- [ ] the review drawer: all fetched reviews in date order, filter by traveller type; opens from the score, the strip or a complaint; Escape and close return focus
+- [ ] the showcase shows labelled sample data; tests over the recorded fixtures
+
+## F-283 Stay and flights apart, a rooms row and the photo scrubber [todo]
+Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html · Decisions D-900..D-904 · Needs: F-282
+- [ ] Stay and Flights each have their own band (icon, accent, a label such as "Your flights · SFO ⇄ LAX · 4 people") and a sticky mini-nav (Stay · Flights · Total · Book) shows where you are
+- [ ] every room type the source gave sits in a scroll-snap row with count and arrows (laptop), swipe (phone), the chosen room marked; choosing still goes through `tm.pick` indexes
+- [ ] the photo scrubber: drag across a thumbnail strip swaps the big photo; only thumbnails in view are rendered and about 6 full photos are kept; wheel, arrows and keyboard work
+
+## F-284 See it from above: satellite, truth pins, photoreal on tap [todo]
+Brief: docs/briefs/matrix-v5.md · Design: docs/design/flyaround/index.html · Decisions D-905..D-909 · Needs: none (Google key on Railway for photoreal on gitaway.me)
+- [ ] a "See it from above" card in the opened square's hotel (one line of the top heads-up), opening a full-screen sheet (phone) or panel (laptop) that loads nothing 3D before the tap and frees it on close
+- [ ] Map view keyless (MapLibre + OpenFreeMap, 3D buildings); satellite and photoreal through Google Map Tiles with `GOOGLE_MAPS_API_KEY` (browser key, referrer-restricted), handed to the page only by a server route that counts opens per day (`GOOGLE_3D_A_DAY`, default 100) and says "Back tomorrow" past it; without the key those views are not offered
+- [ ] truth pins from OpenStreetMap asked by the server (fixed Overpass hosts, timeout, cached per hotel for days), distances on the server, a heads-up line chosen from them; the showcase uses a recorded fixture
+- [ ] attributions always visible (Google logo, OSM, OpenFreeMap); CSP stays report-only and lists the new hosts
+- [ ] tests: the counter and its cap, the pins reader over a recorded Overpass answer, the sheet opens and closes in a browser test without network (stub libraries)
+
+## F-285 Booking emails through Resend [todo]
+Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910..D-914 · Needs: SMTP settings for Resend on Railway for gitaway.me
+- [ ] when a stay is booked (`matrixbook.finish`, also the worker's late finish), one email goes to the lead guest's email: hotel, address, dates, guests, room, LiteAPI booking id and hotel confirmation code, total charged, fees paid at the hotel, the refund policy word for word, "Sold by Nuitée through LiteAPI", links to the booking page and Plan this trip
+- [ ] when a stay is cancelled in-app, one email with the refund LiteAPI reported
+- [ ] sent through fh-saas `send_email` (SMTP_* env: Resend's SMTP), on its own thread, sent before the guest's address is blanked, never twice for one booking (kept on the row), never logging the address or names; no SMTP settings means no email and no error
+- [ ] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
+- [ ] security review (personal data)
