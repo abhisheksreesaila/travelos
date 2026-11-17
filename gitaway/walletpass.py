@@ -259,7 +259,11 @@ def links(booking, family: str, ttl: int = PAGE_TTL) -> list:
            ([("Save to Google Wallet", GOOGLE_PATH + sign("google", ref, family, ttl))] if google_configured() else [])
 
 
-def buttons(booking, family: str, ttl: int = PAGE_TTL):
-    """The two buttons for `booking` (a booking id, or an object with `.booking_id`) of `family` (the tenant id), or "" while neither vendor is set up."""
+def buttons(booking, family: str, ttl: int = PAGE_TTL, **extra):
+    """The two buttons for `booking` (a booking id, or an object with `.booking_id`) of `family` (the tenant id), or "" while neither vendor is set up. With `extra` (a More menu's row attributes,
+    F-293) the buttons come as a plain list of rows instead, for the menu to hold."""
     found = links(booking, family, ttl)
-    return Div(*[A(label, href=path, cls="btn wp-btn", id="wp-apple" if "Apple" in label else "wp-google", rel="nofollow") for label, path in found], cls="wp-btns", id="wp-btns") if found else ""
+    rows = [A(label, href=path, cls="btn wp-btn", id="wp-apple" if "Apple" in label else "wp-google", rel="nofollow", **extra) for label, path in found]
+    if extra:
+        return rows
+    return Div(*rows, cls="wp-btns", id="wp-btns") if found else ""

@@ -94,13 +94,13 @@ def menu_items(captain: bool, new: int = 0, has_trip: bool = False) -> list:
 ITEM = {"role": "menuitem", "tabindex": "-1"}       # what every row of a More menu carries (assets/js/v2top.js moves through them)
 
 
-def more(*items, ident: str = "more", label: str = "More", dot: bool = False, cls: str = "") -> Div:
+def more(*items, ident: str = "more", label: str = "More", dot: bool = False, cls: str = "", compact: bool = False) -> Div:
     """The one quiet button that holds what most people do not need on a screen (F-293, D-946): a small "More" that opens a menu growing out of it (assets/js/v2top.js, the account menu's
-    script; Escape closes it and focus returns here). `items` are links or buttons made with `**ITEM`; `dot` marks that something inside is waiting (an unread chat). No items, no button."""
+    script; Escape closes it and focus returns here). `items` are links or buttons made with `**ITEM`; `dot` marks that something inside is waiting (an unread chat); `compact` is a round button of three dots whose word is only for readers (a card's corner). No items, no button."""
     items = [i for i in items if i != ""]
     if not items:
         return ""
-    return Div(Button(icon("more", 20, 2.4), Span(label), Span(cls="v2-dot", id=f"{ident}-dot", hidden=not dot), type="button", cls="v2-more-btn", id=ident, aria_haspopup="menu", aria_expanded="false", aria_controls=f"{ident}-menu"),
+    return Div(Button(icon("more", 20, 2.4), Span(label, cls="sr-only" if compact else ""), Span(cls="v2-dot", id=f"{ident}-dot", hidden=not dot), type="button", cls="v2-more-btn" + (" is-round" if compact else ""), id=ident, aria_haspopup="menu", aria_expanded="false", aria_controls=f"{ident}-menu"),
                Div(*items, id=f"{ident}-menu", cls="v2-menu v2-glass", role="menu", aria_label=label, hidden=True), cls=("v2-account " + cls).strip(), data_more="1")
 
 

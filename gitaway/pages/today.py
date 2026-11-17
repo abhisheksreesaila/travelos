@@ -14,7 +14,7 @@ from datetime import date, datetime, time
 
 from fasthtml.common import A, B, Div, H1, H2, Link, P, Script, Section, Span, Small
 
-from gitaway import access, airportdrive, catalog, geo, phone, phones, planv2 as pv, session as ses, showcase, today as td, tripcal as cal, tripday as tday, tripgeo
+from gitaway import access, airportdrive, catalog, geo, phone, phones, planv2 as pv, session as ses, showcase, today as td, tripcal as cal, tripday as tday, tripgeo, v2
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booking, tripshare
@@ -83,33 +83,38 @@ def _flight(i, first, trip):
                    *rows, leave, _code("Confirmation", f.confirmation), cls="td-card td-flight" + (" is-next" if first else ""), id="td-flight")
 
 
-def _contact(stay):
-    """Who to call: the hotel's own number when the booking has one (a `tel:` link), else the booking's way: the code, where it was booked and Who to call. Never a number we were not given."""
+def _call(stay):
+    """The hotel's own number as a button beside Directions (a `tel:` link), or "" when the booking has none: then `_contact` says so at the foot of the card. Never a number we were not given."""
     n = phones.tel(stay.phone)
-    if n:
-        return A(icon("phone", 18, 2.4), "Call the hotel", href=f"tel:{n}", cls="td-btn", id="td-call")
+    return A(icon("phone", 18, 2.4), "Call the hotel", href=f"tel:{n}", cls="td-btn", id="td-call") if n else ""
+
+
+def _contact(stay):
+    """No number from the hotel: the booking's own way instead, the code, where it was booked and Who to call (nothing here when the hotel has a number, `_call`)."""
+    if phones.tel(stay.phone):
+        return ""
     said = f" Quote code {stay.confirmation}." if stay.confirmation else ""
     where = f" Booked on {stay.booked_on}." if stay.booked_on else ""
     return Div(P(f"No phone number from the hotel yet.{said}{where}", cls="td-none", id="td-nophone"), A(icon("phone", 18, 2.4), "Who to call", href=booking.href(sos=True), cls="td-btn"), cls="td-contact")
 
 
-def wallet_slot(booking=None, family: str = ""):
-    """The stay's "Add to Apple Wallet" and "Save to Google Wallet" buttons (F-288, `walletpass.buttons`): nothing for a sample stay, without the family, or while neither vendor is set up."""
+def wallet_rows(booking=None, family: str = ""):
+    """The stay's "Add to Apple Wallet" and "Save to Google Wallet" rows for its More menu (F-288, `walletpass.buttons`): none for a sample stay, without the family, or while neither vendor is set up."""
     if booking is None or not family:
-        return ""
+        return []
     from gitaway import walletpass
     try:
-        return walletpass.buttons(booking, family)
+        return walletpass.buttons(booking, family, **v2.ITEM)
     except Exception:      # noqa: BLE001 - a pass that cannot be offered never breaks the day's page
-        return ""
+        return []
 
 
 def _locate(coords):
+    """"Use my location" (F-293: a row of the hotel's More menu, with its privacy note) and where the answer is read, on the card (`#td-near`)."""
     if not coords:
-        return ""
-    return Div(A(icon("nav", 18, 2.4), "Use my location", href="#td-locate", cls="td-btn td-locate-btn", id="td-locate", data_lat=f"{coords[0]:.6f}", data_lon=f"{coords[1]:.6f}", role="button"),
-               P("", cls="td-near", id="td-near", role="status", aria_live="polite"),
-               Small("Only when you tap. Your position is used on this page to measure to the hotel and goes nowhere else.", cls="td-fine"), cls="td-where")
+        return "", ""
+    row = A(icon("nav", 18, 2.4), Span("Use my location"), href="#td-locate", id="td-locate", data_lat=f"{coords[0]:.6f}", data_lon=f"{coords[1]:.6f}", **v2.ITEM)
+    return row, Small("Only when you tap. Your position is used on this page to measure to the hotel and goes nowhere else.", cls="td-fine td-menu-note")
 
 
 def _stay(stay, trip, ua, phase, coords, b=None, past=False, first=False, dated=False, family=""):
@@ -119,11 +124,12 @@ def _stay(stay, trip, ua, phase, coords, b=None, past=False, first=False, dated=
         when, dated = ("Check out", stay.check_out), True
     rows = [Div(Span(when[0], cls="td-k"), Span(_when(when[1]) if dated else _t(when[1]), cls="td-v"), cls="td-row", id="td-when")] if when else []
     addr = Div(Span("Address", cls="td-k"), Span(stay.address, cls="td-v"), cls="td-row", id="td-addr") if stay.address else Div(Span("Area", cls="td-k"), Span(stay.area, cls="td-v"), cls="td-row") if stay.area else ""
-    acts = Div(A(icon("nav", 18, 2.4), "Directions", href=tday.maps_url(place, ua), cls="td-btn", id="td-directions"),
-               A(icon("car", 18, 2.4), "Get a ride", href=uber_deep_link("", place), rel="noopener", cls="td-btn", id="td-ride"), cls="td-acts")
+    near, note = _locate(coords)
+    more = v2.more(A(icon("car", 18, 2.4), Span("Get a ride"), href=uber_deep_link("", place), rel="noopener", id="td-ride", **v2.ITEM), near, *wallet_rows(stay.confirmation or None, family), note, ident="td-more", cls="td-more", compact=True)
+    acts = Div(A(icon("nav", 18, 2.4), "Directions", href=tday.maps_url(place, ua), cls="td-btn is-main", id="td-directions"), _call(stay), cls="td-acts")
     return Section(Div(_tag("Next", "is-next") if first else _tag("Done") if past else "", Span(icon("bed", 22, 2.2), cls="td-ic k-stay"),
-                       Div(H2(stay.name), Span("Where you are staying" if phase == "staying" else "Your hotel", cls="td-sub"), cls="td-ht"), cls="td-head"),
-                   acts, *rows, addr, _code("Confirmation", stay.confirmation), wallet_slot(stay.confirmation or None, family), _locate(coords), _contact(stay),
+                       Div(H2(stay.name), Span("Where you are staying" if phase == "staying" else "Your hotel", cls="td-sub"), cls="td-ht"), more, cls="td-head"),
+                   acts, *rows, addr, _code("Confirmation", stay.confirmation), P("", cls="td-near", id="td-near", role="status", aria_live="polite") if coords else "", _contact(stay),
                    cls="td-card td-stay" + (" is-next" if first else ""), id="td-stay")
 
 

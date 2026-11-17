@@ -55,9 +55,10 @@ def set_mode(page, scheme):
     assert page.evaluate("document.documentElement.dataset.mode") == scheme
 
 
-def open_more(page, row):
-    """F-293 (D-946): the trip's Plan together, Save plan and Share to Instagram are rows of its More menu. Open the menu (if it is closed) and give back the row's locator, `row` a selector."""
-    if page.locator("#pl-more-menu").is_hidden():
-        page.click("#pl-more")
+def open_more(page, row, ident="pl-more"):
+    """F-293 (D-946): the trip's Plan together, Save plan and Share to Instagram (ident `pl-more`), the hotel card's ride, location and wallet on Today (`td-more`) and the like are rows of a More
+    menu. Open the menu (if it is closed) and give back the row's locator, `row` a selector."""
+    if page.locator(f"#{ident}-menu").is_hidden():
+        page.click(f"#{ident}")
     expect(page.locator(row)).to_be_visible()
     return page.locator(row)
