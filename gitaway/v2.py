@@ -16,7 +16,6 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="styl
         Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
 
-CLOUD = '<path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/>'
 MARK = ('<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/>'
         '<path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#fff"/><path d="M5 31c5-3 9-3 14 0s9 3 16 0" fill="none" stroke="#C92A5E" stroke-width="2.5"/></svg>')
 
@@ -37,15 +36,18 @@ def _shore() -> str:
             '<g transform="translate(860 150)"><path d="M0 0 h60 l-8 10 h-44z" fill="#C2410C"/><path d="M28 0 V-46 L56 -4z" fill="#FFD43B"/><path d="M26 -2 V-38 L6 -4z" fill="#fff"/></g>')
 
 
+RIDGES = ('<svg class="ridges" viewBox="0 0 1440 300" preserveAspectRatio="none"><path class="r1" d="M0 190 L140 120 L230 160 L360 70 L470 150 L560 110 L700 180 L820 90 L930 150 L1050 60 L1180 140 L1290 100 L1440 160 V300 H0Z"/>'
+          '<path class="r2" d="M0 240 L120 200 L260 230 L400 170 L540 230 L690 190 L820 240 L980 180 L1120 230 L1260 190 L1440 230 V300 H0Z"/></svg>')      # the Harbour ground's two ridges (F-281, D-890)
+
+
 def bg(mood: str = "", quiet: bool = False) -> Div:
-    """The sky: a gradient, a sun that becomes a moon in the dark, clouds and the mood's one object at the foot (beach: the shore; F-260, gitaway/moods.py). A `?mood=` preview wins on the showcase."""
+    """The sky (F-281, D-890: the Harbour ground; v2.css `.v2-bg:not(.is-quiet)`): a gradient, a sun that becomes a moon in the dark, two ridges and the mood's one object at the foot (beach: the shore; F-260, gitaway/moods.py). A `?mood=` preview wins on the showcase."""
     if quiet:      # a reading page (F-261, D-701): no sun, moon, clouds, shore or mood object, only a soft gradient framing the content column (v2.css `.v2-bg.is-quiet`)
         return Div(cls="v2-bg is-quiet", aria_hidden="true", data_sky="quiet")
     from gitaway import moodart, moods
     mood = moods.preview(session_.request_path()) or (mood if mood in moods.MOODS else moods.DEFAULT)
-    cloud = lambda style: NotStr(f'<svg class="cloud" style="{style}" viewBox="0 0 120 50">{CLOUD}</svg>')      # noqa: E731
     foot = moodart.FEET.get(mood) or _shore()
-    return Div(Div(cls="sunball"), NotStr(moodart.MOON), NotStr(moodart.STARS), cloud("left:6%;top:9%;width:170px"), cloud("left:58%;top:22%;width:120px;animation-duration:80s"), cloud("left:28%;top:44%;width:200px;animation-duration:95s"),
+    return Div(Div(cls="sunball"), NotStr(RIDGES), NotStr(moodart.MOON), NotStr(moodart.STARS),
                NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{foot}</svg>'), cls="v2-bg", aria_hidden="true", data_mood=mood)
 
 

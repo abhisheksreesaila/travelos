@@ -66,9 +66,9 @@ def _card(client, name, lane="sandiego", url=None):
 def test_on_the_showcase_the_rail_is_chips_and_each_card_is_asked_for_when_tapped(sample, client):
     j = client.get(RAIL).json()
     html = unescape(j["html"])
-    assert j["lane"] == "sandiego" and "Around San Diego" in html and "Extra info · tap any" in html and "New: tap for weather, drive times, guides…" in html
+    assert j["lane"] == "sandiego" and "Around San Diego" in html and "More to know before you pick" in html and "New: tap for weather, drive times, guides…" in html
     assert 'class="wg ' not in html and 'class="d5' not in html and "in a straight line" not in html      # chips only: no card is built until a chip is tapped
-    assert html.count('class="wchip v2-glass"') == 8      # weather, where, uber, traffic, food, trend, about, guides
+    assert html.count('class="wchip"') == 8      # weather, where, uber, traffic, food, trend, about, guides
     names = re.findall(r'data-wg="([^"]*)"', html)
     assert names == ["guides", "weather", "where", "uber", "traffic", "food", "trend", "about"]      # a chip is named for its widget (a loop variable once renamed the food chip after a restaurant)
     weather = _card(client, "weather")
@@ -80,6 +80,25 @@ def test_on_the_showcase_the_rail_is_chips_and_each_card_is_asked_for_when_tappe
     about = _card(client, "about")
     assert "About San Diego" in about and "Source" in about and "Show all 4" in about
     assert "Masala Coast" in _card(client, "food") and "Food that fits you" in _card(client, "food")
+
+
+def _chip(html, name):
+    return re.search(rf'<button[^>]*data-wg="{name}"[^>]*class="wchip">(.*?)</button>', html, re.S).group(1)
+
+
+def test_a_chip_is_the_fill_treatment_an_icon_a_title_a_teaser_and_a_count_only_where_the_server_knows_one(sample, client):
+    """F-281 (D-892): the tray's chips invite a tap; every number on one is a fact the server has without asking a service, and a sample chip says so."""
+    html = unescape(client.get(RAIL).json()["html"])
+    assert 'class="rl-tray v2-glass"' in html and 'aria-label="More to know before you pick"' in html
+    weather = _chip(html, "weather")
+    assert 'class="ic"' in weather and "<span>Weather</span>" in weather and "<small>Your dates, day by day</small>" in weather and '<span class="ct num">5 days</span>' in weather
+    where = _chip(html, "where")
+    assert "<small>Typical drives by road</small>" in where and 'class="ct' not in where      # the minutes wait for the tap: no number to show
+    guides = _chip(html, "guides")
+    assert "<span>1 guide for San Diego</span>" in guides and 'class="ct' not in guides      # one guide is the title's own count
+    about = _chip(html, "about")
+    assert "<span>About San Diego</span>" in about and "<small>Facts, each with its source</small>" in about and '<span class="ct num">4</span>' in about
+    assert "<span>Uber $21\u201326 \u00b7 sample</span>" in _chip(html, "uber") and "sample" in _chip(html, "traffic")
 
 
 def test_off_the_showcase_the_made_up_widgets_are_not_drawn(real, client):

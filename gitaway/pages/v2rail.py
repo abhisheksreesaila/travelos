@@ -10,7 +10,7 @@ typical, no live traffic; a straight-line distance from home), a cheaper airport
 page). Uber, traffic and what is on are the showcase's made-up samples and say Sample; off the showcase they are not drawn.
 """
 
-from fasthtml.common import A, Button, Div, Header, Li, NotStr, P, Section, Span, Ul, to_xml
+from fasthtml.common import A, Button, Div, Header, Li, NotStr, P, Section, Small, Span, Ul, to_xml
 
 from gitaway import airportdrive, catalog, showcase, tripmatrix as tm, v2rail, weather
 from gitaway.icons import icon
@@ -21,17 +21,19 @@ SCHEMATIC = "Schematic, not to scale"
 NO_TRAFFIC = "Typical drive by road. No live traffic."
 
 
-def chip_of(title: str, ic, k: str, name: str, label: str = ""):
-    """A chip of a few words that fetches its card when tapped (assets/js/v2rail.js): the label is only what is cheap to know."""
-    return Button(Span(icon(ic, 15, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(label or title), type="button", cls="wchip v2-glass", aria_expanded="false", aria_controls=f"wg-{name}", data_wg=name)
+def chip_of(title: str, ic, k: str, name: str, label: str = "", teaser: str = "", count: str = ""):
+    """A chip that fetches its card when tapped (assets/js/v2rail.js), the Fill treatment (F-281, D-892): a coloured icon, a title, a teaser line and a count. Only what is cheap to know goes on it:
+    the teaser says what is inside and the count is a number the server already has (never one that waits on a service)."""
+    return Button(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(Span(label or title), Small(teaser) if teaser else "", cls="tx"), Span(count, cls="ct num") if count else "",
+                  type="button", cls="wchip", aria_expanded="false", aria_controls=f"wg-{name}", data_wg=name)
 
 
-def wg(title: str, ic, k: str, *body, sample=False, name="", chip=""):
+def wg(title: str, ic, k: str, *body, sample=False, name="", chip="", teaser="", count=""):
     """One widget, folded (F-275, D-862): a chip and the frosted card it opens, with its kind's coloured icon, a title and, when any of it is made-up, a Sample pill. The card is only
     drawn when asked for (F-277, D-870). Returns (chip, card)."""
     card = Section(Header(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(title, cls="wg-h"), Span("Sample", cls="smp") if sample else "", Button(icon("x", 18, 2.4), type="button", cls="wg-x", data_wg_close=name, aria_label=f"Close {title}")),
                    *body, cls="wg v2-glass", id=f"wg-{name}")
-    return chip_of(title, ic, k, name, chip), card
+    return chip_of(title, ic, k, name, chip, teaser, count), card
 
 
 def _ul(rows, cls="list"):
@@ -40,7 +42,7 @@ def _ul(rows, cls="list"):
 
 def weather_widget(place, w, name, lazy=False):
     if lazy:      # a chip with a real source behind it (a station for the place) and nothing asked yet: no forecast is fetched until the chip is tapped
-        return (chip_of("Weather", "sun", "wx", name), None) if v2rail.has_weather(place.name, w.depart) else ""
+        return (chip_of("Weather", "sun", "wx", name, teaser="Your dates, day by day", count=f"{v2rail.DAYS} days"), None) if v2rail.has_weather(place.name, w.depart) else ""
     tw = v2rail.sky(place.name, w.depart)
     days = [d for d in tw.days if d]
     if not days:
@@ -80,7 +82,7 @@ def _map(wh: v2rail.Where):
 def where_widget(s, lane, name, look_up=True, lazy=False):
     if lazy:      # the airport's coordinates are known (or the lane is another place than the asked one): the drives are asked when the chip is tapped
         place = lane.places[0]
-        return (chip_of("Where you will be", "map", "see", name), None) if place.iata in airportdrive.AIRPORTS or (not lane.asked and s.place.name != place.name) else ""
+        return (chip_of("Where you will be", "map", "see", name, teaser="Typical drives by road"), None) if place.iata in airportdrive.AIRPORTS or (not lane.asked and s.place.name != place.name) else ""
     wh = v2rail.where(s, lane, look_up)
     if not wh.rows:
         return ""
@@ -103,7 +105,7 @@ def cheaper_widget(s, lane, w, lanes, known, name):
     return wg("A cheaper airport", "plane", "flight", Div(Span(tm.dollars(c.save_cents), cls="n num"), Span(f"less for {s.travelers}", cls="bw"), cls="bigline"),
               P(Span(f"Flights into {c.iata} ({c.place}) cost less than into {c.base_iata}.", cls="em"), f" The whole trip there is {more} on the same days."),
               Button(f"Look at {c.place}", icon("arrow-right", 18, 2.2), type="button", cls="mini-btn", data_lane=c.lane), name=name,
-              chip=f"From {c.iata}: about {tm.dollars(c.save_cents)} less")
+              chip="A cheaper airport", teaser=f"From {c.iata}, about {tm.dollars(c.save_cents)} less", count=f"\u2212{tm.dollars(c.save_cents)}")
 
 
 def food_widget(sq, place, picked, name):
@@ -115,7 +117,8 @@ def food_widget(sq, place, picked, name):
             rows.append(Li(Span(Span(place_name, cls="b"), Span(Span(kind, cls="tagk"), f"{rest + ' · ' if rest else ''}{minutes} min"), cls="t")))
     if not rows:
         return ""
-    return wg("Food that fits you", "food", "food", _ul(rows), sample=bool(sample), name=name, chip=f"Food that fits you{' · sample' if sample else ''}")
+    return wg("Food that fits you", "food", "food", _ul(rows), sample=bool(sample), name=name, chip=f"Food that fits you{' · sample' if sample else ''}",
+              teaser="Breakfast included, and picks that fit you", count=str(len(rows)) if len(rows) > 1 else "")
 
 
 def about_widget(place, name):
@@ -123,14 +126,14 @@ def about_widget(place, name):
     if not facts:
         return ""
     items = [Li(Span(Span(f.text, cls="b"), A("Source", href=f.source, rel="noopener", target="_blank", cls="src")), hidden=n > 2) for n, f in enumerate(facts)]
-    return wg(f"About {place.name}", "list", "see", _ul(items), Button(f"Show all {len(facts)}", type="button", cls="link-btn", data_more="1") if len(facts) > 3 else "", name=name, chip=f"About {place.name}")
+    return wg(f"About {place.name}", "list", "see", _ul(items), Button(f"Show all {len(facts)}", type="button", cls="link-btn", data_more="1") if len(facts) > 3 else "", name=name, chip=f"About {place.name}", teaser="Facts, each with its source", count=str(len(facts)) if len(facts) > 1 else "")
 
 
 def uber_widget(sample, place, hotel, name):
     a, b = sample["uber"]
     return wg("Uber to the hotel", "car", "ride", Div(Div(Span("UberX", cls="k"), Span(a, cls="num b"), Span("4 seats, tight with bags"), cls="tile"),
                                                       Div(Span("UberXL", cls="k"), Span(b, cls="num b"), Span("6 seats, room for 4 bags"), cls="tile"), cls="tiles2"),
-              P(f"{place.iata} to {hotel}, a made-up estimate.", cls="fine"), sample=True, name=name, chip=f"Uber {a} · sample")
+              P(f"{place.iata} to {hotel}, a made-up estimate.", cls="fine"), sample=True, name=name, chip=f"Uber {a} · sample", teaser="The airport to the hotel")
 
 
 def traffic_widget(sample, name):
@@ -138,11 +141,11 @@ def traffic_widget(sample, name):
     top = max(t)
     bars = Div(*[Div(Span(cls="bar", style=f"height:{round(m / top * 100)}%;--k:{'var(--tix)' if m / top > .8 else 'var(--sun-ink)' if m / top > .55 else 'var(--see)'}"), Span(v2rail.TIMES[n], cls="num"))
                  for n, m in enumerate(t)], cls="bars")
-    return wg("Traffic when you land", "road", "tix", P(sample["route"], cls="route"), bars, P(f"Made up: {min(t)} min at the quietest, {top} min at 5 pm.", cls="fine"), sample=True, name=name, chip="Traffic when you land · sample")
+    return wg("Traffic when you land", "road", "tix", P(sample["route"], cls="route"), bars, P(f"Made up: {min(t)} min at the quietest, {top} min at 5 pm.", cls="fine"), sample=True, name=name, chip="Traffic when you land · sample", teaser="Drive times through the day")
 
 
 def trend_widget(sample, name):
-    return wg("Happening that week", "flame", "stay", _ul([Li(Span(Span(n, cls="b"), Span(d), cls="t")) for n, d in sample["trend"]]), sample=True, name=name, chip="Happening that week · sample")
+    return wg("Happening that week", "flame", "stay", _ul([Li(Span(Span(n, cls="b"), Span(d), cls="t")) for n, d in sample["trend"]]), sample=True, name=name, chip="Happening that week · sample", teaser="What is on while you are there", count=str(len(sample["trend"])) if len(sample["trend"]) > 1 else "")
 
 
 def guides_widget(s, lane, w, guides, name):
@@ -156,12 +159,12 @@ def guides_widget(s, lane, w, guides, name):
     base = mx.href(s, "/guides/sheet", lane=lane.key, w=w.key, ctx="book").split("?", 1)[1]
     return wg(f"Guides for {place}", "list", "see", P("What other families did there. It opens over your trips, so you keep your place.", cls="fine"),
               gs.widget_rows(cards, lambda c: f"/guides/sheet?slug={c.slug}&{base}"), gs.widget_foot(place, total, len(cards)), sample=all(not c.real for c in cards), name=name,
-              chip=f"{total} guide{'' if total == 1 else 's'} for {place}")
+              chip=f"{total} guide{'' if total == 1 else 's'} for {place}", teaser="What other families did there", count=str(total) if total > 1 else "")
 
 
 NAMES = {"guides": "Guides", "weather": "Weather", "where": "Where you will be", "uber": "Uber to the hotel", "traffic": "Traffic when you land", "cheaper": "A cheaper airport",
          "food": "Food that fits you", "trend": "Happening that week", "about": "About this place"}      # in the order the chips come, and the title of a card with nothing to say
-EXTRA = "Extra info · tap any"
+EXTRA = "More to know before you pick"
 NUDGE = "New: tap for weather, drive times, guides…"
 
 
@@ -177,12 +180,13 @@ def _widget(name, s, lane, w, *, sq, lanes, known, picked, look_up, guides, lazy
 
 
 def rail(s, lane, w, *, sq=None, lanes=(), known=None, picked=(), look_up=True, guides=((), 0)):
-    """The extra-info row for `lane` on start day `w` (F-277, D-870): a label, the place, and a scroller of chips for the widgets that have something real (or, on the showcase, made-up)
+    """The extra-info row for `lane` on start day `w` (F-277, D-870): a tray titled for what it is for, the place, and a scroller of chips for the widgets that have something real (or, on the showcase, made-up)
     to say. No card is drawn and no weather or drive is asked: each chip fetches its card when it is tapped (`card`)."""
     place = lane.places[0]
     got = [c for c in (_widget(n, s, lane, w, sq=sq, lanes=lanes, known=known, picked=picked, look_up=look_up, guides=guides, lazy=True) for n in NAMES) if c != ""]
-    top = Div(Span(icon("spark", 15, 2.2), Span(EXTRA), cls="rl-lab"), Span(f"Around {place.name}", cls="rl-h"), cls="rl-top")
-    return Div(top, Div(*[c for c, _ in got], cls="rl-chips"), P(NUDGE, cls="rl-nudge"), Div(cls="rl-cards"), cls="rl-in", data_lane=lane.key, data_w=w.key)
+    top = Div(Span(EXTRA, cls="rl-lab"), Span(f"Around {place.name}", cls="rl-h"), cls="rl-top")
+    tray = Div(top, Div(*[c for c, _ in got], cls="rl-chips"), P(NUDGE, cls="rl-nudge"), cls="rl-tray v2-glass", role="group", aria_label=EXTRA)      # a dark frost over the ground (v2rail.css)
+    return Div(tray, Div(cls="rl-cards"), cls="rl-in", data_lane=lane.key, data_w=w.key)
 
 
 def card(name, s, lane, w, **kw):
