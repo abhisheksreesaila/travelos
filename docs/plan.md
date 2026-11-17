@@ -1797,16 +1797,16 @@ Founder 2026-11-17: "the word plan means different things to different people �
 - [x] a signed-out tap on satellite or 3D in See it from above shows a clear "Sign in to fly around the hotel in 3D" card with the sign-in way
 - [x] the cover's dark sky is the deep night of the Harbour ground, not purple (D-925)
 
-## F-290 Reviews as a calm dashboard, the analysis in the side drawer [todo]
+## F-290 Reviews as a calm dashboard, the analysis in the side drawer [done]
 Founder 2026-11-17 (launch polish): "the reviews should not be shown down and expanded, it takes away the focus … it should be a side drawer … reviews six years ago no one cares, only the last hundred or fifty … a beautiful dashboard … on demand, if they have a question … real-time search". Decisions D-937..D-940.
-- [ ] the opened square shows only a compact dashboard: score and words, the last-100 strip with its one-line streak, category bars as short bars with their scores (no paragraphs); one "Read the reviews" way in
-- [ ] everything long moves into the side drawer: the AI summary per category (its paragraphs), what guests like and watch for, and the reviews themselves, newest first, only the fetched last 100
-- [ ] "Ask the reviews": a search box in the drawer that filters the reviews live as you type (words in pros, cons, headline) and says how many mention it, e.g. "parking · 6 of 100 reviews"; no AI, no network
-- [ ] phone and laptop, both modes, 48px targets; the drawer keeps its focus trap, Escape and reduced motion
+- [x] the opened square shows only a compact dashboard: score and words, the last-100 strip with its one-line streak, category bars as short bars with their scores (no paragraphs); one "Read the reviews" way in
+- [x] everything long moves into the side drawer: the AI summary per category (its paragraphs), what guests like and watch for, and the reviews themselves, newest first, only the fetched last 100
+- [x] "Ask the reviews": a search box in the drawer that filters the reviews live as you type (words in pros, cons, headline) and says how many mention it, e.g. "parking · 6 of 100 reviews"; no AI, no network
+- [x] phone and laptop, both modes, 48px targets; the drawer keeps its focus trap, Escape and reduced motion
 
-## F-291 The gotchas, up top in one line [todo]
+## F-291 The gotchas, up top in one line [done]
 Founder: "show them the gotchas … the key things I get tripped by … expose that". Decisions D-941..D-942.
-- [ ] above the dashboard, one quiet line of the fine print's "Heads up" items as chips (for example "Parking $42/night · Resort fee · Lands 3 h before check-in · Flight path overhead"), each opening its row in "The fine print, up front"; nothing when there are none; never invented (same sources as F-282/F-284)
+- [x] above the dashboard, one quiet line of the fine print's "Heads up" items as chips (for example "Parking $42/night · Resort fee · Lands 3 h before check-in · Flight path overhead"), each opening its row in "The fine print, up front"; nothing when there are none; never invented (same sources as F-282/F-284)
 
 ## F-292 Say who sells it and how it is kept safe [todo]
 Founder: "powered by Nuitée / LiteAPI and all bookings are handled through that … be explicit … talk about security … so they are not put off by a newcomer's vibe-coded app". Decisions D-943..D-945.
