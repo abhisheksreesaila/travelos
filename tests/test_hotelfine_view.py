@@ -12,6 +12,7 @@ from gitaway import liteapi
 from gitaway.pages import hotelview
 
 FIX = Path(__file__).parent / "fixtures" / "liteapi_hotel"
+# SYNTHETIC: written for these tests, not LiteAPI data (the recorded Hilton answer has no important information)
 IMPORTANT = "<p>A resort fee of USD 35 per night is charged at the property.</p><p>Guests must be 21 or older to check in.</p>"
 
 
@@ -20,13 +21,14 @@ def hotel(important=None, place=True):
     if place:
         d["data"]["location"] = {"latitude": 33.9461921, "longitude": -118.3816538}      # the recording has none: F-284's card needs a place
     if important is not None:
-        d["data"]["hotelImportantInformation"] = important
+        d["data"][liteapi.IMPORTANT_FIELD] = important
     return liteapi.read_hotel(d)
 
 
 @pytest.fixture(scope="module")
 def hundred():
-    return liteapi.read_reviews(json.loads((FIX / "reviews100.json").read_text(encoding="utf-8")))
+    from tests.test_hotelfine import reviews_doc
+    return liteapi.read_reviews(reviews_doc())      # with three SYNTHETIC cons that share two words with a complaint
 
 
 def draw(h, rv, pt=""):
@@ -72,7 +74,7 @@ def test_a_complaint_opens_the_matching_reviews_and_one_no_review_says_is_not_a_
     fine = draw(hotel(), hundred)
     fine = fine[fine.index('class="fp"'):fine.index('class="fp-usual"')]
     m = re.search(r'data-rv-open="some" data-rv-ids="([\d,]+)" data-rv-why="Pricey \(breakfast, taxes, parking, lobby shop\)"', unescape(fine))
-    assert m and len(m[1].split(",")) > 3 and f"Read the {len(m[1].split(','))} reviews" in fine
+    assert m and len(m[1].split(",")) == 3 and f"Read the {len(m[1].split(','))} reviews" in fine
     assert "No review we fetched says it" in fine
 
 
@@ -108,3 +110,10 @@ def test_the_showcase_has_the_sample_dashboard_and_fine_print_labelled_and_off_i
     assert "The fine print, up front" in html and 'class="rv-item"' in html and "av-card" in html and "Sample view" in html
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     assert hotelview.sample_fragment("San Diego") == ""
+
+
+def test_the_sample_dashboard_says_above_it_whose_scores_these_are(monkeypatch):
+    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
+    html = to_xml(hotelview.sample_fragment("San Diego"))
+    label = "Sample: these scores and reviews are a real hotel’s (Hilton Los Angeles Airport), shown so you can see how it reads"
+    assert label in html and html.index(label) < html.index('class="dr-dash"')

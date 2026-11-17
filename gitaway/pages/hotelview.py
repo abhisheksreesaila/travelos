@@ -209,6 +209,9 @@ SAMPLE_NOTE = ("Sample: this is a real hotel’s recorded data (Hilton Los Angel
                "The hotels in this square are made up, so their prices, rooms and photos are samples.")
 
 
+SAMPLE_DASH = "Sample: these scores and reviews are a real hotel’s (Hilton Los Angeles Airport), shown so you can see how it reads"
+
+
 def sample_fragment(place_name: str = ""):
     """The showcase's dashboard and fine print: Hilton Los Angeles Airport's recorded LiteAPI answers (tests/fixtures/liteapi_hotel), said to be a sample in the section itself; "" off the showcase
     or when the recording is not there. Its "See it from above" card is the sample card (aerialview.sample_card), and its pins are the recorded ones."""
@@ -222,7 +225,7 @@ def sample_fragment(place_name: str = ""):
     if h is None:
         return ""
     from gitaway.pages import aerialview, fineprint, reviewdrawer
-    return Div(Div(dashboard(h, rv), cls="dr-top"), fineprint.section(h, rv, aerialview.sample_card(place_name), SAMPLE_NOTE), reviewdrawer.drawer(h, rv), cls="dr-richin dr-sample")
+    return Div(P(SAMPLE_DASH, cls="fp-sample"), Div(dashboard(h, rv), cls="dr-top"), fineprint.section(h, rv, aerialview.sample_card(place_name), SAMPLE_NOTE), reviewdrawer.drawer(h, rv), cls="dr-richin dr-sample")
 
 
 def fragment(hotel_id: str, family: str = "", ptype: str = ""):

@@ -20,7 +20,14 @@ IDS = ["1440", "390"]
 
 
 @pytest.fixture
-def sample(monkeypatch, stand):  # noqa: F811
+def sample(monkeypatch, stand, tmp_path):  # noqa: F811
+    import json
+    import shutil
+    from gitaway.pages import hotelview
+    from tests.test_hotelfine import reviews_doc
+    shutil.copy(hotelview.SAMPLE_DIR / "hotel.json", tmp_path / "hotel.json")
+    (tmp_path / "reviews100.json").write_text(json.dumps(reviews_doc()), encoding="utf-8")      # three SYNTHETIC cons share two words with the Pricey complaint
+    monkeypatch.setattr(hotelview, "SAMPLE_DIR", tmp_path)
     monkeypatch.setattr(gridsource, "SQUARE", BookStand(sample=True))
     monkeypatch.setattr(liteapi, "TRANSPORT", lambda *a: (_ for _ in ()).throw(AssertionError("LiteAPI was asked")))
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
@@ -37,6 +44,7 @@ def opened(matrix, viewport, **kw):  # noqa: F811
     drawer = open_square(page, viewport)
     slot = drawer.locator(".dr-sampleslot")
     expect(slot).to_be_visible()
+    expect(slot.locator(".fp-sample").first).to_contain_text("Sample: these scores and reviews are a real hotel’s (Hilton Los Angeles Airport)")      # above the dashboard
     return page, drawer, slot
 
 
@@ -173,6 +181,7 @@ def test_with_reduced_motion_the_drawer_simply_appears_and_goes(matrix, sample):
     rv = drawer_of(page)
     expect(rv).to_be_visible()
     assert rv.evaluate("el => getComputedStyle(el).opacity") == "1" and not rv.evaluate("el => el.getAnimations().length")
+    assert rv.evaluate("el => getComputedStyle(el).transitionDuration") == "0s" and rv.locator(".rv-chip").first.evaluate("el => getComputedStyle(el).transitionDuration") == "0s"
     page.keyboard.press("Escape")
     expect(rv).to_be_hidden()
 

@@ -103,3 +103,5 @@ body.rv-open { overflow: hidden; }
 
 /* a showcase square's sample dashboard sits under its rooms like a hotel's own page does */
 .dr-stay-grid > .dr-sampleslot { grid-column: 1 / -1; min-width: 0; }
+
+@media (prefers-reduced-motion: reduce) { .rv, .rv-scrim, .rv *, .fp *, .dr-scorebtn { transition: none !important; animation: none !important; } }

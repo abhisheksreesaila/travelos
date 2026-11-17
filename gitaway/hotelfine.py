@@ -22,7 +22,8 @@ ASK_FIRST = "Ask the hotel before you go"
 FAMILY_ASKS = (("Cribs", ("crib", "cot", "baby")), ("Kids’ club", ("kids", "children", "child", "playground")), ("Connecting rooms", ("connecting",)))
 FAMILY_HAS = ("family room", "swimming pool", "pool", "babysitting", "water park", "playground", "kids", "children", "crib", "connecting")
 STOP = {"some", "guests", "guest", "reported", "reports", "report", "mentioned", "mention", "expected", "better", "hotel", "property", "several", "many", "with", "that", "this", "from",
-        "have", "were", "very", "long", "other", "occasional", "inconsistent", "star", "room", "rooms", "quality", "value", "money"}
+        "have", "were", "very", "long", "other", "occasional", "inconsistent", "star", "room", "rooms", "quality", "value", "money", "stay", "stayed", "staff", "issue", "issues", "problem", "problems", "poor"}
+MATCH_WORDS = 2      # a review is said to mention a complaint only when it shares this many meaningful words with it
 
 
 @dataclass(frozen=True)
@@ -109,7 +110,7 @@ def _complaints(rv, drawer) -> tuple:
     out = []
     for text in (rv.cons if rv else ()):
         words = _tokens(text)
-        ids = tuple(i for i, r in enumerate(drawer) if words & _tokens(r.cons))
+        ids = tuple(i for i, r in enumerate(drawer) if len(words & _tokens(r.cons)) >= MATCH_WORDS)
         out.append(Complaint(text, ids, len(ids)))
     return tuple(out)
 

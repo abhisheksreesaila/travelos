@@ -8,6 +8,7 @@ import pytest
 from gitaway import hotelfine, liteapi
 
 FIX = Path(__file__).parent / "fixtures" / "liteapi_hotel"
+# SYNTHETIC: written for these tests, not LiteAPI data (the recorded Hilton answer has no important information)
 IMPORTANT = ("<p>A resort fee of USD 35 per night is charged at the property.</p><p>Guests must be 21 or older to check in.</p>"
              "<p>Parking is available for USD 42 per night.</p><br>Quiet hours start at 10 PM.")
 BARE = {"data": {"name": "X", "id": "x1"}}
@@ -16,13 +17,25 @@ BARE = {"data": {"name": "X", "id": "x1"}}
 def hotel(important=None):
     d = json.loads((FIX / "hotel.json").read_text(encoding="utf-8"))
     if important is not None:
-        d["data"]["hotelImportantInformation"] = important
+        d["data"][liteapi.IMPORTANT_FIELD] = important
     return liteapi.read_hotel(d)
+
+
+GRIPE = "Breakfast was pricey and parking costs extra"      # SYNTHETIC: the recorded reviews each name one topic, so none shares two words with a sentiment line; three get this one
+
+
+def reviews_doc(gripe=True):
+    """reviews100.json, with (SYNTHETIC) cons on three reviews that share two words with the Pricey complaint."""
+    doc = json.loads((FIX / "reviews100.json").read_text(encoding="utf-8"))
+    if gripe:
+        for i in (1, 4, 9):
+            doc["data"][i]["cons"] = GRIPE
+    return doc
 
 
 @pytest.fixture(scope="module")
 def hundred():
-    return liteapi.read_reviews(json.loads((FIX / "reviews100.json").read_text(encoding="utf-8")))
+    return liteapi.read_reviews(reviews_doc())
 
 
 def test_the_hotels_important_information_is_its_lines_as_plain_text_and_absent_when_it_gave_none():
@@ -80,8 +93,10 @@ def test_a_complaint_finds_the_reviews_whose_cons_mention_it_in_the_drawers_newe
     assert [r.date for r in drawer] == sorted((r.date for r in drawer), reverse=True) and len(drawer) == 100
     words = ("breakfast", "tax", "parking", "lobby", "shop", "pricey")
     pricey = next(c for c in fp.complaints if c.text.startswith("Pricey"))
-    assert pricey.ids and all(any(w in drawer[i].cons.lower() for w in words) for i in pricey.ids)
-    assert pricey.count == len(pricey.ids) == sum(1 for r in drawer if any(w in r.cons.lower() for w in words))
+    assert pricey.count >= 3
+    two = lambda r: sum(w in r.cons.lower() for w in words) >= 2      # noqa: E731
+    assert pricey.ids and all(two(drawer[i]) for i in pricey.ids)
+    assert pricey.count == len(pricey.ids) == sum(1 for r in drawer if two(r))
     water = next(c for c in fp.complaints if c.text.startswith("No in-room water"))
     assert water.ids == () and water.count == 0      # no review says it: listed, with no reviews to open
 
@@ -89,3 +104,18 @@ def test_a_complaint_finds_the_reviews_whose_cons_mention_it_in_the_drawers_newe
 def test_what_guests_complain_about_is_the_sentiment_cons_only(hundred):
     assert [c.text for c in hotelfine.build(hotel(), hundred).complaints] == list(hundred.cons)
     assert hotelfine.build(hotel(), None).complaints == ()
+
+
+def test_a_complaint_needs_two_meaningful_words_in_a_review_and_a_near_miss_does_not_count():
+    def rev(cons):
+        return liteapi.Review("A", "2026-11-10", 5, "couple", "us", "", "", cons, "")
+    rv = liteapi.HotelReviews((rev("Parking is dear"), rev("Breakfast was pricey and the parking too"), rev("The hotel room was reported small"), rev("Great")), (), (), ("Pricey breakfast and parking", "Hotel guests reported small rooms"), 4)
+    first, second = hotelfine.build(hotel(), rv).complaints
+    drawer = hotelfine.newest_first(rv.items)
+    assert [drawer[i].cons for i in first.ids] == ["Breakfast was pricey and the parking too"] and first.count == 1      # "Parking is dear" shares one word: a near miss
+    assert second.ids == () and second.count == 0      # "hotel", "guests", "reported", "room(s)" are generic: only "small" is left, one word
+
+
+def test_the_recorded_reviews_alone_match_no_complaint_so_every_one_says_so():
+    rv = liteapi.read_reviews(reviews_doc(gripe=False))
+    assert [c.count for c in hotelfine.build(hotel(), rv).complaints] == [0, 0, 0, 0, 0]
