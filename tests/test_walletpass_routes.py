@@ -132,3 +132,14 @@ def test_the_access_log_never_carries_a_wallet_link_inside_the_sign_in_redirect(
         rec = logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d', ("1.2.3.4:5", "GET", path, "1.1", 303), None)
         accesslog.Redact().filter(rec)
         assert t not in rec.getMessage() and t.lower() not in rec.getMessage() and "[link]" in rec.getMessage()
+
+
+def test_today_shows_the_stays_wallet_buttons_when_the_credentials_are_set(stay, client, monkeypatch):
+    """F-287 + F-288: Today's hotel card carries the same two buttons as the booking page, and none without the credentials."""
+    html = client.get("/trip/today").text
+    if "Your hotel" not in html and "Where you are staying" not in html:
+        pytest.skip("the booked stay's dates put Today outside a hotel card")
+    assert 'id="wp-apple"' in html and 'id="wp-google"' in html
+    monkeypatch.delenv("APPLE_PASS_TYPE_ID")
+    monkeypatch.delenv("GOOGLE_WALLET_ISSUER_ID")
+    assert 'id="wp-apple"' not in client.get("/trip/today").text
