@@ -2,7 +2,7 @@
 
 * A reading page (a creator's book, the details editor, the import) shows no sun, moon, clouds, shore or mood object, only the soft gradient; booking (/plan/ask) and planning (/trip/plan)
   keep theirs.
-* Every primary action (Book my trip, Save plan, the pass's Plan this trip) is one solid indigo, never a gradient, and reads 4.5:1; the planning hero is a card with ink on it; the pass is a
+* Every primary action (Book my trip, Today's Directions, the pass's Plan this trip) is one solid indigo, never a gradient, and reads 4.5:1; the planning hero is a card with ink on it; the pass is a
   solid deep indigo. Dark is set through localStorage ga-mode.
 * Every word on a reading page reads 4.5:1 on the pixels the page really paints (the method of test_moods.py), light and dark, at 1440 and 390.
 Set F261_SHOTS=1 for docs/report/f261-<label>-<page>-<width>.png (F261_LABEL=before on the code before the change, default after)."""
@@ -96,16 +96,15 @@ def test_booking_and_planning_keep_their_sun_and_shore(browser, base_url, plan):
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
-def test_planning_is_calm_a_card_for_the_hero_and_solid_indigo_for_save(plan, scheme):  # noqa: F811
+def test_planning_is_calm_a_card_for_the_hero_and_a_solid_add_button(plan, scheme):  # noqa: F811
     page = plan(DESKTOP, scheme)
     hero = page.evaluate("""() => { const s = getComputedStyle(document.querySelector('.pl-trip'));
       return {bg: s.backgroundColor, image: s.backgroundImage, fg: s.color, h1: getComputedStyle(document.querySelector('.pl-trip h1')).color}; }""")
     assert hero["image"] == "none"      # a card: no gradient on it
     card = rgb(hero["bg"])
     assert ratio(rgb(hero["h1"]), card) >= 4.5 and ratio(rgb(hero["fg"]), card) >= 4.5
-    save = page.evaluate(CTA_JS, ".pl .save")[0]
-    assert save["image"] == "none" and rgb(save["bg"]) == ([67, 56, 202] if scheme == "light" else [79, 70, 229])
-    assert ratio(rgb(save["fg"]), rgb(save["bg"])) >= 4.5
+    add = page.evaluate(CTA_JS, ".pl .addbtn")[0]      # F-293: Save plan is a row of the More menu now; the planner's bold action is Add
+    assert add["image"] == "none" and ratio(rgb(add["fg"]), rgb(add["bg"])) >= 4.5
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
