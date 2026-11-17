@@ -1720,12 +1720,12 @@ Founder, 2026-11-16 (on the live matrix): "we need a dedicated card for sentence
 ## F-280 Edits wait for "Update", so the matrix only searches when the person is done [done]
 Founder, 2026-11-16: "you don't have to keep updating the matrix when the user is changing … once he changes from three nights to four nights … wait for … a trigger … if you keep changing every time, you'll be hitting API calls a lot … give him a dynamic update button or press enter … you don't know when he's going to stop." On the results page, every change to the sentence (a word's picker in assets/js/v2.js, which today posts and navigates at once via `go()`; the nights slider in assets/js/tripmatrix.js, which today searches on letting go after COMMIT_MS; the Try chips) only stages the change: the changed words are marked in the search card (F-279), the matrix stays as it is (dimmed slightly with a quiet "Your changes aren't searched yet"), and a prominent "Update" button appears in the card with the number of changes; pressing it or Enter runs one search (the existing address/`go` path). Undo a staged change by setting it back, or "Reset". The first search from the landing (/plan/ask) still searches at once. No search on a timer or pause. The nights slider's labelled estimates while sliding may stay (they make no call); letting go no longer asks for tiles until Update. Checks: changing three words then pressing Update makes exactly one navigation and no tile/peek/warm request before it (browser test counts requests); Enter triggers it; the first search unchanged; staged words marked; phone and laptop, both modes, 48px.
 
-## F-281 Matrix v5 ground and chips: Harbour art sky, Fill chips [todo]
+## F-281 Matrix v5 ground and chips: Harbour art sky, Fill chips [done]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (ground "harbour", chips "fill", light by default) · Decisions D-890..D-894 · Needs: none
-- [ ] the v2 pages' sky becomes the Harbour art ground in light and dark (tokens in assets/css/v2-tokens.css, art as CSS or inline SVG, no images to fetch); the other grounds are not built
-- [ ] text passes WCAG AA on the ground, on glass and on cards (`tests_browser/test_direction_a_pages.py` and the existing contrast checks stay green); no pink-to-violet (tests/test_calm_palette.py)
-- [ ] the extra-info row is the Fill treatment: a dark-frost tray titled "More to know before you pick", chips with a gradient icon, a teaser line and a count, on matrix and opened square; still loads on demand (F-277)
-- [ ] phone and laptop, both modes, 48px targets, reduced motion respected
+- [x] the v2 pages' sky becomes the Harbour art ground in light and dark (tokens in assets/css/v2-tokens.css, art as CSS or inline SVG, no images to fetch); the other grounds are not built
+- [x] text passes WCAG AA on the ground, on glass and on cards (`tests_browser/test_direction_a_pages.py` and the existing contrast checks stay green); no pink-to-violet (tests/test_calm_palette.py)
+- [x] the extra-info row is the Fill treatment: a dark-frost tray titled "More to know before you pick", chips with a gradient icon, a teaser line and a count, on matrix and opened square; still loads on demand (F-277)
+- [x] phone and laptop, both modes, 48px targets, reduced motion respected
 
 ## F-282 The hotel as a decision dashboard, with the fine print up front [todo]
 Brief: docs/briefs/matrix-v5.md · Design: docs/design/matrix-v5/index.html (hotel, fine print, drawer) · Decisions D-895..D-899 · Needs: F-281
