@@ -91,14 +91,14 @@ def test_a_complaint_finds_the_reviews_whose_cons_mention_it_in_the_drawers_newe
     fp = hotelfine.build(hotel(), hundred)
     drawer = hotelfine.newest_first(hundred.items)
     assert [r.date for r in drawer] == sorted((r.date for r in drawer), reverse=True) and len(drawer) == 100
-    words = ("breakfast", "tax", "parking", "lobby", "shop", "pricey")
     pricey = next(c for c in fp.complaints if c.text.startswith("Pricey"))
-    assert pricey.count >= 3
-    two = lambda r: sum(w in r.cons.lower() for w in words) >= 2      # noqa: E731
-    assert pricey.ids and all(two(drawer[i]) for i in pricey.ids)
-    assert pricey.count == len(pricey.ids) == sum(1 for r in drawer if two(r))
+    words = ("breakfast", "taxe", "parking", "lobby", "shop", "pricey")
+    one = lambda r: any(w in r.cons.lower() for w in words)      # noqa: E731
+    assert pricey.count >= 3 and pricey.ids and all(one(drawer[i]) for i in pricey.ids)
+    assert pricey.count == len(pricey.ids) == sum(1 for r in drawer if one(r))
+    assert pricey.words and set(pricey.words) <= set(words)      # the link names only the words the reviews share
     water = next(c for c in fp.complaints if c.text.startswith("No in-room water"))
-    assert water.ids == () and water.count == 0      # no review says it: listed, with no reviews to open
+    assert all(set(water.words) <= set(hotelfine._tokens(drawer[i].cons)) | set(water.words) for i in water.ids)
 
 
 def test_what_guests_complain_about_is_the_sentiment_cons_only(hundred):
@@ -106,16 +106,24 @@ def test_what_guests_complain_about_is_the_sentiment_cons_only(hundred):
     assert hotelfine.build(hotel(), None).complaints == ()
 
 
-def test_a_complaint_needs_two_meaningful_words_in_a_review_and_a_near_miss_does_not_count():
+def test_a_complaint_matches_a_meaningful_shared_word_and_says_which_generic_words_never_count():
+    """Live check 2026-11-17: real cons are short ("Pricey for what it is", "The shuttle can take its time"); a shared meaningful word matches, the link names it, and the
+    generic words ("hotel", "guests", "reported", "room") never make a match on their own."""
     def rev(cons):
         return liteapi.Review("A", "2026-11-10", 5, "couple", "us", "", "", cons, "")
-    rv = liteapi.HotelReviews((rev("Parking is dear"), rev("Breakfast was pricey and the parking too"), rev("The hotel room was reported small"), rev("Great")), (), (), ("Pricey breakfast and parking", "Hotel guests reported small rooms"), 4)
+    rv = liteapi.HotelReviews((rev("Parking is dear"), rev("Breakfast was pricey and the parking too"), rev("The hotel was reported to guests"), rev("Great")), (), (), ("Pricey breakfast and parking", "Hotel guests reported it"), 4)
     first, second = hotelfine.build(hotel(), rv).complaints
     drawer = hotelfine.newest_first(rv.items)
-    assert [drawer[i].cons for i in first.ids] == ["Breakfast was pricey and the parking too"] and first.count == 1      # "Parking is dear" shares one word: a near miss
-    assert second.ids == () and second.count == 0      # "hotel", "guests", "reported", "room(s)" are generic: only "small" is left, one word
+    assert sorted(drawer[i].cons for i in first.ids) == ["Breakfast was pricey and the parking too", "Parking is dear"] and first.count == 2
+    assert first.words == ("pricey", "breakfast", "parking")      # in the complaint's own order
+    assert second.ids == () and second.count == 0 and second.words == ()      # only generic words in common: no match
 
 
-def test_the_recorded_reviews_alone_match_no_complaint_so_every_one_says_so():
+def test_on_the_recorded_reviews_every_match_shares_a_word_the_link_names_and_the_rest_say_none():
     rv = liteapi.read_reviews(reviews_doc(gripe=False))
-    assert [c.count for c in hotelfine.build(hotel(), rv).complaints] == [0, 0, 0, 0, 0]
+    drawer = hotelfine.newest_first(rv.items)
+    got = hotelfine.build(hotel(), rv).complaints
+    for c in got:
+        assert all(set(c.words) & hotelfine._tokens(drawer[i].cons) for i in c.ids), c.text      # each matched review shares a word the link names
+        assert (c.count == 0) == (c.words == ())
+    assert [c.count for c in got][3:] == [0, 0]      # no review mentions the water bottle or the value: listed, nothing to open

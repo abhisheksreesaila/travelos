@@ -74,7 +74,8 @@ def test_a_complaint_opens_the_matching_reviews_and_one_no_review_says_is_not_a_
     fine = draw(hotel(), hundred)
     fine = fine[fine.index('class="fp"'):fine.index('class="fp-usual"')]
     m = re.search(r'data-rv-open="some" data-rv-ids="([\d,]+)" data-rv-why="Pricey \(breakfast, taxes, parking, lobby shop\)"', unescape(fine))
-    assert m and len(m[1].split(",")) == 3 and f"Read the {len(m[1].split(','))} reviews" in fine
+    n = len(m[1].split(",")) if m else 0
+    assert m and n >= 3 and re.search(rf"Read {n} reviews that mention [a-z]+( or [a-z]+)*<", fine)      # the link names the words the reviews share
     assert "No review we fetched says it" in fine
 
 

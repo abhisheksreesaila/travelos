@@ -23,7 +23,7 @@ FAMILY_ASKS = (("Cribs", ("crib", "cot", "baby")), ("Kids’ club", ("kids", "ch
 FAMILY_HAS = ("family room", "swimming pool", "pool", "babysitting", "water park", "playground", "kids", "children", "crib", "connecting")
 STOP = {"some", "guests", "guest", "reported", "reports", "report", "mentioned", "mention", "expected", "better", "hotel", "property", "several", "many", "with", "that", "this", "from",
         "have", "were", "very", "long", "other", "occasional", "inconsistent", "star", "room", "rooms", "quality", "value", "money", "stay", "stayed", "staff", "issue", "issues", "problem", "problems", "poor"}
-MATCH_WORDS = 2      # a review is said to mention a complaint only when it shares this many meaningful words with it
+MATCH_WORDS = 1      # a review mentions a complaint when it shares a meaningful word with it; the link names the words, never claiming more (live check 2026-11-17: real reviews are short, "Pricey for what it is", and two shared words matched almost none)
 
 
 @dataclass(frozen=True)
@@ -37,8 +37,9 @@ class Item:
 @dataclass(frozen=True)
 class Complaint:
     text: str
-    ids: tuple                 # positions in `newest_first(items)` of the reviews whose cons say it
+    ids: tuple                 # positions in `newest_first(items)` of the reviews whose cons mention it
     count: int
+    words: tuple = ()          # the complaint's words those reviews share, in the complaint's order: what the link says they mention
 
 
 @dataclass(frozen=True)
@@ -111,7 +112,9 @@ def _complaints(rv, drawer) -> tuple:
     for text in (rv.cons if rv else ()):
         words = _tokens(text)
         ids = tuple(i for i, r in enumerate(drawer) if len(words & _tokens(r.cons)) >= MATCH_WORDS)
-        out.append(Complaint(text, ids, len(ids)))
+        shared = set().union(*(words & _tokens(drawer[i].cons) for i in ids)) if ids else set()
+        order = [w.rstrip("s") for w in re.findall(r"[a-z]{4,}", text.lower())]
+        out.append(Complaint(text, ids, len(ids), tuple(dict.fromkeys(w for w in order if w in shared))))
     return tuple(out)
 
 

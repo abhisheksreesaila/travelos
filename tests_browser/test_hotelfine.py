@@ -3,6 +3,7 @@ recorded LiteAPI answers, labelled a sample); its pins are the recorded OpenStre
 depend on the room and flight follow the choice (fees paid at the hotel and what the stay really costs, refundability, the landing against check-in); the pins arrive with their Heads up; the review
 drawer opens from the score, the strip and a complaint, filters by traveller type and by a complaint, is a side sheet on a laptop and a full-height sheet on a phone, and Escape and the close button
 give the focus back. Set F282_SHOTS=1 for docs/report/f282-*.png."""
+import re
 import os
 from pathlib import Path
 
@@ -160,13 +161,13 @@ def test_the_chips_filter_by_traveller_type_and_a_complaint_opens_only_its_revie
     assert page.evaluate("() => document.activeElement.classList.contains('tr-read')")
     gripe = slot.locator(".fp-read").first
     gripe.scroll_into_view_if_needed()
-    n = int(gripe.inner_text().split("the ")[1].split(" ")[0])
+    n = int(re.search(r"Read (\d+) review", gripe.inner_text())[1])
     gripe.click()
     expect(rv).to_be_visible()
-    expect(rv.locator(".rv-filter")).to_contain_text(f"{n} reviews say: “Pricey (breakfast, taxes, parking, lobby shop)”")
+    expect(rv.locator(".rv-filter")).to_contain_text(re.compile(rf"{n} reviews mention [a-z]+( or [a-z]+)* · about “Pricey \(breakfast, taxes, parking, lobby shop\)”"))      # what they share, never "say"
     shown = rv.locator(".rv-item:visible")
     assert shown.count() == n
-    assert all(any(w in t.lower() for w in ("breakfast", "tax", "parking", "lobby", "shop", "pricey")) for t in shown.locator(".dr-rc").all_inner_texts())      # each says it in its cons
+    assert all(any(w in t.lower() for w in ("breakfast", "tax", "parking", "lobby", "shop", "pricey")) for t in shown.locator(".dr-rc").all_inner_texts())      # each mentions one of its words in its cons
     shot(page, f"gripe-{viewport['width']}")
     rv.locator(".rv-all").click()
     assert rv.locator(".rv-item:visible").count() == 100

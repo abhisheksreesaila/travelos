@@ -39,8 +39,8 @@ def _card(cls: str, title: str, *body):
 
 
 def _complaint(c: hotelfine.Complaint):
-    open_ = Button(icon("arrow-right", 16, 2.2), f"Read the {c.count} review{'' if c.count == 1 else 's'}", type="button", cls="fp-read", data_rv_open="some", data_rv_ids=",".join(map(str, c.ids)),
-                   data_rv_why=c.text) if c.count else Span("No review we fetched says it", cls="fp-none")
+    open_ = Button(icon("arrow-right", 16, 2.2), f"Read {c.count} review{'' if c.count == 1 else 's'} that mention{'s' if c.count == 1 else ''} " + " or ".join(c.words[:3]), type="button", cls="fp-read", data_rv_open="some", data_rv_ids=",".join(map(str, c.ids)),
+                   data_rv_why=c.text, data_rv_words=" or ".join(c.words[:3])) if c.count else Span("No review we fetched says it", cls="fp-none")
     return Div(Span(icon("flag", 18, 2.2), cls="fp-m", aria_hidden="true"), Div(Span(c.text, cls="fp-t"), open_), cls="fp-i is-plain fp-gripe")
 
 

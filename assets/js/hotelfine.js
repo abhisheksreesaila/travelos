@@ -125,7 +125,7 @@
   // ---- the review drawer ----
   var cur = null;      // { aside, scrim, from, slot }
   function host() { return document.querySelector('.ga-page') || document.body; }
-  function filter(aside, type, ids, why) {
+  function filter(aside, type, ids, why, words) {
     var want = ids ? ids.split(',').filter(Boolean) : null, shown = 0;
     qa(aside, '.rv-item').forEach(function (it) {
       var ok = (!want || want.indexOf(it.dataset.i) >= 0) && (!type || it.dataset.type === type);
@@ -135,11 +135,11 @@
     qa(aside, '.rv-chip').forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.rvType === type ? 'true' : 'false'); });
     var bar = q(aside, '.rv-filter');
     bar.hidden = !want;
-    if (want) q(bar, '.rv-why').textContent = want.length + (want.length === 1 ? ' review says' : ' reviews say') + ': “' + why + '”' + (type ? ' · ' + shown + ' shown' : '');
-    aside._ids = ids; aside._why = why;
+    if (want) q(bar, '.rv-why').textContent = want.length + (want.length === 1 ? ' review mentions ' : ' reviews mention ') + (words || 'it') + ' · about “' + why + '”' + (type ? ' · ' + shown + ' shown' : '');      // what they share, never more
+    aside._ids = ids; aside._why = why; aside._words = words;
     q(aside, '.rv-body').scrollTop = 0;
   }
-  function openDrawer(slot, from, ids, why) {
+  function openDrawer(slot, from, ids, why, words) {
     var aside = slot._rv || q(slot, '.rv');
     if (!aside) return;
     if (cur) return;
@@ -149,7 +149,7 @@
     scrim.className = 'rv-scrim';
     scrim.addEventListener('click', closeDrawer);
     host().appendChild(scrim);
-    filter(aside, '', ids, why);
+    filter(aside, '', ids, why, words);
     aside.hidden = false;
     document.body.classList.add('rv-open');
     cur = { aside: aside, scrim: scrim, from: from, slot: slot };
@@ -172,11 +172,11 @@
     if (t.hasAttribute('data-rv-close')) { closeDrawer(); return; }
     if (t.hasAttribute('data-rv-type')) {
       var aside = t.closest('.rv');
-      if (aside) filter(aside, t.dataset.rvType, t.classList.contains('rv-all') ? '' : aside._ids, aside._why);
+      if (aside) filter(aside, t.dataset.rvType, t.classList.contains('rv-all') ? '' : aside._ids, aside._why, aside._words);
       return;
     }
     var slot = t.closest('.dr-rich, .dr-sampleslot');
-    if (slot) openDrawer(slot, t, t.dataset.rvOpen === 'some' ? t.dataset.rvIds : '', t.dataset.rvWhy || '');
+    if (slot) openDrawer(slot, t, t.dataset.rvOpen === 'some' ? t.dataset.rvIds : '', t.dataset.rvWhy || '', t.dataset.rvWords || '');
   });
   document.addEventListener('keydown', function (e) {
     if (!cur) return;
