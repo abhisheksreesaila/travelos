@@ -13,6 +13,7 @@ from sqlalchemy import text
 
 from gitaway import aerial, community, csp, liteapi
 from gitaway.pages import aerialview, hotelview, tripmatrix
+from tests.test_signin import sign_in
 
 FIX = Path(__file__).parent / "fixtures" / "aerial"
 HOTEL_FIX = Path(__file__).parent / "fixtures" / "liteapi_hotel"
@@ -168,13 +169,13 @@ def test_overpass_is_asked_at_fixed_hosts_only_with_a_generic_user_agent(monkeyp
 
 def test_without_a_google_key_nothing_is_offered_and_nothing_counted(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "")
-    assert aerial.offered() is False and aerial.open_google() == ("off", None) and aerial.opens_today() == 0
+    assert aerial.offered() is False and aerial.open_google("u1") == ("off", None) and aerial.opens_today() == 0
 
 
 def test_the_key_is_handed_out_until_the_daily_cap_and_then_it_is_back_tomorrow(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
     monkeypatch.setenv("GOOGLE_3D_A_DAY", "3")
-    assert [aerial.open_google() for _ in range(5)] == [("ok", "AIza-test-not-real")] * 3 + [("full", None)] * 2
+    assert [aerial.open_google("u1") for _ in range(5)] == [("ok", "AIza-test-not-real")] * 3 + [("full", None)] * 2
     assert aerial.opens_today() == 3      # the refused opens are not counted
 
 
@@ -183,11 +184,11 @@ def test_the_cap_defaults_to_a_hundred_and_survives_a_restart_because_the_count_
     monkeypatch.delenv("GOOGLE_3D_A_DAY", raising=False)
     assert aerial.cap() == 100
     monkeypatch.setenv("GOOGLE_3D_A_DAY", "2")
-    aerial.open_google()
-    aerial.open_google()
+    aerial.open_google("u1")
+    aerial.open_google("u1")
     community._ready.clear()      # a new process: nothing in memory, only the database
     aerial._failed.clear()
-    assert aerial.open_google() == ("full", None)
+    assert aerial.open_google("u1") == ("full", None)
     with community.connect() as db:
         assert db.conn.execute(text("SELECT n FROM aerial_opens")).scalar() == 2
     monkeypatch.setenv("GOOGLE_3D_A_DAY", "not a number")
@@ -200,7 +201,7 @@ def test_yesterdays_count_does_not_carry_over(monkeypatch):
     with community.connect() as db:
         db.conn.execute(text("INSERT INTO aerial_opens (day, n) VALUES ('2020-01-01', 99)"))
         db.conn.commit()
-    assert aerial.open_google() == ("ok", "AIza-test-not-real") and aerial.open_google() == ("full", None)
+    assert aerial.open_google("u1") == ("ok", "AIza-test-not-real") and aerial.open_google("u1") == ("full", None)
     with community.connect() as db:
         assert db.conn.execute(text("SELECT COUNT(*) FROM aerial_opens")).scalar() == 1
 
@@ -237,7 +238,7 @@ def test_the_hotels_fragment_has_the_card_with_a_signed_id_and_no_coordinates(mo
     html = to_xml(hotelview.rich(liteapi.read_hotel(json.loads(hotel_with()))))
     assert "See it from above" in html and "Know this before you book" in html
     assert aerial.NEUTRAL in html      # nothing is kept yet: the card says what it shows, it did not wait on Overpass
-    assert re.search(r'data-aerial="lp1b8e6\.[0-9a-f]{24}"', html) and 'data-keyed=""' in html
+    assert re.search(r'data-aerial="lp1b8e6\.\d{10}\.[0-9a-f]{24}"', html) and 'data-keyed=""' in html
     assert "33.94" not in html and "-118.38" not in html
     assert "See it from above" not in to_xml(hotelview.rich(liteapi.read_hotel(json.loads(hotel_with(None)))))      # no place, no card
 
@@ -252,7 +253,7 @@ def test_the_card_carries_the_top_heads_up_once_the_pins_are_kept_and_offers_the
 
 
 def tok(key):
-    return hotelview.token(key)
+    return aerialview.sign(key)
 
 
 def test_the_pins_route_reads_the_hotel_place_from_liteapi_and_asks_overpass_for_it(client, live):
@@ -304,6 +305,7 @@ def test_the_showcase_answers_a_sample_token_from_the_recording_and_production_r
 def test_the_open_route_counts_and_hands_over_the_key_and_says_back_tomorrow_past_the_cap(client, monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
     monkeypatch.setenv("GOOGLE_3D_A_DAY", "2")
+    sign_in(client)
     ask = lambda **kw: client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo", **kw})  # noqa: E731
     first, second, third = ask(), ask(view="sat"), ask()
     assert (first.status_code, first.json()) == (200, {"ok": True, "key": "AIza-test-not-real"}) and second.json()["ok"] is True
@@ -312,6 +314,7 @@ def test_the_open_route_counts_and_hands_over_the_key_and_says_back_tomorrow_pas
 
 
 def test_the_open_route_without_a_key_is_off_and_a_blind_post_spends_nothing(client, monkeypatch):
+    sign_in(client)
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "")
     assert client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"}).status_code == 404
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
@@ -343,9 +346,10 @@ def test_the_pinned_library_versions_are_exact_and_the_report_only_policy_lists_
     js = Path(__file__).parent.parent / "assets" / "js" / "aerial.js"
     src = js.read_text()
     assert re.search(r"maplibre: '\d+\.\d+\.\d+'", src) and re.search(r"cesium: '\d+\.\d+\.\d+'", src)
-    for host in ("https://unpkg.com", "https://cdn.jsdelivr.net", "https://tiles.openfreemap.org", "https://tile.googleapis.com"):
+    for host in ("https://unpkg.com/maplibre-gl@4.7.1/dist/", "https://cdn.jsdelivr.net/npm/cesium@1.123.0/", "https://tiles.openfreemap.org", "https://tile.googleapis.com"):
         assert host in csp.POLICY, host
     assert "blob:" in csp.POLICY.split("worker-src")[1].split(";")[0]
+    assert "https://unpkg.com " not in csp.POLICY and "https://cdn.jsdelivr.net " not in csp.POLICY and "https://cdn.jsdelivr.net;" not in csp.POLICY      # the exact versioned folders, not the whole hosts
     assert "unpkg.com" in src and "cdn.jsdelivr.net" in src and "tile.googleapis.com" in src
 
 
@@ -365,7 +369,7 @@ def test_a_sample_squares_drawer_has_the_sample_card_for_each_of_its_hotels_and_
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     html = client.get(square).text
     assert html.count('class="av-card"') == 3 and html.count("Sample view") == 3 and "Hilton Los Angeles Airport" in html      # three sample hotels, each opening the recorded real one
-    assert len(re.findall(r'data-aerial="sample-lax\.[0-9a-f]{24}"', html)) == 3
+    assert len(re.findall(r'data-aerial="sample-lax\.\d{10}\.[0-9a-f]{24}"', html)) == 3
 
 
 def test_the_card_uses_none_of_the_data_names_the_drawers_clicks_read(monkeypatch):
@@ -375,3 +379,68 @@ def test_the_card_uses_none_of_the_data_names_the_drawers_clicks_read(monkeypatc
     html = to_xml(aerialview.sample_card("San Diego"))
     for name in ("data-hotel", "data-room", "data-tab", "data-fl", "data-act", "data-gal-go", "data-show"):
         assert name + "=" not in html, name
+
+
+# ---- the security fixes: sign-in, per-person allowance, token age, busy, atomic counts ----------------------------------------------------
+
+def test_signed_out_nobody_gets_the_key_or_spends_the_count_and_the_page_is_told_to_sign_in(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
+    r = client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "photo"})
+    assert r.status_code == 401 and r.json() == {"ok": False, "signin": True, "message": "Sign in for satellite and 3D"} and "AIza" not in r.text and aerial.opens_today() == 0
+
+
+def test_a_viewer_may_open_the_views_because_they_only_look(client, monkeypatch):
+    from gitaway import access
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
+    assert access.needed("POST", "/plan/matrix/aerial/open") is None
+    sign_in(client)
+    assert client.post("/plan/matrix/aerial/open", data={"id": tok("lp1b8e6"), "view": "sat"}).json()["ok"] is True
+
+
+def test_each_person_has_a_daily_allowance_on_top_of_the_sites_and_a_refusal_gives_nothing_back_or_takes_nothing(monkeypatch):
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "AIza-test-not-real")
+    monkeypatch.setenv("GOOGLE_3D_PER_PERSON_A_DAY", "2")
+    monkeypatch.setenv("GOOGLE_3D_A_DAY", "4")
+    assert [aerial.open_google("a")[0] for _ in range(3)] == ["ok", "ok", "person"]
+    assert [aerial.open_google("b")[0] for _ in range(3)] == ["ok", "ok", "person"]
+    assert aerial.open_google("c")[0] == "full" and aerial.opens_today() == 4
+    assert aerial.open_google("c")[0] == "full" and aerial.person_cap() == 2      # the site's refusal handed c's own count back: c was never charged for it
+    monkeypatch.setenv("GOOGLE_3D_A_DAY", "5")
+    assert aerial.open_google("c")[0] == "ok"
+    monkeypatch.delenv("GOOGLE_3D_PER_PERSON_A_DAY")
+    assert aerial.person_cap() == 10
+
+
+def test_a_card_token_stops_working_after_six_hours_and_a_forged_time_does_not_work(client, live):
+    import time
+    live(recorded("osm-lax.json"))
+    old = aerialview.sign("lp1b8e6", now=time.time() - aerialview.TOKEN_AGE - 60)
+    assert aerialview.unsign(old) == "" and aerialview.unsign(aerialview.sign("lp1b8e6")) == "lp1b8e6"
+    assert client.get("/plan/matrix/aerial/pins", params={"id": old}).status_code == 404
+    fresh = aerialview.sign("lp1b8e6")
+    key, at, sig = fresh.rsplit(".", 2)
+    assert aerialview.unsign(f"{key}.{int(at) + 1}.{sig}") == "" and aerialview.unsign(hotelview.token("lp1b8e6")) == ""      # the hotel view's own token is not this route's
+    assert hotelview.unsign(hotelview.token("lp1b8e6")) == "lp1b8e6"      # and it still works where it did
+
+
+def test_when_overpass_has_no_free_slot_the_page_is_told_busy_at_once_and_nothing_is_marked_failed(client, live):
+    f = live(recorded("osm-lax.json"))
+    taken = [aerial._SLOTS.acquire(blocking=False) for _ in range(aerial.AT_ONCE)]
+    try:
+        j = client.get("/plan/matrix/aerial/pins", params={"id": tok("lp1b8e6")}).json()
+    finally:
+        for _ in taken:
+            aerial._SLOTS.release()
+    assert j["ok"] is False and j["message"] == "Pins are busy, try again in a moment" and j["pins"] == [] and f.calls == []
+    assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lp1b8e6")}).json()["ok"] is True      # a moment later it asks
+
+
+def test_a_person_has_a_limit_on_fresh_pins_but_kept_answers_are_free(client, live, monkeypatch):
+    monkeypatch.setattr(aerial, "PINS_PER_PERSON_A_DAY", 2)
+    f = live(recorded("osm-lax.json"), recorded("osm-tahoe.json"), recorded("osm-lax.json"))
+    for i, hid in enumerate(("lpa", "lpb")):
+        assert client.get("/plan/matrix/aerial/pins", params={"id": tok(hid)}).json()["ok"] is True
+    for _ in range(3):      # kept: no ask, no count
+        assert client.get("/plan/matrix/aerial/pins", params={"id": tok("lpa")}).json()["source"] == "kept"
+    j = client.get("/plan/matrix/aerial/pins", params={"id": tok("lpc")}).json()
+    assert j["ok"] is False and j["message"].startswith("You have looked at a lot of places today") and len(f.calls) == 2

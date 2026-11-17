@@ -39,7 +39,8 @@ HOSTS = ("overpass-api.de", "overpass.kumi.systems")
 PATH = "/api/interpreter"
 RADIUS = 2000
 HOST_TIMEOUT = 8.0                   # seconds a host has, lookup to last byte
-WAIT = 6.0                           # seconds a request waits for its turn at Overpass
+PINS_PER_PERSON_A_DAY = 30           # fresh Overpass asks one visitor or family may start in a day (kept answers are free)
+BUSY, LIMIT = {"busy": True}, {"limit": True}      # what `pins` answers when Overpass has no free slot, or this person has used their fresh asks
 AT_ONCE = 2                          # asks to Overpass in flight at once, for the whole site
 FAIL_WAIT = 60.0                     # after every host failed, nobody asks again for that hotel for this long
 MAX_BYTES = 4_000_000
@@ -47,6 +48,7 @@ AGE = timedelta(days=7)              # a kept answer is fresh this long ("cached
 STALE = timedelta(days=60)           # when no host answers, a kept answer this old is still shown, said to be a saved copy
 VERSION = 1                          # bump when `analyse` changes: kept answers of an older version are asked again
 DEFAULT_A_DAY = 100
+DEFAULT_PER_PERSON = 10
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "aerial"
 SAMPLES = {"lax": ("Hilton Los Angeles Airport", 33.9461921, -118.3816538, "osm-lax.json"),
            "tahoe": ("Hyatt Regency Lake Tahoe", 39.2407285, -119.9426988, "osm-tahoe.json")}
@@ -139,9 +141,9 @@ def _read(body) -> dict | None:
 
 
 def ask(lat: float, lon: float) -> tuple | None:
-    """(the answer, the host that gave it) from the first of HOSTS that gives a whole one, else None. Two asks at a time; a request that cannot get its turn in WAIT seconds gives up."""
-    if not _SLOTS.acquire(timeout=WAIT):
-        return None
+    """(the answer, the host that gave it) from the first of HOSTS that gives a whole one, else None. Two asks at a time; a request that finds both slots taken gets BUSY at once."""
+    if not _SLOTS.acquire(blocking=False):      # both slots are busy: no request holds a worker thread waiting for Overpass; the page says "busy"
+        return BUSY
     try:
         q = query(lat, lon)
         for host in HOSTS:
@@ -418,7 +420,7 @@ def teaser(key: str) -> str:
     return json.loads(row["body"]).get("headline", "")
 
 
-def pins(key: str, lat: float, lon: float, name: str) -> dict | None:
+def pins(key: str, lat: float, lon: float, name: str, who: str = "") -> dict | None:
     """The hotel's truth: {"name", "lat", "lon", "pins", "heads", "headline", "source", "source_text"} or None when Overpass gave nothing and nothing is kept. Fresh kept answers cost nothing;
     otherwise one ask (two hosts at most); every host failing is remembered for FAIL_WAIT so a tab that keeps asking cannot hammer a public service."""
     kept = _kept(key, lat, lon, AGE)
@@ -426,7 +428,11 @@ def pins(key: str, lat: float, lon: float, name: str) -> dict | None:
         result, fetched, host = kept
         return {**result, "name": name, "lat": lat, "lon": lon, "source": "kept", "source_text": _words(fetched, host, False)}
     if time.monotonic() - _failed.get(key, -FAIL_WAIT) >= FAIL_WAIT:
+        if who and not _take("pins:" + who, PINS_PER_PERSON_A_DAY):
+            return LIMIT
         got = ask(lat, lon)
+        if got is BUSY:
+            return BUSY
         if got:
             _failed.pop(key, None)
             result = analyse(lat, lon, got[0])
@@ -482,18 +488,43 @@ def opens_today() -> int:
         return int(db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM aerial_opens WHERE day = :d"), {"d": _today()}).scalar())
 
 
-def open_google() -> tuple:
-    """Count one satellite or photoreal open for today and give the page the browser key: ("ok", key), ("full", None) when today's GOOGLE_3D_A_DAY opens are spent (the page says
-    "Back tomorrow"), ("off", None) without GOOGLE_MAPS_API_KEY. The count is a row in the database, kept across restarts; yesterday's rows are dropped."""
+def person_cap() -> int:
+    try:
+        return max(0, int(os.getenv("GOOGLE_3D_PER_PERSON_A_DAY", "").strip() or DEFAULT_PER_PERSON))
+    except ValueError:
+        return DEFAULT_PER_PERSON
+
+
+def _take(who: str, limit: int) -> bool:
+    """One more for `who` today if their count is under `limit`: one conditional UPDATE (the row is made first, OR IGNORE), so two requests, or two processes, cannot both take the last one."""
+    day = _today()
+    with community.connect() as db:
+        db.conn.execute(text("DELETE FROM aerial_person WHERE day != :d"), {"d": day})
+        db.conn.execute(text("INSERT OR IGNORE INTO aerial_person (day, who, n) VALUES (:d, :w, 0)"), {"d": day, "w": who})
+        ok = db.conn.execute(text("UPDATE aerial_person SET n = n + 1 WHERE day = :d AND who = :w AND n < :c"), {"d": day, "w": who, "c": limit}).rowcount == 1
+        db.conn.commit()
+    return ok
+
+
+def open_google(who: str = "") -> tuple:
+    """Count one satellite or photoreal open for `who` (a signed-in person) and give the page the browser key: ("ok", key), ("person", None) when this person's GOOGLE_3D_PER_PERSON_A_DAY
+    (default 10) are spent, ("full", None) when the site's GOOGLE_3D_A_DAY are, ("off", None) without GOOGLE_MAPS_API_KEY. Both counts are conditional UPDATEs in one transaction, so a refusal on
+    the site's count gives the person's back and no pair of requests can pass the cap together; rows are in the database, kept across restarts, and yesterday's are dropped. The real hard cap
+    is Google's own quota on the Map Tiles API (docs/setup.md)."""
     k = key()
     if not k:
         return "off", None
+    day, c = _today(), cap()
     with _LOCK, community.connect() as db:
-        day = _today()
-        used = int(db.conn.execute(text("SELECT COALESCE(SUM(n), 0) FROM aerial_opens WHERE day = :d"), {"d": day}).scalar())
-        if used >= cap():
-            return "full", None
         db.conn.execute(text("DELETE FROM aerial_opens WHERE day != :d"), {"d": day})
-        db.conn.execute(text("INSERT INTO aerial_opens (day, n) VALUES (:d, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1"), {"d": day})
+        db.conn.execute(text("DELETE FROM aerial_person WHERE day != :d"), {"d": day})
+        db.conn.execute(text("INSERT OR IGNORE INTO aerial_person (day, who, n) VALUES (:d, :w, 0)"), {"d": day, "w": "open:" + who})
+        db.conn.execute(text("INSERT OR IGNORE INTO aerial_opens (day, n) VALUES (:d, 0)"), {"d": day})
+        if db.conn.execute(text("UPDATE aerial_person SET n = n + 1 WHERE day = :d AND who = :w AND n < :c"), {"d": day, "w": "open:" + who, "c": person_cap()}).rowcount != 1:
+            db.conn.rollback()
+            return "person", None
+        if db.conn.execute(text("UPDATE aerial_opens SET n = n + 1 WHERE day = :d AND n < :c"), {"d": day, "c": c}).rowcount != 1:
+            db.conn.rollback()
+            return "full", None
         db.conn.commit()
     return "ok", k

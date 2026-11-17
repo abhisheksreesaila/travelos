@@ -16,8 +16,8 @@ STRIPE = "https://js.stripe.com https://m.stripe.network https://b.stripecdn.com
 HCAPTCHA = "https://hcaptcha.com https://*.hcaptcha.com"
 LITEAPI = "https://payment-wrapper.liteapi.travel"
 AMAZON = "https://apay-us.amazon.com"
-MAPLIBRE = "https://unpkg.com"                  # maplibre-gl, the pinned version (assets/js/aerial.js VERSIONS)
-CESIUM = "https://cdn.jsdelivr.net"             # cesium, the pinned version, its Build/Cesium folder: script, widgets.css, workers, sky
+MAPLIBRE = "https://unpkg.com/maplibre-gl@4.7.1/dist/"                  # maplibre-gl, the pinned version (assets/js/aerial.js VERSIONS)
+CESIUM = "https://cdn.jsdelivr.net/npm/cesium@1.123.0/"             # cesium, the pinned version, its Build/Cesium folder: script, widgets.css, workers, sky
 TILES = "https://tiles.openfreemap.org https://tile.googleapis.com"
 POLICY = "; ".join((
     "default-src 'self'",

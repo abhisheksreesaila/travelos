@@ -12,6 +12,10 @@ own answer (kept), never from the request. A token for a sample hotel is only go
 from fasthtml.common import Button, Div, NotStr, Span
 from starlette.responses import JSONResponse
 
+import hashlib
+import hmac
+import time
+
 from gitaway import aerial, liteapi, showcase
 from gitaway.icons import icon
 from gitaway.pages import hotelview
@@ -25,6 +29,26 @@ BACK = "Back tomorrow"
 BACK_MORE = "Satellite and photoreal views are limited each day, because each one is billed to GitAway. The map view still works."
 NO_PINS = "OpenStreetMap did not answer just now, so there are no pins to show. The map is still here."
 HEADERS = {"Cache-Control": "no-store"}
+TOKEN_AGE = 6 * 3600       # seconds a card's token is good for the pins and the key: a token scraped from a page stops working
+SIGN_IN = "Sign in for satellite and 3D"
+BUSY_WORDS = "Pins are busy, try again in a moment"
+LIMIT_WORDS = "You have looked at a lot of places today. Try again tomorrow, or come back to this one: its pins are kept."
+
+
+def sign(key: str, now: float | None = None) -> str:
+    """The card's token: the hotel's key, the time it was issued and a signature of both (this process's secret, hotelview's), so the routes here answer only a card drawn in the last
+    TOKEN_AGE seconds. The hotel view's own token (hotelview.token) is unchanged."""
+    at = str(int(time.time() if now is None else now))
+    return f"{key}.{at}.{hmac.new(hotelview._KEY, f'aerial|{key}|{at}'.encode(), hashlib.sha256).hexdigest()[:24]}"
+
+
+def unsign(tok: str, now: float | None = None) -> str:
+    """The hotel key inside a fresh token of `sign`, or "" when it is forged, malformed or older than TOKEN_AGE."""
+    head, _, sig = str(tok or "").rpartition(".")
+    key, _, at = head.rpartition(".")
+    if not key or not at.isdigit() or not hmac.compare_digest(sig, hmac.new(hotelview._KEY, f"aerial|{key}|{at}".encode(), hashlib.sha256).hexdigest()[:24]):
+        return ""
+    return key if 0 <= (time.time() if now is None else now) - int(at) <= TOKEN_AGE else ""
 
 
 def _thumb():
@@ -46,7 +70,7 @@ def card(h):
     """The card for a hotel LiteAPI described, with the heads-up line when its pins are already kept (never waiting on the network), else what the view shows."""
     if h.lat is None or h.lng is None:
         return ""
-    return _card(hotelview.token(h.id), h.name, KICKER, aerial.teaser(h.id) or aerial.NEUTRAL)
+    return _card(sign(h.id), h.name, KICKER, aerial.teaser(h.id) or aerial.NEUTRAL)
 
 
 def sample_card(place_name: str):
@@ -57,12 +81,12 @@ def sample_card(place_name: str):
     got = aerial.sample(which)
     if got is None:
         return ""
-    return _card(hotelview.token(SAMPLE_PREFIX + which), got["name"], SAMPLE_KICKER, got["headline"])
+    return _card(sign(SAMPLE_PREFIX + which), got["name"], SAMPLE_KICKER, got["headline"])
 
 
 def _hotel(tok: str, who: str):
     """(key, lat, lon, name, sample) of the hotel a signed token names, or None: a token this process did not sign, a sample off the showcase, a hotel LiteAPI has no place for."""
-    key = hotelview.unsign(tok)
+    key = unsign(tok)
     if not key:
         return None
     if key.startswith(SAMPLE_PREFIX):
@@ -80,16 +104,22 @@ def register(app):
         if found is None:
             return JSONResponse({"ok": False, "message": NO_PINS}, status_code=404, headers=HEADERS)
         key, lat, lon, name, sample = found
-        got = sample or aerial.pins(key, lat, lon, name)
-        if got is None:
-            return JSONResponse({"ok": False, "message": NO_PINS, "name": name, "lat": lat, "lon": lon, "pins": [], "keyed": aerial.offered()}, headers=HEADERS)      # the place is known: the map still shows, with no pins
+        got = sample or aerial.pins(key, lat, lon, name, mx._who(request, session))
+        if got is None or got is aerial.BUSY or got is aerial.LIMIT:
+            words = BUSY_WORDS if got is aerial.BUSY else LIMIT_WORDS if got is aerial.LIMIT else NO_PINS
+            return JSONResponse({"ok": False, "message": words, "name": name, "lat": lat, "lon": lon, "pins": [], "keyed": aerial.offered()}, headers=HEADERS)      # the place is known: the map still shows, with no pins
         return JSONResponse({"ok": True, **got, "keyed": aerial.offered()}, headers=HEADERS)
 
     @app.post(PATH + "/open")
-    def aerial_open(id: str = "", view: str = ""):
-        if not hotelview.unsign(id) or view not in ("sat", "photo"):
+    def aerial_open(session, id: str = "", view: str = ""):
+        who = str((session or {}).get("user_id") or "")
+        if not who:      # the Google views are for signed-in people, like Save, Book and Plan (D-761): nobody signed out can draw the key or the day's count down
+            return JSONResponse({"ok": False, "signin": True, "message": SIGN_IN}, status_code=401, headers=HEADERS)
+        if not unsign(id) or view not in ("sat", "photo"):
             return JSONResponse({"ok": False}, status_code=400, headers=HEADERS)
-        state, key = aerial.open_google()
+        state, key = aerial.open_google(who)
+        if state == "person":
+            return JSONResponse({"ok": False, "full": True, "message": BACK, "more": "You have used today's satellite and 3D views. The map view still works."}, status_code=429, headers=HEADERS)
         if state == "off":
             return JSONResponse({"ok": False, "message": "Satellite and photoreal are not switched on."}, status_code=404, headers=HEADERS)
         if state == "full":

@@ -62,7 +62,8 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          """CREATE INDEX IF NOT EXISTS ix_book_presses ON book_presses (person, at)""",
          # F-284: what OpenStreetMap says around a hotel, kept for days (gitaway/aerial.py); and photoreal or satellite opens per day, the count behind GOOGLE_3D_A_DAY: a number, no person
          """CREATE TABLE IF NOT EXISTS aerial_osm (hotel TEXT PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, version INTEGER NOT NULL, fetched TEXT NOT NULL, host TEXT NOT NULL, body TEXT NOT NULL)""",
-         """CREATE TABLE IF NOT EXISTS aerial_opens (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)""")
+         """CREATE TABLE IF NOT EXISTS aerial_opens (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)""",
+         """CREATE TABLE IF NOT EXISTS aerial_person (day TEXT NOT NULL, who TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, who))""")
 # Words a handle cannot be: each is (or may become) a fixed page under /creators/, which would shadow the profile (tests/test_creator_profiles.py walks the app's routes against this set).
 RESERVED_HANDLES = frozenset({"draft", "finish", "done", "new", "import", "settings", "edit", "preview", "photo", "admin", "report", "go", "drafts", "stats"})
 UP = " AND slug NOT IN (SELECT slug FROM takedowns)"   # the live trips: everything not taken down (F-185)
@@ -386,6 +387,6 @@ def clear() -> None:
     with connect() as db:
         db.conn.execute(text("DELETE FROM published"))
         db.conn.execute(text("DELETE FROM creators"))
-        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "trip_review", "klook_failures", "liteapi_searches", "liteapi_bookings", "book_presses", "aerial_osm", "aerial_opens"):
+        for table in ("creator_markers", "takedowns", "reports", "via_clicks", "fork_counts", "trip_days", "view_seen", "trip_review", "klook_failures", "liteapi_searches", "liteapi_bookings", "book_presses", "aerial_osm", "aerial_opens", "aerial_person"):
             db.conn.execute(text(f"DELETE FROM {table}"))
         db.conn.commit()

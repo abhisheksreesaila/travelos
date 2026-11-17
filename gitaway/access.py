@@ -37,6 +37,7 @@ OPEN_POSTS = (
     "/creators/drafts/scan", "/creators/drafts/start",   # my own batch of posts (F-190): find a blog's posts, queue the ticked ones; the drafts are mine, not a family's
     "/admin/plan-for-me/edit", "/admin/plan-for-me/send",   # the captain's founder check of a built plan (F-197): the route answers 404 to anyone not in GITAWAY_ADMIN_EMAILS
     "/plan/ask",   # the search before the matrix (F-241): a viewer may search; the route stores the interests only for an editor or admin
+    "/plan/matrix/aerial/open",   # a read-only view (F-284): a viewer may open satellite and 3D; the route itself needs a signed-in person and counts each open
     "/plan/matrix/warm",   # the trip matrix's head start (F-229): starts price searches the page is about to ask for; changes no plan, anyone may ask
 )
 OPEN_PREFIXES = ("/join/", "/creators/import/", "/claim/", "/creators/drafts/", "/admin/drafts/")                # using an invite link: the person is joining another family
