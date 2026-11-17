@@ -39,13 +39,40 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-async function getWho() {
+/* ga-who holds "<who>|<until>": whose pages are saved and when that person's sign-in runs out (epoch seconds, from the page's ga-until meta; 0 when a page never said). */
+async function whoRecord() {
   const hit = await (await caches.open(WHO)).match("/__who");
-  return hit ? hit.text() : "";
+  const [who, until] = hit ? (await hit.text()).split("|") : ["", "0"];
+  return { who, until: Number(until) || 0 };
 }
 
-async function setWho(who) {
-  await (await caches.open(WHO)).put("/__who", new Response(who));
+async function getWho() {
+  return (await whoRecord()).who;
+}
+
+async function setWho(who, until) {
+  await (await caches.open(WHO)).put("/__who", new Response(`${who}|${until || 0}`));
+}
+
+/* The saved copy of a page for the person it was saved for, or nothing once that person's sign-in has run out: an expired session never gets a private page offline (F-287 review). */
+async function savedFor(req) {
+  const { who, until } = await whoRecord();
+  if (!who) return undefined;
+  if (until && Date.now() / 1000 > until) {
+    await caches.delete(pagesName(who));
+    return undefined;
+  }
+  return (await caches.open(pagesName(who))).match(req);
+}
+
+/* A page that carries data-saved="0" (Today) is told it is a saved copy when it is served from the cache, so it can say so and when it was drawn (today.js). Same length, so the headers stay true. */
+async function asSaved(res) {
+  if (!res || !(res.headers.get("content-type") || "").startsWith("text/html")) return res;
+  const text = await res.clone().text();
+  if (!text.includes('data-saved="0"')) return res;
+  const headers = new Headers(res.headers);
+  headers.delete("content-length");
+  return new Response(text.replace('data-saved="0"', 'data-saved="1"'), { status: res.status, statusText: res.statusText, headers });
 }
 
 /* Versioned (?v=hash) assets never change, so a hit is final; the rest are refreshed in the background. */
@@ -71,11 +98,12 @@ async function remember(req, res) {
   if (res.status !== 200 || !(res.headers.get("content-type") || "").startsWith("text/html")) return;
   const m = /<meta name="ga-user" content="([0-9a-f]+)">/.exec(await res.clone().text());
   const who = m ? m[1] : "";
+  const u = /<meta name="ga-until" content="([0-9]+)">/.exec(await res.clone().text());
   if (who !== (await getWho())) {
     const names = await caches.keys();
     await Promise.all(names.filter((n) => n.startsWith(PAGES_PREFIX) && n !== pagesName(who)).map((n) => caches.delete(n)));
-    await setWho(who);
   }
+  await setWho(who, u ? Number(u[1]) : 0);
   if (!who || res.redirected) return;
   const cache = await caches.open(pagesName(who));
   await cache.delete(req);
@@ -84,13 +112,12 @@ async function remember(req, res) {
 }
 
 async function pageNetworkFirst(req) {
-  const who = await getWho();
-  const saved = who ? await (await caches.open(pagesName(who))).match(req) : undefined;
+  const saved = await savedFor(req);
   const network = fetch(req).then(async (res) => { try { await remember(req, res); } catch (e) {} return res; });
   network.catch(() => {});
   if (!saved) return network.catch(async () => (await caches.match("/offline")) || Response.error());
   const slow = new Promise((resolve) => setTimeout(() => resolve(null), PAGE_TIMEOUT));
-  try { return (await Promise.race([network, slow])) || saved; } catch (e) { return saved; }
+  try { return (await Promise.race([network, slow])) || (await asSaved(saved)); } catch (e) { return asSaved(saved); }
 }
 
 /* F-099: a link the finger touched is fetched at once and the copy kept in memory for FRESH_MS, for the person who was signed in then.
@@ -136,8 +163,7 @@ async function fromPrefetch(req) {
   const slow = new Promise((resolve) => setTimeout(() => resolve(TIMED_OUT), PAGE_TIMEOUT));
   const got = await Promise.race([entry.done, slow]);
   if (got === TIMED_OUT) {   // a hanging connection: show the saved page now rather than start a second wait
-    const who = await getWho();
-    return (who && (await (await caches.open(pagesName(who))).match(req))) || null;
+    return (await asSaved(await savedFor(req))) || null;
   }
   if (!got || entry.who !== (await getWho())) return null;
   const headers = new Headers(got.headers);

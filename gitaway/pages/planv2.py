@@ -21,7 +21,7 @@ from starlette.responses import HTMLResponse, JSONResponse
 from gitaway import access, guide as gd, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import booking, tripshare
+from gitaway.pages import booking, today as todaypage, tripshare
 
 PATH = "/trip/plan"
 HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
@@ -310,7 +310,7 @@ def _drawer(v, request):
 
 # ---- the page ----------------------------------------------------------------------------------------------------------------------------
 
-def plan_page(session, request, arrive=False):
+def plan_page(session, request, arrive=False, day=""):
     role = access.request_role()
     v = pv.view(session, curl)
     sugg = pv.suggestions(v)
@@ -324,7 +324,7 @@ def plan_page(session, request, arrive=False):
     bar = Div(Span(Span(cls="dot"), "Booked", Span("·", aria_hidden="true"), "now planning", cls="crumb"), Span(cls="sp"),
               Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), Span("Plan together"), Span(str(unread), cls="badge", id="pl-badge", hidden=not unread), type="button", cls="together", id="pl-together", aria_haspopup="dialog"),
               Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", id="pl-save"), cls="pl-bar")
-    body = Div(bar, _trip_card(v, role),
+    body = Div(bar, todaypage.card(session, day), _trip_card(v, role),
                Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg, gd.for_place(session, v.place)), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
                Div(Button(Span(*[_avatar(p) for p in v.people[:3]], cls="stack"), "Together", type="button", cls="together", data_together="1"),
                    Button(icon("check", 19, 2.8), Span("Save plan"), type="button", cls="save", data_save="1"), cls="dock v2-glass", id="pl-dock"),
@@ -339,10 +339,10 @@ def plan_page(session, request, arrive=False):
 
 def register(app):
     @app.get(PATH)
-    def plan(session, request, arrive: str = ""):
+    def plan(session, request, arrive: str = "", day: str = ""):
         if (r := phone.guard(session, PATH)):
             return r
-        return plan_page(session, request, arrive == "1")
+        return plan_page(session, request, arrive == "1", day)
 
     @app.get(f"{PATH}/cal")
     def plan_cal(session, request, view: str = "week", frm: str = "0", cols: str = "7", day: str = "0"):

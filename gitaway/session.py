@@ -391,6 +391,16 @@ def slide(session):
         session["seen_at"] = int(now())
 
 
+def expires_at():
+    """When this request's sign-in runs out (epoch seconds): 30 days after the cookie was last written (`seen_at`, which `slide` keeps within a day of now). None when signed out.
+    The service worker keeps it with the saved pages and stops serving them offline past it (F-287 review)."""
+    s = request_session()
+    if not s or not s.get("user_id"):
+        return None
+    from gitaway import auth
+    return int((s.get("seen_at") or now()) + auth.SESSION_DAYS * 86400)
+
+
 PRIVATE_SCOPE_KEY = "gitaway.signed_in"
 
 

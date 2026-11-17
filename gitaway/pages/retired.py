@@ -22,7 +22,7 @@ POST_ONLY = {"/trips/switch"}      # /trips/<slug> is a page, so a GET of this o
 RETIRED = {
     TRIP: (
         "/trip", "/trip/cockpit", "/trip/cockpit/map", "/trip/cockpit/pack/{name}",
-        "/trip/today", "/trip/canvas", "/trip/canvas/card", "/trip/canvas/step", "/trip/canvas/move", "/trip/canvas/undo", "/trip/canvas/plan", "/trip/canvas/add", "/trip/canvas/note", "/trip/canvas/actnote",
+        "/trip/canvas", "/trip/canvas/card", "/trip/canvas/step", "/trip/canvas/move", "/trip/canvas/undo", "/trip/canvas/plan", "/trip/canvas/add", "/trip/canvas/note", "/trip/canvas/actnote",
         "/trip/map", "/trip/map/around", "/trip/block", "/trip/block/step", "/trip/add",
         "/trip/ask", "/trip/ask/mic-event", "/trip/ask/transcribe", "/trip/ask/propose", "/trip/ask/answer", "/trip/ask/edit", "/trip/ask/apply",
         "/trip/family", "/trip/family/thread", "/trip/family/quiet", "/trip/family/panel", "/trip/family/seen", "/trip/family/list",
@@ -39,6 +39,7 @@ RETIRED = {
         "/forks", "/forks/apply", "/forks/undo", "/fork", "/share", "/share/unpublish", "/share/done",
     ),
 }
+# /trip/today came back as the new Today (F-287); the old one's address is no longer listed here.
 # /community, /discover and /for-creators were retired earlier (F-262): gitaway/pages/guides.py redirects them to /guides with the hub's filters, and tests/test_retired.py holds links off them too.
 
 

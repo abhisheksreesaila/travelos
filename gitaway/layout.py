@@ -81,6 +81,7 @@ def styles(*extra, theme="sunset"):
         Meta(name="theme-color", content=THEME_COLORS.get(theme, PAPER), media="(prefers-color-scheme: light)"),
         Meta(name="theme-color", content=DARK, media="(prefers-color-scheme: dark)"),     # F-200: the browser bar follows the mode (mode.js follows a manual choice)
         *((Meta(name="ga-user", content=key),) if key else ()),
+        *((Meta(name="ga-until", content=str(session.expires_at())),) if key and session.expires_at() else ()),      # when this sign-in runs out: sw.js serves no saved page past it
         Link(rel="stylesheet", href="/assets/css/tokens.css"),
         Link(rel="stylesheet", href="/assets/css/base.css"),
         Link(rel="stylesheet", href="/assets/css/toast.css"),         # F-108: the one toast, on every page
