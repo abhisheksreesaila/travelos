@@ -895,6 +895,8 @@ class HotelDetails:
     rooms: tuple
     checkin: str
     checkout: str
+    lat: float | None = None     # F-284: where the hotel is, from LiteAPI's `location` (the aerial view's centre); None when the answer has none
+    lng: float | None = None
 
     @property
     def description(self) -> str:
@@ -954,6 +956,13 @@ def _bed(b) -> str:
     return kind if "bed" in kind.lower() else f"{kind} bed"
 
 
+def _where(d) -> tuple:
+    """(latitude, longitude) from a hotel answer's `location` (or its own latitude and longitude) when both are real coordinates on the earth, else (None, None)."""
+    loc = d.get("location") if isinstance(d.get("location"), dict) else d
+    lat, lng = _num(loc.get("latitude")), _num(loc.get("longitude"))
+    return (lat, lng) if lat is not None and lng is not None and -90 <= lat <= 90 and -180 <= lng <= 180 and (lat or lng) else (None, None)
+
+
 def read_hotel(answer) -> HotelDetails | None:
     d = answer.get("data") if isinstance(answer, dict) else None
     if not isinstance(d, dict) or not d.get("name"):
@@ -970,7 +979,7 @@ def read_hotel(answer) -> HotelDetails | None:
     times = d.get("checkinCheckoutTimes") if isinstance(d.get("checkinCheckoutTimes"), dict) else {}
     return HotelDetails(_str(d.get("id")), _str(d["name"]), _str(d.get("address")), _num(d.get("starRating")), _num(d.get("rating")), int(_num(d.get("reviewCount")) or 0),
                         _paragraphs(d.get("hotelDescription")), photos, tuple(_str(f) for f in d.get("hotelFacilities") or () if _str(f)), tuple(rooms),
-                        _str(times.get("checkinStart") or times.get("checkin")), _str(times.get("checkout")))
+                        _str(times.get("checkinStart") or times.get("checkin")), _str(times.get("checkout")), *_where(d))
 
 
 def read_reviews(answer) -> HotelReviews | None:
