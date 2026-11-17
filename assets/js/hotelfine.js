@@ -176,7 +176,7 @@
     bar.hidden = !want;
     if (want) q(bar, '.rv-why').textContent = want.length + (want.length === 1 ? ' review mentions ' : ' reviews mention ') + (aside._words || 'it') + ' · about “' + aside._why + '”' + (type ? ' · ' + scope + ' shown' : '');      // what they share, never more
     found.hidden = !terms.length;
-    if (terms.length) found.textContent = typed + ' · ' + hits + ' of ' + scope + ' reviews mention it';
+    if (terms.length) found.textContent = typed + ' · ' + hits + ' of ' + scope + (hits === 1 ? ' reviews mentions it' : ' reviews mention it');      // "1 of 100 reviews mentions it"
     if (ai) ai.hidden = !!(want || type || terms.length);      // the AI's reading is for the whole set: it steps aside while the list is filtered
   }
   function filter(aside, type, ids, why, words) {
