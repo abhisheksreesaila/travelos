@@ -39,8 +39,8 @@ SANDBOX_MERCHANT = "Booked through Nuitée (LiteAPI)'s sandbox: nothing is charg
 
 
 def merchant_words() -> str:
-    """Who sells the stay, in the words that are true of this key: a live key books and charges for real; a sandbox key charges nothing."""
-    return MERCHANT if liteapi.mode() == "live" else SANDBOX_MERCHANT
+    """Who sells the stay, in the words that are true of this key: a real booking (LIVE) charges for real; every other mode (sandbox, stand-in, soon) charges nothing."""
+    return MERCHANT if mode() == LIVE else SANDBOX_MERCHANT
 
 
 LIVE_WORDS = "Sold by Nuitée through LiteAPI. Your card is charged when you pay"

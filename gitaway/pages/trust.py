@@ -14,7 +14,8 @@ Written in plain words, never as a certification. Evidence, as of F-292 (file:li
             LiteAPI keeps its own record: the privacy page (pages/legal.py `_liteapi_words`) says it.
   sign-in   "Google or a passkey ... no password": gitaway/pages/signin.py (Google and passkey buttons, "No password to remember"), gitaway/passkeys.py:4 (only the public key is stored);
             no password field or hash exists in auth.py, passkeys.py, members.py or the sign-in page (tests/test_trust.py).
-  scripts   "no analytics service ... the only scripts from other sites": tests/test_no_cdn_scripts.py (every page loads its own scripts; the allow-list is Travelpayouts Drive); the payment
+  scripts   (pages/legal.py "See it from above" and "Resend" entries say what each outside host gets; the payment form also loads Stripe, hCaptcha and Amazon Pay: gitaway/csp.py)
+            "no analytics service ... the only scripts from other sites": tests/test_no_cdn_scripts.py (every page loads its own scripts; the allow-list is Travelpayouts Drive); the payment
             form (liteapi.py:53); assets/js/aerial.js:10 `HOSTS` (unpkg.com for MapLibre, cdn.jsdelivr.net for Cesium, loaded only after the "See it from above" tap) and its map tiles
             (OpenFreeMap; Google only with GOOGLE_MAPS_API_KEY); gitaway/pages/home.py:24-30 `_drive`, Travelpayouts' site-verification script on the signed-out front page only, only when
             TRAVELPAYOUTS_DRIVE_ID is set. "No ad trackers" is NOT claimed: Drive is an affiliate partner's script and this page does not argue what it is (D-944).
@@ -23,7 +24,7 @@ Written in plain words, never as a certification. Evidence, as of F-292 (file:li
   email     "a booking email never writes the address or name to a log": gitaway/bookingmail.py:197-241 log the booking id only, no exception text (a server's refusal repeats the
             address); fh-saas's `send_email`, which logs the recipient, is not used (module docstring). Tests: tests/test_bookingmail.py, tests/test_trust.py.
   review    "money, sign-in and personal-data changes get a separate security review before they go live": true of the process (docs/plan.md tickets F-274, F-285, F-288 carry the
-            "security review" check; AGENTS.md, `Risk: high`), not of the code, and said as a practice, not as a certification.
+            "security review" check), not of the code, and said as a practice, not as a certification.
   contact   GITAWAY_CONTACT_EMAIL through `legal.contact`, as /privacy and /terms do.
 """
 
@@ -49,13 +50,13 @@ def claims() -> list[tuple[str, str]]:
          f"within {mb.PURGE_GUEST} days. LiteAPI keeps its own record of the booking under its own rules."),
         ("Signing in", "You sign in with Google, or with a passkey (Face ID or your device's lock). GitAway has no password for you to choose, so there is none to store or lose."),
         ("Scripts and tracking",
-         "GitAway uses no analytics service. Its pages load their scripts from GitAway itself, apart from these: LiteAPI's payment form, only when you pay; the map libraries and map pictures "
+         "GitAway uses no analytics service. Its pages load their scripts from GitAway itself, apart from these: LiteAPI's payment form (with its card processor Stripe, Stripe's hCaptcha check and an Amazon Pay button), only when you pay; the map libraries and map pictures "
          "behind \"See it from above\", only after you tap it; and, only while it is switched on and only on the front page you see signed out, Travelpayouts' site-verification script, "
          "our affiliate partner's. The privacy policy says what each one gets."),
         ("Counting visitors",
          "Readers of a published trip, and a signed-out visitor's daily searches, are counted from a short code made from a random value that is thrown away each day. It cannot be turned back "
          "into a person, and it needs no cookie."),
-        ("Booking emails", "The email that confirms or cancels a booking is sent without writing your address or name to any log."),
+        ("Booking emails", "The email that confirms or cancels a booking is sent without writing your address or name to any of GitAway's logs (the mail service, Resend, keeps its own delivery record)."),
         ("How changes are checked",
          "A change that touches payments, sign-in or personal data gets a separate security review before it goes live. That is how we work, not a certification."),
     ]

@@ -1,6 +1,7 @@
 """F-292: who sells a stay and how it is kept safe. The one sentence about the merchant sits on the checkout, the booked pass and the stay's booking page; /trust ("How GitAway keeps you
 safe") says only what the code does today, is linked from the checkout, the reading-page foot and the about-prices card, and each claim is pinned here to the fact it rests on."""
 import re
+import sys
 from datetime import datetime, timedelta, timezone
 from html import unescape
 from pathlib import Path
@@ -16,6 +17,8 @@ from tests.test_matrixbook_page import MATRIX
 from tests.test_staycancel import booked_stay
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+import send_test_email as sample  # noqa: E402
 MERCHANT = "Booked and paid through Nuitée (LiteAPI), the merchant of record. GitAway never sees your card."
 
 
@@ -83,9 +86,9 @@ def test_the_contact_is_the_sites_own_address_or_none(client, monkeypatch):
 def test_a_stripe_sentence_appears_only_while_plan_it_for_me_is_paid(client, monkeypatch):
     from gitaway import planforme
     monkeypatch.setattr(planforme, "paid", lambda: False)
-    assert "Stripe" not in client.get("/trust").text
+    assert "Plan it for me, which is paid" not in client.get("/trust").text
     monkeypatch.setattr(planforme, "paid", lambda: True)
-    assert "Stripe" in client.get("/trust").text
+    assert "Plan it for me, which is paid, takes its card on Stripe" in words(client.get("/trust").text)
 
 
 # ---- each claim pinned to the code fact it rests on ---------------------------------------------------------------------------------------
@@ -168,3 +171,66 @@ def test_email_claim_a_failed_send_logs_the_booking_id_and_never_the_address(cap
         bookingmail._send("anne@example.com", bookingmail.Mail("s", "t", "h"), "bk-1")
     assert [r.getMessage() for r in caplog.records if r.name == "gitaway.bookingmail"] == ["booking email failed: bk-1"]
     assert "anne@example.com" not in caplog.text
+
+
+# ---- review fixes (F-292) -------------------------------------------------------------------------------------------------------------
+
+def test_the_privacy_policy_says_what_see_it_from_above_and_the_email_sender_get_and_no_longer_names_google_fonts(client):
+    page = words(client.get("/privacy").text)
+    for needle in ("See it from above", "unpkg.com", "cdn.jsdelivr.net", "tiles.openfreemap.org", "tile.googleapis.com", "signed in", "Overpass", "Resend"):
+        assert needle in page, needle
+    assert "Google Fonts" not in page
+    css = (ROOT / "assets" / "css" / "v2-tokens.css").read_text()
+    assert "fonts.googleapis" not in css and "inter-variable.woff2" in css      # the type is our own file
+
+
+def test_the_seven_day_claim_holds_because_the_purge_runs_hourly(client):
+    from gitaway import bookingjobs
+    assert mb.PURGE_GUEST == 7 and bookingjobs.PURGE_EVERY <= timedelta(hours=1)
+    assert "within 7 days" in words(client.get("/trust").text)
+
+
+def test_the_payment_form_sentence_names_what_it_loads_and_the_csp_records_each(client):
+    from gitaway import csp
+    page = words(client.get("/trust").text)
+    assert "LiteAPI's payment form (with its card processor Stripe, Stripe's hCaptcha check and an Amazon Pay button), only when you pay" in page
+    assert "js.stripe.com" in csp.STRIPE and "hcaptcha.com" in csp.HCAPTCHA and "amazon.com" in csp.AMAZON
+
+
+def test_the_email_claim_names_the_mail_service_record(client):
+    assert "to any of GitAway's logs (the mail service, Resend, keeps its own delivery record)" in words(client.get("/trust").text)
+
+
+@pytest.mark.parametrize("mode", [mb.SANDBOX, mb.STAND_IN, mb.SOON])
+def test_nothing_says_booked_and_paid_unless_a_real_booking_is_on(monkeypatch, mode):
+    monkeypatch.setenv("LITEAPI_KEY", LIVE)      # a live key, as on a dev box: the booking mode decides, not the key
+    monkeypatch.setattr(mb, "mode", lambda: mode)
+    from gitaway import bookingmail
+    assert mb.merchant_words() == mb.SANDBOX_MERCHANT
+    assert bookingmail._sandbox() is True      # what `booked` and `cancelled` pass to the email: its sentence is then the sandbox's
+
+
+def test_a_live_booking_mode_says_booked_and_paid(monkeypatch):
+    monkeypatch.setattr(mb, "mode", lambda: mb.LIVE)
+    from gitaway import bookingmail
+    assert mb.merchant_words() == mb.MERCHANT and bookingmail._sandbox() is False
+
+
+def test_the_trust_docstring_cites_only_what_exists():
+    assert "Risk: high" not in (ROOT / "gitaway" / "pages" / "trust.py").read_text()
+
+
+def test_the_set_of_sign_in_routes_is_pinned_so_a_new_way_in_fails_here(client):
+    """/trust says "Google or a passkey": a new sign-in method must be added to that sentence and to this list together."""
+    found = sorted({(m, r.path) for r in client.app.routes for m in (getattr(r, "methods", None) or ()) if m != "HEAD"
+                    and re.match(r"^/(signin|login|auth/|passkeys/|signout|logout|oauth|sso)", r.path)})
+    assert found == [("GET", "/auth/callback"), ("GET", "/login"), ("GET", "/logout"), ("GET", "/signin"), ("POST", "/logout"), ("POST", "/passkeys/auth"), ("POST", "/passkeys/auth/options"),
+                     ("POST", "/passkeys/register"), ("POST", "/passkeys/register/options"), ("POST", "/passkeys/remove"), ("POST", "/signin"), ("POST", "/signout")]
+    page = words(client.get("/trust").text)
+    assert "Google" in page and "passkey" in page
+
+
+def test_the_footer_line_says_where_stays_and_flights_are_booked():
+    from gitaway import layout
+    line = layout._footer_line()
+    assert "own sites" not in line and "Nuitée" in line and "airline" in line
