@@ -56,7 +56,7 @@ def test_the_dashboard_and_the_fine_print_are_on_the_page_and_labelled_a_sample(
     expect(dash.locator(".dr-score")).to_have_text("7.6")
     expect(dash).to_contain_text("Good")
     expect(dash).to_contain_text("6,263 reviews")
-    expect(dash).to_contain_text("How the last 100 reviews went")
+    expect(dash).to_contain_text("Last 100 reviews")
     expect(dash).to_contain_text("The last 10 were all 8 or more.")
     expect(dash.locator(".dr-bar").first).to_have_attribute("aria-label", "Cleanliness 8 out of 10")
     assert dash.locator(".dr-bar").count() == 8
@@ -176,6 +176,153 @@ def test_the_chips_filter_by_traveller_type_and_a_complaint_opens_only_its_revie
     assert page.evaluate("() => document.activeElement.classList.contains('fp-read')")
 
 
+@pytest.mark.parametrize("viewport", BOTH, ids=IDS)
+def test_the_square_keeps_only_a_compact_dashboard_with_one_way_in(matrix, sample, viewport):  # noqa: F811
+    page, drawer, slot = opened(matrix, viewport)
+    dash = slot.locator(".dr-dash")
+    expect(dash.locator(".tr-w")).to_have_count(1)
+    assert dash.locator(".dr-cat").count() == 8 and dash.locator(".dr-cat p").count() == 0      # short bars with their numbers, no paragraphs
+    expect(dash.locator(".dr-cat .dr-cv").first).to_have_text("8")
+    assert slot.locator(".dr-top .dr-pc, .dr-top .dr-rev, .dr-reviews").count() == 0      # nothing long on the square: it is all in the drawer (hidden in the page until opened)
+    way = dash.locator(".tr-read")
+    expect(way).to_have_text("Read the reviews")
+    assert way.bounding_box()["height"] >= 48
+    way.click()
+    rv = drawer_of(page)
+    expect(rv).to_be_visible()
+    expect(rv.locator(".rv-ai")).to_contain_text("Summary written by AI from the guest reviews")
+    expect(rv.locator(".rv-ai")).to_contain_text("Frequent comments that the hotel is pricey")      # a category's paragraph
+    expect(rv.locator(".rv-ai .dr-pros li").first).to_be_visible()
+    expect(rv.locator(".rv-ai .dr-cons li").first).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(rv).to_be_hidden()
+    assert page.evaluate("() => document.activeElement.classList.contains('tr-read')")
+
+
+def mentions(rv, word):
+    return [t for t in rv.locator(".rv-item:visible").all_inner_texts() if word in t.lower()]
+
+
+@pytest.mark.parametrize("viewport", BOTH, ids=IDS)
+def test_ask_the_reviews_filters_live_as_you_type_and_says_how_many_mention_it(matrix, sample, viewport):  # noqa: F811
+    page, drawer, slot = opened(matrix, viewport)
+    slot.locator(".dr-scorebtn").click()
+    rv = drawer_of(page)
+    ask = rv.locator(".rv-q")
+    assert rv.locator(".rv-ask").bounding_box()["height"] >= 48 and ask.get_attribute("aria-label") == "Ask the reviews"
+    assert rv.locator(".rv-ask").bounding_box()["y"] < rv.locator(".rv-chips").bounding_box()["y"]      # at the drawer's top, above the chips
+    asked = []
+    page.on("request", lambda r: asked.append(r.url))
+    ask.press_sequentially("park", delay=20)
+    n = rv.locator(".rv-item:visible").count()
+    assert 0 < n < 100 and len(mentions(rv, "park")) == n
+    expect(rv.locator(".rv-found")).to_have_text(f"park · {n} of 100 reviews mention it")
+    expect(rv.locator(".rv-ai")).to_be_hidden()
+    shot(page, f"ask-{viewport['width']}")
+    ask.fill("PARKING  fee")      # every word must be in the review, any case
+    m = rv.locator(".rv-item:visible").count()
+    assert m <= n and len(mentions(rv, "fee")) == m
+    ask.fill("")
+    assert rv.locator(".rv-item:visible").count() == 100
+    expect(rv.locator(".rv-found")).to_be_hidden()
+    expect(rv.locator(".rv-ai")).to_be_visible()
+    ask.fill("zzzzqq")
+    expect(rv.locator(".rv-found")).to_have_text("zzzzqq · 0 of 100 reviews mention it")
+    assert [u for u in asked if "/plan/matrix" in u or "/data/" in u] == []      # client side only: no network
+
+
+@pytest.mark.parametrize("viewport", BOTH, ids=IDS)
+def test_the_search_combines_with_the_traveller_chips_and_a_complaint(matrix, sample, viewport):  # noqa: F811
+    page, drawer, slot = opened(matrix, viewport)
+    slot.locator(".dr-scorebtn").click()
+    rv = drawer_of(page)
+    rv.locator(".rv-ask .rv-q").fill("the")
+    all_n = rv.locator(".rv-item:visible").count()
+    rv.locator(".rv-chip", has_text="Family 8").click()
+    n = rv.locator(".rv-item:visible").count()
+    assert 0 < n <= 8 and n < all_n
+    assert all(t.startswith("Family") for t in rv.locator(".rv-item:visible .dr-rh small").all_inner_texts())
+    expect(rv.locator(".rv-found")).to_have_text(f"the · {n} of 8 reviews mention it")      # out of the reviews the chip leaves
+    rv.locator(".rv-chip", has_text="All 100").click()
+    rv.locator(".rv-q").fill("")
+    rv.locator(".rv-x").click()
+    gripe = slot.locator(".fp-read").first
+    gripe.scroll_into_view_if_needed()
+    gripe.click()
+    k = rv.locator(".rv-item:visible").count()
+    assert rv.locator(".rv-q").input_value() == ""      # opening clears a search left behind
+    rv.locator(".rv-q").fill("breakfast")
+    j = rv.locator(".rv-item:visible").count()
+    assert j <= k and all("breakfast" in t.lower() for t in rv.locator(".rv-item:visible").all_inner_texts())
+    expect(rv.locator(".rv-filter")).to_be_visible()
+    rv.locator(".rv-all").click()
+    assert rv.locator(".rv-item:visible").count() == 100 and rv.locator(".rv-q").input_value() == ""
+
+
+@pytest.mark.parametrize("viewport", BOTH, ids=IDS)
+def test_the_focus_trap_includes_the_search_box_and_escape_still_closes(matrix, sample, viewport):  # noqa: F811
+    page, drawer, slot = opened(matrix, viewport)
+    slot.locator(".dr-scorebtn").click()
+    rv = drawer_of(page)
+    assert page.evaluate("() => document.activeElement.classList.contains('rv-x')")
+    page.keyboard.press("Tab")
+    assert page.evaluate("() => document.activeElement.classList.contains('rv-q')")
+    for _ in range(12):
+        page.keyboard.press("Tab")
+        assert page.evaluate("() => !!document.activeElement.closest('.rv')")      # never leaves the drawer
+    page.keyboard.press("Shift+Tab")
+    assert page.evaluate("() => !!document.activeElement.closest('.rv')")
+    rv.locator(".rv-q").fill("park")
+    page.keyboard.press("Escape")
+    expect(rv).to_be_hidden()
+    assert page.evaluate("() => document.activeElement.classList.contains('dr-scorebtn')")
+
+
+@pytest.mark.parametrize("viewport", BOTH, ids=IDS)
+def test_the_heads_up_line_has_a_chip_for_each_flagged_row_and_each_opens_its_row(matrix, sample, viewport):  # noqa: F811
+    page, drawer, slot = opened(matrix, viewport)
+    line = slot.locator("[data-hu]")
+    expect(line).to_be_visible()
+    slot.locator(".fp-going .fp-i.is-hu").first.wait_for()      # the pins have come
+    flagged = slot.locator(".fp .fp-i.is-hu")
+    texts = [t.replace("Heads up", "").strip() for t in flagged.locator(".fp-t").evaluate_all("els => els.map(e => e.textContent)")]
+    chips = line.locator(".hu-chip")
+    assert chips.all_inner_texts() == texts and len(texts) >= 3      # the room's fees, the refund or flight rows, the pins: only what the fine print flags
+    assert any("Paid at the hotel: $160" in t for t in texts) and any("flight paths" in t for t in texts)
+    assert line.bounding_box()["y"] < slot.locator(".dr-dash").bounding_box()["y"] + 1      # above the dashboard
+    assert all(c.bounding_box()["height"] >= 48 for c in chips.all())
+    shot(page, f"heads-{viewport['width']}")
+    last = chips.last
+    last.click()
+    row = flagged.last
+    expect(row).to_have_class(re.compile(r"\bis-hit\b"))
+    box = row.bounding_box()
+    vp = page.viewport_size
+    assert 0 <= box["y"] and box["y"] + box["height"] <= vp["height"]      # scrolled into view
+    page.wait_for_function("() => !document.querySelector('.fp-i.is-hit')", timeout=4000)      # the highlight is brief
+    chips.first.click()
+    expect(flagged.first).to_have_class(re.compile(r"\bis-hit\b"))
+
+
+def test_without_a_flagged_row_there_is_no_heads_up_line(matrix, sample):  # noqa: F811
+    page, drawer, slot = opened(matrix, DESKTOP)
+    slot.locator(".fp-going .fp-i.is-hu").first.wait_for()
+    page.evaluate("""() => { const b = document.querySelector('.dr-rooms:not([hidden]) .dr-opt[aria-checked="true"]'); b.dataset.refund = '1'; b.dataset.due = '0';
+        document.querySelectorAll('.fp-going .fp-i.is-hu').forEach(e => e.classList.remove('is-hu'));
+        document.querySelector('.dr-fly .dr-opt[aria-checked="true"]').dataset.land = '5:00 PM';
+        document.querySelector('.dr').dispatchEvent(new CustomEvent('dr:changed', { bubbles: true })); }""")
+    expect(slot.locator("[data-hu]")).to_be_hidden()
+    assert slot.locator(".hu-chip").count() == 0
+
+
+def test_with_reduced_motion_the_highlight_does_not_animate(matrix, sample):  # noqa: F811
+    page, drawer, slot = opened(matrix, DESKTOP)      # reduced motion is the fixture's default
+    slot.locator(".hu-chip").first.click()
+    row = slot.locator(".fp-i.is-hit")
+    expect(row).to_have_count(1)
+    assert row.evaluate("el => el.getAnimations().length") == 0 and row.evaluate("el => getComputedStyle(el).transitionDuration") == "0s"
+
+
 def test_with_reduced_motion_the_drawer_simply_appears_and_goes(matrix, sample):  # noqa: F811
     page, drawer, slot = opened(matrix, DESKTOP)      # the matrix fixture's default is reduced motion
     slot.locator(".dr-scorebtn").click()
@@ -216,8 +363,8 @@ sel => {
   return out;
 }
 """
-READS = [".fp-t", ".fp-n", ".fp-flag", ".fp-count", ".fp-sample", ".fp-rk", ".fp-rn", ".fp-rw", ".fp-read", ".fp-usual", ".fp-ct", ".fp-h h3", ".fp-h p", ".tr-read"]
-DRAWER_READS = [".rv-title", ".rv-top small", ".rv-n", ".rv-chip", ".rv-filter", ".rv-all", ".rv-item .dr-rn", ".rv-item .dr-rh small", ".rv-item .dr-rp", ".rv-item .dr-rc"]
+READS = [".hu-k", ".hu-chip", ".dr-cn", ".dr-cv", ".fp-t", ".fp-n", ".fp-flag", ".fp-count", ".fp-sample", ".fp-rk", ".fp-rn", ".fp-rw", ".fp-read", ".fp-usual", ".fp-ct", ".fp-h h3", ".fp-h p", ".tr-read"]
+DRAWER_READS = [".rv-found", ".rv-q", ".rv-ai .dr-sub", ".rv-ai .dr-fine", ".rv-cat p", ".rv-h", ".rv-title", ".rv-top small", ".rv-n", ".rv-chip", ".rv-filter", ".rv-all", ".rv-item .dr-rn", ".rv-item .dr-rh small", ".rv-item .dr-rp", ".rv-item .dr-rc"]
 
 
 LARGE = (".fp-rn", ".rv-n")      # 24px and bolder: WCAG AA large text, 3:1

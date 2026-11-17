@@ -4,9 +4,13 @@
 //   - the rows that depend on the choice (fees paid at the hotel, breakfast, refundability, the flight's landing against check-in, the drive from the airport and "what the stay really
 //     costs", shown only when the chosen room has a real amount paid at the hotel) are rewritten each time assets/js/v2drawer.js says the choice changed (`dr:changed`) or a hotel's page
 //     arrived (`dr:rich`);
-//   - "Getting there and around" asks the pins route once, when it scrolls into view (the server reads OpenStreetMap, F-284), and draws the heads-ups and the top pins from its answer;
-//   - the review drawer: opened from the score, the last-100 strip or a complaint, filtered by traveller type (and by a complaint's reviews), Escape and the close button fold it back into
-//     what was tapped and give that its focus back. Motion is GA.motion's (reduced motion: it simply appears); durations and easings are the page's tokens.
+//   - "Getting there and around" asks the pins route once, as soon as the hotel's page is there (the server reads OpenStreetMap, F-284, and keeps it; the Heads up line needs the pins), and draws
+//     the heads-ups and the top pins from its answer;
+//   - the Heads up line (F-291): a chip for each fine print row marked Heads up, built from the rows themselves each time they change, so it says only what the fine print says; a chip scrolls to
+//     its row and marks it for a moment (a plain outline, never an animation);
+//   - the review drawer (F-290): opened from the score, the strip, "Read the reviews" or a complaint; "Ask the reviews" filters its reviews as you type (words in the headline, pros and cons, all
+//     of them; no network), together with the traveller chips and a complaint's reviews; Escape and the close button fold it back into what was tapped and give that its focus back. Motion is
+//     GA.motion's (reduced motion: it simply appears); durations and easings are the page's tokens.
 (function () {
   'use strict';
   var PINS = '/plan/matrix/aerial/pins', HEADS_UP = 'Heads up', EARLY_MIN = 180;      // a flight landing this long before check-in is worth a flag
@@ -37,7 +41,38 @@
   function count(fp) {
     var n = qa(fp, '.fp-i.is-hu').length, c = q(fp, '[data-count]');
     if (c) c.textContent = n ? n + (n === 1 ? ' thing to know' : ' things to know') : '';
+    gotchas(fp);
   }
+
+  // ---- the Heads up line (F-291): one chip for each row the fine print marks Heads up; nothing when there is none ----
+  var HIT_MS = 1800;      // how long a row stays marked after its chip was tapped
+  function rowText(row) {
+    var t = q(row, '.fp-t'), c = t && t.cloneNode(true), f = c && q(c, '.fp-flag');
+    if (f) f.remove();
+    return c ? c.textContent.trim() : '';
+  }
+  function gotchas(fp) {
+    var root = fp.closest('.dr-richin'), line = root && q(root, '[data-hu]');
+    if (!line) return;
+    var rows = qa(fp, '.fp-i.is-hu').map(function (r) { return { row: r, text: rowText(r) }; }).filter(function (x) { return x.text; });
+    var sig = rows.map(function (x) { return x.text; }).join('\n');
+    if (line._sig === sig) { line._rows = rows; return; }      // unchanged: keep the chips (and the focus on one)
+    line._sig = sig; line._rows = rows;
+    var box = q(line, '.hu-chips');
+    box.innerHTML = rows.map(function (x, i) { return '<button type="button" class="hu-chip" data-hu-i="' + i + '">' + svg('flag') + '<span>' + esc(x.text) + '</span></button>'; }).join('');
+    line.hidden = !rows.length;
+  }
+  document.addEventListener('click', function (e) {
+    var chip = e.target.closest && e.target.closest('.hu-chip');
+    if (!chip) return;
+    var line = chip.closest('[data-hu]'), x = line && line._rows && line._rows[parseInt(chip.dataset.huI, 10)];
+    if (!x || !x.row.isConnected) return;
+    qa(document, '.fp-i.is-hit').forEach(function (r) { r.classList.remove('is-hit'); });
+    x.row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    x.row.classList.add('is-hit');
+    clearTimeout(line._hit);
+    line._hit = setTimeout(function () { x.row.classList.remove('is-hit'); }, HIT_MS);
+  });
 
   // ---- what the chosen room and flight say ----
   function minutes(clock) {
@@ -86,17 +121,12 @@
   document.addEventListener('dr:changed', function (e) { updateAll(e.target); });
   document.addEventListener('dr:rich', function (e) { update(e.target); watchPins(e.target); });
 
-  // ---- getting there and around: the pins, asked once when the card scrolls into view ----
-  var io = null;
+  // ---- getting there and around: the pins, asked once as soon as the hotel's page is there (the Heads up line up top needs them) ----
   function watchPins(slot) {
     var box = q(slot, '[data-pins]');
     if (!box || box.dataset.watching) return;
     box.dataset.watching = '1';
-    if (!('IntersectionObserver' in window)) { askPins(slot, box); return; }
-    io = io || new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { io.unobserve(e.target); askPins(e.target.closest('.dr-rich, .dr-sampleslot'), e.target); } });
-    }, { rootMargin: '200px' });
-    io.observe(box);
+    askPins(slot, box);
   }
   function askPins(slot, box) {
     var card = q(slot, '.av-card');
@@ -125,20 +155,36 @@
   // ---- the review drawer ----
   var cur = null;      // { aside, scrim, from, slot }
   function host() { return document.querySelector('.ga-page') || document.body; }
-  function filter(aside, type, ids, why, words) {
-    var want = ids ? ids.split(',').filter(Boolean) : null, shown = 0;
+  // what the drawer shows: a review passes the traveller chip and a complaint's ids, then the search (every typed word must be in its headline, pros or cons)
+  function apply(aside) {
+    var type = aside._type || '', ids = aside._ids, want = ids ? ids.split(',').filter(Boolean) : null, typed = (aside._q || '').trim(), terms = typed.toLowerCase().split(/\s+/).filter(Boolean);
+    var scope = 0, hits = 0;
     qa(aside, '.rv-item').forEach(function (it) {
-      var ok = (!want || want.indexOf(it.dataset.i) >= 0) && (!type || it.dataset.type === type);
+      var inScope = (!want || want.indexOf(it.dataset.i) >= 0) && (!type || it.dataset.type === type), ok = inScope;
+      if (inScope) {
+        scope++;
+        if (terms.length) {
+          if (it._t == null) it._t = qa(it, '.dr-rhead, .dr-rp, .dr-rc').map(function (n) { return n.textContent; }).join(' ').toLowerCase();
+          ok = terms.every(function (w) { return it._t.indexOf(w) >= 0; });
+        }
+      }
       it.hidden = !ok;
-      if (ok) shown++;
+      if (ok) hits++;
     });
     qa(aside, '.rv-chip').forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.rvType === type ? 'true' : 'false'); });
-    var bar = q(aside, '.rv-filter');
+    var bar = q(aside, '.rv-filter'), found = q(aside, '.rv-found'), ai = q(aside, '.rv-ai');
     bar.hidden = !want;
-    if (want) q(bar, '.rv-why').textContent = want.length + (want.length === 1 ? ' review mentions ' : ' reviews mention ') + (words || 'it') + ' · about “' + why + '”' + (type ? ' · ' + shown + ' shown' : '');      // what they share, never more
-    aside._ids = ids; aside._why = why; aside._words = words;
+    if (want) q(bar, '.rv-why').textContent = want.length + (want.length === 1 ? ' review mentions ' : ' reviews mention ') + (aside._words || 'it') + ' · about “' + aside._why + '”' + (type ? ' · ' + scope + ' shown' : '');      // what they share, never more
+    found.hidden = !terms.length;
+    if (terms.length) found.textContent = typed + ' · ' + hits + ' of ' + scope + ' reviews mention it';
+    if (ai) ai.hidden = !!(want || type || terms.length);      // the AI's reading is for the whole set: it steps aside while the list is filtered
+  }
+  function filter(aside, type, ids, why, words) {
+    aside._type = type; aside._ids = ids; aside._why = why; aside._words = words;
+    apply(aside);
     q(aside, '.rv-body').scrollTop = 0;
   }
+  function clearAsk(aside) { var i = q(aside, '.rv-q'); if (i) i.value = ''; aside._q = ''; }
   function openDrawer(slot, from, ids, why, words) {
     var aside = slot._rv || q(slot, '.rv');
     if (!aside) return;
@@ -149,6 +195,7 @@
     scrim.className = 'rv-scrim';
     scrim.addEventListener('click', closeDrawer);
     host().appendChild(scrim);
+    clearAsk(aside);
     filter(aside, '', ids, why, words);
     aside.hidden = false;
     document.body.classList.add('rv-open');
@@ -172,17 +219,24 @@
     if (t.hasAttribute('data-rv-close')) { closeDrawer(); return; }
     if (t.hasAttribute('data-rv-type')) {
       var aside = t.closest('.rv');
-      if (aside) filter(aside, t.dataset.rvType, t.classList.contains('rv-all') ? '' : aside._ids, aside._why, aside._words);
+      if (aside) {
+        if (t.classList.contains('rv-all')) clearAsk(aside);      // "Show all" is all of them
+        filter(aside, t.dataset.rvType, t.classList.contains('rv-all') ? '' : aside._ids, aside._why, aside._words);
+      }
       return;
     }
     var slot = t.closest('.dr-rich, .dr-sampleslot');
     if (slot) openDrawer(slot, t, t.dataset.rvOpen === 'some' ? t.dataset.rvIds : '', t.dataset.rvWhy || '', t.dataset.rvWords || '');
   });
+  document.addEventListener('input', function (e) {
+    var i = e.target.classList && e.target.classList.contains('rv-q') ? e.target : null, aside = i && i.closest('.rv');
+    if (aside) { aside._q = i.value; apply(aside); q(aside, '.rv-body').scrollTop = 0; }
+  });
   document.addEventListener('keydown', function (e) {
     if (!cur) return;
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeDrawer(); return; }
     if (e.key !== 'Tab') return;
-    var f = qa(cur.aside, 'button').filter(function (b) { return b.offsetParent !== null; });
+    var f = qa(cur.aside, 'button, input').filter(function (b) { return b.offsetParent !== null; });
     if (!f.length) return;
     var first = f[0], last = f[f.length - 1];
     if (e.shiftKey && (document.activeElement === first || !cur.aside.contains(document.activeElement))) { e.preventDefault(); last.focus(); }

@@ -2,8 +2,9 @@
 /data/reviews (gitaway/liteapi.py `hotel`, `reviews`; asked when a square is opened, never for every square).
 
     GET /plan/matrix/hotel?id=<LiteAPI hotel id>&pt=<traveller type>    the fragment as JSON {html} for assets/js/v2drawer.js, which puts it in the hotel's slot; a plain `def` (the call can wait)
-    rich(h, rv)                                      the fragment as an element: the photo mosaic ("The hotel's own photos", a lightbox from "See all N photos"), the rating and
-                                                     the hotel's words, its facilities and check-in times, the guests' sentiment by category and the newest reviews, and the hotel's rooms with their photos
+    rich(h, rv)                                      the fragment as an element: the photo mosaic ("The hotel's own photos", a lightbox from "See all N photos"), a compact dashboard (F-290:
+                                                     score, the last-100 strip with one streak line, short category bars, one "Read the reviews"), the fine print up front under a "Heads up" line
+                                                     (F-291), the hotel's rooms with their photos, and the drawer that holds everything long (pages/reviewdrawer.py)
     sample_slides()                                  the showcase's gallery: generic CC0 hotel pictures, each captioned "Sample photo · ..." (assets/photos/CREDITS.md); never reviews, off a real hotel
 
 Everything from LiteAPI is a guest's or a hotel's own text: it is escaped (FastHTML does) and never trusted as markup; a photo is https only (liteapi `_https`). The AI summary is LiteAPI's
@@ -15,7 +16,7 @@ import hmac
 import json
 import secrets
 
-from fasthtml.common import Button, Details, Div, H4, Img, Li, P, Small, Span, Summary, Ul, to_xml
+from fasthtml.common import Button, Details, Div, H4, Img, P, Small, Span, Summary, to_xml
 from starlette.responses import JSONResponse
 
 from pathlib import Path
@@ -26,12 +27,10 @@ from gitaway.icons import icon
 PATH = "/plan/matrix/hotel"
 OWN = "The hotel’s own photos"
 AI_NOTE = "Summary written by AI from the guest reviews"
-AI_NOTE_LOW = "summary written by AI from the guest reviews"
 _KEY = secrets.token_bytes(32)      # signs the hotel ids this process drew into squares: the route answers only those, so a made-up id spends nobody's allowance
 MOSAIC = 5                # photos in the mosaic; the rest wait behind "See all"
 PHOTOS_MAX = 40           # photos kept in the fragment (a hotel can have a hundred)
 FACILITIES_SHOWN = 8
-REVIEWS_SHOWN = 4         # cards before "Read more reviews" (reviewtrend.CARDS_MAX in all)
 SAMPLE_SLIDES = (("lobby-front-desk.jpg", "Hotel lobby"), ("room-bed-lamp.jpg", "Hotel room"), ("pool-courtyard.jpg", "Hotel pool"), ("breakfast-buffet.jpg", "Hotel breakfast"),
                  ("room-balcony-view.jpg", "Hotel room with a view"))
 TYPES = {"couple": "Couple", "extended_group": "Group", "solo_traveller": "Solo", "family_with_children": "Family", "friends": "Friends", "business": "Business"}
@@ -92,32 +91,24 @@ def _paragraphs(h):
 
 
 def _rating(h, rv):
-    """The score with its words and count: a button that opens the review drawer when LiteAPI gave reviews (F-282), the AI's pros and cons under it."""
+    """The score with its words and count: a button that opens the review drawer when LiteAPI gave reviews (F-282). The AI's pros and cons are in the drawer (F-290)."""
     if h.rating is None:
         return ""
     count = rv.total if rv and rv.total else h.review_count
-    pros = Ul(*[Li(icon("check", 15, 2.4), t) for t in rv.pros[:4]], cls="dr-pros") if rv and rv.pros else ""
-    cons = Ul(*[Li(icon("flag", 15, 2.2), t) for t in rv.cons[:4]], cls="dr-cons") if rv and rv.cons else ""
-    head = [Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews" + (f" · {AI_NOTE_LOW}" if pros or cons else "")), cls="dr-rt")]
+    head = [Span(score_text(h.rating), cls="dr-score num"), Div(Span(rating_word(h.rating), cls="dr-word"), Small(f"{count:,} reviews"), cls="dr-rt")]
     if rv and rv.items:
-        rate = Button(*head, Span(icon("chev-right", 18, 2.2), cls="dr-go", aria_hidden="true"), type="button", cls="dr-rate dr-scorebtn", data_rv_open="all",
-                      aria_label=f"Rated {score_text(h.rating)} out of 10, {rating_word(h.rating)}, from {count:,} reviews. Read the guests’ reviews")
-    else:
-        rate = Div(*head, cls="dr-rate")
-    return Div(rate, Div(pros, cons, cls="dr-pc") if pros or cons else "", cls="dr-rating")
+        return Div(Button(*head, Span(icon("chev-right", 18, 2.2), cls="dr-go", aria_hidden="true"), type="button", cls="dr-rate dr-scorebtn", data_rv_open="all",
+                          aria_label=f"Rated {score_text(h.rating)} out of 10, {rating_word(h.rating)}, from {count:,} reviews. Read the guests’ reviews"), cls="dr-rating")
+    return Div(Div(*head, cls="dr-rate"), cls="dr-rating")
 
 
-def _categories(rv):
+def _bars(rv):
+    """The categories as short bars with their numbers and no paragraphs (F-290); the AI's paragraph for each is in the drawer (reviewdrawer.summary)."""
     if not rv or not rv.categories:
         return ""
-    return Div(H4(f"What guests say · {AI_NOTE_LOW}", cls="dr-sub"),
-               Div(*[Div(Div(Span(c.name), Span(score_text(c.rating), cls="num"), cls="dr-ch"),
-                         Div(Span(style=f"width:{max(0, min(100, round((c.rating or 0) * 10)))}%"), cls="dr-bar", role="img", aria_label=f"{c.name} {score_text(c.rating)} out of 10"),
-                         P(c.description) if c.description else "", cls="dr-cat") for c in rv.categories], cls="dr-cats"), cls="dr-sent")
-
-
-def _wordy(r) -> bool:
-    return reviewtrend.wordy(r)
+    return Div(H4("What guests rate", cls="dr-sub"),
+               Div(*[Div(Span(c.name, cls="dr-cn"), Div(Span(style=f"width:{max(0, min(100, round((c.rating or 0) * 10)))}%"), cls="dr-bar", role="img", aria_label=f"{c.name} {score_text(c.rating)} out of 10"),
+                         Span(score_text(c.rating), cls="num dr-cv"), cls="dr-cat") for c in rv.categories], cls="dr-cats"), cls="dr-sent")
 
 
 def _review(r):
@@ -131,16 +122,15 @@ SHAPES = {"good": "8 or more", "mixed": "6 or 7", "poor": "5 or less"}      # th
 
 
 def _strip(t):
-    """The last reviews as dots, oldest to newest (F-278): a circle for a score of 8 or more, a diamond for 6 or 7, a triangle for 5 or less, each also a colour, with the plain words the server
-    computed (reviewtrend): the recent average against the hotel's rating, a streak, and the average for travellers like you. Every dot is aria-hidden; the strip says its counts once."""
+    """The last reviews as dots, oldest to newest (F-278): a circle for a score of 8 or more, a diamond for 6 or 7, a triangle for 5 or less, each also a colour, with ONE line of words the server
+    computed (reviewtrend): the streak, else the recent average against the hotel's rating (F-290). Every dot is aria-hidden; the strip says its counts once."""
     n = len(t.dots)
     said = f"The last {n} reviews, oldest to newest: {t.good} good, {t.mixed} mixed, {t.poor} poor"
     dots = Div(*[Span(cls=f"tr-d is-{d.kind}", title=f"{score_text(d.score)}/10" + (f" · {d.date}" if d.date else ""), aria_hidden="true") for d in t.dots], cls="tr-dots", role="img", aria_label=said, data_rv_open="all")
     legend = Div(*[Span(Span(cls=f"tr-d is-{k}", aria_hidden="true"), f"{SHAPES[k]} · {getattr(t, k)}", cls="tr-key") for k in SHAPES], cls="tr-legend")
-    words = [P(w, cls="tr-w") for w in (t.recent, t.streak, t.like_you) if w]
-    head = Div(H4(f"How the last {n} reviews went" + (f" · {t.span}" if t.span else ""), cls="dr-sub"), Button("Read them", icon("arrow-right", 16, 2.2), type="button", cls="tr-read", data_rv_open="all"), cls="tr-head")
-    return Div(head, dots,
-               Div(Span("Oldest"), Span("Newest"), cls="tr-ends", aria_hidden="true"), legend, *words, cls="tr-strip")
+    line = t.streak or t.recent
+    return Div(H4(f"Last {n} reviews" + (f" · {t.span}" if t.span else ""), cls="dr-sub"), dots, Div(Span("Oldest"), Span("Newest"), cls="tr-ends", aria_hidden="true"), legend,
+               P(line, cls="tr-w") if line else "", cls="tr-strip")
 
 
 def source_line(rv) -> str:
@@ -148,27 +138,10 @@ def source_line(rv) -> str:
     return f"Reviews from {named} (LiteAPI)" if named else "Reviews from LiteAPI"
 
 
-def _trend(rv, overall=None, ptype=""):
-    """The strip with its words, right under the rating (a number alone says little); "" when no review has a score."""
-    t = reviewtrend.trend(rv.items, overall, ptype) if rv and rv.items else None
+def _trend(rv, overall=None):
+    """The strip with its streak line, right under the rating (a number alone says little); "" when no review has a score."""
+    t = reviewtrend.trend(rv.items, overall) if rv and rv.items else None
     return _strip(t) if t else ""
-
-
-def _reviews(rv, ptype=""):
-    """The cards in the reader's order (reviewtrend.order: only reviews with words, the party's own traveller type first, then newest, one good and one critical near the top);
-    the scores that came without words are counted once, never a card of their own. The source is said as LiteAPI labels it."""
-    if not rv or not rv.items:
-        return ""
-    cards = reviewtrend.order(rv.items, ptype)
-    bare = len(rv.items) - sum(1 for r in rv.items if _wordy(r))
-    shown = cards[:REVIEWS_SHOWN]
-    note = P(f"Plus {bare} score{'' if bare == 1 else 's'} without words.", cls="dr-fine") if bare else ""
-    src = P(source_line(rv), cls="dr-fine tr-src")
-    if not cards:
-        return Div(H4("Reviews", cls="dr-sub"), P(f"{bare} score{'' if bare == 1 else 's'}, no words.", cls="dr-fine"), src, cls="dr-reviews")
-    first = f", {TYPE_LOWER[ptype]} first" if ptype in TYPE_LOWER and any(r.type == ptype for r in cards) else ""
-    return Div(H4("What guests wrote" + first, cls="dr-sub"), Div(*[_review(r) for r in shown], cls="dr-revs"),
-               Button(f"Read all {len(rv.items)} reviews", icon("arrow-right", 16, 2.2), type="button", cls="tr-read", data_rv_open="all"), note, src, cls="dr-reviews")
 
 
 def _rooms(h):
@@ -187,20 +160,31 @@ def room_photos(h) -> dict:
     return {r.name.lower(): r.photos[0] for r in h.rooms if r.photos}
 
 
-def dashboard(h, rv, ptype=""):
-    """The score with its words and count, the last-100 strip with its streaks, and the category bars: one card, beside the photos on a laptop and under them on a phone (F-282)."""
-    parts = [_rating(h, rv), _trend(rv, h.rating, ptype), _categories(rv)]
-    return Div(*parts, cls="dr-dash") if any(parts) else ""
+def dashboard(h, rv):
+    """The compact dashboard (F-290): the score with its words and count, the last-100 strip with its streak line, the category bars, and one "Read the reviews". Beside the photos on a laptop,
+    under them on a phone. Everything long (the AI's paragraphs, what guests like and watch for, the reviews) waits in the drawer."""
+    parts = [_rating(h, rv), _trend(rv, h.rating), _bars(rv)]
+    if not any(parts):
+        return ""
+    way_in = Button("Read the reviews", icon("arrow-right", 16, 2.2), type="button", cls="tr-read", data_rv_open="all") if rv and rv.items else ""
+    return Div(*parts, way_in, cls="dr-dash")
+
+
+def heads_up():
+    """F-291: the one quiet line of the fine print's "Heads up" rows, as chips that open their row. It starts empty and hidden: assets/js/hotelfine.js fills it from the rows that are on the page
+    (the hotel's own costs and conditions, the chosen room's and flight's, the pins), so it says only what the fine print says and nothing when there is nothing."""
+    return Div(Span("Heads up", cls="hu-k"), Div(cls="hu-chips"), cls="hu", data_hu="1", hidden=True, role="group", aria_label="Heads up: what to know before you book")
 
 
 def rich(h, rv=None, ptype=""):
     """The fragment: everything the hotel and its guests say, as one element for the hotel's slot. `h` is liteapi.HotelDetails, `rv` liteapi.HotelReviews or None.
-    The photos (and what the hotel says under them) and the dashboard sit side by side, then the fine print up front (with F-284's "See it from above" card), the newest cards, the rooms, the drawer of every review."""
+    The "Heads up" line, then the photos (and what the hotel says under them) and the compact dashboard side by side, then the fine print up front (with F-284's "See it from above" card), the rooms,
+    and the drawer. `ptype` is kept for the route's sake (the party's own average is in the fine print, F-282)."""
     from gitaway.pages import aerialview, fineprint, reviewdrawer      # the card, the fine print and the drawer are their own modules (F-284, F-282)
     mos = mosaic([(p.url, p.caption) for p in h.photos], h.name)
-    dash = dashboard(h, rv, ptype)
+    dash = dashboard(h, rv)
     top = Div(Div(mos, Div(_paragraphs(h), cls="dr-info"), cls="dr-left"), dash, cls="dr-top" + (" has-dash" if dash else ""))
-    return Div(top, fineprint.section(h, rv, aerialview.card(h)), _reviews(rv, ptype), _rooms(h),
+    return Div(heads_up(), top, fineprint.section(h, rv, aerialview.card(h)), _rooms(h),
                Span(json.dumps(room_photos(h), ensure_ascii=False), cls="dr-roomphotos", hidden=True, data_json="1"), reviewdrawer.drawer(h, rv), cls="dr-richin")
 
 
@@ -225,7 +209,7 @@ def sample_fragment(place_name: str = ""):
     if h is None:
         return ""
     from gitaway.pages import aerialview, fineprint, reviewdrawer
-    return Div(P(SAMPLE_DASH, cls="fp-sample"), Div(dashboard(h, rv), cls="dr-top"), fineprint.section(h, rv, aerialview.sample_card(place_name), SAMPLE_NOTE), reviewdrawer.drawer(h, rv), cls="dr-richin dr-sample")
+    return Div(P(SAMPLE_DASH, cls="fp-sample"), heads_up(), Div(dashboard(h, rv), cls="dr-top"), fineprint.section(h, rv, aerialview.sample_card(place_name), SAMPLE_NOTE), reviewdrawer.drawer(h, rv), cls="dr-richin dr-sample")
 
 
 def fragment(hotel_id: str, family: str = "", ptype: str = ""):

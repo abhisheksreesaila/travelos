@@ -73,30 +73,6 @@ def test_the_partys_traveller_type_is_what_liteapi_calls_it(adults, kids, expect
     assert rt.party_type(adults, kids) == expect
 
 
-def test_cards_are_only_reviews_with_words_the_partys_type_first_then_newest():
-    items = [rev(9, "2026-11-16", "couple", "A", headline="x"), rev(9, "2026-11-15", "family_with_children", "B", pros="p"), rev(9, "2026-11-14", "couple", "C"),      # C has no words
-             rev(8, "2026-11-13", "family_with_children", "D", cons="c"), rev(8, "2026-11-12", "couple", "E", pros="p")]
-    assert [r.name for r in rt.order(items, "family_with_children")] == ["B", "D", "A", "E"]
-    assert [r.name for r in rt.order(items, "")] == ["A", "B", "D", "E"]      # no party: newest first
-
-
-def test_one_good_and_one_critical_review_are_put_near_the_top_when_both_exist():
-    mixed = [rev(7, "2026-11-16", name="M1", headline="m"), rev(7, "2026-11-15", name="M2", headline="m"), rev(6, "2026-11-14", name="M3", headline="m"),
-             rev(9, "2026-11-10", name="G", headline="g"), rev(2, "2026-11-09", name="P1", headline="p"), rev(1, "2026-11-08", name="P2", headline="p")]
-    assert [r.name for r in rt.order(mixed)] == ["G", "P1", "M1", "M2", "M3", "P2"]      # the first good and the first poor lead, the rest keep their order
-    only_mixed = [r for r in mixed if r.name.startswith("M")]
-    assert [r.name for r in rt.order(only_mixed)] == ["M1", "M2", "M3"]      # no good or no critical one: nothing is moved
-    assert len(rt.order([rev(9, f"2026-11-{d:02d}", headline="h") for d in range(1, 29)])) == rt.CARDS_MAX
-
-
-def test_the_hundred_reviews_order_for_a_family_with_the_newest_family_review_with_words_first(hundred):
-    cards = rt.order(hundred.items, "family_with_children")
-    assert len(cards) == 12 and all(rt.wordy(r) for r in cards)
-    family = [r for r in hundred.items if r.type == "family_with_children" and rt.wordy(r)]
-    assert family and {r.name + r.date for r in family} & {r.name + r.date for r in cards[:2]}      # a family's own review leads
-    assert any(rt.kind(r.score) == "good" for r in cards[:2]) and any(rt.kind(r.score) == "poor" for r in cards[:3])
-
-
 def test_the_source_is_what_liteapi_names_in_its_own_spelling_and_never_a_guess():
     assert rt.source_name([rev(9, source="nuitee"), rev(9, source="nuitee"), rev(8, source="other")]) == "Nuitée"
     assert rt.source_name([rev(9)]) == ""
@@ -105,15 +81,14 @@ def test_the_source_is_what_liteapi_names_in_its_own_spelling_and_never_a_guess(
     assert line == "Reviews from LiteAPI" and "Google" not in line and "Expedia" not in line
 
 
-def test_the_fragment_draws_the_strip_the_words_the_cards_and_the_source(hundred):
+def test_the_fragment_draws_the_strip_with_its_streak_and_the_drawer_holds_the_source(hundred):
     h = liteapi.read_hotel(json.loads((FIX / "hotel.json").read_text(encoding="utf-8")))
     html = hotelview.to_xml(hotelview.rich(h, hundred, "family_with_children"))
-    assert "How the last 100 reviews went · Oct 30 to Nov 16" in html
-    assert html.count('class="tr-d is-') == 103      # 100 dots and the legend's three
-    assert "The last 10 averaged 9.1, above the hotel’s 7.6." in html and "The last 10 were all 8 or more." in html
-    assert "Families with children: 7.8 on average, from 8 of the last 100 reviews." in html
-    assert "What guests wrote, families first" in html and "Reviews from Nuitée (LiteAPI)" in html
-    assert html.split("<aside")[0].count('class="dr-rev"') == 4 and "Read all 100 reviews" in html and "Plus 36 scores without words." in html      # F-282: four cards on the page; the drawer after them holds all 100
+    square = html.split("<aside")[0]
+    assert "Last 100 reviews · Oct 30 to Nov 16" in square
+    assert square.count('class="tr-d is-') == 103      # 100 dots and the legend's three
+    assert "The last 10 were all 8 or more." in square      # F-290: one streak line; the average and the party's own average are in the fine print and the drawer
+    assert "Reviews from Nuitée (LiteAPI)" in html.split("<aside")[1] and 'class="dr-rev"' not in square
     assert "8 or more · 53" in html and "6 or 7 · 22" in html and "5 or less · 25" in html
     assert 'aria-label="The last 100 reviews, oldest to newest: 53 good, 22 mixed, 25 poor"' in html
 

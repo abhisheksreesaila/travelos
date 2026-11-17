@@ -1,5 +1,6 @@
 """F-275 in a real browser (docs/design/matrix-v3, D-860..): the sentence's suggestion chips, the side widgets folded into chips that open into cards, and the opened square's rich hotel
 (the recorded Hilton answer, tests/fixtures/liteapi_hotel): the photo mosaic and its lightbox, the reviews as text, the room photos. Shots: F275_SHOTS=1 for docs/report/f275-*.png."""
+import json as _json
 import os
 import re
 from dataclasses import replace
@@ -176,13 +177,18 @@ def test_nothing_in_the_opened_square_runs_past_its_right_edge_but_the_strips_th
     assert cats >= 2      # the sentiment categories wrap into a grid, not one clipped row
 
 
-def test_reviews_without_words_are_one_line_not_cards(matrix, hilton):  # noqa: F811
+def test_reviews_are_not_on_the_square_and_a_score_without_words_is_a_bare_row_in_the_drawer(matrix, hilton):  # noqa: F811
     page = matrix(DESKTOP)
     page.wait_for_selector(".mx-sq.is-ok")
     page.locator(".mx-lane[data-lane='sandiego'] .mx-sq.is-ok").nth(1).click()
-    expect(page.locator("#mx-drawer .dr-reviews")).to_be_visible()
-    assert page.locator("#mx-drawer .dr-rnone").count() == 0
-    expect(page.locator("#mx-drawer .dr-reviews")).to_contain_text(re.compile(r"Plus \d+ scores? without words\."))
+    expect(page.locator("#mx-drawer .dr-dash")).to_be_visible()
+    assert page.locator("#mx-drawer .dr-top .dr-rev, #mx-drawer .dr-reviews, #mx-drawer .dr-rnone").count() == 0      # F-290: nothing long on the square
+    page.locator("#mx-drawer .dr-dash .tr-read").click()
+    docs = _json.loads((FIX / "reviews.json").read_text())["data"]
+    bare = [r for r in docs if not (r.get("headline") or r.get("pros") or r.get("cons"))]
+    rows = page.locator(".rv .rv-item")
+    assert bare and rows.count() == len(docs)
+    assert page.locator(".rv .rv-item:has(.dr-rhead), .rv .rv-item:has(.dr-rp), .rv .rv-item:has(.dr-rc)").count() == len(docs) - len(bare)      # a score with no words is its head and nothing else
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
