@@ -1784,12 +1784,12 @@ Brief: docs/briefs/trip-day.md · Decisions D-926..D-930 · Needs: none
 
 ## F-288 The stay in Apple and Google Wallet [todo]
 Brief: docs/briefs/trip-day.md · Decisions D-931..D-935 · Needs: Apple Pass Type ID certificate; Google Wallet issuer id and service account (names only: APPLE_PASS_*, GOOGLE_WALLET_*)
-- [ ] an Apple `.pkpass` (pass.json, images, manifest, PKCS#7 signature) for a booked stay: hotel, address, dates, guests, confirmation code (QR of the code), check-in/out, relevantDate and the hotel's location
-- [ ] a "Save to Google Wallet" link (signed JWT, generic pass) with the same facts
-- [ ] buttons on the booking page, the booked pass, the confirmation email and Today; hidden until the credentials are set
-- [ ] downloads only for the booking's own family, signed per booking; no guessable address; nothing logged but the booking id
-- [ ] tested with test keys made in the tests; `scripts/wallet_setup.sh` walks the founder through both accounts
-- [ ] security review (personal data)
+- [x] an Apple `.pkpass` (pass.json, images, manifest, PKCS#7 signature) for a booked stay: hotel, address, dates, guests, confirmation code (QR of the code), check-in/out, relevantDate and the hotel's location
+- [x] a "Save to Google Wallet" link (signed JWT, generic pass) with the same facts
+- [x] buttons on the booking page, the booked pass, the confirmation email and Today; hidden until the credentials are set
+- [x] downloads only for the booking's own family, signed per booking; no guessable address; nothing logged but the booking id
+- [x] tested with test keys made in the tests; `scripts/wallet_setup.sh` walks the founder through both accounts
+- [x] security review (personal data)
 
 ## F-289 "My trip", "Find a trip", and sign in for 3D [done]
 Founder 2026-11-17: "the word plan means different things to different people … it should mean you have finished booking, now plan your itinerary"; "we can put a big sign in to check 3D view and immersive experience".

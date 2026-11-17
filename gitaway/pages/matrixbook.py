@@ -25,7 +25,7 @@ from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, Noscript
 from fasthtml.core import FtResponse
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
-from gitaway import access, auth, blogbutton, catalog, familydb, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, tripstart
+from gitaway import access, auth, blogbutton, catalog, familydb, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, tripstart, walletpass
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import plan_search, tripmatrix as mx, v2drawer
@@ -220,7 +220,7 @@ def return_url(request, token: str) -> str:
 _TOKEN = re.compile(r"^[A-Za-z0-9_-]{8,40}\Z")
 
 
-def _paid_page(done, pay, problem: str = "", status: int = 200):
+def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = ""):
     """The page the payment form returns to: the pass of the stay just booked (what LiteAPI and the saved prebook say, nothing typed), or why it is not confirmed."""
     back = A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1")
     if done is None:
@@ -239,7 +239,7 @@ def _paid_page(done, pay, problem: str = "", status: int = 200):
                        *([P("Hotel confirmation", cls="mxb-k"), P(Span(done.confirmation, cls="mxb-id"), cls="mxb-code")] if done.confirmation else []), cls="mxb-stub-i"), cls="mxb-stub")
         inner = Div(Div(Div(Span("Booked", cls="mxb-k0"), H2("You’re booked", cls="mxb-h"), P(done.hotel, cls="mxb-sub"), cls="mxb-top"),
                         P(icon("shield", 16, 2.4), mb.words(), cls="mxb-sandbox is-booked", role="status"), cls="mxb-head"),
-                    Div(_confetti(), Div(Div(*what, cls="mxb-pass-mid"), stub, cls="mxb-pass"), back, cls="mxb-confirm", data_step="booked"), cls="mxb", data_at="booked")
+                    Div(_confetti(), Div(Div(*what, cls="mxb-pass-mid"), stub, cls="mxb-pass"), walletpass.buttons(done.booking_id, family), back, cls="mxb-confirm", data_step="booked"), cls="mxb", data_at="booked")
     out = page("Your booking", Div(Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
     return FtResponse(out, status_code=status, headers={"Cache-Control": "no-store"})
 
@@ -266,7 +266,7 @@ def _pass_stay(d: mb.Done, address: str):
                P(icon("pin", 14, 2.2), address, cls="mx-r-s mxb-addr") if address else "", cls="mxb-pass-row")
 
 
-def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extras=None):
+def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extras=None, family: str = ""):
     """The stamped boarding pass (D-574): where, the flight, each stay with what the answer gives (the booking id, the hotel's confirmation code and its address), the test
     card, and a bold Plan this trip. Only what LiteAPI (or the sample) gave: no phone number or record locator is made up."""
     flight = _flight_link(s, lane, w)
@@ -289,7 +289,7 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
                      *([P("Hotel confirmation", cls="mxb-k"), P(Span(d.confirmation, cls="mxb-id"), cls="mxb-code")] if d.confirmation else []), cls="mxb-stub-i") for d in res.done], cls="mxb-stub")
     return Div(_confetti(), H3("You’re going to " + lane.name + "!", cls="mxb-q mxb-going"),
                P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), Div(top, mid, stub, cls="mxb-pass"),
-               A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1"),
+               *[walletpass.buttons(d.booking_id, family) for d in res.done], A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1"),
                A(f"Search flights on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener") if flight else "",
                cls="mxb-confirm", data_step="booked")
 
@@ -298,14 +298,14 @@ def _problem(words: str):
     return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
 
 
-def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who="", extras=None, pay=None):
+def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who="", extras=None, pay=None, family=""):
     """The checkout's inside (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it): the head and one body, the four questions or the pass."""
     if problem:
         body, at = _problem(problem), "room"
     elif pay is not None:
         body, at = pay_form(prep, *pay), "pay"
     elif res is not None and res.ok:
-        body, at = _confirmation(s, lane, w, sq, prep, res, who, extras), "booked"
+        body, at = _confirmation(s, lane, w, sq, prep, res, who, extras, family), "booked"
     else:
         body, at = Div(P(icon("bell", 16, 2.4), note, cls="mxb-note", role="status") if note else "", _checkout(s, lane, w, sq, prep, pk, values, errors), cls="mxb-body"), "guest"
     return Div(_head(s, lane, w, sample or (prep is not None and prep.sample) or (res is not None and any(d.sample for d in res.done)), booked=at == "booked"), body,
@@ -460,7 +460,7 @@ def register(app):
         if res.done:
             mb.add_to_trip(session, trip_id, res.done)
         if res.ok:
-            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, res=res, who=f"{guest.first} {guest.last}", extras=(guest.email, extras)))
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, res=res, who=f"{guest.first} {guest.last}", extras=(guest.email, extras), family=family))
         said = mb.SAID.get(res.status, mb.SAID[liteapi.FAILED])
         left = f" {len(res.done)} of {len(prep.rows)} stays are booked; press Book again for the rest." if res.done else ""
         return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, values={**typed, "first": guest.first, "last": guest.last, "email": guest.email}, note=said + left))
@@ -535,4 +535,4 @@ def register(app):
             return _paid_page(None, None, (PAID_BUT if paying else "We could not find that booking.") + kept, status=502 if paying else 404)
         done = res.done[0]
         mb.add_to_trip(session, done.trip_id, res.done)
-        return _paid_page(done, pay)
+        return _paid_page(done, pay, family=family)

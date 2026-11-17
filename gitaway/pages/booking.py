@@ -20,7 +20,7 @@ from gitaway.pages import booked
 
 PATH = "/trip/booking"
 PLAN = "/trip/plan"
-HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/help.css"), Link(rel="stylesheet", href="/assets/css/passes.css"), Link(rel="stylesheet", href="/assets/css/booking.css"))
+HEAD = (Link(rel="stylesheet", href="/assets/css/trip.css"), Link(rel="stylesheet", href="/assets/css/help.css"), Link(rel="stylesheet", href="/assets/css/passes.css"), Link(rel="stylesheet", href="/assets/css/booking.css"), Link(rel="stylesheet", href="/assets/css/walletpass.css"))
 
 
 def href(block="", sos=False) -> str:

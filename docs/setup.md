@@ -217,3 +217,20 @@ With `PLAN_FOR_ME_PAID=1` a family pays once ($29) and an agent builds their who
 5. **The founder check** (F-197): while `PLAN_FOR_ME_REVIEW=1`, nothing reaches a family until you tap Send to family on `/admin`, so check `/admin` a few times a day; the pages promise "usually within a few hours". Leave it unset to deliver at once.
 6. **The founding price**: the first `PLAN_FOR_ME_FOUNDING_LIMIT` (10) paid families pay `PLAN_FOR_ME_PRICE_CENTS` ($29), everyone after `PLAN_FOR_ME_FULL_PRICE_CENTS` ($49). A refunded order is marked failed only when the build failed; a refund you give by hand for a "not useful" plan still counts as a taken spot. The limit is held when a payment page is opened: an unpaid order made at $29 keeps it only while its page (open for one hour) may still be paid; after that, once the spots are gone, it is repriced to $49 and its Pay button says so. A founding spot held by someone's open payment page is not given to a second page.
 7. A paid order that was building when the app stopped is built again at the next start (`planforme.start()` in `on_startup`), without a second model call if the first answer was already saved.
+
+## Wallet passes (F-288)
+
+A booked stay can be added to Apple Wallet and Google Wallet from its booking page, the booked pass and the confirmation email. Each button shows only once that vendor's names are set; with none set nothing shows.
+
+| Variable | What it is |
+|---|---|
+| `APPLE_PASS_TYPE_ID` | The Pass Type ID you registered (`pass.…`). |
+| `APPLE_TEAM_ID` | Your Apple Developer Team ID. |
+| `APPLE_PASS_CERT_PEM_B64` | The Pass Type ID certificate as PEM, base64 on one line. |
+| `APPLE_PASS_KEY_PEM_B64` | Its private key as PEM, base64. |
+| `APPLE_PASS_KEY_PASSWORD` | Only if that key has a password (the wizard makes one without). |
+| `APPLE_WWDR_PEM_B64` | Apple's Worldwide Developer Relations intermediate certificate as PEM, base64. |
+| `GOOGLE_WALLET_ISSUER_ID` | The Google Wallet issuer id (a long number). |
+| `GOOGLE_WALLET_SA_JSON_B64` | The service account's JSON key file, base64. |
+
+`scripts/wallet_setup.sh` walks through both accounts and sets them on Railway with `--skip-deploys`, reading each from a private file without printing it. Until Google approves the issuer for publishing, only test accounts added in its console can save a pass. Facts and links: `docs/research/wallet-passes.md`. Downloads need the family's own sign-in and a signed link (`gitaway/pages/walletpass.py`); never put a pass link in a log.
