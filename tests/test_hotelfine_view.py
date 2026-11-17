@@ -35,14 +35,36 @@ def draw(h, rv, pt=""):
     return to_xml(hotelview.rich(h, rv, pt))
 
 
-def test_the_dashboard_is_the_score_with_words_and_count_the_strip_and_the_category_bars_beside_the_photos(hundred):
+def test_the_dashboard_is_compact_score_strip_with_one_streak_line_and_short_bars_with_numbers(hundred):
     html = draw(hotel(), hundred)
     top = html[html.index('class="dr-top'):html.index('class="fp"')]
     assert 'class="dr-photos"' in top and 'class="dr-dash"' in top and top.index("dr-photos") < top.index("dr-dash")
     assert '<span class="dr-score num">7.6</span>' in top and "Good" in top and "6,263 reviews" in top
-    assert "How the last 100 reviews went" in top and "The last 10 were all 8 or more." in top
+    assert "Last 100 reviews · Oct 30 to Nov 16" in top and top.count('class="tr-w"') == 1 and "The last 10 were all 8 or more." in top
     assert 'aria-label="Cleanliness 8 out of 10"' in top and 'aria-label="Value for Money 6.5 out of 10"' in top
+    assert re.search(r'<span class="num dr-cv">6\.5</span>', top)
     assert 'aria-label="Rated 7.6 out of 10, Good, from 6,263 reviews. Read the guests’ reviews"' in top
+    assert top.count("Read the reviews") == 1 and 'data-rv-open="all"' in top      # one way in, besides the score itself
+
+
+def test_nothing_long_is_on_the_square_it_is_all_in_the_drawer(hundred):
+    html = draw(hotel(), hundred)
+    square, drawer = html.split("<aside")
+    assert 'class="dr-rev"' not in square and "What guests wrote" not in square and 'class="dr-pros"' not in square and "Frequent comments that the hotel is pricey" not in square
+    assert drawer.count('class="dr-rev"') == 100 and "Frequent comments that the hotel is pricey" in drawer
+    assert "Summary written by AI from the guest reviews" in drawer and 'class="dr-pros"' in drawer and 'class="dr-cons"' in drawer
+
+
+def test_the_drawer_opens_with_a_search_box_that_says_ask_the_reviews_then_the_chips(hundred):
+    drawer = draw(hotel(), hundred)
+    drawer = drawer[drawer.index("<aside"):]
+    assert re.search(r'<input[^>]*type="search"[^>]*class="rv-q"|<input[^>]*class="rv-q"[^>]*type="search"', drawer) and 'aria-label="Ask the reviews"' in drawer
+    assert drawer.index("rv-q") < drawer.index("rv-chips") < drawer.index('class="rv-ai"') < drawer.index('class="rv-list"')
+
+
+def test_the_heads_up_line_is_an_empty_hidden_place_the_page_fills_from_the_fine_print_rows(hundred):
+    html = draw(hotel(IMPORTANT), hundred)
+    assert re.search(r'<div[^>]*data-hu="1"[^>]*hidden', html) and html.index("data-hu") < html.index('class="dr-top')
 
 
 def test_the_fine_print_has_its_five_cards_in_order_and_the_usual_line_last(hundred):

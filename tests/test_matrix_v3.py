@@ -112,14 +112,14 @@ def test_the_fragment_has_the_photos_labelled_the_hotels_own_with_a_see_all_over
 def test_the_fragment_says_the_rating_the_ai_summary_and_what_guests_say_by_category(hilton):
     html = hotelview.to_xml(hotelview.fragment(ID))
     assert '<span class="dr-score num">7.6</span>' in html and "Good" in html and "6,263 reviews" in html
-    assert "summary written by AI from the guest reviews" in html and "ai from" not in html
-    assert "Cleanliness" in html and 'aria-label="Cleanliness 8 out of 10"' in html and "Overall reviewers frequently noted clean" in html
+    drawer = html.split("<aside")[1]      # F-290: the AI's paragraphs and what guests wrote are in the drawer, the square has the bars
+    assert "Summary written by AI from the guest reviews" in drawer and "Summary written by AI" not in html.split("<aside")[0]
+    assert "Cleanliness" in html and 'aria-label="Cleanliness 8 out of 10"' in html and "Overall reviewers frequently noted clean" in drawer
     assert "Maria" in html and "Group · Australia · 2026-11-14" in html and "8/10" in html
     docs = _json.loads((FIX / "reviews.json").read_text())["data"]
     bare = [r["name"] for r in docs if not (r.get("headline") or r.get("pros") or r.get("cons"))]
     cards = html.split("<aside")[0]      # the page's own cards; the review drawer (F-282) lists every review, a score with no words too
-    assert bare and all(f">{n}<" not in cards for n in bare) and all(f">{n}<" in html for n in bare)      # a score with no words is not a card on the page
-    assert f"Plus {len(bare)} score{'' if len(bare) == 1 else 's'} without words." in html and html.count("Plus ") == 1 and "Left a score" not in html
+    assert bare and all(f">{n}<" not in cards for n in bare) and all(f">{n}<" in html for n in bare)      # a score with no words is not on the page, only in the drawer
 
 
 def test_the_hotels_facilities_check_in_and_rooms_with_their_photos_are_there(hilton):
@@ -147,13 +147,6 @@ def test_the_route_answers_the_fragment_and_nothing_for_a_hotel_it_does_not_have
     monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(status=404))
     assert client.get(f"/plan/matrix/hotel?id={hotelview.token('lpnone')}").json() == {"html": ""}
     assert client.get("/plan/matrix/hotel?id=../x").json() == {"html": ""}
-
-
-def test_the_route_orders_the_reviews_for_the_party_type_it_is_given_and_ignores_a_made_up_one(real, client, monkeypatch):
-    monkeypatch.setattr(liteapi, "TRANSPORT", HotelFake(reviews=(FIX / "reviews100.json").read_bytes()))
-    ask = lambda pt: client.get(f"/plan/matrix/hotel?id={hotelview.token(ID)}&pt={pt}").json()["html"]      # noqa: E731
-    assert "What guests wrote, families first" in ask("family_with_children") and "Families with children: 7.8 on average" in ask("family_with_children")
-    assert "What guests wrote</h4>" in ask("nonsense") and "first</h4>" not in ask("nonsense")
 
 
 def test_an_id_the_server_did_not_draw_is_nothing_and_spends_nobodys_allowance(real, client, monkeypatch):

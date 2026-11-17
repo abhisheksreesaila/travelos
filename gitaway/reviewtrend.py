@@ -20,7 +20,6 @@ RECENT_GAP = 0.5                 # the recent average must differ from the hotel
 STREAK_N = 6                     # "the last 6 were all 8 or more" / "3 of the last 6 were poor"
 POOR_OF_LAST = 3
 TYPE_MIN = 5                     # reviews of the party's own type needed to say their average
-CARDS_MAX = 12                   # cards drawn (the page is light: the strip carries the other reviews)
 TYPE_WORDS = {"family_with_children": "Families with children", "couple": "Couples", "solo_traveller": "Solo travellers", "extended_group": "Groups", "friends": "Friends", "business": "Business travellers"}
 SOURCES = {"nuitee": "Nuitée"}   # LiteAPI's own label for its reviews, written the way the company writes its name
 
@@ -116,22 +115,6 @@ def trend(items, overall=None, ptype="") -> Trend | None:
         return None
     kinds = Counter(kind(r.score) for r in rs)
     return Trend(tuple(Dot(r.score, kind(r.score), r.date) for r in rs), kinds["good"], kinds["mixed"], kinds["poor"], _span(rs), recent_words(rs, overall), streak_words(rs), like_you_words(rs, ptype))
-
-
-def wordy(r) -> bool:
-    return bool(r.headline or r.pros or r.cons)
-
-
-def order(items, ptype="") -> list:
-    """The cards, in the order a reader wants them: only reviews with words, the party's own type first, then newest first; then the first good one and the first critical one (a poor score)
-    are put at the top, so both sides of the hotel are in view; at most CARDS_MAX."""
-    words = [r for r in items if wordy(r)]
-    newest = sorted(words, key=lambda r: r.date or "", reverse=True)      # stable: a day keeps LiteAPI's own order
-    base = [r for r in newest if ptype and r.type == ptype] + [r for r in newest if not (ptype and r.type == ptype)]
-    good = next((r for r in base if r.score is not None and kind(r.score) == "good"), None)
-    poor = next((r for r in base if r.score is not None and kind(r.score) == "poor"), None)
-    lead = sorted([r for r in (good, poor) if r is not None], key=base.index) if good is not None and poor is not None else []
-    return (lead + [r for r in base if r not in lead])[:CARDS_MAX]
 
 
 def source_name(items) -> str:
