@@ -10,15 +10,31 @@
 .dr-dash { display: grid; gap: 0.75rem; padding: 0.5rem; border-radius: 1.5rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); }
 .dr-dash > * { margin: 0; min-width: 0; }
 .dr-dash .dr-rating, .dr-dash .tr-strip, .dr-dash .dr-sent { padding: 1rem; border-radius: 1.25rem; background: var(--card-solid); box-shadow: inset 0 0 0 1px var(--line); }
-.dr-dash .dr-cats { grid-template-columns: minmax(0, 1fr); }
+.dr-dash .dr-cats { grid-template-columns: minmax(0, 1fr); gap: 0.125rem; }
+/* F-290: a category is one short row: its name, a bar, its number (the AI's paragraph is in the drawer) */
+.dr-dash .dr-cat { display: grid; grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr) 2.5rem; align-items: center; gap: 0 0.75rem; min-height: 2rem; }
+.dr-dash .dr-cat .dr-bar { margin-top: 0; }
+.dr-cn { font: 560 1rem/1.2 var(--f-ui); overflow-wrap: anywhere; }
+.dr-cv { text-align: right; font: 700 1rem/1 var(--f-ui); }
+.dr-dash .tr-strip { margin-bottom: 0; }
+.dr-dash .tr-read { justify-content: center; width: 100%; background: var(--card-2); border-radius: 1.25rem; }
+.dr-dash .tr-w { color: var(--ink-2); }
 .dr-dash .dr-sub { margin-top: 0; }
 .dr-scorebtn { display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: var(--target); padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.dr-scorebtn:focus-visible, .tr-read:focus-visible, .fp-read:focus-visible, .rv-chip:focus-visible, .rv-x:focus-visible, .rv-all:focus-visible { outline: 0.1875rem solid var(--flight); outline-offset: 0.1875rem; }
+.dr-scorebtn:focus-visible, .hu-chip:focus-visible, .tr-read:focus-visible, .fp-read:focus-visible, .rv-chip:focus-visible, .rv-x:focus-visible, .rv-all:focus-visible { outline: 0.1875rem solid var(--flight); outline-offset: 0.1875rem; }
 .dr-go { margin-left: auto; width: 2.5rem; height: 2.5rem; flex: none; display: grid; place-items: center; border-radius: 62.4375rem; background: var(--card-2); color: var(--ink); }
-.tr-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap; }
-.tr-head .dr-sub { margin: 0; }
 .tr-read { display: inline-flex; align-items: center; gap: 0.375rem; min-height: var(--target); padding: 0 0.25rem; border: 0; background: none; color: var(--word); font: 650 1rem/1 var(--f-ui); cursor: pointer; }
 .tr-dots[data-rv-open] { cursor: pointer; }
+
+/* F-291: the Heads up line above the dashboard: one quiet row of chips, each opens its row in the fine print */
+.hu { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin: 0 0 1rem; }
+.hu[hidden] { display: none; }
+.hu-k { font: 650 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--warn-ink); }
+.hu-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+.hu-chip { display: inline-flex; align-items: center; gap: 0.375rem; max-width: 100%; min-height: var(--target); padding: 0.375rem 0.875rem 0.375rem 0.625rem; border: 0; border-radius: 62.4375rem; background: var(--warn-tint); color: var(--warn-ink); font: 600 1rem/1.25 var(--f-ui); text-align: left; cursor: pointer; }
+.hu-chip svg { flex: none; }
+.hu-chip span { min-width: 0; overflow-wrap: anywhere; }
+.fp-i.is-hit { outline: 0.1875rem solid var(--flight); outline-offset: 0.125rem; }      /* a moment's mark on the row a chip opened: a plain outline, no animation */
 
 /* the fine print, up front */
 .fp { display: grid; gap: 0.875rem; }
@@ -100,6 +116,21 @@ body.rv-open { overflow: hidden; }
 .rv-list { display: grid; gap: 0.625rem; }
 .rv-item[hidden] { display: none; }
 .rv-list .dr-rev { margin: 0; }
+
+/* "Ask the reviews" and the AI's reading, at the top of the drawer (F-290) */
+.rv-ask { display: flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 0.875rem; border-radius: 62.4375rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); }
+.rv-ask:focus-within { box-shadow: inset 0 0 0 0.125rem var(--flight); }
+.rv-q { flex: 1; min-width: 0; height: var(--target); padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 560 1rem/1.2 var(--f-ui); }
+.rv-q::placeholder { color: var(--ink-2); opacity: 1; }
+.rv-found { margin: 0; padding: 0 0.25rem; color: var(--ink); font: 650 1rem/1.35 var(--f-ui); }
+.rv-found[hidden], .rv-ai[hidden] { display: none; }
+.rv-ai { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 1.25rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); }
+.rv-ai > * { margin: 0; }
+.rv-h { font: 560 1.25rem/1.15 var(--f-display); }
+.rv-cats { display: grid; gap: 0.75rem; }
+.rv-cat p { margin: 0.25rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
+.rv-ai .dr-pc { grid-template-columns: minmax(0, 1fr); }
+.rv-ai .dr-sub { margin: 0 0 0.375rem; }
 
 /* a showcase square's sample dashboard sits under its rooms like a hotel's own page does */
 .dr-stay-grid > .dr-sampleslot { grid-column: 1 / -1; min-width: 0; }
