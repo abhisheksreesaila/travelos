@@ -6,6 +6,7 @@
   var form = document.getElementById('v2-form'), q = document.getElementById('v2-q'), list = document.getElementById('v2-list'), say = document.getElementById('v2-say');
   var root = document.querySelector('.v2'), stage = document.querySelector('[data-v2="landing"]');
   if (!form || !q || !list || !stage) return;
+  if (q.dataset.short && window.matchMedia('(max-width: 40rem)').matches) q.placeholder = q.dataset.short;      // a phone's box is too narrow for the long example
   var cs = getComputedStyle(document.documentElement);
   var RM = window.matchMedia('(prefers-reduced-motion: reduce)');
   var items = [], active = -1, seq = 0, shown = false;

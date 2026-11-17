@@ -28,6 +28,7 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/tripmatrix.css"), Link(rel="sty
 ASK = "Where would you like to go?"
 SUB = "Start with a place. We add who is coming and when, then price the whole trip: flights and stays, every start day."
 PLACEHOLDER = "Try “San Diego” or “a family of 4 in Santa Barbara”"
+SHORT_PLACEHOLDER = "Try “Tahoe with kids”"      # a phone's box shows about 22 letters (overnight walk 2026-11-17: the long one was cut mid-word)
 LANES, DAYS = 4, 5      # the skeleton's rows and columns: the look of the matrix while it is asked for, not a count of anything
 
 
@@ -60,7 +61,7 @@ def ask_page(s=None, picked=(), problem="", q=""):
     s = s or tripmatrix.state()
     err = P(problem, cls="v2-error", id="v2-error", role="alert", **({} if problem else {"hidden": True}))
     field = Div(icon("search", 22, 2),
-                Input(type="text", name="q", id="v2-q", value=q, placeholder=PLACEHOLDER, autocomplete="off", autocapitalize="off", spellcheck="false", maxlength=asksuggest.MAX_TEXT,
+                Input(type="text", name="q", id="v2-q", value=q, placeholder=PLACEHOLDER, data_short=SHORT_PLACEHOLDER, autocomplete="off", autocapitalize="off", spellcheck="false", maxlength=asksuggest.MAX_TEXT,
                       role="combobox", aria_expanded="false", aria_controls="v2-list", aria_autocomplete="list", aria_label=ASK),
                 Button("Search", icon("arrow-right", 20, 2.2), type="submit", cls="v2-go", id="v2-go"), cls="ak-field")
     box = Div(field, Ul(id="v2-list", cls="ak-list v2-glass", role="listbox", aria_label="Suggestions", hidden=True), P(id="v2-say", cls="ak-say", role="status", hidden=True), cls="ak-box")

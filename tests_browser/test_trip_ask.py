@@ -258,3 +258,13 @@ def test_changing_a_word_on_the_results_waits_for_update_and_then_searches_again
     page.wait_for_selector("#mx.is-live")
     expect(word(page, "flex")).to_have_text("on the dot")
     assert page.locator(".mx-sq[data-sq]").count() == 5      # exactly the one start day, five places
+
+
+def test_on_a_phone_the_boxs_example_fits_and_on_a_laptop_it_is_the_long_one(ask):
+    """Overnight walk 2026-11-17: at 390 the long example was cut mid-word ("or “a f"); a phone shows the short one, whole."""
+    page = ask(PHONE)
+    box = page.locator("#v2-q")
+    assert box.get_attribute("placeholder") == "Try “Tahoe with kids”"
+    assert page.evaluate("""() => { const q = document.getElementById('v2-q'), c = document.createElement('canvas').getContext('2d'), s = getComputedStyle(q);
+      c.font = s.font; return c.measureText(q.placeholder).width <= q.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); }""")
+    assert ask(DESKTOP).locator("#v2-q").get_attribute("placeholder").startswith("Try “San Diego” or")
