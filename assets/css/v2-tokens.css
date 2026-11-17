@@ -1,5 +1,5 @@
 /* GitAway design language v2 (F-250, D-610): the booking prototype's look, docs/design/booking-v2/index.html, which the founder approved ("it just felt like water").
-   A sky gradient with a sun and clouds behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
+   The Harbour ground (F-281: a deep gradient, a sun or moon, two ridges) behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
    accent; the kinds' colours; Newsreader for the display and Inter for everything you read and every price (tabular figures). It supersedes Direction A's grey canvas
    and Geist, and omxqua's "no glass or blur", for the pages that opt in. A page opts in with ONE class: `v2` on its wrapper (layout.page(v2=True)).
    These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
@@ -67,7 +67,6 @@
   --v2-shimmer: 1300ms;    /* one pass of a waiting square's shimmer */
   --v2-flash: 700ms;       /* the flash on a word that just changed */
   --v2-spin-t: 800ms;      /* one turn of the spinner */
-  --v2-drift: 60s;         /* a cloud drifting */
   --v2-drawer: 820ms;      /* the drawer growing down out of its square's column (F-251) */
   --v2-drawer-again: 520ms;      /* the drawer, already open, taking another square */
   --v2-drawer-in: 460ms;   /* what is in the drawer arriving, one part after another */

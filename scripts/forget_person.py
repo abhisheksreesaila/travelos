@@ -55,6 +55,7 @@ def community_plan(folder: Path, uid, email):
             ("reports they sent", db, "reports", "reporter = ? OR (email != '' AND lower(email) = lower(?))", (uid, email)),
             ("daily try, picture and blog-scan counts", db, "creator_import_hits", "owner_user = ? OR owner_user = ? OR owner_user = ?", (uid, f"pic:{uid}", f"scan:{uid}")),
             ("their own clicks on a creator's trip", db, "via_clicks", "who = ?", (f"u:{uid}",)),
+            ("their daily satellite and 3D map counts", db, "aerial_person", "who = ?", (f"open:{uid}",)),      # F-284: pins are counted by family or a salted daily visitor code, never by person
             ("Plan it for me Stripe event ids of their orders", db, "plan_order_events", "order_id IN (SELECT id FROM plan_orders WHERE owner_user = ? OR (email != '' AND lower(email) = lower(?)))", (uid, email)),      # F-193 (D-208): before the orders, which it reads
             ("Plan it for me payment-page counts", db, "plan_checkouts", "owner_user = ?", (uid,)),
             ("Plan it for me orders (the intake is personal; Stripe keeps the payment)", db, "plan_orders", "owner_user = ? OR (email != '' AND lower(email) = lower(?))", (uid, email))]

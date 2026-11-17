@@ -7,14 +7,14 @@
   border-radius: 1.25rem; border: 1px solid var(--line); background: var(--card-solid); color: var(--ink); box-shadow: var(--sh2); font: inherit; cursor: pointer;
   transition: box-shadow var(--v2-quick) var(--v2-ease); }
 .av-card:hover { box-shadow: var(--sh3); }
-.av-card:focus-visible { outline: 3px solid var(--flight); outline-offset: 3px; }
+.av-card:focus-visible { outline: 0.1875rem solid var(--flight); outline-offset: 0.1875rem; }
 .av-thumb { width: 6.5rem; height: 5rem; border-radius: 0.9rem; overflow: hidden; background: var(--card-2); }
 .av-thumb svg { width: 100%; height: 100%; display: block; }
 .av-tx { display: grid; gap: 0.25rem; min-width: 0; }
 .av-k { font: 600 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--flight); }
 .av-t { font: 560 1.35rem/1.15 var(--f-display); }
 .av-l { color: var(--ink-2); font-size: max(var(--text-min), 0.875rem); line-height: 1.35; }
-.av-go { width: 3rem; height: 3rem; border-radius: 999px; display: grid; place-items: center; background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); }
+.av-go { width: 3rem; height: 3rem; border-radius: 62.4375rem; display: grid; place-items: center; background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-sh); }
 .av-go svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 30rem) { .av-card { grid-template-columns: 5rem 1fr; } .av-go { display: none; } .av-thumb { width: 5rem; height: 4.5rem; } }
 
@@ -31,17 +31,17 @@ body.av-open { overflow: hidden; }
 .av-canvas canvas:focus { outline: none; }
 .av-loading { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: var(--ink-2); font-weight: 560; pointer-events: none; }
 .av-loading[hidden], .av-msg[hidden], .av-resume[hidden] { display: none; }
-.av-loading span { padding: 0.6rem 1rem; border-radius: 999px; }
+.av-loading span { padding: 0.6rem 1rem; border-radius: 62.4375rem; }
 .av-bar { position: absolute; left: 0.75rem; right: 0.75rem; top: max(0.75rem, env(safe-area-inset-top)); z-index: 3; display: flex; gap: 0.5rem; align-items: center; pointer-events: none; }
 .av-bar > * { pointer-events: auto; }
-.av-round { width: var(--target); height: var(--target); padding: 0; border-radius: 999px; display: grid; place-items: center; border: 0; color: var(--ink); cursor: pointer; }
-.av-seg { display: flex; padding: 0.25rem; gap: 0.15rem; margin-left: auto; border-radius: 999px; }
-.av-seg button { min-height: 2.5rem; padding: 0 0.85rem; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: 560 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
+.av-round { width: var(--target); height: var(--target); padding: 0; border-radius: 62.4375rem; display: grid; place-items: center; border: 0; color: var(--ink); cursor: pointer; }
+.av-seg { display: flex; padding: 0.25rem; gap: 0.15rem; margin-left: auto; border-radius: 62.4375rem; }
+.av-seg button { min-height: 2.5rem; padding: 0 0.85rem; border: 0; border-radius: 62.4375rem; background: transparent; color: var(--ink); font: 560 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
 .av-seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
 @media (max-width: 26rem) { .av-seg button { padding: 0 0.6rem; } }
 .av-i { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .av-resume { position: absolute; left: 50%; bottom: 3.25rem; z-index: 3; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 1.1rem;
-  border: 0; border-radius: 999px; color: var(--ink); font: 600 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
+  border: 0; border-radius: 62.4375rem; color: var(--ink); font: 600 max(var(--text-min), 0.875rem)/1 var(--f-ui); cursor: pointer; }
 .av-attr { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0.35rem 0.75rem; font-size: max(var(--label-min), 0.8125rem); line-height: 1.35; color: var(--ink-2); background: var(--card-t); border-top: 1px solid var(--line); }
 .av-attr a { color: inherit; }
 .av-sheet.cesium-on .av-attr { bottom: auto; top: 4.5rem; left: 0.75rem; right: auto; border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.2rem 0.55rem; }
@@ -84,7 +84,7 @@ body.av-open { overflow: hidden; }
 .av-c-park { background: var(--stay-t); color: var(--stay); }
 
 /* the map's markers */
-.av-mk { width: 2.25rem; height: 2.25rem; border-radius: 999px; display: grid; place-items: center; border: 2px solid var(--card-solid); box-shadow: var(--sh2); }
+.av-mk { width: 2.25rem; height: 2.25rem; border-radius: 62.4375rem; display: grid; place-items: center; border: 0.125rem solid var(--card-solid); box-shadow: var(--sh2); }
 .av-mk .av-i { width: 1.1rem; height: 1.1rem; }
 .av-mk.hotel { width: 2.75rem; height: 2.75rem; background: var(--ink); color: var(--on-ink); }
 .av-mk.flash { animation: av-flash var(--v2-flash) var(--v2-ease) 2; }

@@ -28,7 +28,7 @@ KINDS_JS = """() => [...document.querySelectorAll('.v2-top *, #main *')].filter(
   return {t: e.textContent.trim().slice(0, 30), kind, x: r.left, y: r.top, w: r.width, h: r.height, c: s.color,
           shown: r.width > 2 && r.height > 2 && s.visibility === 'visible' && +s.opacity > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
           closed: !!((d) => d && !d.open && !e.closest('summary'))(e.closest('details')),
-          hit: [0.05, 0.5, 0.95].every(f => (h => !!h && e.contains(h))(document.elementFromPoint(r.left + r.width * f, r.top + r.height / 2)))};
+          hit: (on => on(0.5) && [0.05, 0.95].some(on))(f => (h => !!h && e.contains(h))(document.elementFromPoint(r.left + r.width * f, r.top + r.height / 2)))};      // review: a word whose middle and one end are in view is measured; one a floating bar sits on (its middle covered) is not
 }).filter(w => w.shown && !w.closed && w.hit)"""      # not a word in a closed popover, and not one a floating bar or the grid's edge cuts
 
 

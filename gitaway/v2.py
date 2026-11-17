@@ -1,4 +1,4 @@
-"""The v2 page chrome (F-250, D-610): the sky behind the page (a sun, clouds, the shore), the top bar (the mark, the sample label, the light/dark round button, the account)
+"""The v2 page chrome (F-250, D-610): the sky behind the page (the Harbour ground: a gradient, a sun or moon, two ridges, the mood's object at the foot; F-281), the top bar (the mark, the sample label, the light/dark round button, the account)
 and the stylesheets and script a v2 page loads. `layout.page(v2=True)` uses it; a page opts in by that one flag, which puts the class `v2` on its wrapper.
 Reference: docs/design/booking-v2/index.html (type pairing C, Newsreader with Inter); the tokens are assets/css/v2-tokens.css."""
 
