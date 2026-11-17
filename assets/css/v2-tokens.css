@@ -16,9 +16,9 @@
   --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
 
   /* the Harbour ground (F-281, D-890; docs/design/matrix-v5, "harbour"): a deep navy sky, a warm glow low on the horizon, two ridges. Deep in light mode too, so the glass has something to frost;
-     --sky-ink is the text that sits straight on it (a card, a glass widget and every field keep --ink). The reading pages keep the quiet sky above. */
+     --ground-ink is the text that sits straight on it (a card, a glass widget and every field keep --ink). The reading pages keep the quiet sky above. */
   --hb-a: #1B2A41; --hb-b: #3A4558; --hb-c: #7A4C30; --hb-glow: #F2B47A; --hb-ridge: #141C2A; --hb-ridge-2: #241F24;
-  --sky-ink: #F4F7FB; --sky-ink-2: rgb(244 247 251 / .88);
+  --ground-ink: #F4F7FB; --ground-ink-2: rgb(244 247 251 / .88);
   --frost: rgb(16 12 24 / .6); --sky-pill: rgb(255 255 255 / .9); --sky-pill-fg: #0F1124;      /* a dark tray over the ground (the extra-info chips) and the count pill on it */
   --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
   --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73; --on-ink: #FFFFFF;
