@@ -66,7 +66,7 @@ def tap(page, viewport, locator):
 def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor, base_url, viewport):
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/guides/make")
-    expect(page.locator("h1")).to_contain_text("Paste your post. It becomes a guide families can plan from.")
+    expect(page.locator("h1")).to_contain_text("Your post becomes a guide people can plan and book from.")
     box = page.locator("#fc-text").bounding_box()
     assert box["y"] + box["height"] <= viewport["height"], "the paste box is on the first screen"
     assert overflow(page) <= 1
@@ -76,7 +76,7 @@ def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor,
     page.set_viewport_size(viewport)
     if viewport is PHONE:
         assert not too_small(page, "main a.btn, main button:not(.sr-only), main textarea, main summary")
-    expect(page.locator(".fc-promise")).to_have_count(3)
+    expect(page.locator(".fc-promise")).to_have_count(4)
     expect(page.locator("#fc-free")).to_contain_text("Free. Terms shown on day one.")
     expect(page.locator("#fc-example")).to_have_attribute("data-kind", "drawn")
     shot(page, f"page-{viewport['width']}")

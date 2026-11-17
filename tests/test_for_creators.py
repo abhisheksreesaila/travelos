@@ -32,7 +32,7 @@ def stranger(client):
 def test_the_page_is_open_to_everyone_before_anyone_has_published(client, mode):
     assert not community.has_real()
     r = client.get("/guides/make")
-    assert r.status_code == 200 and "Paste your post. It becomes a guide families can plan from." in words(r.text)
+    assert r.status_code == 200 and "Your post becomes a guide people can plan and book from. Your words and your links stay yours." in words(r.text)
     sign_in(client)
     assert client.get("/guides/make").status_code == 200
 
@@ -67,7 +67,7 @@ def test_the_page_carries_no_sample_content_and_links_to_nothing_hidden(client, 
 
 def test_the_box_comes_first_then_the_example_the_promises_the_terms_and_the_questions(client, mode):
     html = client.get("/guides/make").text
-    order = [html.index(x) for x in ('id="fc-paste"', 'id="fc-example"', 'class="fc-promises', 'id="terms"', 'id="faq"')]      # F-253: the landing's box first, then what it always had
+    order = [html.index(x) for x in ('id="fc-paste"', 'class="fc-promises', 'id="fc-example"', 'id="terms"', 'id="faq"')]      # F-253 the box first; F-295 then why it helps the creator, then the example
     assert order == sorted(order)
 
 
@@ -75,13 +75,13 @@ def test_the_paste_box_posts_to_the_import(client, mode):
     html = client.get("/guides/make").text
     form = re.search(r'<form[^>]*id="fc-paste"[^>]*>', html).group(0)
     assert 'action="/creators/import"' in form and 'method="post"' in form
-    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>Make my guide(?:<svg.*?</svg>)?<', html)
+    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>(?:Make my guide|Start my guide)(?:<svg.*?</svg>)?<', html)
     assert re.search(r'<button[^>]*value="manual"[^>]*>Or write it yourself<', html)
 
 
 def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, mode):
     text = words(client.get("/guides/make").text)
-    for promise in ("Under a minute", "Flights from your trips pay you", "It links back to your post"):
+    for promise in ("Another place your post travels", "Readers can plan the trip", "The links stay yours", "You can see who reads it"):
         assert promise in text
     assert "Free. Terms shown on day one." in text
     for term in ("What we show", "Take it down any time", "Your marker", "Later, a share for big creators"):
@@ -150,3 +150,13 @@ def test_an_empty_box_asks_for_something_instead_of_drafting(client, mode):
     sign_in(client)
     r = client.post("/creators/import", data={"text": "  ", "do": "draft"})
     assert r.status_code == 422 and "Paste the link to your post, or the text of it." in unescape(r.text)
+
+
+def test_without_an_ai_key_the_page_says_a_link_is_not_read_yet_and_asks_for_the_text(client, mode):
+    html = client.get("/guides/make").text
+    text = words(html)
+    if mode == "0":      # production's case today: no key, no sample draft
+        assert "Reading a link is not switched on yet. Paste the text of your post and lay it out yourself." in text
+        assert 'placeholder="Paste the text of your post"' in html and 'id="fc-example-chip"' not in html
+    else:               # the showcase's simulated draft reads a link
+        assert 'id="fc-off"' not in html and 'id="fc-example-chip"' in html

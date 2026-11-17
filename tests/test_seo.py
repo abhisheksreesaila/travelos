@@ -70,7 +70,7 @@ def test_a_creator_imported_trip_page_says_noindex(me, client):
 def test_make_a_guide_has_a_description_and_open_graph_tags_and_the_google_line(client):
     html = client.get("/guides/make").text
     m = metas(html)
-    assert m["description"] == "Paste your blog link, YouTube video or Instagram caption. GitAway drafts the days, you fix what is off, and families can fork your trip into their own plans."
+    assert m["description"] == "Your post becomes a guide people can plan and book from. Your words and your links stay yours. Paste it once: a blog link, a YouTube video or an Instagram caption."
     assert (m["og:title"], m["og:type"], m["og:url"], m["og:image"]) == ("Make a guide", "website", "https://gitaway.me/guides/make", "https://gitaway.me/assets/icons/icon-512.png")
     assert "robots" not in m
     text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html)))

@@ -1822,7 +1822,7 @@ Founder: "everything should first focus on the core feature and everything else 
 Founder: "I liked the booking emails … you can polish that as well". Decisions D-950..D-951.
 - [ ] the booked and cancelled emails in the site's look (deep header band, the logo, one bold "Open your booking"), the Wallet links when offered, "Booked and paid through Nuitée (LiteAPI)", a short what-next (check-in time, the Today page the day before), plain-text part kept; previews in docs/design/emails/
 
-## F-295 Ready for creators [todo]
+## F-295 Ready for creators [built, awaiting review]
 Founder: "send this off to like 50 creators … incentive: another distribution platform … they keep their affiliate links … a link to the website, one second". Decisions D-952..D-954.
 - [ ] the creator path reads as that offer: /guides/make leads with "Your post becomes a guide people can plan and book from. Your words and your links stay yours." and the one-paste flow; a creator's guide shows their name and links prominently
 - [ ] docs/launch/creator-outreach.md: a short email for creators and one for travel blogs (what it is, why it helps them, the founder's own guide as the example, one link), plus a checklist of what a creator sees in the first minute
