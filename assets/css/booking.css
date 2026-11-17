@@ -3,6 +3,7 @@
 .bk-page { display: flex; flex-direction: column; gap: 0.75rem; border-radius: 1.5rem; padding: 1.25rem; }
 .bk-page h1 { margin: 0; font-family: var(--v2-display, inherit); font-size: 1.75rem; line-height: 1.1; overflow-wrap: anywhere; }
 .bk-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.25rem; min-height: var(--target); font-weight: 700; color: inherit; }
+.bk-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }      /* Back to the plan, and the page's More when a stay has something in it (F-293) */
 .bk-pills { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .bk-pill { padding: 0.125rem 0.625rem; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 800; font-size: max(var(--label-min), 0.75rem); }
 .bk-page .hp-addr { display: block; }
