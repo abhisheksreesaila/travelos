@@ -275,7 +275,7 @@ def test_the_mini_nav_shows_the_zone_you_are_in_and_jumps_there_and_book_focuses
     page.wait_for_timeout(900)
     items = view.locator(".dr-znav a")
     assert [t.strip() for t in items.all_inner_texts()][:2] == ["Stay", "Flights"] and items.count() == 4
-    assert min(page.evaluate("() => [...document.querySelectorAll('.dr-znav a')].map(a => a.getBoundingClientRect().height)")) >= 47.5      # 48px targets
+    assert min(page.evaluate("() => [...document.querySelectorAll('.dr-znav a')].filter(a => a.offsetParent).map(a => a.getBoundingClientRect().height)")) >= 47.5      # 48px targets (of the ones shown)
     assert current(page) == ["stay"]
     items.nth(1).click()      # Flights: scrolls to its zone and the nav says so
     page.wait_for_function("() => document.querySelector('.dr-znav [data-znav=fly]').getAttribute('aria-current') === 'true'")
@@ -286,7 +286,12 @@ def test_the_mini_nav_shows_the_zone_you_are_in_and_jumps_there_and_book_focuses
     page.wait_for_function("() => document.querySelector('.dr-znav [data-znav=stay]').getAttribute('aria-current') === 'true'")
     assert current(page) == ["stay"] and rect(page, ".dr-stay")["top"] < 200
     forms = page.evaluate("() => document.querySelectorAll('#mx-drawer form[action$=\"/plan/matrix/book\"]').length")
-    items.nth(3).click()      # Book: the foot's own Book gets the focus; it is not a second form
+    zbook = view.locator(".dr-zbook")
+    if viewport is DESKTOP:      # F-293 founder call: one Book on a laptop, the sticky foot's, always in view there; the nav does not repeat it
+        assert not zbook.is_visible() and view.locator(".dr-book").is_visible()
+        assert forms == 1 and page.errors == []
+        return
+    zbook.click()      # Book on a phone: the foot's own Book gets the focus; it is not a second form
     page.wait_for_function("() => document.activeElement && document.activeElement.classList.contains('dr-book')")
     assert forms == 1 and page.locator(".mxb-sheet").count() == 0 and page.errors == []
 

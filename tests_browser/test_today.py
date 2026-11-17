@@ -216,26 +216,31 @@ def test_on_a_travel_day_phone_the_hotels_key_actions_are_on_the_first_screen_ab
     page.goto(f"{base_url}/trip/today?day={DAY}")
     page.wait_for_selector("#td-directions")
     bar_top = page.evaluate("document.querySelector('.v2-sections').getBoundingClientRect().top")
-    for ident in ("td-directions", "td-more"):      # F-293: the ride is a row of the hotel's More menu; the button that holds it is on the first screen
+    for ident in ("td-directions", "td-ride"):      # F-293 review: Directions and the ride, the travel day's two moves, are on the first screen above the bar
         assert page.evaluate("(i) => document.getElementById(i).getBoundingClientRect().bottom", ident) <= bar_top, ident
 
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
 def test_the_hotel_card_keeps_directions_and_its_more_menu_holds_the_ride(ctxs, base_url, viewport):
-    """F-293 (D-948): at rest the card has Directions (the bold action) and Call the hotel; the ride waits in the round More button's menu, which opens, has 48px rows and gives focus back on Escape."""
+    """F-293 (D-948) and its review: at rest the card has Directions (the bold action), Get a ride (core to the day) and Call the hotel; the rest waits in the round More button's menu,
+    which opens, has 48px rows and gives focus back on Escape."""
     ctx = ctxs(viewport)
     sign_in(ctx, base_url)
     book_pasted(ctx, base_url)
     page = ctx.new_page()
     page.goto(f"{base_url}/trip/today?day={DAY}")
-    page.wait_for_selector("#td-more")
-    assert page.is_hidden("#td-ride") and page.is_visible("#td-directions") and page.is_visible("#td-call")
+    page.wait_for_selector("#td-stay")
+    assert page.is_visible("#td-ride") and page.is_visible("#td-directions") and page.is_visible("#td-call")
+    assert page.get_attribute("#td-ride", "href").startswith("https://m.uber.com/")
+    assert page.evaluate("document.getElementById('td-ride').getBoundingClientRect().height") >= 47.5
+    if not page.locator("#td-more").count():      # nothing secondary to hold for this stay: no More button at all
+        assert page.evaluate(OVERFLOW)
+        return
     box = page.locator("#td-more").bounding_box()
     assert box["width"] >= 47.5 and box["height"] >= 47.5 and page.get_attribute("#td-more", "aria-expanded") == "false"
     assert box["width"] < 60 and "More" in page.locator("#td-more").text_content()      # a round button; its word is for readers
-    open_more(page, "#td-ride", "td-more")
-    assert page.evaluate("document.getElementById('td-ride').getBoundingClientRect().height") >= 47.5
-    assert page.get_attribute("#td-ride", "href").startswith("https://m.uber.com/")
+    page.click("#td-more")
+    page.wait_for_selector("#td-more-menu", state="visible")
     page.keyboard.press("Escape")
     page.wait_for_selector("#td-more-menu", state="hidden")      # it folds back into its button first
     assert page.evaluate("document.activeElement.id") == "td-more"

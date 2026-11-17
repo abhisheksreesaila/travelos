@@ -82,7 +82,7 @@ def test_the_hub_filters_and_a_guide_opens_a_stop_and_adds_it_to_the_plan(family
     page.wait_for_url("**/trips/dog-friendly-big-sur-drive")
     # the guide: tiles, the day strip, the stop cards; nothing it does not know
     expect(page.locator("h1")).to_have_text("Dog-friendly Big Sur drive")
-    expect(page.locator(".gl small")).to_have_text(["Days", "Suits", "From the vlog"])
+    expect(page.locator(".gl small")).to_have_text(["From the vlog", "Days", "Suits"])
     expect(page.locator(".dbtn")).to_have_count(3)
     assert page.locator(".g-stop").count() > 3
     assert overflow(page) <= 1

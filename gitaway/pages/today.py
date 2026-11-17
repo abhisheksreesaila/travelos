@@ -125,8 +125,9 @@ def _stay(stay, trip, ua, phase, coords, b=None, past=False, first=False, dated=
     rows = [Div(Span(when[0], cls="td-k"), Span(_when(when[1]) if dated else _t(when[1]), cls="td-v"), cls="td-row", id="td-when")] if when else []
     addr = Div(Span("Address", cls="td-k"), Span(stay.address, cls="td-v"), cls="td-row", id="td-addr") if stay.address else Div(Span("Area", cls="td-k"), Span(stay.area, cls="td-v"), cls="td-row") if stay.area else ""
     near, note = _locate(coords)
-    more = v2.more(A(icon("car", 18, 2.4), Span("Get a ride"), href=uber_deep_link("", place), rel="noopener", id="td-ride", **v2.ITEM), near, *wallet_rows(stay.confirmation or None, family), note, ident="td-more", cls="td-more", compact=True)
-    acts = Div(A(icon("nav", 18, 2.4), "Directions", href=tday.maps_url(place, ua), cls="td-btn is-main", id="td-directions"), _call(stay), cls="td-acts")
+    more = v2.more(near, *wallet_rows(stay.confirmation or None, family), note, ident="td-more", cls="td-more", compact=True)
+    acts = Div(A(icon("nav", 18, 2.4), "Directions", href=tday.maps_url(place, ua), cls="td-btn is-main", id="td-directions"),
+               A(icon("car", 18, 2.4), "Get a ride", href=uber_deep_link("", place), rel="noopener", cls="td-btn", id="td-ride"), _call(stay), cls="td-acts")      # F-293 review: a ride is core to the travel day (docs/briefs/trip-day.md), so it stays in view
     return Section(Div(_tag("Next", "is-next") if first else _tag("Done") if past else "", Span(icon("bed", 22, 2.2), cls="td-ic k-stay"),
                        Div(H2(stay.name), Span("Where you are staying" if phase == "staying" else "Your hotel", cls="td-sub"), cls="td-ht"), more, cls="td-head"),
                    acts, *rows, addr, _code("Confirmation", stay.confirmation), P("", cls="td-near", id="td-near", role="status", aria_live="polite") if coords else "", _contact(stay),

@@ -100,7 +100,7 @@ def more(*items, ident: str = "more", label: str = "More", dot: bool = False, cl
     items = [i for i in items if i != ""]
     if not items:
         return ""
-    return Div(Button(icon("more", 20, 2.4), Span(label, cls="sr-only" if compact else ""), Span(cls="v2-dot", id=f"{ident}-dot", hidden=not dot), type="button", cls="v2-more-btn" + (" is-round" if compact else ""), id=ident, aria_haspopup="menu", aria_expanded="false", aria_controls=f"{ident}-menu"),
+    return Div(Button(icon("more", 20, 2.4), Span(label, cls="sr-only" if compact else ""), Span(cls="v2-dot", id=f"{ident}-dot", hidden=not dot), Span(" (something new inside)", cls="sr-only") if dot else "", type="button", cls="v2-more-btn" + (" is-round" if compact else ""), id=ident, aria_haspopup="menu", aria_expanded="false", aria_controls=f"{ident}-menu"),
                Div(*items, id=f"{ident}-menu", cls="v2-menu v2-glass", role="menu", aria_label=label, hidden=True), cls=("v2-account " + cls).strip(), data_more="1")
 
 

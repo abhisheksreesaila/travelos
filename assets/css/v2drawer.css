@@ -297,6 +297,7 @@
 .dr-znav a { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 3rem; padding: 0 1rem; border-radius: 62.4375rem; color: var(--ink-2); text-decoration: none; font: 620 1rem/1 var(--f-ui); white-space: nowrap; }
 .dr-znav a .num { color: var(--ink); font-weight: 720; }
 .dr-znav a[aria-current="true"] { background: var(--card-2); color: var(--ink); }
+@media (min-width: 720px) { .dr-znav .dr-zbook { display: none; } }      /* one Book on a laptop: the sticky foot's (D-918) stays in view there; a phone keeps this jump to it (F-293 founder call, "go with your recommendation") */
 .dr-znav a[data-znav="stay"][aria-current="true"] { background: var(--stay-t); color: var(--stay-i); }
 .dr-znav a[data-znav="fly"][aria-current="true"] { background: var(--flight-t); color: var(--flight-i); }
 .dr-zdot { width: 0.625rem; height: 0.625rem; flex: none; border-radius: 50%; background: var(--k-stay); }

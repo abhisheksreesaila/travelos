@@ -337,6 +337,8 @@ def stay_card(html):
     """The hotel card's html, and its More menu's html."""
     card = html[html.index('<section id="td-stay"'):]
     card = card[:card.index("</section>")]
+    if 'id="td-more"' not in card:
+        return card, ""
     start = card.rfind("<div", 0, card.index('id="td-more"'))
     menu = card[start:card.index("</div>", card.index('id="td-more-menu"')) + 6]
     return card.replace(menu, ""), menu
@@ -353,16 +355,17 @@ def test_the_hotel_card_leads_with_directions_and_keeps_the_ride_the_location_an
     monkeypatch.setattr(walletpass, "offered", lambda ref: True)
     html = client.get("/trip/today?day=2026-10-16").text
     rest, menu = stay_card(html)
-    assert [x.strip() for x in re.findall(r'role="menuitem"[^>]*>(?:<svg.*?</svg>)?(?:<span>)?([^<]+)', menu, re.S) if x.strip()] == ["Get a ride", "Use my location", "Add to Apple Wallet"]
-    for ident in ("td-ride", "td-locate", "wp-apple"):
+    assert [x.strip() for x in re.findall(r'role="menuitem"[^>]*>(?:<svg.*?</svg>)?(?:<span>)?([^<]+)', menu, re.S) if x.strip()] == ["Use my location", "Add to Apple Wallet"]
+    for ident in ("td-locate", "wp-apple"):
         assert f'id="{ident}"' in menu and f'id="{ident}"' not in rest, ident
+    assert 'id="td-ride"' in rest and 'id="td-ride"' not in menu      # F-293 review: a ride is core to the travel day, so it stays on the card
     assert 'id="td-directions"' in rest and "Directions" in visible(rest)          # the one bold action stays on the card
     assert 'id="td-near"' in rest                                                   # where the measured distance is read
     assert "Your position is used on this page" in visible(menu)                    # the privacy note stays with its row
 
 
-def test_a_hotel_card_with_nothing_to_hold_still_has_the_ride_in_more(client):
+def test_a_hotel_card_with_nothing_to_hold_has_no_more_button_and_keeps_the_ride_in_view(client):
     imported(client)
     html = client.get("/trip/today?day=2026-10-16").text
     rest, menu = stay_card(html)
-    assert 'id="td-ride"' in menu and 'id="td-locate"' not in html and 'id="td-ride"' not in rest
+    assert 'id="td-ride"' in rest and 'id="td-locate"' not in html and 'id="td-more"' not in html      # nothing secondary to hold: no More at all
