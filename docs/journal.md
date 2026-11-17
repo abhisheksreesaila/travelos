@@ -39,3 +39,5 @@
 - Live check with the production key on a local server: San Diego from SFO, Dec 15-18, family of 4: $1,017 the whole trip (Best Western Island Palms, refundable); Los Angeles $855 marked Our pick.
 - Walked the visitor journey at 1440 and 390: found and fixed the guide page header overflowing a phone (1098a40f). Noted: the sign-in page is still the old purple Direction A look, unlike the cover and v2 pages (recommendation, not changed).
 - Not done on purpose: deploy, Railway variables, real bookings (founder: autopilot is development and testing only).
+## 2026-11-17 overnight
+- Goal and checker committed (docs/overnight-goal-2026-11-17.md, scripts/check_overnight2.py). F-281, F-284, F-285 merged earlier; F-286 in review; F-282 building.
