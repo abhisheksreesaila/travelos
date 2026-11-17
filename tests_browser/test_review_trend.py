@@ -35,10 +35,9 @@ def test_the_last_hundred_reviews_show_as_a_trend_with_words_and_their_source(ma
     assert len(asked) == 1 and asked[0].endswith("limit=100&getSentiment=true")      # one call, for a hundred
     expect(strip.locator(".tr-dots .tr-d")).to_have_count(100)
     expect(strip.locator(".tr-dots")).to_have_attribute("aria-label", "The last 100 reviews, oldest to newest: 53 good, 22 mixed, 25 poor")
-    expect(strip.locator(".dr-sub")).to_have_text("How the last 100 reviews went · Oct 30 to Nov 16")
-    expect(strip.locator(".tr-w").nth(0)).to_have_text("The last 10 averaged 9.1, above the hotel’s 7.6.")
-    expect(strip.locator(".tr-w").nth(1)).to_have_text("The last 10 were all 8 or more.")
-    expect(strip.locator(".tr-w").nth(2)).to_contain_text("on average, from")      # travellers like you (the party's own type)
+    expect(strip.locator(".dr-sub")).to_have_text("Last 100 reviews · Oct 30 to Nov 16")
+    expect(strip.locator(".tr-w")).to_have_count(1)      # F-290: one line, the streak
+    expect(strip.locator(".tr-w")).to_have_text("The last 10 were all 8 or more.")
     expect(page.locator("#mx-drawer .tr-src")).to_have_text("Reviews from Nuitée (LiteAPI)")
     # a shape as well as a colour: circle, diamond, triangle, and three colours that read on the card (3:1 for a mark)
     look = page.evaluate("""() => ['good', 'mixed', 'poor'].map(k => { const d = document.querySelector('#mx-drawer .tr-dots .tr-d.is-' + k), s = getComputedStyle(d);
@@ -48,7 +47,7 @@ def test_the_last_hundred_reviews_show_as_a_trend_with_words_and_their_source(ma
     page_bg = page.evaluate("getComputedStyle(document.documentElement).backgroundColor")
     for x in look:
         assert ratio(rgb(x["bg"]), rgb(card) if rgb(card) != [0, 0, 0] else rgb(page_bg)) >= 3, x      # WCAG non-text contrast: 3:1 for a mark
-    assert page.locator("#mx-drawer .dr-rev").count() <= 12 and page.locator("#mx-drawer .dr-revs").first.locator(".dr-rev").count() == 4
+    assert page.locator("#mx-drawer .dr-top .dr-rev").count() == 0      # the reviews themselves are in the drawer (F-290)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     if os.environ.get("F278_SHOTS"):
         strip.scroll_into_view_if_needed()

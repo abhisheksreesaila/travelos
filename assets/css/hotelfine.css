@@ -14,6 +14,10 @@
 /* F-290: a category is one short row: its name, a bar, its number (the AI's paragraph is in the drawer) */
 .dr-dash .dr-cat { display: grid; grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr) 2.5rem; align-items: center; gap: 0 0.75rem; min-height: 2rem; }
 .dr-dash .dr-cat .dr-bar { margin-top: 0; }
+@media (max-width: 29.9375rem) {      /* a phone: the name and its number on a line, the bar under them at the full width */
+  .dr-dash .dr-cat { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0.25rem; padding: 0.25rem 0; }
+  .dr-dash .dr-cat .dr-bar { grid-column: 1 / -1; grid-row: 2; }
+}
 .dr-cn { font: 560 1rem/1.2 var(--f-ui); overflow-wrap: anywhere; }
 .dr-cv { text-align: right; font: 700 1rem/1 var(--f-ui); }
 .dr-dash .tr-strip { margin-bottom: 0; }
@@ -119,7 +123,8 @@ body.rv-open { overflow: hidden; }
 
 /* "Ask the reviews" and the AI's reading, at the top of the drawer (F-290) */
 .rv-ask { display: flex; align-items: center; gap: 0.5rem; min-height: var(--target); padding: 0 0.875rem; border-radius: 62.4375rem; background: var(--card-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); }
-.rv-ask:focus-within { box-shadow: inset 0 0 0 0.125rem var(--flight); }
+.rv-ask:focus-within { box-shadow: inset 0 0 0 0.1875rem var(--flight); }      /* the box shows the focus once; the input inside draws none of its own */
+.rv-q, .rv-q:focus-visible { outline: 0; box-shadow: none; border-radius: 0; }
 .rv-q { flex: 1; min-width: 0; height: var(--target); padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 560 1rem/1.2 var(--f-ui); }
 .rv-q::placeholder { color: var(--ink-2); opacity: 1; }
 .rv-found { margin: 0; padding: 0 0.25rem; color: var(--ink); font: 650 1rem/1.35 var(--f-ui); }
