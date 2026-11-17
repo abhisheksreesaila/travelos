@@ -22,3 +22,6 @@ travelos.egg-info/
 /*.db
 .dream-loop/
 docs/design/cover-v2/story/sol-v2/film/*.mp4
+
+# a local browser key for a design prototype (never committed)
+docs/design/**/local-key.js
