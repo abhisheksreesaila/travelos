@@ -81,3 +81,4 @@ Claude reads this at the start of each session. -->
 - 2026-11-16 · A test that `CREATE TABLE IF NOT EXISTS`es a narrow stand-in and then `INSERT ... VALUES` without column names breaks in random order once another test made the real, wider table. Always name the columns in a test's INSERT.
 - A builder's report of "the related tests pass" missed a global rule test (tests/test_scale.py) after F-284; every builder runs the whole unit suite before handing back, and a pipe into tail never gates a commit (use set -o pipefail).
 - A mid-line comment inserted by a script commented out the rest of the line (the checkout's Continue button); never insert a comment by string-replace into a line that continues — put it on its own line.
+- A rename or palette change must be followed by a sweep of every browser file (grep the old label or colour in tests_browser/), not only the files the change touched; F-289 and D-925 left four stale pins found later.
