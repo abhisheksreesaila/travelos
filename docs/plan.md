@@ -1764,10 +1764,10 @@ Brief: docs/briefs/matrix-v5.md, docs/briefs/live-booking.md · Decisions D-910.
 - [x] HTML that reads well in Gmail and Apple Mail (v2 look, plain-text part too); `scripts/send_test_email.py --to <addr>` sends a sample booking email
 - [x] security review (personal data; security auditor: ship)
 
-## F-286 Pins that are there when you look [todo]
+## F-286 Pins that are there when you look [done]
 Brief: docs/briefs/matrix-v5.md · Decisions D-915..D-917 · Needs: F-284
 Live check 2026-11-16: the public Overpass servers did not answer, so Forest Suites at Heavenly showed no pins.
-- [ ] more Overpass mirrors, tried in turn, each with a short deadline; a failing mirror sits out for a few minutes
-- [ ] pins are asked in the background when a square opens (not only on the card's tap), so they are kept by the time anyone looks; the same per-visitor limits apply and a cached hotel costs nothing
-- [ ] the card's teaser shows the heads-up as soon as it is kept
-- [ ] tests over recorded answers; no live network in tests
+- [x] more Overpass mirrors, tried in turn, each with a short deadline; a failing mirror sits out for a few minutes
+- [x] pins are asked in the background when a square opens (not only on the card's tap), so they are kept by the time anyone looks; the same per-visitor limits apply and a cached hotel costs nothing
+- [x] the card's teaser shows the heads-up as soon as it is kept
+- [x] tests over recorded answers; no live network in tests
