@@ -76,3 +76,30 @@ def test_the_preview_files_show_what_a_real_booking_sends(tmp_path):
     assert sample.main(["--preview", str(tmp_path)]) == 0
     booked, cancelled = (tmp_path / "booked.html").read_text(), (tmp_path / "cancelled.html").read_text()
     assert mb.MERCHANT in words(booked) and mb.MERCHANT in words(cancelled) and "Sandbox booking" not in booked
+
+
+def _lum(hex_):
+    r, g, b = (int(hex_[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b)]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def _contrast(a, b):
+    hi, lo = sorted((_lum(a), _lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def test_the_emails_wear_the_stage_a_near_black_band_ink_type_and_orange_only_as_a_signal():
+    """F-296 follow-ups (D-969): no indigo, no navy band, no yellow badge; the band is #1D1D1F, the action ink, a sandbox note is the orange signal, "Booked" is the one green."""
+    booked, sandbox = bookingmail.booked_mail(LIVE).html, bookingmail.booked_mail(sample.BOOKED).html
+    cancelled = bookingmail.cancelled_mail({**sample.CANCELLED, "sandbox": False}).html
+    assert bookingmail._BAND == "#1D1D1F" and bookingmail._CTA == "#1D1D1F" and bookingmail._INK == "#1D1D1F"
+    for html in (booked, sandbox, cancelled):
+        for old in ("#4338CA", "#1B2A41", "#FFF4C2", "#5C4300", "#0F1124", "Newsreader", "#DCEBF9"):
+            assert old.lower() not in html.lower(), old
+        assert "#F5F5F7" in html                                                          # the Stage's grey behind the card
+    assert re.search(r'<p [^>]*color:#B84A00[^>]*>Sandbox booking: nothing was charged\.</p>', sandbox)      # orange words, only on the heads-up
+    assert "#B84A00" not in booked and "#F25500" not in booked and "#F25500" not in sandbox
+    assert re.search(r'<span [^>]*color:#0F766E[^>]*>Booked</span>', booked) and "#0F766E" not in cancelled      # green is only good news
+    pairs = [(bookingmail._INK, bookingmail._CARD), (bookingmail._INK2, bookingmail._CARD), (bookingmail._ON_BAND, bookingmail._BAND), ("#B84A00", "#FFF1E6"), ("#0F766E", "#E3F4F1")]
+    assert all(_contrast(a, b) >= 4.5 for a, b in pairs), [(a, b, _contrast(a, b)) for a, b in pairs]

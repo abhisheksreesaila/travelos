@@ -51,7 +51,7 @@ def sky(ctx):
 def welcome():
     """Storyboard frame 2 (F-074): the full-screen moment after a Face ID sign-in. Hidden; passkeys.js fills the name and shows it for a beat before opening Today."""
     return Div(
-        Div(NotStr(v2_.MARK), Span("GitAway", cls="si-brand"), cls="sw-brand"),
+        Div(*v2_.brand_parts(), cls="sw-brand"),
         Span(icon("face-id", 64, 1.8), cls="sw-glyph", aria_hidden="true"),
         H2("Welcome back, ", Span("", id="si-welcome-name"), cls="sw-title"),
         P("Signed in with Face ID. No password, no code by text.", cls="sw-line"),
@@ -135,7 +135,7 @@ def _continue(session, intent, next_path):
 def _page(request, next_path, intent, asked, error="", status=200):
     """The whole document: the v2 sky and a slim bar (the brand, "Early preview", light/dark, Cancel; no sections, this is a dialog), the card, and on a laptop the side beside it."""
     card, sky_ = dialog(next_path, intent, asked, dev=auth.dev_login_allowed(request), google=auth.google_enabled(), error=error, faceid=passkeys.available(request))
-    top = Div(A(NotStr(v2_.MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway home"), preview(), Span(cls="sp"),
+    top = Div(A(*v2_.brand_parts(), href="/", cls="v2-brand", aria_label="GitAway home"), preview(), Span(cls="sp"),
               Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",
                      aria_pressed="false", aria_label="Dark mode", title="Dark mode"),
               A(icon("x", 20, 2.6), Span("Cancel", cls="sr-only"), href=cancel_href(next_path), id="si-cancel", cls="v2-round si-x"), cls="v2-top")

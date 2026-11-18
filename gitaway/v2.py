@@ -4,7 +4,7 @@ Reference: docs/design/palette-bo/index.html (look C, Stage; Inter); the tokens 
 
 import logging
 
-from fasthtml.common import A, Button, Div, Form, Link, Nav, NotStr, Script, Span
+from fasthtml.common import A, Button, Div, Form, Link, Nav, Script, Span
 
 from gitaway import session as session_, showcase
 from gitaway.icons import icon
@@ -15,8 +15,10 @@ HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="styl
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
 
-MARK = ('<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/>'
-        '<path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#fff"/><path d="M5 31c5-3 9-3 14 0s9 3 16 0" fill="none" stroke="#C92A5E" stroke-width="2.5"/></svg>')
+def brand_parts():
+    """The logo as the v2 bar and the sign-in draw it (F-296 follow-ups, D-966): layout.mark()'s tile, then the word; one mark on every page."""
+    from gitaway.layout import mark      # here: layout imports this module
+    return mark(), Span("GitAway", cls="v2-brand-name")
 
 
 def bg(quiet: bool = False) -> Div:
@@ -98,5 +100,5 @@ def top(current: str = "", sample: str = "Sample prices") -> Div:
     mode = Button(Span(icon("moon", 20), cls="ga-mode-moon"), Span(icon("sun", 20), cls="ga-mode-sun"), type="button", cls="v2-round", id="ga-mode-v2", data_mode_toggle="1",
                   aria_pressed="false", aria_label="Dark mode", title="Dark mode")
     from gitaway.layout import preview      # here: layout imports this module
-    return Div(A(NotStr(MARK), "GitAway", href="/", cls="v2-brand", aria_label="GitAway"), preview(), Span(cls="sp"),
+    return Div(A(*brand_parts(), href="/", cls="v2-brand", aria_label="GitAway"), preview(), Span(cls="sp"),
                pill, Span(cls="sp"), Span(sample, cls="v2-pill") if showcase.on() else "", mode, account, cls="v2-top")

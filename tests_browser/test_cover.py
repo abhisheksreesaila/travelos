@@ -12,8 +12,8 @@ SIZES = {"390": PHONE, "1440": DESKTOP}
 HEADLINES = ("Every trip starts as a wish.", "Every way to go, on one card.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Then you just go.",
              "Bring it home as a guide.", "Give it to the world.", "And someone else's trip begins.")
 RING = ("Wish", "Compare", "Book", "Plan", "Go", "Share", "Post", "Pass it on")
-WIDE_CARD = {0: (520, 340), 1: (640, 400), 2: (380, 410), 3: (660, 430), 4: (540, 350), 5: (400, 540), 6: (400, 500), 7: (520, 340)}      # cover.css, in drawing units
-PHONE_CARD = {**WIDE_CARD, 0: (520, 400), 1: (520, 380), 3: (520, 440), 4: (520, 340), 7: (520, 400)}
+WIDE_CARD = {0: (520, 340), 1: (640, 400), 2: (380, 425), 3: (660, 430), 4: (540, 350), 5: (400, 545), 6: (400, 500), 7: (520, 340)}      # cover.css, in drawing units
+PHONE_CARD = {**WIDE_CARD, 0: (520, 400), 1: (520, 380), 2: (520, 620), 3: (520, 440), 4: (520, 340), 5: (520, 700), 7: (520, 400)}      # F-296 follow-ups (D-970): the square and the guide are taller, so their parts stay inside
 
 
 @pytest.fixture
@@ -237,3 +237,13 @@ def test_the_early_preview_line_opens_inside_the_screen_and_escape_closes_it(cov
     assert box["x"] >= 0 and box["x"] + box["width"] <= SIZES[size]["width"], box      # the line stays on the screen
     page.keyboard.press("Escape")
     page.wait_for_function("!document.querySelector('.ga-preview[open]')")
+
+
+@pytest.mark.parametrize("size", ["390", "1440"])
+def test_nothing_in_a_face_runs_out_of_its_card(cover, size):
+    """F-296 follow-ups (D-970): the Book face's button hung out of the card at 390. In the still (every face drawn, animations at their last frame) each face's own parts sit inside it."""
+    page = cover(SIZES[size], query="?still")
+    out = page.evaluate("""() => [...document.querySelectorAll('.pc .f')].flatMap(f => { const r = f.getBoundingClientRect();
+      return [...f.querySelectorAll('*')].filter(e => !e.closest('.confetti, .artbox, svg') && e.getClientRects().length && e.offsetWidth > 0).map(e => [e.getBoundingClientRect(), e])
+        .filter(([b]) => b.bottom > r.bottom + 1 || b.right > r.right + 1 || b.left < r.left - 1 || b.top < r.top - 1).map(([b, e]) => f.className + ' > ' + e.className + ' ' + Math.round(b.bottom - r.bottom) + 'px below, ' + Math.round(b.right - r.right) + 'px right'); })""")
+    assert out == [], out

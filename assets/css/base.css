@@ -42,6 +42,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .ga-brand-mark { width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.625rem; background: var(--mark-bg); display: grid; place-items: center; }
 .ga-brand-mark svg { width: 1.5rem; height: 1.5rem; }
 .ga-mark .mk-l { stroke: var(--mark-line); } .ga-mark .mk-a { stroke: var(--mark-a); } .ga-mark .mk-b { stroke: var(--mark-b); } .ga-mark .mk-c { stroke: var(--mark-c); }
+.ga-mark .mk-c { fill: var(--mark-c); }                  /* the destination node is the one dot (D-966) */
 .ga-brand-name, .si-brand { font-family: var(--font-brand); font-weight: 750; font-size: 1.5rem; letter-spacing: -0.03em; color: var(--ink); }
 .ga-nav { display: flex; align-items: center; gap: 2rem; font-weight: 600; }
 .ga-nav a { text-decoration: none; }
