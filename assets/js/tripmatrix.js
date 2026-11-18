@@ -90,6 +90,7 @@
     });
     if (!best) return null;
     var x = best.lane, d = best.diff;
+    if (Math.floor((Math.abs(d) + 50) / 100) === 0) d = 0;      // under 50 cents rounds to $0: "the same as", never "$0 less" (live 2026-11-18)
     var said = (d < 0 ? money(-d) + ' less than ' : 'the same as ') + a.n + (x.c ? ' alone' : '');      // never a dearer one (D-860)
     return { key: key(x.k, best.w.k), lane: x.k, w: best.w.k, name: x.n, said: said, words: x.n + ', ' + said, when: best.w.when };
   }
@@ -116,6 +117,7 @@
     var mine = known[k], base = known[key(a.k, p[1])];
     if (!x || x.a || !mine || !base || mine.s !== 'ok' || base.s !== 'ok') return '';
     var d = mine.c - base.c;      // pages/tripmatrix.py `vs_words`
+    if (Math.floor((Math.abs(d) + 50) / 100) === 0) d = 0;
     return (d < 0 ? money(-d) + ' less than ' : d === 0 ? 'the same as ' : money(d) + ' more than ') + a.n + (x.c ? ' alone' : '');
   }
 

@@ -203,6 +203,8 @@ def age_words(fetched) -> str:
 def vs_words(diff, asked_name, combo) -> str:
     """The panel's chip beside a nearby square's total. assets/js/tripmatrix.js `vs` says the same words."""
     alone = " alone" if combo else ""
+    if (abs(int(diff)) + 50) // 100 == 0:      # under 50 cents either way rounds to $0: say "the same", never "$0 less" (live 2026-11-18)
+        diff = 0
     if diff < 0:
         return f"{tm.dollars(-diff)} less than {asked_name}{alone}"
     return f"the same as {asked_name}{alone}" if diff == 0 else f"{tm.dollars(diff)} more than {asked_name}{alone}"

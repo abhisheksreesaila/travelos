@@ -1,3 +1,4 @@
+from pathlib import Path
 """F-222: the trip matrix's pages. /plan/matrix draws every place and start day the source already knows and a skeleton for the rest; /plan/matrix/tile answers one
 square for the script; /plan/matrix/square is one square as a page (the panel, for a link and without the script); /plan/matrix/save keeps a square on the family's
 trip, reading the price again. On the showcase the sample catalog drives it and says so; off it the pages exist only with LITEAPI_KEY."""
@@ -341,3 +342,6 @@ def test_a_dearer_square_says_plainly_how_much_more_never_a_find():
     assert mx.vs_words(3_800, "Lake Tahoe", False) == "$38 more than Lake Tahoe"
     assert mx.vs_words(5_000, "San Diego", True) == "$50 more than San Diego alone"
     assert mx.vs_words(-3_800, "Lake Tahoe", False) == "$38 less than Lake Tahoe" and mx.vs_words(0, "Lake Tahoe", False) == "the same as Lake Tahoe"
+    assert mx.vs_words(-40, "Lake Tahoe", True) == "the same as Lake Tahoe alone" and mx.vs_words(49, "Lake Tahoe", False) == "the same as Lake Tahoe"      # live 2026-11-18: never "$0 less"
+    js = (Path(__file__).resolve().parent.parent / "assets" / "js" / "tripmatrix.js").read_text()
+    assert js.count("Math.floor((Math.abs(d) + 50) / 100) === 0") == 2      # the pick bar and the chip round the same way
