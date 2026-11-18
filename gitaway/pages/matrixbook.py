@@ -742,6 +742,9 @@ def register(app):
         with ses.family(session) as fam:
             if not fam:
                 return RedirectResponse(ses.signin_href(f"{FLIGHT_RETURN}?token={token}"), status_code=303)
+            before = fb.payment(fam.db, token)
+            if before and before["status"] == fb.PAYING and before["user_id"] == me.id and not mb.allow(me.id):      # an unpaid form reloaded again and again asks LiteAPI each time: the per-person limit counts it
+                return _flight_page(request, None, None, None, problem=SLOW_DOWN, status=429)
             res = fb.finish(fam.db, family, token, me.id)
             pay = fb.payment(fam.db, token)
             if res.ok and res.row["status"] == "PENDING_CONFIRMATION" and not res.row["sample"] and res.row["checks"] in (None, 0):

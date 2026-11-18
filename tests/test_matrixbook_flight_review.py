@@ -142,3 +142,12 @@ def test_the_admin_lists_a_form_left_open_with_its_transaction_and_no_traveller(
     html = to_xml(admin._flights_to_match())
     assert "Flights to match" in html and "tr_cts_HX7MNE9cTvRSWyWn_QAcm" in html and "paying" in html
     assert "Okafor" not in html and "maya" not in html.lower() and "example.com" not in html
+
+
+def test_an_unpaid_form_reloaded_again_and_again_stops_asking_liteapi(flying, client):  # noqa: F811
+    _, tok, _ = paid_flight(client)
+    flying.answers["book"] = (400, {"error": {"code": 2014, "description": "payment not completed"}})
+    codes = [client.get(f"{RETURN}?token={tok}").status_code for _ in range(6)]
+    asked = len(flying.calls(FBOOK))
+    assert codes[-1] == 429 and asked < 6 and codes.count(402) == asked      # the refused reloads made no LiteAPI call
+    assert "a lot of booking tries" in text(client.get(f"{RETURN}?token={tok}").text) and len(flying.calls(FBOOK)) == asked

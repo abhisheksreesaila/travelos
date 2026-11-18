@@ -4,7 +4,7 @@ sandbox's own recordings (tests/fixtures/liteapi_flight, 2026-11-18); nothing he
 
 import json
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -291,6 +291,11 @@ def test_a_prebook_liteapi_no_longer_has_is_expired_and_the_passengers_are_dropp
     assert fb.finish(db, "fam", "tok-1", user).status == liteapi.GONE
     row = fb.payment(db, "tok-1")
     assert (row["status"], row["travellers"], row["contact"]) == ("expired", "", "")
+    fb.purge(db)
+    assert fb.payment(db, "tok-1")["transaction_id"] == TRANSACTION      # a paid return whose fare is gone keeps its record: the captain matches it
+    assert [r["id"] for r in fb.to_match(db, datetime.now(timezone.utc) + timedelta(minutes=20))] == ["tok-1"]
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_flight_payments SET created_at = :t", t=(datetime.now(timezone.utc) - timedelta(days=8)).isoformat(timespec="seconds"))
     fb.purge(db)
     assert fb.payment(db, "tok-1") is None
 

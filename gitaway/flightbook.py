@@ -19,7 +19,7 @@ import json
 import logging
 import re
 from dataclasses import asdict, dataclass, replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy.exc import IntegrityError
 
@@ -628,22 +628,20 @@ def mark_cancelled(session, trip_id: str, ref: str) -> None:
 
 
 def purge(db) -> None:
-    """Drop what no longer needs keeping: an expired prebook at once, every passenger and contact after PURGE_GUEST days (the ids and amounts stay: they are the record)."""
-    from datetime import timezone
+    """Drop what no longer needs keeping: an expired prebook after PURGE_GUEST days (it may have been paid: it stays on /admin until then, passengers already blanked), every passenger and contact after PURGE_GUEST days (the ids and amounts stay: they are the record)."""
     cut = (datetime.now(timezone.utc) - timedelta(days=mb.PURGE_GUEST)).isoformat(timespec="seconds")
     with familydb.transaction(db):
-        familydb.run(db, "DELETE FROM matrix_flight_payments WHERE status = 'expired'")
+        familydb.run(db, "DELETE FROM matrix_flight_payments WHERE status = 'expired' AND created_at < :t", t=cut)
         familydb.run(db, "UPDATE matrix_flight_payments SET travellers = '', contact = '' WHERE created_at < :t AND (travellers != '' OR contact != '')", t=cut)
         familydb.run(db, "UPDATE matrix_flight_payments SET travellers = '' WHERE status = 'paying' AND travellers != '' AND created_at < :t",      # a form left open for a day: the passengers go, the ids and the amount stay (like the stay's PURGE_UNPAID)
                      t=(datetime.now(timezone.utc) - timedelta(days=mb.PURGE_UNPAID)).isoformat(timespec="seconds"))
 
 
 def to_match(db, now=None) -> list:
-    """Flight payments the captain may need to match in LiteAPI's dashboard (D-980): a form opened and left over OPEN_AFTER ("maybe paid"), a book that may have gone through (`needs_help`) or was
+    """Flight payments the captain may need to match in LiteAPI's dashboard (D-980): a form opened and left over OPEN_AFTER ("maybe paid"), a paid return whose fare was gone (`expired`), a book that may have gone through (`needs_help`) or was
     started and never finished (`booking`), from the last 7 days. Only the ids and the date: never a traveller."""
-    from datetime import timezone
     now = now or datetime.now(timezone.utc)
-    rows = familydb.rows(db, "SELECT id, status, transaction_id, charge_cents, created_at, updated_at FROM matrix_flight_payments WHERE status IN ('paying', 'booking', 'needs_help') AND created_at > :w ORDER BY created_at",
+    rows = familydb.rows(db, "SELECT id, status, transaction_id, charge_cents, created_at, updated_at FROM matrix_flight_payments WHERE status IN ('paying', 'booking', 'needs_help', 'expired') AND created_at > :w ORDER BY created_at",
                          w=(now - timedelta(days=mb.PURGE_GUEST)).isoformat(timespec="seconds"))
     cut = (now - OPEN_AFTER).isoformat(timespec="seconds")
     return [r for r in rows if r["updated_at"] < cut]
