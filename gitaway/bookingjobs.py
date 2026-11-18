@@ -1,6 +1,6 @@
 """The booking worker (F-274 review fixes, D-848): a daemon thread, started at boot like `draftjobs` and `planforme`, that visits every family's database once a minute.
 
-    run_once(now)        finishes every payment left in `paying` for over STUCK_AFTER minutes (the guest paid, the browser never came back or LiteAPI did not answer then: `matrixbook.finish`
+    run_once(now)        also follows the flights waiting for their tickets (`flightbook.refresh`: never books one, D-978); finishes every payment left in `paying` for over STUCK_AFTER minutes (the guest paid, the browser never came back or LiteAPI did not answer then: `matrixbook.finish`
                          books it with the transaction id saved at prebook, once, under the same reference), puts the stay on its trip, and once a day runs `matrixbook.purge`
                          (unpaid prebooks dropped, guests' names, emails and numbers blanked after seven days) over every family, even one that never books again
     stuck_count()        how many payments are paid but not booked after STUCK_AFTER minutes, for /admin
@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from fh_saas.db_tenant import get_or_create_tenant_db
 
-from gitaway import familydb, liteapi, matrixbook as mb, members
+from gitaway import familydb, flightbook as fb, liteapi, matrixbook as mb, members
 
 log = logging.getLogger("gitaway.bookingjobs")
 STUCK_AFTER = timedelta(minutes=10)
@@ -54,7 +54,7 @@ def stuck_count(now=None) -> int:
             log.warning("booking jobs: a family could not be read (%s)", type(e).__name__)
             continue
         try:
-            n += len(mb.stuck(db, cut))
+            n += len(mb.stuck(db, cut)) + len(fb.to_match(db, now or datetime.now(timezone.utc)))
         finally:
             db.conn.close()
     return n
@@ -96,6 +96,19 @@ def _finish_one(db, tenant_id, row, now) -> tuple:
     return False, False
 
 
+def _follow_flights(db, tenant_id, now) -> None:
+    """Ask LiteAPI where each flight booking still waiting for its tickets is, at growing gaps (F-276, D-977): the one "tickets issued" email goes when it turns CONFIRMED, and a cancel LiteAPI had
+    only accepted is finished on the trip. It never books a flight (D-978): only the person's return from the payment form does, because the sandbox booked a payment nobody made."""
+    for row in fb.due(db, now):
+        got = fb.refresh(db, tenant_id, row, "job:" + tenant_id, now)
+        done = mb.cancelled(db, row["booking_id"]) if got["status"] in ("CANCELLED", "CANCELLED_WITH_CHARGES") else None
+        if done:
+            try:      # best effort, like the stay: the flight is marked cancelled on its trip
+                fb.mark_cancelled({"tenant_id": tenant_id, "user_id": row["user_id"], "email": ""}, row["trip_id"], row["ref"] or row["booking_id"])
+            except Exception as e:  # noqa: BLE001
+                log.warning("booking jobs: the cancelled flight could not be marked on its trip (%s)", type(e).__name__)
+
+
 def needing_help() -> list:
     """Every payment kept for the captain (paid perhaps, not booked after the hour), over every family: dicts with the family, the token, when, the transaction id and our reference."""
     out = []
@@ -107,6 +120,23 @@ def needing_help() -> list:
         try:
             for r in familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'needs_help' ORDER BY created_at"):
                 out.append({"family": tid, "token": r["id"], "created_at": r["created_at"], "transaction_id": r["transaction_id"], "reference": mb.reference(tid, r["id"], 0)})
+        finally:
+            db.conn.close()
+    return out
+
+
+def flights_to_match(now=None) -> list:
+    """Every flight payment the captain may need to match in LiteAPI (a form left open over 15 minutes, a book that may have gone through or never finished), over every family: the family, the
+    token, its status, the date, LiteAPI's transaction id and the amount. No traveller data (D-980)."""
+    out = []
+    for tid in members.tenant_ids():
+        try:
+            db = _tenant(tid)
+        except Exception:  # noqa: BLE001
+            continue
+        try:
+            out += [{"family": tid, "token": r["id"], "status": r["status"], "created_at": r["created_at"], "transaction_id": r["transaction_id"], "charge_cents": r["charge_cents"]}
+                    for r in fb.to_match(db, now or datetime.now(timezone.utc))]
         finally:
             db.conn.close()
     return out
@@ -142,11 +172,13 @@ def run_once(now=None) -> int:
                         booked += did
                         if stop:
                             break
+                    _follow_flights(db, tid, now)
             except Exception as e:  # noqa: BLE001 - one family's trouble never stops the rest, nor its purge
                 log.warning("booking jobs: family %s: %s", tid[:6], type(e).__name__)
             if purge:
                 try:
                     mb.purge(db)
+                    fb.purge(db)
                 except Exception as e:  # noqa: BLE001
                     log.warning("booking jobs: purge of family %s: %s", tid[:6], type(e).__name__)
         finally:

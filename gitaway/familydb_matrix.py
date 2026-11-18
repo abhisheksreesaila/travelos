@@ -83,4 +83,60 @@ class MatrixCancel:
     cancelled_at: str = ""
 
 
-MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id"), (MatrixBooking, "matrix_bookings", "id"), (MatrixPayment, "matrix_payments", "id"), (MatrixCancel, "matrix_cancels", "booking_id")]
+class FlightPayment:
+    """A flight prebooked for LiteAPI's payment form (F-276, D-972, D-974): saved the moment the prebook answers (LiteAPI cannot give the ids back). The card is never ours. `travellers` holds
+    the passengers and the contact LiteAPI's booking needs (names, birth dates, passport numbers, email, phone): personal data, blanked the moment the flight is booked (`contact` keeps only the
+    lead's first name and email until the tickets email is sent, 7 days at most), never logged, never sent anywhere but LiteAPI and the lead's own email."""
+    id: str                 # the sheet's token (also the stay's), the idempotency key's base
+    user_id: str = ""
+    trip_id: str = ""
+    status: str = "paying"  # paying (the form is shown), booking (the book call is in flight: one caller only), booked, expired (LiteAPI says the prebook is gone), needs_help (the book may have gone through)
+    prebook_id: str = ""
+    transaction_id: str = ""
+    charge_cents: int = 0   # what the card is charged for the flight
+    airline: str = ""
+    route: str = ""         # "SFO to SAN"
+    legs: str = ""          # JSON: the flights (direction, origin, destination, depart, arrive, airline, code, number)
+    facts: str = ""         # JSON: the fare family, bags, refundable, changeable, as shown before paying
+    party: str = ""         # "2 adults, 1 kid"
+    stay_token: str = ""    # the stay this flight is booked with, paid next (its own payment row, `matrix_payments`)
+    back_href: str = ""     # the square's address, for "try again" when the stay cannot follow
+    travellers: str = ""    # JSON, see above
+    contact: str = ""       # JSON {first, email}: kept after booking only for the tickets email
+    booking_id: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class FlightBooking:
+    """A flight booked through LiteAPI (F-276), or a labelled sample one (nothing was sent). One row a booking (both ways of a round trip). No passenger data: it is in `matrix_flight_payments`
+    until booked, then gone. The status follows LiteAPI's lookup (`flightbook.refresh`)."""
+    id: str                 # our reference: family, token and "flight" hashed
+    trip_id: str = ""
+    user_id: str = ""
+    booking_id: str         # LiteAPI's (a UUID); a sample booking: "SAMPLE-" and the reference
+    ref: str = ""           # LiteAPI's short reference, the one to read out ("FH-26B-1VO6TJ6Z")
+    pnr: str = ""           # the order's locator
+    locators: str = ""      # JSON [[airline code, the airline's own PNR], ...]
+    status: str = "PENDING_CONFIRMATION"   # LiteAPI's: PENDING_CONFIRMATION, CONFIRMED, CANCELLED, CANCELLED_WITH_CHARGES, ...
+    payment_status: str = ""
+    total_cents: int = 0
+    airline: str = ""
+    legs: str = ""
+    facts: str = ""
+    party: str = ""
+    ticket_limit: str = ""
+    sample: int = 0
+    checks: int = 0         # how many times the worker has asked LiteAPI whether it is confirmed
+    next_check_at: str = ""
+    booked_email_at: str = ""   # the markers of the emails, each sent once (`bookingmail`)
+    tickets_email_at: str = ""
+    cancel_email_at: str = ""
+    quote_at: str = ""      # the cancel quote last shown and what it said: a cancel is only made after one
+    quote_refund_cents: int = 0
+    quote_fee_cents: int = 0
+    created_at: str = ""
+
+
+MATRIX_TABLES = [(MatrixSave, "matrix_saves", "id"), (MatrixBooking, "matrix_bookings", "id"), (MatrixPayment, "matrix_payments", "id"), (MatrixCancel, "matrix_cancels", "booking_id"),
+                 (FlightPayment, "matrix_flight_payments", "id"), (FlightBooking, "matrix_flights", "id")]

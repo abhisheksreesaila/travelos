@@ -53,6 +53,7 @@ MARGIN = 16.0                            # percent put on the net rate of every 
 PAYMENT_SDK = "https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"      # LiteAPI's payment form script, the one script of another site GitAway loads, from the booking sheet only (D-841)
 PREBOOK_TIMEOUT, BOOK_TIMEOUT = 60, 90     # the docs say a prebook can take up to about 2 minutes; the sandbox answered in a few seconds
 NOT_PAID = "not paid"      # a TRANSACTION_ID book LiteAPI refuses because the payment was never made (HTTP 400, code 2014): not "LiteAPI is down" (F-274, D-851)
+PENDING = "pending"      # a flight cancel LiteAPI accepted (HTTP 202) and has not finished (F-276, D-977)
 OK, OVER, OFF, FAILED, BUSY = "ok", "over budget", "off", "failed", "busy"    # BUSY: no turn at the gate in time; never kept
 STAY_KEEP = timedelta(minutes=20)        # hotel prices move with the rooms left
 FLIGHT_KEEP = timedelta(minutes=60)      # a flight offer expires within minutes, but its price is a preview here; booking verifies it again
@@ -197,6 +198,12 @@ def margin() -> float | None:
     except ValueError:
         return MARGIN
     return m if 0 <= m <= 40 else MARGIN
+
+
+def flights_live() -> bool:
+    """May a live key book flights (D-980)? Only with GITAWAY_LIVE_FLIGHTS=1, off by default: nothing proves a flight was paid (no payment-status call or webhook, and the sandbox booked an unpaid
+    transaction), so a live flight is not offered until LiteAPI confirms in writing that its live book refuses an unpaid TRANSACTION_ID. A sandbox key is not affected."""
+    return os.environ.get("GITAWAY_LIVE_FLIGHTS", "").strip() == "1"
 
 
 def real_booking() -> bool:
@@ -1175,21 +1182,23 @@ def _allowed(body: dict | None) -> bool:
     if m != "live":
         return False
     body = body or {}
-    if "usePaymentSdk" in body:      # a prebook: new business, only where booking is on, and never with a payment of its own in it
-        return body["usePaymentSdk"] is True and "payment" not in body and real_booking()
+    if set(body) == {"offerId"}:      # a flight verify (F-276): asks LiteAPI whether the offer still stands and at what price; it books and charges nothing
+        return bool(body["offerId"]) and real_booking() and flights_live()      # new flight business: only where booking is on and flights are (D-980)
+    if "usePaymentSdk" in body:      # a prebook (a stay's or a flight's): new business, only where booking is on, and never with a payment of its own in it
+        return body["usePaymentSdk"] is True and "payment" not in body and real_booking() and (flights_live() or "passengers" not in body)
     if "payment" in body:           # a book: only what a paid form's transaction can finish
         pay = body["payment"]
         return isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId"))
     return not body                 # a cancel or a lookup: no body
 
 
-def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "") -> Answer:
+def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "", ok=(200,), pending=(), paid: bool = False) -> Answer:
     """One booking call: sandbox key only, one at a time across the site, through the gate and the booking budgets, never cached, never asked again by itself (the first may
     have gone through), and a failure logs the call and its HTTP status, never the body (it can hold a guest's email). `gone`: the HTTP statuses that mean the room or rate is
-    no longer there. No `body`: a GET, or `method` (a PUT)."""
+    no longer there. No `body`: a GET, or `method` (a PUT). `ok`: the HTTP statuses that are an answer to read (a flight booking is 201); `pending`: statuses that mean accepted, not done (202). `paid`: the money is already taken (a book after the payment form), so the daily booking budgets never refuse it (the gate and the one-at-a-time rule still hold)."""
     if not _allowed(body):
         return Answer(OFF)
-    if not can_search(family, True):
+    if not paid and not can_search(family, True):
         return Answer(OVER)
     wait = TILE_WAIT if wait is None else wait
     if not _BOOK_TURN.acquire(timeout=wait):
@@ -1198,7 +1207,7 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
         with _Gate(wait=wait) as gate:
             if not gate.ok:
                 return Answer(BUSY)
-            if not _spend(family, True):
+            if not paid and not _spend(family, True):
                 return Answer(OVER)
             at = now()
             try:
@@ -1209,7 +1218,9 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
             except Exception as e:      # a timeout, a dropped line, a body that is not JSON
                 log.warning("LiteAPI %s not read (%s)", what, type(e).__name__)
                 return Answer(FAILED, (), at)
-            if status == 200:
+            if status in pending:
+                return Answer(PENDING, (), at)
+            if status in ok:
                 try:
                     return Answer(OK, (read(doc, at),), at)
                 except Exception as e:      # a shape we never saw
@@ -1264,3 +1275,200 @@ def book(prebook_id: str, guest: Guest, reference: str, family: str = "", transa
 def cancel(booking_id: str, family: str = "") -> Answer:
     """Cancel a booking (PUT /bookings/{id}): an Answer of one Cancelled saying what came back. Asking again answers the same; an unknown booking is FAILED."""
     return _order("cancel", "/bookings/" + quote(str(booking_id), safe=""), None, BOOK_TIMEOUT, family, read_cancel, method="PUT")
+
+
+# --- flights booked here (F-276, D-972..D-978): verify the offer, prebook for the payment form, book with the transaction id, look up, cancel. All on api.liteapi.travel/v3.0.
+
+@dataclass(frozen=True)
+class Seg:
+    """One flight of a journey as LiteAPI's verify, prebook and booking answers give it; times are local to their airports (no zone)."""
+    direction: str           # OUTBOUND | INBOUND
+    origin: str
+    destination: str
+    depart: datetime
+    arrive: datetime
+    airline: str             # "Nuitée Air"
+    code: str                # "ND"
+    number: str              # "6278"
+    minutes: int
+
+
+@dataclass(frozen=True)
+class FlightVerified:
+    cents: int               # the whole party, taxes included: what LiteAPI says the trip costs now
+    price_changed: bool      # LiteAPI's own flag: the price moved since the search
+    fare: str                # "Economy Light"
+    bags_included: tuple     # LiteAPI's words for what the fare carries
+    bags_paid: tuple         # ((words, cents), ...) bags that cost extra: not sold here yet (D-975)
+    refundable: bool
+    changeable: bool
+    summary: tuple           # LiteAPI's own warnings ("Non-refundable ticket")
+    expires: datetime | None
+    session_id: str
+    segments: tuple
+    fetched: datetime
+
+
+@dataclass(frozen=True)
+class FlightPrebook:
+    prebook_id: str          # verbatim, never shown
+    cents: int               # the price the payment form charges
+    secret_key: str = ""     # the payment form's key: handed to the page, never saved, never logged
+    transaction_id: str = ""  # what book pays with; saved at once
+    segments: tuple = ()
+    fetched: datetime | None = None
+
+
+@dataclass(frozen=True)
+class FlightBooking:
+    booking_id: str          # LiteAPI's, a UUID: what lookup and cancel take
+    ref: str                 # LiteAPI's short reference ("FH-26B-1VO6TJ6Z"), the one a person can read out
+    status: str              # PENDING_CONFIRMATION | CONFIRMED | CANCELLED | CANCELLED_WITH_CHARGES | ...
+    payment_status: str
+    cents: int
+    pnr: str                 # the order's own locator ("JSS7LG"), "" before the airline gave it
+    airline_pnrs: tuple      # ((code, pnr), ...): each airline's own record locator
+    ticket_limit: datetime | None
+    issued: bool             # the tickets have numbers
+    segments: tuple
+    fetched: datetime
+
+    @property
+    def confirmed(self) -> bool:
+        return self.status == "CONFIRMED"
+
+    @property
+    def pending(self) -> bool:
+        return self.status == "PENDING_CONFIRMATION"
+
+
+@dataclass(frozen=True)
+class FlightQuote:
+    refund_cents: int        # what would come back
+    penalty_cents: int       # what cancelling would cost
+    destination: str         # where it goes back: "original_payment"
+    pnr: str
+    fetched: datetime
+
+
+def _flight_data(answer) -> dict:
+    d = answer.get("data") if isinstance(answer, dict) and "error" not in answer else None
+    d = d[0] if isinstance(d, list) and d else d
+    if not isinstance(d, dict):
+        raise Unreadable("no flight data")
+    return d
+
+
+def _segs(raw) -> tuple:
+    out = []
+    for s in raw or ():
+        if not isinstance(s, dict):
+            continue
+        depart, arrive = _when(s.get("departureTime")), _when(s.get("arrivalTime"))
+        if not depart or not arrive or not s.get("originCode") or not s.get("destinationCode"):
+            raise Unreadable("a flight without its times or airports")
+        carrier, number = s.get("carrier") or {}, s.get("flight") or {}
+        minutes = (s.get("duration") or {}).get("minutes")
+        out.append(Seg(str(s.get("direction") or ""), str(s["originCode"]), str(s["destinationCode"]), depart, arrive, str(carrier.get("marketingName") or ""),
+                       str(carrier.get("marketingCode") or ""), str(number.get("marketingNumber") or ""), minutes if isinstance(minutes, int) else int((arrive - depart).total_seconds() // 60)))
+    if not out:
+        raise Unreadable("no flights")
+    return tuple(out)
+
+
+def _usd_cents(pricing) -> int:
+    display = (pricing or {}).get("display") or {}
+    cents = _cents(display.get("total"))
+    if cents is None or display.get("currency") != "USD":
+        raise Unreadable("no USD price")
+    return cents
+
+
+def read_flight_verify(answer, fetched: datetime) -> FlightVerified:
+    d = _flight_data(answer)
+    j = d.get("journey")
+    if not isinstance(j, dict):
+        raise Unreadable("no journey")
+    bags = j.get("baggage") or {}
+    terms = j.get("terms") or {}
+    paid = tuple((str(b.get("description") or ""), _cents(((b.get("pricing") or {}).get("display") or {}).get("amount")) or 0) for b in bags.get("paid") or () if isinstance(b, dict))
+    return FlightVerified(_usd_cents(j.get("pricing")), bool((d.get("changes") or {}).get("priceChanged")), str((j.get("fare") or {}).get("family") or ""),
+                          tuple(str(b.get("description")) for b in bags.get("included") or () if isinstance(b, dict) and b.get("description")), paid,
+                          terms.get("refundable") is True, terms.get("changeable") is True,
+                          tuple(str(m.get("message")) for m in terms.get("summary") or () if isinstance(m, dict) and m.get("message")),
+                          _when(j.get("expiration")), str(d.get("sessionId") or ""), _segs(j.get("segments")), fetched)
+
+
+def read_flight_prebook(answer, fetched: datetime) -> FlightPrebook:
+    d = _flight_data(answer)
+    cents = _cents(d.get("price"))
+    if not d.get("prebookId") or d.get("currency") != "USD" or cents is None:
+        raise Unreadable("no flight prebook")
+    return FlightPrebook(str(d["prebookId"]), cents, str(d.get("secretKey") or ""), str(d.get("transactionId") or ""), _segs(((d.get("booking") or {}).get("journey") or {}).get("segments")), fetched)
+
+
+def read_flight_booking(answer, fetched: datetime) -> FlightBooking:
+    d = _flight_data(answer)
+    b = d.get("booking")
+    if not isinstance(b, dict) or not b.get("bookingId") or not b.get("status"):
+        raise Unreadable("no flight booking")
+    pricing = b.get("pricing") or {}
+    cents = _cents(pricing.get("totalAmount"))
+    if cents is None or pricing.get("currency") != "USD":
+        raise Unreadable("no USD total")
+    order = ((b.get("order") or {}).get("reference") or {})
+    locators = tuple((str(x.get("airlineCode") or ""), str(x.get("airlinePnr") or "")) for x in b.get("airlineLocators") or () if isinstance(x, dict) and x.get("airlinePnr"))
+    tickets = (b.get("ticketData") or {}).get("tickets") or ()
+    return FlightBooking(str(b["bookingId"]), str(b.get("bookingRef") or ""), str(b["status"]), str(b.get("paymentStatus") or ""), cents, str(order.get("orderId") or ""), locators,
+                         _when(b.get("ticketLimitTime")), bool(tickets) and all(isinstance(t, dict) and t.get("ticketNumber") for t in tickets), _segs((b.get("journey") or {}).get("segments")), fetched)
+
+
+def read_flight_quote(answer, fetched: datetime) -> FlightQuote:
+    d = _flight_data(answer)
+    refund, penalty = _cents(((d.get("refund") or {}).get("display") or {}).get("amount")), _cents(((d.get("penalty") or {}).get("display") or {}).get("amount"))
+    if refund is None or penalty is None:
+        raise Unreadable("no cancel quote")
+    return FlightQuote(refund, penalty, str(d.get("destination") or ""), str(d.get("pnr") or ""), fetched)
+
+
+def read_flight_cancel(answer, fetched: datetime) -> Cancelled:
+    """The same Cancelled a stay gives: CANCELLED or CANCELLED_WITH_CHARGES, the refund and the fee in cents."""
+    return read_cancel(answer, fetched)
+
+
+def _fid(booking_id) -> str:
+    return quote(str(booking_id), safe="")
+
+
+def flight_verify(offer_id: str, family: str = "") -> Answer:
+    """Ask LiteAPI whether a flight offer still stands, before anyone is asked to pay: an Answer of one FlightVerified (the price now, the fare's facts, the session for prebook). GONE when it expired."""
+    return _order("flight verify", "/flights/verify", {"offerId": str(offer_id)}, PREBOOK_TIMEOUT, family, read_flight_verify, gone=(404, 409, 410), base=API)
+
+
+def flight_prebook(offer_id: str, contact: dict, passengers: list, session: str = "", family: str = "") -> Answer:
+    """Prebook the verified offer for the payment form (`usePaymentSdk: true`, always: a flight is only ever paid in LiteAPI's form): an Answer of one FlightPrebook with the form's
+    `secretKey` and the `transactionId`. `contact` and `passengers` are LiteAPI's own shapes; they are personal data, sent to LiteAPI and to nobody else, never logged."""
+    body = {"offerId": str(offer_id), "usePaymentSdk": True, "contact": contact, "passengers": passengers, **({"sessionId": str(session)} if session else {})}
+    return _order("flight prebook", "/flights/prebooks", body, PREBOOK_TIMEOUT, family, read_flight_prebook, gone=(409, 410), base=API)
+
+
+def flight_book(prebook_id: str, transaction_id: str, family: str = "") -> Answer:
+    """Book the prebooked flight with the payment form's transaction (the only method: never a card of the sandbox's own). The path ends in a slash: the bare one answers 307. An Answer
+    of one FlightBooking, usually PENDING_CONFIRMATION. NOT_PAID when LiteAPI says the payment was not made; a failure may mean the booking went through (no way to ask by reference)."""
+    body = {"prebookId": str(prebook_id), "payment": {"method": "TRANSACTION_ID", "transactionId": str(transaction_id)}}
+    return _order("flight book", "/flights/bookings/", body, BOOK_TIMEOUT, family, read_flight_booking, gone=(410,), base=API, ok=(200, 201), paid=True)
+
+
+def flight_booking(booking_id: str, family: str = "") -> Answer:
+    """A flight booking as LiteAPI holds it now: an Answer of one FlightBooking (its status, the airline's locators, the tickets)."""
+    return _order("flight lookup", "/flights/bookings/" + _fid(booking_id), None, STAY_TIMEOUT, family, read_flight_booking, base=API)
+
+
+def flight_cancel_quote(booking_id: str, family: str = "") -> Answer:
+    """What cancelling would give back and cost, in LiteAPI's numbers (nothing is cancelled): an Answer of one FlightQuote."""
+    return _order("flight cancel quote", "/flights/bookings/" + _fid(booking_id) + "/cancellations", None, BOOK_TIMEOUT, family, read_flight_quote, base=API)
+
+
+def flight_cancel(booking_id: str, family: str = "") -> Answer:
+    """Cancel a flight booking: an Answer of one Cancelled (HTTP 200), or PENDING (HTTP 202: accepted, the airline has not finished)."""
+    return _order("flight cancel", "/flights/bookings/" + _fid(booking_id) + "/cancellations", {}, BOOK_TIMEOUT, family, read_flight_cancel, base=API, pending=(202,))

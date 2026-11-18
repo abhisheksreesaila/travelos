@@ -78,8 +78,9 @@ def _flight(v, i, leg, can_edit, back):
     cards, add = passes_ui.pass_cards(f, ps, can_edit, names, back) if f else ([], "")
     times = Div(_kv("LEAVES", ti.when_text(leg.depart), "bk-leaves"), _kv("ARRIVES", ti.when_text(leg.arrive), "bk-arrives"), cls="hp-times")
     show = A(icon("ticket", 18, 2.4), "Show everyone's passes", href=passes_ui.gate_url(key), cls="tp-btn tp-btn-coral", id="bk-show-passes") if ps else ""
+    from gitaway.pages import flightcancel      # a flight booked here (F-276): its status, references, fare rules and cancel with the quote first
     return ["Flight", ti.when_text(leg.depart).split(",")[0]], f"{leg.origin} → {leg.dest}", [
-        Span(leg.name, cls="hp-addr", id="bk-flight"), times, tab_help._confirm(leg.confirmation), show,
+        Span(leg.name, cls="hp-addr", id="bk-flight"), times, tab_help._confirm(leg.confirmation), flightcancel.panel(v, leg, back), show,
         Div(Span("Passes & documents", cls="hp-k"), *cards, add, cls="bk-passes", id="bk-passes")]
 
 

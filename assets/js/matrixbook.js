@@ -12,6 +12,8 @@
 // adds LiteAPI's own script from the one address below (nothing else of another site is ever loaded), hands it the form's `secretKey` and the return address, and drops the key from the
 // page. The card is typed into LiteAPI's frame, never into a field of ours; the browser comes back to /plan/matrix/book/return, which books. "Have a code?" asks the server to prebook the
 // stay again with the code (a JSON answer), and only then does the checkout show the discount.
+// A real flight (F-276) is paid first, in its own LiteAPI form: the review's Continue sends the travellers (one card a seat) and the answer is the flight's card form; the browser returns to
+// /plan/matrix/book/flight/return, which books the flight and shows the stay's own form on that page, mounted when it loads.
 // A viewer is told in a word (the server answers 403 before anything is asked of LiteAPI); a signed-out person is sent to sign in (the redirect is followed).
 (function () {
   var PAY_SDK = 'https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1';      // LiteAPI's payment form: the one script of another site GitAway loads (D-844)
@@ -156,7 +158,7 @@
     go(form, parseInt(form.dataset.step, 10) || 0, 1, true);
   }
   function next(form) {      // Continue: say what is wrong in place, with the browser's own words, before going on
-    var at = parseInt(form.dataset.step, 10) || 0, bad = Array.prototype.filter.call(panes(form)[at].querySelectorAll('input[required], input[type=email], input[type=tel]'), function (el) { return !el.checkValidity(); })[0];
+    var at = parseInt(form.dataset.step, 10) || 0, bad = Array.prototype.filter.call(panes(form)[at].querySelectorAll('input[required], select[required], input[type=email], input[type=tel]'), function (el) { return !el.checkValidity(); })[0];
     if (bad) { bad.reportValidity(); bad.focus({ preventScroll: true }); return; }
     go(form, at + 1, 1);
   }
@@ -203,7 +205,7 @@
     var fail = function () { if (wait) { wait.textContent = 'LiteAPI’s payment form did not load. Nothing was charged. Close this and press Book again.'; wait.classList.add('is-err'); } };
     var back, key = el.dataset.key === 'live' ? 'live' : 'sandbox', secret = el.dataset.secret;
     try { back = new URL(el.dataset.return, location.href); } catch (e) { return fail(); }
-    if (back.pathname !== '/plan/matrix/book/return' || !secret) return fail();
+    if ((back.pathname !== '/plan/matrix/book/return' && back.pathname !== '/plan/matrix/book/flight/return') || !secret) return fail();      // the stay's return, or the flight's (F-276: the flight is paid first)
     el.removeAttribute('data-secret');      // the key is only for the form: it does not stay in the page
     var start = function () {
       try {
@@ -334,6 +336,9 @@
       else step(f);
     }
   });
+  // The page the flight's payment form returns to carries the stay's own form (F-276): it is not in a sheet, so it is mounted when the page loads.
+  function boot() { if (!sheet && document.querySelector('[data-pay-root]')) mountPay(document); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && sheet) { e.stopImmediatePropagation(); close(); }
     if (e.key === 'Enter' && sheet && e.target.matches && e.target.matches('[data-code]')) { e.preventDefault(); e.stopImmediatePropagation(); apply(e.target.closest('.mxb-f')); }      // Enter in the code field applies it, it does not book

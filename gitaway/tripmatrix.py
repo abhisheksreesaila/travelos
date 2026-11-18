@@ -64,6 +64,7 @@ class FlightPart:
     stops: int
     cents: int            # the whole party, both ways
     complete: bool = True      # False: the search was stopped at its deadline (F-229), so this is the cheapest found by then
+    offer_id: str = ""         # LiteAPI's offer for this flight, verbatim and never shown (F-276: what a booking verifies and prebooks); "" for a sample
 
 
 @dataclass(frozen=True)

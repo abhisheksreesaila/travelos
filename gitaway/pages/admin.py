@@ -207,6 +207,7 @@ def admin_page(drafted=()):
             Section(H2("Plan it for me orders"), P("Refunds are yours, by hand in Stripe: a failed order that was paid, and a payment that paid an order twice or one that is gone, say Refund due.", cls="ad-meta"),
                     Ul(*[_owed(p) for p in owed], *[_order(o) for o in orders], cls="ad-list", id="ad-orders") if orders or owed else P("No orders yet.", cls="ad-meta", id="ad-no-orders"), cls="ad-sec"),
             _needs_a_look(),
+            _flights_to_match(),
             claims.section(drafted),
             Section(H2("Waiting for your approval"), P("A trip claimed or published by someone whose email is not at the post's own site. Check it is theirs, then approve it.", cls="ad-meta"),
                     Ul(*[_waiting(w) for w in waiting], cls="ad-list", id="ad-waiting"), cls="ad-sec", id="ad-waiting-sec") if waiting else "",
@@ -232,6 +233,17 @@ def _needs_a_look():
                    Ul(*[Li(Div(Span(f"{r['token'][:6]} · {r['created_at'][:16].replace('T', ' ')}", cls="ad-reason"), Span(f"Transaction {r['transaction_id']}", cls="ad-meta"), Span(f"Reference {r['reference']}", cls="ad-meta")),
                             Form(Input(type="hidden", name="family", value=r["family"]), Input(type="hidden", name="token", value=r["token"]), Button("Resolved", type="submit", cls="btn btn-sm"),
                                  action="/admin/payments/resolve", method="post", cls="ad-inline")) for r in rows], cls="ad-list", id="ad-needs-help"), cls="ad-sec", id="ad-needs-help-sec")
+
+
+def _flights_to_match():
+    """F-276 (D-980): flight payment forms opened and not finished, or a book that may have gone through, from the last 7 days. Nothing proves a flight was paid, so the captain matches each by
+    LiteAPI's transaction id in its dashboard (booked by hand or refunded). Only the ids, the amount and the date: no traveller."""
+    rows = bookingjobs.flights_to_match()
+    if not rows:
+        return ""
+    return Section(H2("Flights to match"), P("A flight form was opened and left, or a flight booking may have gone through. Find the transaction in LiteAPI's dashboard: if it was paid and no flight exists, book it by hand or refund it.", cls="ad-meta"),
+                   Ul(*[Li(Div(Span(f"{r['token'][:6]} · {r['created_at'][:16].replace('T', ' ')} · {r['status']}", cls="ad-reason"), Span(f"Transaction {r['transaction_id']}", cls="ad-meta"),
+                               Span(catalog.money(r["charge_cents"]), cls="ad-meta"))) for r in rows], cls="ad-list", id="ad-flights-match"), cls="ad-sec", id="ad-flights-match-sec")
 
 
 def register(app):

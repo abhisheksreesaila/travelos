@@ -240,3 +240,20 @@ def test_at_the_margin_the_sandbox_recorded_the_price_charged_is_the_public_pric
     assert len(with16) == 11 and all(abs(r["retail"] - r["ssp"]) <= 0.011 for r in with16)      # what is charged is what is shown, within a cent
     assert all(r["retail"] < r["ssp"] * 0.88 for r in without)      # without it the charge is a good deal under the public price
     assert LIVE and liteapi.MARGIN == 16.0
+
+
+def test_no_flight_call_carries_the_sandbox_card_with_any_key(monkeypatch):
+    """F-276, D-978: the flight functions pay only with TRANSACTION_ID, so with a live key (and a sandbox one) no body of any of them holds ACC_CREDIT_CARD."""
+    from tests.flight_support import BOOKING_ID, Fly, OFFER, PREBOOK_ID, TRANSACTION
+    for key in (LIVE, "sand_test-key-not-real"):
+        monkeypatch.setenv("LITEAPI_KEY", key)
+        monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
+        monkeypatch.setattr(auth, "production", lambda: True)
+        f = Fly()
+        monkeypatch.setattr(liteapi, "TRANSPORT", f)
+        liteapi.flight_verify(OFFER, "fam")
+        liteapi.flight_prebook(OFFER, {"firstName": "Maya"}, [], "", "fam")
+        liteapi.flight_book(PREBOOK_ID, TRANSACTION, "fam")
+        liteapi.flight_booking(BOOKING_ID, "fam")
+        liteapi.flight_cancel(BOOKING_ID, "fam")
+        assert len(f.asked) == 5 and "ACC_CREDIT_CARD" not in json.dumps(f.asked)

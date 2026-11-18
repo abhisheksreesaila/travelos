@@ -286,7 +286,7 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
             Form(*hidden, *picks, Button(icon("plus", 16, 2.4), "Save this trip" if soon else "Save to trip", type="submit", cls="dr-save" + (" is-lead" if soon else "")), method="post", action=mx.SAVE, cls="mx-save-f"))
     why = _why(s, lane, w, sq, asked_sq)
     has_book = can_save and not soon
-    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot", id="dr-foot")
+    foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The flight and the stay{'s' if multi else ''} book here, each in its own payment form.", cls="dr-fnote"), save, book, cls="dr-foot", id="dr-foot")
     znav = _znav(total, has_book)
     head = Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), why, cls="dr-ti"),
                Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head has-pc", style=placecolor.style(lane.places[0]), id="dr-head")
