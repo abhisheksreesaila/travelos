@@ -10,15 +10,6 @@ import re
 from itertools import product
 
 
-def passengers(adults, kid_ages) -> tuple:
-    """(adults, children, infants) in Aviasales' bands for a party: adults are 12 and over, children 2 to 11, infants under 2, at most one infant per adult."""
-    grown = adults + sum(a >= 12 for a in kid_ages)
-    children, infants = sum(2 <= a < 12 for a in kid_ages), sum(a < 2 for a in kid_ages)
-    if infants > grown:
-        children, infants = children + infants - grown, grown
-    return grown, children, infants
-
-
 @dataclass(frozen=True)
 class TripSearch:
     origin: str
@@ -29,7 +20,7 @@ class TripSearch:
     return_: date
     adults: int
     kid_ages: tuple
-    home: str = ""    # where the reader said they fly from (an airport code), "" when they have not: the real flight link then leaves the origin out and Aviasales asks (F-195)
+    home: str = ""    # where the reader said they fly from (an airport code), "" when they have not
     focus: str = ""   # "disney" on a Los Angeles trip that is really about Disneyland (see FOCUS), else ""
 
     @property
@@ -41,20 +32,9 @@ class TripSearch:
         return self.adults + len(self.kid_ages)
 
     @property
-    def passengers(self) -> tuple:
-        """(adults, children, infants) the way Aviasales counts them: adults are 12 and over, children 2 to 11, infants under 2, and only one infant
-        per adult (a second is booked as a child with a seat). A 15-year-old kid is an adult fare; the sum is always `travelers`."""
-        return passengers(self.adults, self.kid_ages)
-
-    @property
     def stay_area(self) -> str:
         """Where to look for a stay: Anaheim for a Disneyland trip, else the destination."""
         return "Anaheim" if self.focus == "disney" else self.destination_name
-
-    @property
-    def todo_cta(self) -> str:
-        """The words on the Klook link of the Tickets and things to do card."""
-        return "See tickets on Klook" if self.focus == "disney" else "Things to do on Klook"
 
     @property
     def nights_text(self) -> str:
@@ -388,17 +368,6 @@ def offers(kind: str, trip=SAMPLE_TRIP) -> list[Offer]:
 def offer_place(offer_id: str) -> str:
     """The destination key an offer belongs to. Raises KeyError for an unknown id."""
     return _BY_ID[offer_id].place
-
-
-SEARCH_KINDS = {"flight": "Search flights to {place}", "stay": "Find stays near {area}", "todo": "Tickets and things to do"}
-
-
-def search_offer(kind: str, trip) -> Offer:
-    """What an honest page offers where we know no real offers (F-195): one search at the partner per lane, `flight`, `stay` or `todo` (KeyError for another).
-    No price (the partner shows today's), no made-up airline or hotel: the id is `search-<kind>`."""
-    name = SEARCH_KINDS[kind].format(place=trip.destination_name, area=trip.stay_area)
-    line = ("Disneyland Resort tickets" if trip.focus == "disney" else f"{trip.destination_name} attractions") if kind == "todo" else ""
-    return Offer(f"search-{kind}", kind, name, line, "", 0, airport=trip.airports[0] if kind == "flight" else "", place=trip.key)
 
 
 def offer(offer_id: str, trip=SAMPLE_TRIP) -> Offer:

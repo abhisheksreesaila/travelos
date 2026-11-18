@@ -8,9 +8,7 @@ cards published by the signed-in traveler are marked `mine`.
 Pure functions over a session dict (for the signed-in person) and the community database.
 """
 
-import re
 from dataclasses import dataclass, replace
-from urllib.parse import urlencode
 
 from gitaway import community, itineraries, showcase
 from gitaway.community import HubError  # noqa: F401  (the error publishers raise, re-exported for them)
@@ -72,39 +70,11 @@ def all_cards(session) -> list:
     return [*(() if real else (_from_itinerary(t) for t in itineraries.ITINERARIES.values())), *cards]
 
 
-_DISNEY = re.compile(r"disney\s?land|anaheim", re.I)       # not "Walt Disney Concert Hall" or "Disney Hall", which are downtown Los Angeles
-_NOT_CALIFORNIA = re.compile(r"world|paris|tokyo|hong kong|shanghai|orlando|florida", re.I)   # Disneyland Resort is the one in Anaheim, not these
-
-
-def focus_of(trip) -> str:
-    """"disney" when a trip in the Los Angeles place is about Disneyland in Anaheim: its place, title, headline or lede says so (F-195). The Los Angeles place is also where
-    other Los Angeles trips go, so its links (stays in Anaheim, Disneyland tickets) only apply to a trip that is one. "" for anything else."""
-    said = f"{trip.place} {trip.title} {trip.headline} {trip.lede}"
-    return "disney" if trip.plan_to == "la" and _DISNEY.search(said) and not _NOT_CALIFORNIA.search(said) else ""
-
-
-def _params(trip) -> dict | None:
-    """The trip a link from this page names: the place, sensible dates ahead for two adults, the focus, and whose trip it is (F-184). None
-    when the trip's place is not one the workspace plans."""
-    from gitaway import publish
-    if not trip.plan_to:
-        return None
-    depart, ret = publish.sample_dates(trip.plan_days)
-    focus = focus_of(trip)
-    return {"to": trip.plan_to, "d": depart.isoformat(), "r": ret.isoformat(), "a": 2, **({"focus": focus} if focus else {}), **({"via": trip.handle} if trip.handle else {})}
-
-
 def plan_href(trip) -> str:
     """"Plan this trip" for a real published trip: the way in (/plan/ask) at the trip's place and length (gitaway.guide.plan_href), "" when
     the trip's place is not one the workspace plans. The reader says their party and airport on the page it opens (F-195)."""
     from gitaway import guide as gd  # here, not at the top: guide imports this module
-    return gd.plan_href(trip.place, max(trip.plan_days - 1, 0), trip.handle if trip.real else "") if trip.plan_to else ""
-
-
-def todo_href(trip) -> str:
-    """The Tickets and things to do card of a real published trip: /go/search-todo with the same trip as "Plan this trip" (via: the click is theirs, F-195), "" when the place is not planned."""
-    params = _params(trip)
-    return "/go/search-todo?" + urlencode(params) if params else ""
+    return gd.plan_href(trip.place, max(trip.plan_days - 1, 0)) if trip.plan_to else ""
 
 
 def plan_note(trip) -> str:

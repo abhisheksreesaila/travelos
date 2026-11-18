@@ -1,11 +1,9 @@
-"""A creator's stats (F-192, D-129): how many people read their trips, forked them, tapped "Plan this trip", and where the partner clicks went.
+"""A creator's stats (F-192, D-129): how many people read their trips, forked them, tapped "Plan this trip".
 
 Readers are counted without a cookie and without keeping anything about a person. A view of a live published trip is one upsert into `trip_days` (slug, day, views, forks, plans):
 a plain count per trip per day. To count a reader once a day, `view_seen` holds a short hash of (today's random salt, address, browser) for the current day only: the salt lives in
 memory and is dropped at midnight (and on every restart), the hash cannot be turned back into an address, and the table is emptied of every other day on the first view of each day.
 No address and no user-agent text is ever written. Known bots, empty user-agents and the creator's own visits are not counted.
-
-Partner clicks come from `via_clicks` (gitaway.affiliate), which records the creator's handle, not a trip, so they are shown for the creator as a whole.
 """
 
 import hashlib
@@ -145,26 +143,13 @@ def _spark(conn, slug) -> list:
     return [got.get((first + timedelta(days=i)).isoformat(), 0) for i in range(SPARK_DAYS)]
 
 
-def clicks(handle) -> dict:
-    """Partner clicks from the creator's trips: {"7": n, "30": n, "all": n, "own": n clicks that carried their marker, "gitaway": n that went through ours}, each window's own and GitAway's too."""
-    out = {}
-    with community.connect() as db:
-        for w in WINDOWS:
-            since = _since(w)
-            r = db.conn.execute(text("SELECT COUNT(*), COALESCE(SUM(own_marker), 0) FROM via_clicks WHERE handle = :h AND clicked_at >= :t"), {"h": handle, "t": since}).fetchone()
-            out[w], out[f"own_{w}"] = r[0], r[1]
-    out["own"], out["gitaway"] = out["own_all"], out["all"] - out["own_all"]
-    return out
-
-
 def report(owner) -> dict:
-    """{"trips": [{slug, title, 7, 30, all (each {views, forks, plans}), spark}], "total": {7, 30, all}, "clicks": clicks(handle) or None} for the person's live trips."""
-    creator = community.creator_of(owner)
+    """{"trips": [{slug, title, 7, 30, all (each {views, forks, plans}), spark}], "total": {7, 30, all}} for the person's live trips."""
     trips = community.rows(kind="scrapbook", owner=owner, pending=True)      # their own, the waiting ones too (F-194)
     with community.connect() as db:
         per = [{"slug": t["slug"], "title": t["title"], **_group(db.conn, [t["slug"]]), "spark": _spark(db.conn, t["slug"])} for t in trips]
         total = _group(db.conn, [t["slug"] for t in trips])
-    return {"trips": per, "total": total, "clicks": clicks(creator["handle"]) if creator else None}
+    return {"trips": per, "total": total}
 
 
 def readers_all_time(slugs) -> int:

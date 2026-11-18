@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable
 
-from gitaway import airportdrive, catalog, liteapi, partners, showcase, tripgrid, tripmatrix as tm
+from gitaway import airportdrive, catalog, liteapi, showcase, tripgrid, tripmatrix as tm
 from gitaway.tripgrid import Flight, Stay
 
 MAX_FLIGHTS = MAX_STAYS = 12     # the page draws up to 12 columns
@@ -38,7 +38,6 @@ class Found:
     flights: tuple
     stays: tuple
     drive_min: Callable      # (flight, stay) -> minutes from its airport to the stay, or None when not known
-    book: Callable           # (flight or stay) -> ((label, href), ...): where it is booked, never on GitAway
     sample: bool             # invented data: the page says so
     problem: str = ""        # why there are no offers (a spent budget, a failed search), said in words
     checked: datetime | None = None     # when the older of the answers was fetched
@@ -58,11 +57,7 @@ def _catalog(trip):
     def drive_min(flight, stay):
         return catalog.ride_base(flight.airport, catalog.ride_area(flight.airport, offers[stay.id]), "arrive")[1]
 
-    def book(item):
-        offer = catalog.offer(item.id, trip)
-        return ((f"Book on {partners.for_offer(offer).name}", partners.go_href(offer, trip)),)
-
-    return Found(flights, stays, drive_min, book, True) if flights and stays else None
+    return Found(flights, stays, drive_min, True) if flights and stays else None
 
 
 def _stops_text(n: int) -> str:
@@ -104,7 +99,7 @@ def _liteapi(trip, family=""):
     stays = tuple(_stay(s) for s in st.items[:MAX_STAYS]) if not problem else ()
     if not problem and not (flights and stays):
         problem, flights, stays = NONE, [], ()
-    return Found(tuple(flights), stays, lambda flight, stay: None, lambda item: (), False, problem, min((a.fetched for a in answers if a.fetched), default=None))
+    return Found(tuple(flights), stays, lambda flight, stay: None, False, problem, min((a.fetched for a in answers if a.fetched), default=None))
 
 
 def _source(trip, family=""):

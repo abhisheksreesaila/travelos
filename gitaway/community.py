@@ -36,8 +36,8 @@ _SCHEMA = """CREATE TABLE IF NOT EXISTS published (
     snapshot TEXT NOT NULL, meta TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
 _CREATORS = """CREATE TABLE IF NOT EXISTS creators (
     handle TEXT PRIMARY KEY, owner_user TEXT NOT NULL UNIQUE, name TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
-# F-184/F-185: a creator's own Travelpayouts marker (keyed by the person, so it can be saved before a first publish), a taken-down trip, a report, and one row
-# per /go click that came from a creator's trip. Plain CREATE IF NOT EXISTS: a live database gains them on first use, no migration.
+# F-184/F-185: a taken-down trip and a report. `creator_markers` and `via_clicks` (a creator's own Travelpayouts marker, one row per /go click from their trip) are not written since F-297 (D-971);
+# the tables stay, never dropped, and the forget-a-person list clears them. Plain CREATE IF NOT EXISTS: a live database gains them on first use, no migration.
 _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY KEY, marker TEXT NOT NULL, updated_at TEXT NOT NULL)""",
          """CREATE TABLE IF NOT EXISTS takedowns (slug TEXT PRIMARY KEY, taken_at TEXT NOT NULL)""",
          """CREATE TABLE IF NOT EXISTS reports (
@@ -52,7 +52,7 @@ _MORE = ("""CREATE TABLE IF NOT EXISTS creator_markers (owner_user TEXT PRIMARY 
          # F-194: a creator's trip whose ownership the captain has not checked: "pending" (a claim by someone not at the post's site: unlisted), "unverified" (an open import: listed, the byline waits)
          # or "approved". No row: nothing to check. Holds the slug and the post's site only; who published it is read from the trip.
          """CREATE TABLE IF NOT EXISTS trip_review (slug TEXT PRIMARY KEY, state TEXT NOT NULL, host TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL)""",
-         # F-195: Klook links the partner-links API could not make, per day and reason (gitaway/partners/failures.py): no person in it
+         # F-195: Klook links the partner-links API could not make, per day and reason: no person in it. Nothing writes it since F-297 (D-971); the table stays, never dropped
          """CREATE TABLE IF NOT EXISTS klook_failures (day TEXT NOT NULL, reason TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, last_at TEXT NOT NULL, PRIMARY KEY (day, reason))""",
          # F-220: uncached LiteAPI calls per day and family ("guest" for everyone signed out), for the daily budgets (gitaway/liteapi.py): a count, no search
          """CREATE TABLE IF NOT EXISTS liteapi_searches (day TEXT NOT NULL, family TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, family))""",

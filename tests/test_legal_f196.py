@@ -48,7 +48,7 @@ def test_terms_have_a_repeat_infringer_policy(terms):
 
 def test_the_sample_prices_sentence_is_gone_but_terms_still_say_nothing_is_booked_here(terms):
     assert "sample prices" not in terms
-    assert "GitAway does not book anything. A Book button takes you to a partner's own site, and you book and pay there" in terms and "Check every flight, stay and time" in terms      # F-193: the one payment GitAway takes is Plan it for me, said in the next paragraph
+    assert "Whatever you book here is booked and paid through Nuitée (LiteAPI), the seller and merchant of record" in terms and "Check every flight, stay and time" in terms      # F-193: the one payment GitAway takes is Plan it for me, said in the next paragraph
 
 
 def test_the_dmca_agent_is_pending_until_the_environment_names_one(client, monkeypatch):
@@ -75,14 +75,7 @@ def test_takedown_notices_go_to_the_contact_address_when_one_is_set(client, monk
 
 # ---- privacy --------------------------------------------------------------------------------------------------------------------------
 
-def test_privacy_says_what_ga_via_is_and_no_longer_claims_no_tracking_cookies(privacy):
-    assert "ga_via, is a 30-day affiliate attribution cookie" in privacy
-    assert "exists to credit the creator, not to build a profile of you" in privacy
-    assert "no tracking or advertising cookies of our own" not in privacy
-    assert "GitAway sets no analytics or advertising cookie" in privacy
-
-
-def test_privacy_names_the_travelpayouts_drive_script_on_the_signed_out_landing(privacy):
-    for phrase in ("Travelpayouts Drive", "only on the landing page you see signed out", "tp-em.com", "turn travel links on that page into partner links",
-                   "never on a page you see signed in", "may set its own cookies"):
-        assert phrase in privacy, phrase
+def test_privacy_names_the_one_cookie_and_has_no_affiliate_script_or_cookie(privacy):
+    assert "One cookie, which keeps you signed in, for up to 30 days. GitAway sets no analytics, advertising or affiliate cookie." in privacy
+    for gone in ("ga_via", "Travelpayouts", "tp-em.com", "attribution cookie"):
+        assert gone not in privacy, gone

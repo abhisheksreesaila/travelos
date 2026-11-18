@@ -318,7 +318,7 @@ def test_off_the_showcase_the_grid_reads_liteapi(fake, monkeypatch):
     s = found.stays[0]
     assert s.name and s.cents == 59694 + 16000                    # the resort fee paid at the hotel is part of the whole trip, and the room says so
     assert "Room only" in s.detail and "$160 of it paid at the hotel" in s.detail and s.rating
-    assert found.drive_min(f, s) is None and found.book(f) == ()   # no drive is guessed; booking opens later (F-222)
+    assert found.drive_min(f, s) is None   # no drive is guessed (F-222)
     assert liteapi.searches_today() == 2
 
 

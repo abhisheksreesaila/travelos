@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import pytest
 from sqlalchemy import text
 
-from gitaway import affiliate, auth, community, stats
+from gitaway import auth, community, stats
 from tests.live_trips import live_trip
 from tests.pagebody import without_bar
 from tests.test_signin import sign_in
@@ -140,7 +140,7 @@ def test_yesterdays_seen_rows_are_purged_when_a_new_day_starts(client, monkeypat
     assert sum(d["views"] for d in table("trip_days")) == 4          # the counts stay, only the who-was-here is gone
 
 
-# ---- forks, "Plan this trip" taps, partner clicks ---------------------------------------------------------------------
+# ---- forks and "Plan this trip" taps ---------------------------------------------------------------------
 
 def plan_from(client, row, handle, ip="203.0.113.7", ua=CHROME):
     return client.get(f"/plan?to=la&d=2027-03-05&r=2027-03-08&a=2&via={handle}", headers={"referer": f"http://testserver/trips/{row['slug']}", "x-forwarded-for": ip, "user-agent": ua})
@@ -151,14 +151,6 @@ def test_a_plan_link_not_clicked_on_the_creators_own_page_is_not_a_tap(client):
     client.get(f"/plan?to=la&d=2027-03-05&r=2027-03-08&a=2&via={handle}", headers={"referer": "https://elsewhere.example/post"})
     client.get(f"/plan?to=la&d=2027-03-05&r=2027-03-08&a=2&via={handle}")
     assert numbers(s["user_id"])["all"]["plans"] == 0
-
-
-def test_partner_clicks_say_whose_marker_earned(client):
-    _, handle, s = live_trip()
-    for own in (True, True, False):
-        affiliate.log_click(handle, "aviasales" if own else "klook", "flight" if own else "stay", own)
-    c = stats.report(s["user_id"])["clicks"]
-    assert (c["all"], c["own"], c["gitaway"]) == (3, 2, 1)
 
 
 # ---- the windows ----------------------------------------------------------------------------------------------------
@@ -182,16 +174,6 @@ def test_the_sparkline_has_one_point_per_day_oldest_first(client):
     put(row["slug"], ago(0), views=2)
     spark = numbers(s["user_id"], row["slug"])["spark"]
     assert len(spark) == 30 and spark[0] == 5 and spark[-1] == 2 and sum(spark) == 7
-
-
-def test_partner_clicks_are_windowed_by_the_day_they_happened(client):
-    _, handle, s = live_trip()
-    affiliate.log_click(handle, "aviasales", "flight", True)
-    with community.connect() as db:
-        db.conn.execute(text("UPDATE via_clicks SET clicked_at = :t"), {"t": f"{ago(10).isoformat()}T09:00:00.000000+00:00"})
-        db.conn.commit()
-    c = stats.report(s["user_id"])["clicks"]
-    assert (c["7"], c["30"], c["all"]) == (0, 1, 1)
 
 
 def test_the_total_adds_up_the_trips(client):
@@ -227,24 +209,22 @@ def test_a_creator_sees_their_own_trips_and_never_another_creators(client):
     assert re.search(r'id="cs-readers"[^>]*>12<', body)
 
 
-def test_the_page_shows_readers_forks_taps_and_clicks_for_the_chosen_window(client):
+def test_the_page_shows_readers_forks_and_taps_for_the_chosen_window(client):
     row, handle, _ = live_trip()
     put(row["slug"], ago(2), views=12, forks=3, plans=5)
     put(row["slug"], ago(20), views=100, forks=10, plans=50)
-    affiliate.log_click(handle, "aviasales", "flight", True)
-    affiliate.log_click(handle, "klook", "stay", False)
     sign_in(client, "maya@example.com")
 
     def shown(w):
         body = without_bar(client.get(f"/creators/stats?w={w}").text)
-        return [re.search(rf'id="cs-{k}"[^>]*>(\d+)<', body).group(1) for k in ("readers", "forks", "taps", "clicks")]
+        return [re.search(rf'id="cs-{k}"[^>]*>(\d+)<', body).group(1) for k in ("readers", "forks", "taps")]
 
-    assert shown("7") == ["12", "3", "5", "2"]
-    assert shown("30") == ["112", "13", "55", "2"]
-    assert shown("all") == ["112", "13", "55", "2"]
+    assert shown("7") == ["12", "3", "5"]
+    assert shown("30") == ["112", "13", "55"]
+    assert shown("all") == ["112", "13", "55"]
     assert shown("bogus") == shown("30")                     # an unknown window is the default
     body = without_bar(client.get("/creators/stats").text)
-    assert "1 with your marker" in body and "1 through GitAway" in body
+    assert "partner click" not in body and "marker" not in body and 'id="cs-clicks"' not in body
     assert "$" not in body
 
 

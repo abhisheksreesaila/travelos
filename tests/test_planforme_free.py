@@ -169,4 +169,4 @@ def test_privacy_and_terms_say_no_payment_is_taken(client):
     assert "GitAway takes no payment of any kind. Plan it for me is free while GitAway is in early preview" in terms
     assert "Stripe" not in privacy and "Stripe" not in terms and "the amount and Stripe's code" not in privacy
     assert "Anthropic (Claude Haiku) builds your trip when you ask for Plan it for me" in privacy
-    assert "No commission opens their search" in privacy and "Change or cancel button" in terms
+    assert "No affiliate links." in privacy and "Change or cancel button" in terms

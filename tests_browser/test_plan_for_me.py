@@ -43,7 +43,7 @@ def day_label(d):
     return f"{d:%A}, {d:%B} {d.day}"
 
 
-CONTROLS = "#pf button, #pf .btn, #pf .pf-pill, #pf input[type=text], #pf textarea, #pf [role=button], #pf a.pf-link"
+CONTROLS = "#pf button, #pf .btn, #pf .pf-pill, #pf input[type=text], #pf textarea, #pf [role=button]"
 
 
 @pytest.fixture
@@ -136,7 +136,7 @@ def test_a_stranger_fills_the_intake_signs_in_pays_and_opens_their_trip(setup, s
     expect(page.locator("#pf-title")).to_have_text("Your trip is ready", timeout=20000)      # the page reloads itself when the status changes
     expect(page.locator("#pf-open")).to_be_visible()
     expect(page.locator("#pf-promise")).to_have_text("Not useful? Email us within 7 days for a full refund.")
-    expect(page.locator("#pf-go-flight")).to_be_visible()
+    assert page.locator("#pf-book").count() == 0
     assert overflow(page) <= 1 and not too_small(page, CONTROLS), too_small(page, CONTROLS)
     shot(page, f"ready-{w}")
 

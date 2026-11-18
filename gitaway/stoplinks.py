@@ -1,6 +1,6 @@
 """A stop can carry one link of the creator's own (F-196). The creator's brief says GitAway never takes their links away; their trips are mostly booking and ticket links.
 
-A link is kept only when it goes to a site on ALLOWED (booking, ticket and affiliate sites) or to the creator's own blog (`own_domain`). Nothing else ever reaches a public page: not a
+A link is kept only when it goes to a site on ALLOWED (booking and ticket sites, where a creator may use their own affiliate link) or to the creator's own blog (`own_domain`). Nothing else ever reaches a public page: not a
 shortener, not a stranger's site, not an address with a name or an email in it. Links are never fetched by GitAway; they are drawn rel="sponsored noopener" (gitaway/itinerary_view.py).
 
     clean(url, own)         the address when it is allowed, else ""

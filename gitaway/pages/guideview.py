@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Aside, Blockquote, Button, Div, H1, H2, H3, I, Img, Li, Link, Ol, P, Pre, Script, Section, Small, Span, Template
 
-from gitaway import guide as gd
+from gitaway import guide as gd, howpaid
 from gitaway.icons import icon
 from gitaway.itinerary_view import _from_gitaway
 from gitaway.pages import bookview
@@ -105,7 +105,7 @@ def panel() -> Aside:
 
 def _actions(g: gd.Guide, mode: str, state: dict) -> Div:
     add = state.get("add", "no")
-    plan = A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights, g.handle), cls="go", id="g-plan", data_plan="1")
+    plan = A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights), cls="go", id="g-plan", data_plan="1")
     if mode == "owner":
         return Div(A(icon("pencil", 20, 2.2), "Edit details", href=state["editor"], cls="tonal", id="detailsBtn"), cls="g-act")
     heart = bookview.heart_button(state.get("saved", False), g.slug, state.get("signed", False))
@@ -145,15 +145,14 @@ def share_template() -> Template:
 
 
 def trust(g: gd.Guide, st: dict) -> Div:
-    """What is true about the money and the words, in plain sentences (F-184, F-185, F-196): who earns from Plan this trip (affiliate.earning_line, the one place those words live), that a stop's link is the
-    creator's own and may earn them a commission and that GitAway adds nothing to its price, and Report this trip for a guide that is live."""
-    from gitaway import affiliate      # here: affiliate reads the community database
+    """What is true about the money and the words, in plain sentences (F-184, F-185, F-196, F-297): who earns from this page (howpaid.earning_line, the one place those words live), that a stop's link is the
+    creator's own and that GitAway adds nothing to its price, and Report this trip for a guide that is live."""
     if g.sample:
         return Div(P("A sample guide: the people and prices in it are made up so you can see how it reads.", cls="g-disclose"), cls="g-trust")
     own = f"{g.author}'s" if g.author else g.poss
     has_links = any(s.link for d in g.days for s in d.stops)
     return Div(P(f"The words, the times and the links are {g.poss} own. GitAway adds nothing to the price of their links.", cls="g-disclose"),
-               P(affiliate.earning_line(g.author, False, bool(st.get("plannable", True))), id="who-earns", cls="g-disclose"),
+               P(howpaid.earning_line(bool(st.get("plannable", True))), id="who-earns", cls="g-disclose"),
                P(f"Links on a stop are {own} own. They may earn them a commission.", id="own-links", cls="g-disclose") if has_links else "",
                A(icon("flag", 18, 2.2), "Report this guide", href=f"/report?trip={g.slug}", cls="tonal", id="report-this") if st.get("report") else "", cls="g-trust")
 
@@ -179,7 +178,7 @@ def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     days = [day_section(g, d, owner, add) for d in g.days]
     disclose = trust(g, st)
     main = Div(back, head, owner_bar(g, st) if owner else "", privates, Div(*[tile(t) for t in g.tiles], cls="g-tiles"), strip(g), *days, disclose, cls="g-main")
-    return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights, g.handle), data_title=g.title,
+    return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights), data_title=g.title,
                     data_days=str(len(g.days)), data_stops=str(g.stops), data_by=g.by, data_host=g.host, data_live="1" if st.get("live") else "0", data_first=g.first, data_post=st.get("post", ""), data_sample="1" if g.sample else "0", data_signed="1" if st.get("signed") else "0"),
             share_template() if owner else "", Div(id="scrim", cls="scrim"), Div(id="sheet", cls="sheet", role="dialog", aria_modal="true", hidden=True), Div(id="toast", cls="toast", role="status", aria_live="polite"),
             Aside(id="sharep", cls="sharep v2-glass", hidden=True, aria_label="Share your guide")]

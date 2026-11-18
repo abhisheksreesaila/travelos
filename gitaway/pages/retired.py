@@ -34,6 +34,7 @@ RETIRED = {
     ),
     WAY_IN: (
         "/plan", "/plan/grid", "/plan/grid/trip", "/plan/quote", "/plan/explore", "/plan/pay", "/pay", "/trip/book", "/trip/new",
+        "/go/{offer_id}", "/book/{lane}", "/sandbox/{partner}/{click}", "/sandbox/{partner}/{click}/done", "/plan-for-me/{order_id}/go/{lane}",     # F-297: the partner links and their stand-in checkout
     ),
     GUIDES: (
         "/forks", "/forks/apply", "/forks/undo", "/fork", "/share", "/share/unpublish", "/share/done",

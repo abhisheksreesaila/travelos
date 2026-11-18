@@ -84,9 +84,10 @@ def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, 
     for promise in ("Another place your post travels", "Readers can plan the trip", "The links stay yours", "You can see who reads it"):
         assert promise in text
     assert "Free. Terms shown on day one." in text
-    for term in ("What we show", "Take it down any time", "Your marker", "Later, a share for big creators"):
+    for term in ("What we show", "Take it down any time", "How GitAway is paid"):
         assert term in text
-    assert "Stays and things to do support GitAway for now." in text and "That is a plan, not a promise of an amount." in text
+    assert "GitAway has no affiliate links." in text and "Nothing on a guide carries a tracking code of ours." in text
+    assert "marker" not in text and "Klook" not in text and "Travelpayouts" not in text
 
 
 def test_the_questions_say_what_to_paste_for_instagram_and_youtube(client, mode):
@@ -98,7 +99,7 @@ def test_the_questions_say_what_to_paste_for_instagram_and_youtube(client, mode)
 
 def test_every_question_opens_and_closes_with_a_tap_and_no_script(client, mode):
     html = client.get("/guides/make").text
-    assert len(re.findall(r"<details[^>]*class=\"fc-q\"", html)) == 8 and html.count("<summary>") == 8
+    assert len(re.findall(r"<details[^>]*class=\"fc-q\"", html)) == 7 and html.count("<summary>") == 7
 
 
 # ---- the live example ----------------------------------------------------------------------------------------------

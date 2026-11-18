@@ -275,29 +275,12 @@ def _tips(trip):
 # ---------- who earns, and report (F-184, F-185) ----------
 
 def _trust(trip):
-    """A real trip's plain statement of who earns from its Book links, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
-    from gitaway import affiliate, community  # here, not at the top: both read the community database
-    line = affiliate.earning_line(trip.author, bool(affiliate.marker_for(trip.handle, trip.slug)) if trip.handle else False, bool(trip.plan_to))
+    """A real trip's plain statement of who earns from it, and "Report this trip" (only once it is live: a draft's preview has nothing to report)."""
+    from gitaway import community, howpaid  # here, not at the top: community reads the community database
+    line = howpaid.earning_line(bool(trip.plan_to))
     report = A(icon("flag", 18, 2.2), "Report this trip", href=f"/report?trip={trip.slug}", cls="btn btn-sm trust-report", id="report-this") if community.is_real(trip.slug) else ""
     own = P(f"Links on a stop are {trip.author}'s own. They may earn them a commission.", id="own-links", cls="trust-line") if any(s.link for d in trip.days for s in d.stops) else ""     # F-196
     return Section(P(line, id="who-earns", cls="trust-line"), own, report, id="trust", cls="trust ga-wrap")
-
-
-# ---------- tickets and things to do (F-195) ----------
-
-def _todo(trip):
-    """A real trip's Tickets and things to do card (Klook), honest about who it pays: Klook never carries a creator's marker (D-101). Nothing where we plan no place or nowhere to send anyone."""
-    from gitaway import catalog, hub, partners  # here, not at the top: hub reads the community database
-    href = hub.todo_href(trip) if trip.real else ""
-    if not href or not partners.available():
-        return ""
-    where = catalog.sample_trip(trip.plan_to, focus=hub.focus_of(trip))
-    offer = catalog.search_offer("todo", where)
-    return Section(
-        Div(H2(offer.name), P(offer.headline, cls="todo-what"),
-            P(f"Klook sells the tickets and keeps your booking. This link supports GitAway, not {trip.author.split()[0]}.", cls="todo-fine")),
-        A(icon("link", 22, 2.2), where.todo_cta, href=href, rel="sponsored noopener", cls="btn btn-hero", id="todo-klook"),
-        id="todo", cls="todo ga-wrap")
 
 
 def plan_for_me_card(title, href, cls="pf-card ga-wrap", price=True):
@@ -350,7 +333,7 @@ SCRIPT = Script("""
 def itinerary_body(trip: Itinerary, loading: bool = False, saved: bool = False, forked: bool = False, blog=""):
     if loading:
         return skeleton(trip)
-    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), _todo(trip) if trip.real else "", plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
+    return Div(_hero(trip, saved, forked), _board(trip), _days(trip), _tips(trip), plan_for_me_card("Want this trip built around your family?", f"/plan-for-me?from={trip.slug}", price=False) if trip.real else "", blog, _trust(trip) if trip.real else "", SCRIPT, cls="itinerary")
 
 
 def itinerary_page(trip: Itinerary, theme=None, loading: bool = False, saved: bool = False, forked: bool = False, blog="", noindex: bool = False, waiting: bool = False):

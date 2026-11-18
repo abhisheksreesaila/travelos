@@ -65,7 +65,7 @@ def paste_page(session, link="", text="", error="", status=200):
     body = Div(Section(Div(Span(I(), "For travel creators", cls="kicker"), H1("Turn your post into a trip", cls="disp ci-h"),
                             P("Paste a link or your text. GitAway drafts the days, you fix what is off, and nothing is public until you tick \"This is my post\" and publish.", cls="ci-lede"), note, cls="ci-top"),
                        form, creatordrafts.bulk_card() if mode != "manual" else "",
-                       P(A("Add your affiliate marker", href="/creators/settings", id="ci-marker"), " so flight bookings from your trips pay you.", cls="ci-hint"), id="landing", cls="ci ga-wrap"),
+                       id="landing", cls="ci ga-wrap"),
                studio.stage(), studio.foot(), cls="cv-paste")
     return FtResponse(page("Turn your post into a trip", body, current="/guides", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/creatordrafts.css")), v2="cv", quiet=True), status_code=status)
 

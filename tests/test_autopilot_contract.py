@@ -1,6 +1,5 @@
 """Autopilot contract (GOAL.md M1-M4, M6). Written before the work; never edited to pass. Test names start with the milestone."""
 import re
-from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -12,10 +11,6 @@ TRIP = "d=2027-03-05&r=2027-03-09&a=2"
 
 def plan(client, to):
     return client.get(f"/plan?to={to}&{TRIP}")
-
-
-def go_links(html):
-    return re.findall(r'href="(/go/[^"]+)"', html.replace("&amp;", "&"))
 
 
 # M1 four places --------------------------------------------------------------
@@ -39,22 +34,7 @@ def test_m1_catalog_is_deterministic(client):
     assert a == b
 
 
-# M2 partner seam -------------------------------------------------------------
-
-def test_m2_unknown_offer_is_404(client):
-    assert client.get(f"/go/nope-not-real?to=la&{TRIP}", follow_redirects=False).status_code == 404
-
-
-# M3 the loop closes ----------------------------------------------------------
-
-def _complete_sandbox(client, to="hi"):
-    link = go_links(plan(client, to).text)[0]
-    loc = client.get(link, follow_redirects=False).headers["location"]
-    page = client.get(loc).text
-    action = re.search(r'<form[^>]*action="([^"]+)"', page).group(1)
-    fields = dict(re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', page))
-    return client.post(action, data=fields, follow_redirects=True)
-
+# M2 and M3 (the partner seam, the sandbox checkout) were removed with the affiliate links (F-297, D-971); the old address still answers.
 
 def test_m3_partners_needs_sign_in(client):
     r = client.get("/partners", follow_redirects=False)

@@ -17,7 +17,7 @@ from fasthtml.common import A, Button, Div, Form, H1, Input, Label, Link, P, Scr
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import access, affiliate, asksuggest, interests, v2sentence
+from gitaway import access, asksuggest, interests, v2sentence
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import tripmatrix
@@ -74,11 +74,9 @@ def ask_page(s=None, picked=(), problem="", q=""):
 
 def register(app):
     @app.get(PATH)
-    def ask(request, session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = "", via: str = ""):
+    def ask(request, session, to: str = "", home: str = "", d: str = "", r: str = "", a: str = "", k: str = "", x: str = "", nb: str = "", b: str = ""):
         s = tripmatrix.state(to, home, d, r, a, k, x, nb, b)
-        body = ask_page(s, interests.get(session), q=box_for(s, {"to": to, "d": d, "r": r, "a": a, "k": k}))
-        mark = affiliate.credit_cookie(request, via)      # F-254: "Plan this trip" on a creator's guide remembers whose it is
-        return (body, mark) if mark else body
+        return ask_page(s, interests.get(session), q=box_for(s, {"to": to, "d": d, "r": r, "a": a, "k": k}))
 
     @app.get(SUGGEST)
     def suggest(q: str = "", home: str = ""):

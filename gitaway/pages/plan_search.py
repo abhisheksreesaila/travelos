@@ -1,11 +1,11 @@
-"""What a search is, in words (F-195, F-198; trimmed by F-254 when the booking lanes page at /plan retired): the place, dates and party a request names, read the one way for the partner links
-(/book/<lane>, gitaway/pages/partners.py), the trip matrix's old addresses (`matrix_href`) and the booking sheet's flight link. No page is drawn here."""
+"""What a search is, in words (F-195, F-198; trimmed by F-254 and F-297): the place, dates and party a request names, read the one way for a trip made from a search (gitaway/tripstart.py) and the
+trip matrix's old addresses (`matrix_href`). No page is drawn here."""
 
 from dataclasses import replace
 from urllib.parse import urlencode
 
 from gitaway import catalog, showcase
-from gitaway.partners import links, places
+from gitaway.partners import places
 
 BAD_IATA = "Use a three-letter airport code, like RNO, or leave it empty."
 
@@ -46,11 +46,11 @@ def search_from(place="", iata="", d="", r="", a="", k="", to="", home="", focus
     if not (k or "").strip() and not showcase.on():      # F-210: off the showcase the sample family's kids never fill in a party nobody typed
         trip = replace(trip, kid_ages=())
     spot = places.resolve(place_text(to, focus, place), iata)
-    return (links.Search(spot, trip.depart, trip.return_, trip.adults, trip.kid_ages, trip.home) if spot else None), errors
+    return (places.Search(spot, trip.depart, trip.return_, trip.adults, trip.kid_ages, trip.home) if spot else None), errors
 
 
-def query(search, via="", iata=""):
-    """The address words that carry a search to /book and back to /plan."""
+def query(search, iata=""):
+    """The address words that carry a search (to /trip/new and back)."""
     q = {"place": search.place.name, "d": search.depart.isoformat(), "r": search.return_.isoformat(), "a": search.adults}
     if search.kid_ages:
         q["k"] = ",".join(map(str, search.kid_ages))
@@ -58,13 +58,7 @@ def query(search, via="", iata=""):
         q["home"] = search.home
     if iata:
         q["iata"] = iata
-    if via:
-        q["via"] = via
     return q
-
-
-def _href(link, q):
-    return f"/book/{link.lane}?" + urlencode({"site": link.site, **q})
 
 
 MAX_KIDS = catalog.MAX_TRAVELERS - 1

@@ -9,7 +9,7 @@ Open to everyone, in both showcase modes, with no sample content in it: every wo
 
 from fasthtml.common import A, Button, Details, Div, Em, Form, I, H1, H2, H3, Img, Label, Li, Link, Ol, P, Section, Span, Summary, Textarea, Ul
 
-from gitaway import affiliate, community, creatordraft as cd, planforme, session as ses
+from gitaway import community, creatordraft as cd, howpaid, planforme, session as ses
 from gitaway.icons import icon
 from gitaway.itinerary_view import _icon
 from gitaway.layout import page
@@ -24,14 +24,13 @@ LEDE = f"{HEAD_LINE} {SUB} Paste it once: a blog link, a YouTube video or an Ins
 PROMISES = (
     ("ext", "fc-p1", "Another place your post travels", "Your guide has a page and a link of its own, a card for Instagram and a badge for your blog. It opens with your name and a link back to your post."),
     ("spark", "fc-p2", "Readers can plan the trip", "\"Plan this trip\" starts a search at the guide's place, and \"Add to my plan\" drops your stops into their calendar."),
-    ("link", "fc-p3", "The links stay yours", f"Each stop shows your own link, labelled as yours; GitAway adds nothing to its price. {affiliate.pays_you()}"),
+    ("link", "fc-p3", "The links stay yours", f"Each stop shows your own link, labelled as yours; GitAway adds nothing to its price. {howpaid.LINKS_YOURS}"),
     ("users", "fc-p4", "You can see who reads it", "Your stats page counts readers, plans started and clicks from your guides, with no cookies and no tracking of who they are."),
 )
 TERMS = (
     ("What we show", "Your name, the days, stops and tips you approve, up to two photos you pick (copied without where they were taken) and a link to your post. Never anything else."),
     ("Take it down any time", "Unpublish in one tap and the page and its photos go. Anyone can report a trip, and the person who runs GitAway can take a page down."),
-    ("Your marker", f"Paste your own Travelpayouts marker once. {affiliate.pays_you()} The trip page says so."),
-    ("Later, a share for big creators", "When a creator's trips bring a lot of bookings, we want to share what Klook pays us with them. That is a plan, not a promise of an amount."),
+    ("How GitAway is paid", howpaid.PAID + " Nothing on a guide carries a tracking code of ours."),
 )
 FAQ = (
     ("Does it work with Instagram?", "Instagram does not let anyone read a post, so paste the caption. We keep your link as the source and the draft comes from your words."),
@@ -41,7 +40,6 @@ FAQ = (
     ("What if the draft gets something wrong?", "It happens. A place it is not sure of shows as an unnamed stop, and nothing goes public until you fix it, tick \"This is my post\" and press Publish."),
     ("Will GitAway's copy compete with my post in Google?", "No. We tell Google not to index this copy, so your post keeps its ranking."),
     ("What does it cost?", "Nothing. Drafting, publishing and your page are free, and the terms are on this page before you start."),
-    ("How do I get my marker?", "In Travelpayouts, under Profile. It is a number such as 801445. Save it on your creator settings and it goes on the flight links of your trips."),
 )
 # the drawn example, shown only while nothing real is published: (time, title, icon, tint)
 SAMPLE_STOPS = (("9:00", "Venice Beach boardwalk", "sun", "sun"), ("12:30", "Lunch on Abbot Kinney", "food", "bubble"), ("17:30", "Sunset at the pier", "pin", "sky"))
@@ -113,7 +111,7 @@ def page_body(signed_in):
                     id="terms", cls="fc-sec ga-wrap"),
             Section(Div(H2("Questions bloggers ask"), cls="fc-sec-head"), Div(*[Details(Summary(q), P(a), cls="fc-q") for q, a in FAQ], cls="fc-faq"), id="faq", cls="fc-sec ga-wrap"),
             Section(Div(H2("Your next trip post is a trip someone can use."), A(bookview.ico("arrow"), "Start with your post", href="#fc-text", cls="go", id="fc-again"),
-                        A("Your marker", href="/creators/settings", cls="tonal", id="fc-marker"), cls="fc-end-in"), cls="fc-end ga-wrap"), id="landing"),
+                        A("Your blog button", href="/creators/settings", cls="tonal", id="fc-marker"), cls="fc-end-in"), cls="fc-end ga-wrap"), id="landing"),
         studio.stage(), studio.foot(), cls="fc")
 
 

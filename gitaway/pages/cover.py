@@ -308,12 +308,12 @@ def _boot():
     return (ASSETS / "js" / "cover_boot.js").read_text(encoding="utf-8").strip()
 
 
-def page(footer_links, drive=()):
-    """The whole cover document. `footer_links` are the landing's (home.footer_links); `drive` the Travelpayouts Drive tag when it is switched on (home._drive)."""
+def page(footer_links):
+    """The whole cover document. `footer_links` are the landing's (home.footer_links)."""
     head = styles(Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/cover.css"),
                   Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
                   Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
-                  *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE), *drive,
+                  *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE),
                   Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True))
     return (
         Title(f"GitAway · {TITLE}"),

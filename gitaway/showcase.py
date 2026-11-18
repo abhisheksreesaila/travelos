@@ -18,7 +18,7 @@ import re
 from gitaway import auth
 
 # Paths (and everything under them) that exist only for sample or community content.
-HIDDEN = ("/sandbox",  # the stand-in partner checkout (M3): partners keep real bookings, there is nothing to stand in for
+HIDDEN = ("/sandbox",  # the stand-in checkouts: nothing real to stand in for
           "/creators/draft", "/creators/finish", "/creators/done",  # the paste-a-link import is simulated (F-023)
           "/dev")  # F-223: the designer's previews (/dev/placeart)
 LITEAPI_PAGES = ("/plan/matrix", "/plan/ask")   # the trip matrix (F-222): off the showcase they exist only with LITEAPI_KEY, the one real source of their prices
@@ -56,15 +56,14 @@ def community_open() -> bool:
 
 
 def _needs_keys(path: str) -> bool:
-    """Pages that exist off the showcase only with real partner keys: /go/... sends a
-    traveler to a real tracked link (TRAVELPAYOUTS_MARKER), /plan-for-me sells only with STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and an AI key (`planforme.offered`), and the trip grid and
+    """Pages that exist off the showcase only with real keys: /plan-for-me sells only with STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and an AI key (`planforme.offered`), and the trip grid and
     the trip matrix price only with LITEAPI_KEY (F-222); without them there is nothing real to show or send anyone to."""
     if _under(path, LITEAPI_PAGES):
         return not os.getenv("LITEAPI_KEY", "").strip()
     if path == "/plan-for-me" or path.startswith("/plan-for-me/"):      # Plan it for me (F-193) is for sale only when `planforme.offered()`; the webhook is not here, it answers 503 without its own secret
         from gitaway import planforme
         return not planforme.offered()
-    return path.startswith("/go/") and not os.getenv("TRAVELPAYOUTS_MARKER", "").strip()
+    return False
 
 
 def _under(path: str, prefixes) -> bool:
