@@ -18,7 +18,7 @@
   the Heads up chip on the Book face, the rain nudge on the Plan face. Paper sky #F4F2EE (warm: #F6EFE3; dark #0C0C0E / #100E0B); the postcard is cream #FBF5EA in both modes.
   Contrast (measured): on the cream postcard #FBF5EA ink 17.0, ink-3 #6B6660 5.2, burnt #B23C10 5.5, green #0F766E 5.0 (on the dark-mode cream #EFE7D8: ink 15.0, ink-2 6.2, ink-3 4.6, burnt 4.8);
   ring words: the current one ink 16.5 on the paper; the others are decoration (aria-hidden) at 1.6, the captions carry the text.
-  Addresses: ?theme=light|dark ?colour=mono|warm|good ?beat=0..7 (jump to a beat) ?still ?picker=0
+  Addresses: ?look=canvas|stage ?theme=light|dark ?colour=mono|warm|good ?beat=0..7 (jump to a beat) ?still ?picker=0
   Every family, place, price and count here is made up, to show how it works (D-270).
 -->
 <style>
@@ -257,6 +257,51 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--sh1); }
 .pk-link { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: 8px; padding: 0 10px; border-radius: 14px; background: var(--card-2); color: var(--ink); font: 620 14px/1 var(--f-ui); text-decoration: none; }
 
+
+/* ======================= C, Stage: neutral Apple greys, colour from content (see index.html's Stage layer) =======================
+   No cream or paper: the postcard is white, its picture the place's own vivid colour. Orange is a clean signal orange (#F25500, words #B84A00), only on the
+   Book face's Heads up chip and the Plan face's rain nudge; the stamp and the pager go ink. Green #0F766E is good news. Headlines Inter, heavy and tight.
+   Contrast: ink #1D1D1F on #F5F5F7 15.5, #6E6E73 on #F5F5F7 4.7 and on white 5.1; dark: #A1A1A6 on #000 8.0, white ink 21; on the white postcard the same as light. */
+:root[data-look="stage"] { --f-display: "Inter", system-ui, sans-serif;
+  --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --find: #0F766E; --find-ink: #0F766E; --find-t: #E3F3EE;
+  --ground: #F5F5F7; --ink: #1D1D1F; --ink-2: #6E6E73; --ink-3: #6E6E73; --card: #FFFFFF; --card-2: #F0F0F3; --card-3: #E8E8ED; --line: rgb(0 0 0 / .08); --line-2: rgb(0 0 0 / .16); --ring-dim: rgb(0 0 0 / .1);
+  --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --paper: #FFFFFF; --paper-2: #F5F5F7; --paper-3: #E8E8ED;
+  --k-stay: #1D1D1F; --k-stay-t: #F0F0F3; --k-fl: #1D1D1F; --k-fl-t: #F0F0F3; --k-wx: #F5B400; --k-plan-t: #F0F0F3;
+  --sh1: 0 1px 2px rgb(0 0 0 / .05); --sh3: 0 2px 4px rgb(0 0 0 / .04), 0 30px 60px -28px rgb(0 0 0 / .28); }
+:root[data-look="stage"][data-theme="dark"] { --sig: #FF7A1A; --sig-ink: #FF9A4D; --sig-t: #3A2210;
+  --ground: #000000; --ink: #F5F5F7; --ink-2: #A1A1A6; --ink-3: #A1A1A6; --card: #1C1C1E; --card-2: #2C2C2E; --card-3: #3A3A3C; --line: rgb(255 255 255 / .1); --line-2: rgb(255 255 255 / .18); --ring-dim: rgb(255 255 255 / .1);
+  --cta-bg: #F5F5F7; --cta-fg: #1D1D1F; --sh3: 0 30px 70px -28px rgb(0 0 0 / .9), 0 0 0 1px rgb(255 255 255 / .06); }
+:root[data-look="stage"] .bg { display: none; }
+:root[data-look="stage"] .pc { --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --find: #0F766E; --find-ink: #0F766E; --find-t: #E3F3EE; --ink-2: #6E6E73; --ink-3: #6E6E73; --line: rgb(0 0 0 / .08); }
+:root[data-look="stage"] .stamp { background: #1D1D1F; }
+:root[data-look="stage"] .stamp svg { stroke: #FFFFFF; }
+:root[data-look="stage"] .stamp svg * { stroke: #FFFFFF; }
+:root[data-look="stage"] .pager button[aria-current]::before { background: var(--ink); }
+:root[data-look="stage"] .sq.pick { box-shadow: 0 6px 14px -6px rgb(0 0 0 / .5); }
+:root[data-look="stage"] .sq.pick small { background: #D5EFE8; color: #0B5C55; }
+:root[data-look="stage"] .btn .dot { display: none; }
+/* the picture is the place's own colour, its line art in white */
+:root[data-look="stage"] .aw { display: none !important; }
+:root[data-look="stage"] .am { display: block !important; }
+:root[data-look="stage"] .photo, :root[data-look="stage"] .mx .pl .t { background: var(--pc); }
+:root[data-look="stage"] .am .ln { stroke: #FFFFFF; opacity: .9; stroke-width: 2.5; }
+:root[data-look="stage"] .am .fl { fill: rgb(0 0 0 / .2); }      /* the greeting sits on a darker band of the colour: white on it passes (blue 6.6, violet 7.1, green 6.8) */
+:root[data-look="stage"] .photo .greet { color: #FFFFFF; text-shadow: none; }
+:root[data-look="stage"] .mx .pl .t .am .ln { stroke-width: 6; }
+/* the gallery: other families' postcards as saturated colour cards */
+:root[data-look="stage"] .gal i { background: var(--gc); border-color: #FFFFFF; opacity: calc(1 - var(--d) * .07); }
+@media (min-width: 761px) { :root[data-look="stage"] .caps { width: min(470px, 33vw); } }
+@media (max-width: 760px) { :root[data-look="stage"] .gal i { opacity: calc(.55 - var(--d) * .04); } }
+:root[data-look="stage"] .gal i b { background: #FFFFFF; color: #1D1D1F; font: 600 11px/1.25 var(--f-ui); }
+/* the type: Inter, big, heavy, tight; the soft words in grey, not italic */
+:root[data-look="stage"] .cap h1, :root[data-look="stage"] .cap h2, :root[data-look="stage"] .endcard h2 { font-weight: 800; letter-spacing: -0.045em; line-height: 1; font-size: clamp(2.3rem, 3.9vw, 3.7rem); }
+:root[data-look="stage"] .cap em, :root[data-look="stage"] .endcard em { font-style: normal; font-weight: 800; color: var(--ink-3); }
+:root[data-look="stage"] .ring text { font-weight: 800; letter-spacing: -0.04em; font-size: 52px; }
+:root[data-look="stage"] .brand { font-weight: 700; letter-spacing: -0.03em; }
+:root[data-look="stage"] .wish label, :root[data-look="stage"] .bk h3, :root[data-look="stage"] .f-guide h3, :root[data-look="stage"] .f-art .over b, :root[data-look="stage"] .f-pass b { font-weight: 700; letter-spacing: -0.03em; }
+:root[data-look="stage"] .wish textarea { font: 500 1.1em/1.72 var(--f-ui); }
+:root[data-look="stage"] .gd { color: var(--find-ink); font-weight: 650; }
+
 /* the phone: the card on top, its words under it, no ring */
 @media (max-width: 760px) {
   .bar { padding: 12px 16px; }
@@ -339,7 +384,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 </main>
 
 <details class="picker" id="picker" open><summary>Design options</summary>
-  <div class="pk-row"><small>Look</small><div class="seg"><button aria-pressed="true" disabled>A · Canvas</button></div></div>
+  <div class="pk-row"><small>Look</small><div class="seg" id="pk-look"><button data-lk="canvas">A · Canvas</button><button data-lk="stage">C · Stage</button></div></div>
   <div class="pk-row"><small>Mode</small><div class="seg" id="pk-mode"><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
   <div class="pk-row"><small>Colour</small><div class="seg" id="pk-col"><button data-col="mono">Mono</button><button data-col="warm">Warm</button><button data-col="good">Warm + good</button></div></div>
   <a class="pk-link" id="pk-link" href="index.html">The matrix and the square<span aria-hidden="true">→</span></a>
@@ -366,8 +411,9 @@ const MONO = {
   la: '<svg viewBox="0 0 480 240" preserveAspectRatio="xMidYMax slice"><circle class="ln" cx="90" cy="64" r="26"/><path class="ln" d="M0 170 L90 110 L170 150 L260 96 L350 140 L480 104"/><path class="ln" d="M236 104 a24 24 0 0 1 48 0 M226 104 H294 M244 104 V118 M276 104 V118"/><path class="ln" d="M60 230 V160 M60 160 q-18 -6 -26 4 M60 160 q18 -6 26 4 M400 230 V150 M400 150 q-18 -6 -26 4 M400 150 q18 -6 26 4"/><path class="fl" d="M0 210 H480 V240 H0Z"/></svg>',
   lt: '<svg viewBox="0 0 480 240" preserveAspectRatio="xMidYMax slice"><path class="ln" d="M0 150 L110 60 L170 110 L250 40 L340 120 L400 80 L480 130"/><path class="ln" d="M90 76 L110 60 L128 76 M232 56 L250 40 L270 58"/><path class="ln" d="M60 210 l20 -50 l20 50 Z M110 210 l16 -40 l16 40 Z M380 210 l20 -54 l20 54 Z"/><path class="ln" d="M0 180 H480"/><path class="fl" d="M0 214 H480 V240 H0Z"/></svg>',
 };
-const pic = (id, greet = '') => `<div class="photo"><span class="am${ART[id] ? ' has' : ''}">${MONO[id]}</span>${ART[id] ? `<span class="aw">${ART[id]}</span>` : ''}${greet ? `<span class="greet">${greet}</span>` : ''}</div>`;
-const thumb = id => `<span class="t">${ART[id] ? `<span class="am has">${MONO[id]}</span><span class="aw">${ART[id]}</span>` : `<span class="am">${MONO[id] || ''}</span>`}</span>`;
+const PCV = {"sd": "#0071E3", "la": "#7D4CF0", "lt": "#17834A"};      /* C, Stage: each place's own colour (index.html's PC) */
+const pic = (id, greet = '') => `<div class="photo" style="--pc:${PCV[id]}"><span class="am${ART[id] ? ' has' : ''}">${MONO[id]}</span>${ART[id] ? `<span class="aw">${ART[id]}</span>` : ''}${greet ? `<span class="greet">${greet}</span>` : ''}</div>`;
+const thumb = id => `<span class="t" style="--pc:${PCV[id]}">${ART[id] ? `<span class="am has">${MONO[id]}</span><span class="aw">${ART[id]}</span>` : `<span class="am">${MONO[id] || ''}</span>`}</span>`;
 const stamp = () => `<span class="stamp" aria-hidden="true">${FORK}</span><span class="pmark" aria-hidden="true">GitAway<br>Dec 2026</span>`;
 
 const BEATS = [
@@ -412,7 +458,8 @@ let rh = '<defs><path id="rp" d="M500 60 A440 440 0 1 1 500 940 A440 440 0 1 1 5
 BEATS.forEach(([w], k) => { rh += `<text class="${k ? '' : 'now'}" dy="20"><textPath href="#rp" startOffset="${k * 12.5 + 6.25}%" text-anchor="middle">${w}</textPath></text>`; const a = k * Math.PI / 4; rh += `<circle class="dot" r="7" cx="${(500 + 440 * Math.sin(a)).toFixed(1)}" cy="${(500 - 440 * Math.cos(a)).toFixed(1)}"/>`; });
 $('#ring').innerHTML = rh;
 const GL = ['Lisbon in 48 hours', 'Tahoe ski week', 'Kyoto in autumn', 'Maui with toddlers', 'New York at New Year', 'Banff by train', 'Mexico City, to eat', 'Big Sur drive', 'Paris for four', 'Zion and Bryce'];
-$('#gal').innerHTML = GL.map((l, i) => `<i style="--i:${i}"><b>${l}</b></i>`).join('');
+const GC = ['#0071E3', '#E5246B', '#00A6A6', '#7D4CF0', '#FFC300', '#17834A', '#D41F62', '#0A84FF', '#5E5CE6', '#30B0C7'];      /* Stage: saturated colour cards */
+$('#gal').innerHTML = GL.map((l, i) => `<i style="--i:${i};--gc:${GC[i]}"><b>${l}</b></i>`).join('');
 
 let beat = 0;
 function setBeat(k) {
@@ -438,14 +485,19 @@ const wish = $('#q'); wish?.addEventListener('keydown', e => { if (e.key === 'En
 const paint = () => {
   $$('#pk-mode button').forEach(b => b.setAttribute('aria-pressed', b.dataset.th === root.dataset.theme));
   $$('#pk-col button').forEach(b => b.setAttribute('aria-pressed', b.dataset.col === root.dataset.colour));
+  $$('#pk-look button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lk === root.dataset.look));
+  $('#pk-col').closest('.pk-row').hidden = root.dataset.look === 'stage';
   $('#mode').innerHTML = I(root.dataset.theme === 'dark' ? IC.sun : IC.moon);
-  $('#pk-link').href = `index.html?look=canvas&theme=${root.dataset.theme}&colour=${root.dataset.colour}`;
+  $('#pk-link').href = `index.html?look=${root.dataset.look}&theme=${root.dataset.theme}&colour=${root.dataset.colour}`;
 };
 const setTheme = t => { root.dataset.theme = t === 'dark' ? 'dark' : 'light'; store.set('bo-theme', root.dataset.theme); paint(); };
+const setLook = l => { root.dataset.look = l === 'stage' ? 'stage' : 'canvas'; store.set('bo-look', root.dataset.look); paint(); };
 const setColour = c => { root.dataset.colour = ['mono', 'warm', 'good'].includes(c) ? c : 'mono'; store.set('bo-colour', root.dataset.colour); paint(); };
 $('#pk-mode').addEventListener('click', e => { const b = e.target.closest('[data-th]'); if (b) setTheme(b.dataset.th); });
+$('#pk-look').addEventListener('click', e => { const b = e.target.closest('[data-lk]'); if (b) setLook(b.dataset.lk); });
 $('#pk-col').addEventListener('click', e => { const b = e.target.closest('[data-col]'); if (b) setColour(b.dataset.col); });
 $('#mode').addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+root.dataset.look = ['canvas', 'stage'].includes(Q.get('look') || store.get('bo-look')) ? (Q.get('look') || store.get('bo-look')) : 'canvas';
 setTheme(Q.get('theme') || store.get('bo-theme') || 'light'); setColour(Q.get('colour') || store.get('bo-colour') || 'mono');
 if (matchMedia('(max-width: 760px)').matches) $('#picker').open = false;
 if (Q.get('picker') === '0') $('#picker').hidden = true;
