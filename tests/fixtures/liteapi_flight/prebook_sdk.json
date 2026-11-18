@@ -1,0 +1,3200 @@
+{
+ "status": 200,
+ "seconds": 2.9,
+ "body": {
+  "data": [
+   {
+    "prebookId": "01a1effe-2d7f-78b4-9e13-1596fd089221",
+    "booking": {
+     "timestamp": "2026-11-18T18:49:37Z",
+     "journey": {
+      "journeyKey": "e668f40cd3b26f83",
+      "segments": [
+       {
+        "arrivalTime": "2026-12-18T17:29:00",
+        "carrier": {
+         "marketingCode": "ND",
+         "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "marketingName": "Nuit\u00e9e Air",
+         "operatingCode": "ND",
+         "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "operatingName": "Nuit\u00e9e Air"
+        },
+        "departureTime": "2026-12-18T15:50:00",
+        "originCode": "SFO",
+        "destinationCode": "SAN",
+        "direction": "OUTBOUND",
+        "duration": {
+         "iso8601": "PT1H39M",
+         "minutes": 99
+        },
+        "flight": {
+         "marketingNumber": "6278",
+         "operatingNumber": "6278"
+        },
+        "segmentKey": "3f8e3666",
+        "originName": "San Francisco International Airport",
+        "destinationName": "San Diego International Airport",
+        "stopCount": 0
+       },
+       {
+        "arrivalTime": "2026-12-22T20:34:00",
+        "carrier": {
+         "marketingCode": "ND",
+         "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "marketingName": "Nuit\u00e9e Air",
+         "operatingCode": "ND",
+         "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "operatingName": "Nuit\u00e9e Air"
+        },
+        "departureTime": "2026-12-22T18:55:00",
+        "originCode": "SAN",
+        "destinationCode": "SFO",
+        "direction": "INBOUND",
+        "duration": {
+         "iso8601": "PT1H39M",
+         "minutes": 99
+        },
+        "flight": {
+         "marketingNumber": "3060",
+         "operatingNumber": "3060"
+        },
+        "segmentKey": "4002c16c",
+        "originName": "San Diego International Airport",
+        "destinationName": "San Francisco International Airport",
+        "stopCount": 0
+       }
+      ],
+      "pricing": {
+       "display": {
+        "total": 569.07,
+        "currency": "USD",
+        "base": 426.8,
+        "fees": 0,
+        "taxes": 142.27,
+        "perPassenger": {
+         "adult": {
+          "base": 155.2,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 51.73,
+          "total": 206.93
+         },
+         "child": {
+          "base": 116.4,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 38.81,
+          "total": 155.21
+         },
+         "infant": {
+          "base": 15.52,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 5.18,
+          "total": 20.7
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": false,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "personal",
+         "description": "Personal item (backpack/handbag)",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "40x30x20cm",
+         "weightKg": 5
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "cabin",
+         "description": "Carry-on bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 33.66,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 8
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag 23kg",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 23
+        }
+       ]
+      },
+      "terms": {
+       "changeable": false,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "warning",
+         "message": "Non-refundable ticket"
+        },
+        {
+         "level": "danger",
+         "message": "Non-changeable ticket"
+        }
+       ]
+      },
+      "cabinClass": "ECONOMY",
+      "fare": {
+       "family": "Economy Light",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 9
+      },
+      "segmentFares": [
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "3f8e3666"
+       },
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "4002c16c"
+       }
+      ]
+     },
+     "passengers": [
+      {
+       "title": "MS",
+       "firstName": "Maya",
+       "lastName": "Okafor",
+       "birthday": "1985-04-12",
+       "gender": "F",
+       "nationality": "US"
+      },
+      {
+       "title": "MR",
+       "firstName": "Daniel",
+       "lastName": "Okafor",
+       "birthday": "1983-09-03",
+       "gender": "M",
+       "nationality": "US"
+      },
+      {
+       "firstName": "Leo",
+       "lastName": "Okafor",
+       "birthday": "2019-10-11",
+       "gender": "M",
+       "nationality": "US",
+       "passengerType": 1
+      }
+     ],
+     "order": {
+      "reference": {
+       "orderId": "GJ2N45",
+       "airlineBookings": [
+        {
+         "airlineCode": "ND",
+         "airlineName": "Nuit\u00e9e Air",
+         "airlinePnr": "2ED4JN"
+        }
+       ]
+      }
+     },
+     "contact": {
+      "firstName": "Maya",
+      "email": "maya.okafor@example.com"
+     },
+     "airlineLocators": [
+      {
+       "airlineCode": "ND",
+       "airlinePnr": "2ED4JN"
+      }
+     ],
+     "pricing": {
+      "subtotal": 569.07,
+      "totalAmount": 569.07,
+      "currency": "USD"
+     },
+     "searchId": "01a1effe08017027aa94eb4cc6a59079",
+     "sessionId": "session_01a1effe07f8iDfWwFGAyFQ0tI71i9WXe3G2MUTy"
+    },
+    "price": 569.07,
+    "currency": "USD",
+    "transactionId": "tr_cts_HX7MNE9cTvRSWyWn_QAcm",
+    "secretKey": "[secretKey]",
+    "servicesAttachable": {
+     "expiresAt": "2026-11-18T19:04:37.264Z",
+     "groups": [
+      {
+       "category": "seat",
+       "label": "Seat Selection",
+       "services": [
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB6t8cKzaifAcP_rc2aQgGGRzexY6DAmlcYMeirlTIov8r7iJ6hIzNVB-Cr8ZKifYokL9LsolE6sW9iPGl_omgAkEVBf-0B1OAvCsuWRdbbv-uvUdMnz2MeZBcoEqj-jsY0aOaLCJpKujqJXrr5zU=",
+         "name": "Seat 14A \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "14A",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBlJpPsftT-dO_-QBY3LohZEDkbQ2_MJrrULpLzm2BEbiCGsbPULy1PqNhimdE_fmeTcnOgUSTxXPtL2kvzhYeWmT3GdsvxdRpAm_aONTbV-McxCbUxEXJVimE3PHQ56PzQipHISy8D7j2uzK2p3Q=",
+         "name": "Seat 14B \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "14B",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBhc4V3RIBTHpO4EFOPPde5SSw0L2giVipJDM0y4wK3oDdkjHzJI-Gsd_2YEyogBTundeEaE0RTCReU7Dwn9-iVAvX_ozHUj6AkCrT13yGV0xBlL4iSXwwMRBELVQxUhc3Yc0=",
+         "name": "Seat 14C \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "14C",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBBQ2bNXk8-R3-jbGmtKVlzB6M-QcmYk8tH2iNl3PhaoA8aIzks7BxksS1ihWtUq6ahPWWYfukIVa9DhBuJZzawgMYn1SiJFJur1axDjxEkNWMh-3ni5irwZ2-75St4OJ6Exg=",
+         "name": "Seat 14D \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "14D",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB7Z8kmup1Lzsr2kWf4nPMPNS9CBoHLuPJkIHxmaSvI3dvkBTF9bIztv6MDY35iitUXDXlyevYIKV5oFHjem35cvQflpUERPFezuPV8Oh-9iRINUviVSwCjCvAja721DYWipDfAY6kyAjydDkYJ9Y=",
+         "name": "Seat 14E \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "14E",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBdqTMEfO0CTGYxsaPadyGJXnPBmSBMsJKY8CLMfjQ9WB0l8hYpYDDECbGKhJh9j9Bhf0pVdPKrhumFS0de3bj4y2RQpVP5h1iOU4QRiIcy0QoJnWGfv9JZZ8mC2Yjz42e-S_aPnavUk55WMCsFpg=",
+         "name": "Seat 14F \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "14F",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBtEzQWMKDrcHF5YWLttTdVwDHdx8Xvwyj9YYEIUw22ZDv8JUtctSpgVnn5fGyVLgeV8qeo1AHSaFGCwSG0AMYbPFx48-2q6G3jtNtFZ-amfCbhzsRxlMyxvXUqLt1KVxJbZI=",
+         "name": "Seat 15A \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "15A",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBbwdrZHHiI072B7UcxO12baxak1uFYT3Uh8jePneIF75QpEVP-77yRpFmsV61cCb45oCvUYE-J7zpEI1AKx8-waICaZjVt8oSeKmoxWSdjN5MH_MGrnYXyo7hopG-b7hVA0c=",
+         "name": "Seat 15B \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "15B",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBZxeyOYLOKOfIWdhy5MfVIDanPGuhrUJ1h-BP-Xa1E1LYYJAfc5fvmn4MNGjb7zKG37_B8_PrDsNlzI_HXGWX2uyPnzx5m2vqkmmS2Uav31wkQ7QQcFFiX2v05Y5CXdQ0ARzU4jjVKXITLCHFfMQ=",
+         "name": "Seat 15C \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "15C",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB2raeTBKTwTIFyivWZDQoZkbyqbHDUr9sXgmD5qLA5M4uL1jw3WnnK1-bOHJienxhp-XIjy9IozA1L9jv_yLILFWjQWFpzMYcUOiC9ye7krfNheUYm7a__1Bs_618efiRs6843HgHblqZS5cJlRM=",
+         "name": "Seat 15D \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "15D",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBhKkY-OaoZ0k0AM_0vcLYgXFHZkogpQtkVCEoka80Iwkglv3B_-kn6fpKY0MLV50DxD8R4EGXv__chRyvktiGmuBwkoA7elDWyOSImMTwrnFJt0l8ka3YMRsFsqAm4bxy2LLdfn1GYsEg35RCf0w=",
+         "name": "Seat 15E \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "15E",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBwwXGsUiOCZiiKEoE_d6MKi9LEXbGK2DzEh3LzXa4hnDzXPBtNOiBCLSaVgrpfqw6fq7I_MpG0LCUEHdrGqlUqDjtUOGgZxv6aGbCdfCR7-tIEustWhDFz-mAoE-WL9TbF3xDXmXB7K7HHahCtkA=",
+         "name": "Seat 15F \u2014 Exit Row (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "15F",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBHS5cMaV_P3vDcWUsVBL4SigGHt9PlMkJalY_KPzV7-Oqi1ZAwM9muroygQEwvnDrSoLEl_EYZ3X2ptd51vj7dy6qBW3DZjie7ZMeSL5lt4vYa_OraumpiiqH_i1kWy9rZ34=",
+         "name": "Seat 3A \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "3A",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBHz5MqTkVO42xtrBX7xf1h6tx0M784NtICY5nPwZmBJ_3ybBwZQTRQUmURT0vcAO7j2sn8cJkFkcdjNpGNnYAkRRWjgI42ACre6COGft9PJ4hou3DLFha8bi-7TH6Ly5GbtVmT5e9R9wOT_6QKWc=",
+         "name": "Seat 3C \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "3C",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBD-XceW1g92vy1isR3ummL9pDSFZX3ujgyIuZehdC1XLmJ763X9Pt5xXmO_t8FpkRprCeNG_HqfIcWOgtcu5pIFjvOYplVpq10smB85nOTYV55Yq2mbWFQwsaFAEI7joAbxk=",
+         "name": "Seat 3D \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "3D",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB-5ra_GradlWvvqSR8aqpwLFoTkWT3zwF0taXIQ5oTUT9utnfuhHEQ_VXpomAKs8nxw2BJ8cLBNxhoGSdczph5A4KmiTwCuBi5RfZt4mqN3-um9uU86ua70BBKXoZNs5o59Hd4hhHc-WlcCa87-U=",
+         "name": "Seat 3F \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "3F",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB5-qSPV5mcISlb1KeNirUxDKRVXiJeJS6fRIOGkS1P1vUFC6MzGX3rw-_9U08PtUfZYovV-uf3IE9479CIrAspSBGBZkvqnLXXFcZ1178uVQrLTMO7D83UjGbEjkDzs_i7Hp34VpZrOffMWpQitY=",
+         "name": "Seat 4A \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "4A",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB96YbtJV2XQL2XOzmxZVU4EdRClj81RXr66KXpqE5pA-_AjgOU3joZRO91yRN9RxHg9FmmPj3ymRIjIdiLjYOwz_o3dFtRXkxAaEYG7rZz04JT-ojq9CUI9WgMB9PyIZnIKbC-pJ3y50Wj_HnFjk=",
+         "name": "Seat 4C \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "4C",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBoOXqzlK7fRQ9skAbDqbY_2EsXkGgUThD3EIudR6NfuL__ZihB5QgCTjn2VYcikIhZlvJInCcWzh4xIN_JtmvmuLIZWkSc9Mv5ATxeO5AZ8J4moO88AFH_8kZEgNoTWEbS9gNuuQoo-Zc28raE4Q=",
+         "name": "Seat 4D \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "4D",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBVs1z8eLyiKWvBDYcEyv_MgfVoiRxWL8Pl767dyCQ4kaslEzQXLIZ8ttVhMO-VBPmymT31jt7y-otJuK_yzOGT7H5IZU3BeEJ0uSHFmjbxe-7eLlk1la9b3ybumwTniJ7HxGOqE_xeBVfZsF6Gd8=",
+         "name": "Seat 4F \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "4F",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBwIJ-4KujiH9E-oLewC3uVHk6p9r-b0lUIg4_-J7GxsQ5D2wx2c3aSdakSIL-fkMBmVoQaoQ1zpBlTQUFH_TE24T2fqPySPln7KAP_qqIYglc7B8b7ukH-SX7i7b3DXMq6DfwVLtHD_Bl46C0eVI=",
+         "name": "Seat 5A \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "5A",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBg-8yjprWWerzCiTrzr3To-pngZcdVwGiEraQ3IgVOiFtYfTtLQi3tBq9Aj0ums_iq8BjiO0i7DBJ417N9jTIken40jNEyNJK6MCZPMUdN9AD8Ya5HnT3MwzHPq3QnUaS0Vt_5575cxAWyUobd20=",
+         "name": "Seat 5C \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "5C",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBJL9v-0LJHCSJWYYpcxSUvIZIAo4npmHMotrqR1thz0H_UN8bUyShkRRqKL2DFwbeAUG48jch7mGgk5XVFp-0LdSJkhpYpPB65gc7CqRbuDjeaAxsx75OIgZOm_Ri2HvVr3XlO-3HArC7NJKNUaQ=",
+         "name": "Seat 5D \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "5D",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB5r6hmhCg0vu2QnStq502drl6J_GRrzFukcmmhzcL2cWovP88oKG8pym4gE_-AYWGB87oIEkJPBMkhbiqtlGmxWlmyt0u3PsOoGe9E1n6rmnmNvK1SPh777Wu-gWZsvlhGGbKao6b0RmS59-d5no=",
+         "name": "Seat 5F \u2014 Front Cabin (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "5F",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBbKh411sf4vf4cNSJ2mR_IEbopFzeuyJhNfJsHOtE1fUsmaW_yVjNOpmA0OlEM4iEopym16yqP5498c6m-O6HVKVm02eWu3Y0h8a8q2kqLBnyaASAsjaNLoft-aALOYmxTv7DLdWfGahYpD1dsWg=",
+         "name": "Seat 20A \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "20A",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBQgpRnlQubJ4eXcl41XI4dVdXllEGTRTOsFy592XdZnkgJ2nOlkPBzC5tOKHkpZkLs324UMQOSAKZJMeJ1WJ25WkNr-dLz55fwfUnuJZUvOlk1O_dgfeVPvY2YSEIyPGnCDI=",
+         "name": "Seat 20B \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "20B",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBn0-mSZegrFrj3lLkRdnlQACNGZayqDo_4M-DCchbT3VyMvFkp086whKlanyua1SHMY06ONLChRzwRw183G2qAaC7jpwaMuZqV-_iaegN60TwFLhs-MONSavPJ050qgBSmVI=",
+         "name": "Seat 20C \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "20C",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBfJxQKjshkMgbopN5UhlIrkZZCLHGg3WB29zZ83HrTzX61SxoiX02MGg2VuMe8CQ7ey-U3jk20gz17qmqXwXhbuZjf9mjWJgOjnr-phYsIXd6iAcEK7Tr9rw6U-RFQbGjN6PKT1XeauNcIYNzZPo=",
+         "name": "Seat 20D \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "20D",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBpPIcEK9rrTzmOOcy5ilfIuRvweMv9lNilMWGNNbHCApHw0MriWVCvRV1k8J0Xe_gYt8Hf1TmQuEnem3TQmywpEmMIi5UeQug9mAHn0joznmRdYK4mqzAoX2ShlkDynnQFRA=",
+         "name": "Seat 20E \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "20E",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB6iJ99zFlmzCKdXUtfDbMJxfnrMUIhh6dzlS3hXJFaA7dv1A-fIFS96JKKSlycEDfFIbnf-xwcvuhwEItrtGIioGlx9T8Zy3SrLvAW2p8LQHPQsjaC31qWis0-sa_27HwdUTnQrsho9_5vRkF4e4=",
+         "name": "Seat 20F \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "20F",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBGzvF7oTP67ASM0A3JkJ_uLA22NXTiNJ7OhWsFU1gLwMW7ljfifLfKM8fN9Xnxgp0gROKKT8oSklMxbjUoE40roS_WTh-2NbHNISE0iQpuvhUmikqazRGlGddIwNA0-vm3kg=",
+         "name": "Seat 21A \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "21A",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBPTYyA4erBdEGr1Vn4Y_Bpr4fTYYDOP2aRmM26-txfTL-83K_rrmYOB8U5Xu9YnSfzbnHaQ55D3ec4Vvp4zikG0rplsLN3ym_4MTGLr5RfVLWzgIV11NxqA4PfTwcMw92XfkvwspsEqWaNokSRPM=",
+         "name": "Seat 21B \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "21B",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBXO7R0jy2m5ZRLTv587ykLKDxmEEue-_zg8QIfPp4-vqjcSEgLDrTVhxcNTvwMC5a7AXGBbsezljIfv8MeiVlbUwIH7QZgmThImsxH3Gh6kqnTOwMtGxJBbSbbgD38Yq9W-Hh3LcBZDYlKjilQ-M=",
+         "name": "Seat 21C \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "21C",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB_9H5DvFId8TC9du3IP3DgUjpTgQOK5f9KB3_i1d3Zh4MqxWxUKcU8S3Mo2QiOU4bMaPt3ohE6a4C9-I_BTQB8zg34CqaN4EwYQRg_ZbyctLvsRyyPtnP22fvX4jq_vW8Gkc=",
+         "name": "Seat 21D \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "21D",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBHwXRKL0fM83JXW0iQ9-PKd_NBBvf2BjIY6sZM-_ys1R3Lh3PZSZpksGqHKEAG8BwoCXdwqHmC11ARxjeqd4mgjZaex05n437gDUbCmYIvueQnw5QPe4hClqAtCzysRWOwsohMiUaGDp4e15hWAk=",
+         "name": "Seat 21E \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "21E",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBOo9it1C1PoHsoxvdZTzUUo8xXcpwENYSt0VTyB7B0NNxvbCMJt-CJKhn4czeqgWcEKWUDae9jrBqbF2Uwfa15iBz_LfWlycE4Y2ovsWYpn0EoZqt4aJ6NvGhsbE_--ngRDQ=",
+         "name": "Seat 21F \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "21F",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBDFEQBH-XF9BzS9hz-mJDl1XMuMh61V6dbLKtp-7HLd0ojkElVmWQPPdVHLolluwwY_LVzZnO7mtyL7nOh4L-gnas0qBsp5gnK1BEORi6Feo6d6q53k1s9Mssp1jRLsXK7qr-rG-3bj2QAP8K5UM=",
+         "name": "Seat 22A \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "22A",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB_9_EffXOyewkO-7yNqbYzG2CacUs4fUP4zj4BLAwFGYWxDjRz3NDvW2fu7VV-etSf0jntLIC1yYVFWGVc9HoFRRg1a3xfpxqExoXOWTcS16ys0B09HILZkFBwWOu4FBrqZALmlMgOI2ZltUucvk=",
+         "name": "Seat 22B \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "22B",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBHG0h5Q2jv5LiVABfeiNS7ldgFiE0e9o-eU664CCOnNI6tMZ8amaUtZ2Df1HNX7T8FpZGymH9fgF1w1H6ZDDivSUCpj-2p6Bt8RjADI-kbYn2rjvYvHuDyBa5TB4e3dQwNvxcOeLEPlQWFc2maBw=",
+         "name": "Seat 22C \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "22C",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB5aN1E8kpiWB9mG2uSw7YnFsEd5jtC1vi2Nm3QOSqoKarlSZvMI6THgskomjVPndpxNSOPtfp0pDkN7UUYUZPY_AmFDhYL0x4d2_t5u4z5_XlzDhgXv4bYSEbWul7BJsvT9MjkeFBxIgyg-NQZnY=",
+         "name": "Seat 22D \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "22D",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB82sFLRL-wxpn9IAx0DT6bX10zQGK__c30Y99-tC1QqTOsYlhVAarJ78fotckr-Zn7Fqa-mgvA_5ZupdC-zPnOu_l9pFWnVuSJxPZFTInLuWU_7rl9SF5gCbOkFXVKErBjzGmH-jr_cZQeanrz1E=",
+         "name": "Seat 22E \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "22E",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBRPCeZcM2qjgVE-j_GbknTGFFSunlLeq_HkG8FP8AZCAdbImZP1ndc_uQVWkx4Tf8odg8cKQVIABJ_Rt_dxoqm2Ghj7BzGKu3NNhCfEEjpuN35_eo3TSk_ep_h7N0O_uPGJtIx7J-RiR1QQE1qHI=",
+         "name": "Seat 22F \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "22F",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBKbVWqyOWPhVAwyTcwCwfzEgau53By6S_dF-kbiAhngbpunvvuQa4oll5pdh2i6wX_hhuRcu7VlM5Jxot_g6-oA2Vvy4QC6IsSnXB23BJIztIMY3iGw-YZ4XbjW5bsGRjUXaX0CMzgKlwc1Oao3Q=",
+         "name": "Seat 25A \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "25A",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBw2e5TgFltb0Y60GIILVjPGPFB-k4K4FNlcD6uzmLHoOJJ5mb4NnLpE5eUc3fGrn3U513risWSu2sm476EX9FZ3R-xfVzTqv8UUe6qt6BedDVumEEZOucK5jM9YWGCXB1dQK4eRwY42p7M4Fihu0=",
+         "name": "Seat 25B \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "25B",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB7qujUpY5CGTChn3Z8nkWf2kF9BnYfjrWz9f3FnCSoH3yGXEDh-9sb5fTAaeOQB8QDuCinN_bi8ZZuIHUYg71igoz4X9I9zVS1fHzMEr9DuMjYsZFXmQETQyRGqnMk3jqJ8Q=",
+         "name": "Seat 25C \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "25C",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBjOFZrTKxObe2GXjAQBvEiNydWVdrTQbgjClQnwB4XBmx6RcUOubo5CNPmYvYsuE7YJlUktJ8IGYnGwD8p9MlIJRqX3JiD1z51GfxUZGvWLqmQb9sShyACpH73dF02_05mNg=",
+         "name": "Seat 25D \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "25D",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBoRfNnlHVesIfGYltqASI35_i-q9LgnDc9ZPNVVhx7-GegqF2BDKv71rTcGs2Et08JFOuPlKoTeHH-G8oHRSeAnILPaRGsWLPc97lGlTipFKRuXkct6c9sLx_rtg1ShdK2qw9gEK9vZu_HXU1fYA=",
+         "name": "Seat 25E \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "25E",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBj_hLUnrID6f3xYUkg3npS5GqiDAaeUfSHTnhBpIq8cbnPJ7KkHHaQKhjOUQubFn04spMERluRFDc1LYWWj5d6CY5jWJbKgdmepdqgoDhsvlMV-UwUl87LU0Yut0JBOFRXn3gORFHgKExmD6sdEY=",
+         "name": "Seat 25F \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "25F",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBRBMTv2k88ZohtPMTjLpxIBZ0JCcTbsVpbEQ0UftRQnoeGmFaLFetOkekYRxNKrLT-lTG7C3A1g0SGCbfVsIX6tPZoFXVPKlwwD7AFZEjLjCrR12mBOD8vmtLpOSgu2zgahA-XOl0Z7iXHH8RW18=",
+         "name": "Seat 26A \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "26A",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBSh3973f3sf5bXJN7dRqx7RJLCcvBC5ShpCkI0yFdXahWW_DbZzEUee9gzkkof5HulMwtGww6aI9BHqzU_nuUp1wp4BEaHoqQH9xpasUpLn6C01gdPYJBCZPK0bF35tRQ2_g8Z_FfUHLsesBbCwE=",
+         "name": "Seat 26B \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "26B",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBa9DETODvcMdZqqrs7sNGH_BJoWeDID3e3ujkgBdNmLCa4ts7gxddEy7dmRDxjkyaDwEQ2K836ngpFnIpml8_xF2-ReAlAenWo6-10oSN7BYYeGF7mBDIdbS_TeFNOJCKOwFGEPOlPO8b7J1L63E=",
+         "name": "Seat 26C \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "26C",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBQrmNn0XOO-NZblNK6sgnl_bGJrSgghIz-9Mda_0M7D6c9U3f0fdNuPsWLhgQLg5Y5CMkIbEp-u3-EvKx5Q5gZX4ljhk-pIICOLVVkQ0Ybus4pvLL1KZBv2HbUE_TCWHi0Pk6o-Vv7yZy3DjpPTw=",
+         "name": "Seat 26D \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "26D",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBgDM6StP5x95vB-NsnvpVEXizX0Xs_sYzWnVt66YCXh07XbjnaQMQHGxU8B_22WI9yoIAhqepvOEaTzfsQYMNH2DF7H_H75CtnT00qsbodJGa8kXs69y_x3Y1bIbCJ-ZlFs4ldSZeJgE5pCVbYv0=",
+         "name": "Seat 26E \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "26E",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBBIcaenniRLyZxR-gEQ9IquL2kyxgEEEJdfsfTYOJNrEkQ01yqpwrq_NbxjcUStpdd7rGoc3IINXxBZOAYGwbLPWd-MzmS8RvxS_WRGcPrugdnGa7iibtDHPIcQY7WbUhAiIN1KHQXA_hLWYwhL4=",
+         "name": "Seat 26F \u2014 Standard (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "26F",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBJo706m5KeGnBi_-AU7JxJegbn5mbIWuKnAHBbDRKNbt7TO2rbQ9lErRfDUitgGSOoLTcu5buW_mfTXJgmUqm7sfcc-8CZpEfKDPO_dT6rVkazDk1yjj-mzw01lYPc_RVczE=",
+         "name": "Seat 30A \u2014 Window (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "30A",
+           "seatRow": 30,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TByz_8UVzWK9CvMrD-GoyuQddvlQZa2MMMxT24_cTBFqnoVqHfsKUDA8E2YQjUiKBEq4bo99Tm55CQRInnTCTgIrx310EJEjI__YFj-VQOW0PdW7VV-40EphOeGwVfVHDhjzX_WHL0iIQNVxGlVko=",
+         "name": "Seat 30F \u2014 Window (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "30F",
+           "seatRow": 30,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBsrZuBsS7Ds-7GETTJG206trZHCldDNnFc8mNyAzaIS1BQj0V5M8LddjZNAAAvzlUf7PEWV8bGS2f8tXhXibP_FPvWOBs5cw05YtnrgcqUcWYusARqrjkH480246P1rLcVXY62IDuOfqUADTF_0w=",
+         "name": "Seat 31A \u2014 Window (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "31A",
+           "seatRow": 31,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB8Epph6ytX5DzD20wxsZk_XdKKL_J6BRGBtMhOcPopLmpgsAZbdsuEk_saQsoiDrh6CEZ_93mZO5CjBMzJBaNYVURPk5SmtNIPXJ0o6ke2JSF217C1PJvjw-xpsCfoNkg5Kpfon5j8i-rvNg2pKM=",
+         "name": "Seat 31F \u2014 Window (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "31F",
+           "seatRow": 31,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBgMQ5himCnzea6bxHCWF_zCtHePfikVuG81OtEuH1ICa-fvUPtOA7vt4WSreYesk3nU5WoOxIF7y9-OcNRPVHJBp1WYhccvmCqTRRIKM6KuUUOeVMbmaWxalTsdfhkn_p58kVwh0-ms4fAVzqALQ=",
+         "name": "Seat 14A \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "14A",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBRjWtQDUikBa4BbdZQXOZxl3sxL327j4V5Ck0APE5P0KqPOVU986Xg4V4nmMRAIZCGz9Vmm52RdJnd8iyOH_1AbF8_geOj1AjV_jb8te9VMDQJQ0tfkAjcHNx2NXZhMXe3f9iz4tgS0i-Ho_q-5w=",
+         "name": "Seat 14B \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "14B",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBQnmHkuw1IGRToii-NRXKdzMdHqJEU4gb6xEwDgIF-_unZv4e_rm6jcTz9LP1LhGuqnkhvhcWIJmPDSJ9HR8Wq0wrGt9nORg5Gfv34RB5ac2QR7dnAVCz6l8Vy3_wIiy-BEw=",
+         "name": "Seat 14C \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "14C",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB9GcVziYKZ74mjO-2QrWnhSU7mLryZ4hhGaooU7FvZqmXVeNdOWGEuqbcCD3WiHPMterrZoIvKkuuSL5M7vw77zGZS5URmMeQzhNMPm1yH7gvK86nQALRadqWi4Af76n_d1Y=",
+         "name": "Seat 14D \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "14D",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBpnlq6TQWjlSVE_qTGueatO2aNGbfgTgLHx0MvTMWfImIwvbKj6ag7uOOudR1ckT36BXZGIClisn6_OWS-v4IyBgLPqrgMKsn5PXVrJ1mzRv-rCvNhYUS-FQPcsCdHPVSLxm7Ge_RV9L6DxFInbs=",
+         "name": "Seat 14E \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "14E",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBCjB0_AxeGkbFF6aAvtZZ_LaEm8f64ok2ol6jla3XapHsJyGJqDzivTHFf_DskVDnCqFJKYU_BNho-6SaPWkVso45WGUI_XcF-Yd4830h-Ft4HPg-rzjpWd9jnB6U8nzxnmtNPBHPTowjyhkGIak=",
+         "name": "Seat 14F \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "14F",
+           "seatRow": 14,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBq4Zfyag4T-qg_t_O60RkipZkcZRonh7EKh6fd3loGNQSEhRW3A6T_NVlHM0X7SEvCFVzNKF6_Vb6VjzKnPzUMePKpZp_VPsXQiVCuslX4DFK-lL6fZ1OZ5jrWQ_sG8ZYRuQ=",
+         "name": "Seat 15A \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "15A",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBbaF3qID4tjKXq5hou8_8F8gOCJckGOat0Jr9TsQm9DwoKgI94XlUwHyJ-WJgtXPLBLwOyNxxSGYGCjzPzZ7cUA3l9LlT1N9aW2OJETjSy3WLzqBp_Ej4_JVSslIFCnRNq70=",
+         "name": "Seat 15B \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "15B",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBstxVc4b5FOlijLJIj9gsEafzHlQVjSNHHde4gtyKMTh2k-yQMwyq_l-gzR9Gk_h024wul1jsuonnNaJElX92Zj9co4LY1WKQ0HJR7vAJ0jbacg9Ew0hKLnOoyfii2uOhzhfZN5ZGbAng9ppHC9Y=",
+         "name": "Seat 15C \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "15C",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBEAjAOZUYXHg51F5I75g63ysYrfSP_QzbUe-rE3AzlGqR8w4KBpdVVk-kTyLzxpCQ-zPS9CqLFG-lRY0Zc9fyiNEzoxZP2izkPMDooGB0imM4w2caaIpizy8zFImrpf4I6N8jgdG-TDj51meY4Rk=",
+         "name": "Seat 15D \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "15D",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBb0zbQWdTyeMASictwsryTXqmaCh1C7Qd0i5zrl7qgniYHzWCgWhWRuBUYNdfQDZvnZXqBHMU1aISokZNDELwnVuuOKIiPnMUh5fQYO-mZ66JtAerRnHtApPMRa5oTdShioUuG7C-tYCRFWqpl9c=",
+         "name": "Seat 15E \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "15E",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB7TqpH7g79Ekxf9qszSCl4MphmksErgPSqAigdLdtUjxhiN6v0goafNNf5lhRUHjz63V1Lv7Cu0RWHpKVSKESLmwiQVvCQ_P2uKkZgklSjjxhZFSgyooFWx5hJyPYeAvMLQ6Iuo3Lc1ZpfTw1p6s=",
+         "name": "Seat 15F \u2014 Exit Row (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "15F",
+           "seatRow": 15,
+           "seatType": "extra_legroom"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBRW5P7ATqP-o4rMNnxsYmmBao4X95RZfh6_c3A5_l42Wx26CwFdQFpKvOGD4jGCYISvivt1kk3UVOIhrAW7UmPq5BifD7FKCS4e2bAMzr3DV8F3oiIMdEDWYEy06uwGmoJGU=",
+         "name": "Seat 3A \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "3A",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBEiRIJ6NnCboVVvqOgz7Xu6tcYaVCNkJ-P_BoV2J0mlyZD8mES3hlT7UhElXATftw8qMlQqi47VvxnNZs-yzZstjpsif6GF-VDqmD4YmaNOyB8r9M2y09kGvT-Zznq-Bbejy1WGBNO_lTXS64PZk=",
+         "name": "Seat 3C \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "3C",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBcKXMK0solLKsk8XTZOuK0VrAurNTSxUHy4GHtMMj-bTIxfjkcmo-A3TtJABOVQtyxuVOx4pvusCIJhX281fbud1ZPVwYaRPIvL-IxHktZunq_UFFIQaxT05fP_NMTYsj5IQ=",
+         "name": "Seat 3D \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "3D",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBq1CSUVz5wesTkwX1wnYNXCAHsM6HueWRGsIfNhOTp5sUaukDJzEq1dgSh3WguMIo05wa2peO1jr29lJQle2DtpB3xqDl3l1A9N3KUoe40TZ5sdaHWbc4YUX4xRe3OdmA2knRlI4Tb0-tBtfZ1Xk=",
+         "name": "Seat 3F \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "3F",
+           "seatRow": 3,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB9zu4s2h5Xc2qXzY8Z8Oc4t5zjh99cm50ywOLIYo3Z8Ec_BMaDcMPwD8g6Q7LMOO51Pl_6aQtBWI7ipgj7bD1tr4bzJb1dxDDvAhA063TNUzo3jj2abNJV3HXlJ2qqsVv9AVbcU7Q-6QMLUXM2-0=",
+         "name": "Seat 4A \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "4A",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBq7zIk9SgVQ3780Mt8O9RVlo2_J0Lbt0xJAzSQotMkB9Wz0BmqTWOvav7Of-LfzOdqi0J5xi7ZsqzEgK69zWraDoxuMv0NFLq_AE6orGe-t4s2c9oF9WrwAfDwDA-3T8rO61qx1DHYyq7YMD1IZw=",
+         "name": "Seat 4C \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "4C",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBkVDkXpNJJsdf-OWzG68QQVMn_fFDCkVMvUeGiJFUKs3hF0LpnzXg9lVvQLdiU5vuvisic7UuwHYgFuZw1oKdCwkPXQ5ZLmdBqHp29ZZBcSkf3JzuVu8d0XSFjxVxZSmOjqrkomZQp_sDk0bXxRU=",
+         "name": "Seat 4D \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "4D",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBnjoZxoJeTZcGpn-0bC0FU9g6ozp_Sj0X6tO5aoal48A_vkkOJ68hIlnEAk4O-WXoamARcMr9tRbcZJWI1NujJfd9BSvD6MuiM7YWAiqoD_FWnuRLNL33OvEdHfv-5QtwNu3ebNdWXHewk4n-SfU=",
+         "name": "Seat 4F \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "4F",
+           "seatRow": 4,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB3AdHNtPS9Uj3ypyIchGIDAQnoUszuSumqiUBm3Xx8ht_1ddQq_P0LO2w6du65KALlSyTMAU-Ayvv2fHJh2h5s5Hv-bL76qUIGtzDLqZ1FIG7JlhRpNUDsuDXnXQgRRfDDQuAFhJdhLo0DNxmYvI=",
+         "name": "Seat 5A \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "5A",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBtXUrwTvANpiPwjrwawq9Pu_KulInrmOOdVnb2JzDa2Mq2PrhrrSkVimAD1FFhEWk9tBLk2W4XMjgyhRh6aDejzmopbL9Hny6fviMVWS00dnDQRFUxZ2u9RUmxPwZf2EdwCpDTa8xCrWPsP55lJA=",
+         "name": "Seat 5C \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "5C",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBgpSeFKk5PAii_88qIL1b7jcK6dU7kJ4eGkoKs-o3VnghqSb0tX9YqRvY2xEQ-5aoFBE76F73VJ5_5O-w8O3blfwbq8LQnjwHkHqw8ZC_p-2KNCrtslrerWJveQk8hca1SWKPAzS8B_MRo3ifDM4=",
+         "name": "Seat 5D \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "5D",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBa6uujQ0CftG7zzcnniUmHo9oEBx9pjXvHlfspJ-UrYqXFBu89h-73Vf-OwXgWGablVAHJWE4efKrJASMUB4jDFNRGSzn2hjxwr4PdV1KyKHcksfStxRM5lqnw8lKL5CNPc8PrdiN7_S49xPCABs=",
+         "name": "Seat 5F \u2014 Front Cabin (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 28.05,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "5F",
+           "seatRow": 5,
+           "seatType": "bulkhead"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBl1mhjaFcvNPRYEHLspt8oaOCgS4_W6v1CP_AhztRx7h822ARXIsB1LTga-DzHV2g9t-cWNGXu4ZC6j91A5EjKQxWMGQtsqNuDqq_hKpG6lZKGKN7Bb8oW1FqT9YOXrlTHg70abDqtoGSnFEFGHM=",
+         "name": "Seat 20A \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "20A",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBBseGGTy_HQ4BGTP01Ywa9QJphuISsV4Qrh89pEuW2Hao42RVcNAj3ktCcyLES99QQ67OIlK5SPN62LLM-uDINwXH4gjXxsEIxTzC-FRXaiwHq-htVq_-QfPzGSixpPK1U-o=",
+         "name": "Seat 20B \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "20B",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBpKB3IikmhUT-DBi7Spe58vIBxHq_KN6pMxP-L1V1LqDYoXZ-1rRhh4nki2mLwrWINWCaREoj7QhYAFRvznCCh22RTOTyyQ-IyyrgdbqMezM64gUMFvlEDAbpErSAbmHET6M=",
+         "name": "Seat 20C \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "20C",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBNQmVaMuVuF6Ihg8W5Xrm0yuc8v7bf87vd2cklaggJGxFN3xghMuDm37iKyB7yJOEfNt9q6q-07pJxubT4aO4jNuHKQqd6L_6-px1KbtA-SFApH2A13qtrfUcvP3l8VcyvTRX_KdMduJQG0gIxQM=",
+         "name": "Seat 20D \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "20D",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBby5c3FjvlfCbzOMQBoVldUB9Hb5lKjS8_Wfd2Zxcm8JPN6d0ozL0Tv3NO82u07NdiydUOJGwcvUSDTaFoYC74Io63fwmbDiO6eSLqbuswNoCVdDv_xWuwc5r98tUlXVVgrc=",
+         "name": "Seat 20E \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "20E",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBLmSf94e17FK1JP-afJ9vpGIKjy6W7IsChHNjyo_cQ-TsOBGCcUi9vAOpeFffR7nfWYeweRuMwLd9xVRt04HkQHuLXxNWEkIf5PLoZp2MhCB1D8f9UaVZu4xMlmOWp-41Gzi-ojTuteevPlxRFIo=",
+         "name": "Seat 20F \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "20F",
+           "seatRow": 20,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBpmqTN6_2zNqExMR1h6DgIfGpo9O3pHEoCVBtn36ZJEGDRIv8QHvkRlqqu73DunfoCwzfz-iUBbqgtT1PzV93n4vUnyzoxift31ERI5oSgqIkEjnUndHx0kizsIfjkS69kGM=",
+         "name": "Seat 21A \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "21A",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBr85EV-uOb61Lz_KU-bAoJ9gNC8R_M8xWFXoh6BwJIJMEfAk6j7_875r8WL2HLCTzSS5HFictIZOAzx8rz_dMKp5wvBsL-Qm90QJ2kbovee1dpWVBPLtUtL47-snKjTwbD8kxKHCvfHfimGMX9R4=",
+         "name": "Seat 21B \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "21B",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBwtt6gXC-HRx3zXm4DDwwL_ctzj6cdUr140RaWSbqkrrkpPWMn56M_GaIcY04Q_rclHnMXp9OA9hZgUa0yv_syPD_52JyeZ_bpZZWdy2rspYiXH0h9TUf9AfO6S4M_7miibFElZVP88J3vPzJ51g=",
+         "name": "Seat 21C \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "21C",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBLDOo2aBq0PAO2dnrUP22f4Konmqq4uAc3Msu5jKiRarLj1Tn66PJfOnocxbz5_O5LzmLfgeCm30UEvEb1Ye9RUEZPQ-H6iSCOp-O4zT1RQpF-x7hPgfZGyj58pNLvPSZJOE=",
+         "name": "Seat 21D \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "21D",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBu-0WbaL3zGavGo_Br2Yg-HWtB2ZSGgGZ1lxqvnR9qPF79Al8VTk8gvKqJp_2mMSOSzM17rZqk0si0Ug5w2slihU9wNju15uAcf1XCRXDh_S0EmBdurG7Vn7wUZxykr4ukEAyfp6G5v4XO0LoHQI=",
+         "name": "Seat 21E \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "21E",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBVVRcuZgIQTKPWJVi1Gs6sl43kUKG3whH9KM54LWENByw319ccdcEdr0eIM6Rk3XqKwh6tiNynxlovzIXkwzhlCwryCkxin09ZaS42pPCScCQijShCSIc4qzs_ip3KghbjyI=",
+         "name": "Seat 21F \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "21F",
+           "seatRow": 21,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBHnjG7vgzC3FJUqvAZ0dSf0Q9al4pB7bv1PLrXUo8-9twu7mnNBjoD7MUL7LSld9oiLtqVvpTp-2ZKOjocmpDevHCnlDr_eoPPDSAH_iZNWHLAeVRVPkAScM4eom5ESUkBXNqXBBpwyt83VcC_C0=",
+         "name": "Seat 22A \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "22A",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB6J4uNDesNUtBfAr8K0UMtrVuSKv_evfn_5HTF0MuxPrppRgqnWwskWxAekbEZ8d4864l7VPJQ05bJRdTDNpFw_J8qarlBbdFJvMHWb83gQyuvZl9LgVyuCXW2iFAc8vyhax0sltlI2DlDUrF5XA=",
+         "name": "Seat 22B \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "22B",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBglpRxlOEU5zQ4bsdEW1FZMIBqb7dHgr4hAMvV5_YC-cm3G-rOWE9HfiwbHr3ewqTkoBqCrnCvXnzATLCua48RRpdJAgYPw6ZpU4u_R02nBZ2Lj3I6N07DGstuY4PVF_aVIlYGcTThS2UabR5G0Q=",
+         "name": "Seat 22C \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "22C",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBgdHmte_Q0Z3gUQqUn4-ZwVEt1Q-3KtuUxT1JVC5HjN-W1nKMAiliCYHIFzroffu0fMIk6lvCsxTqk6rl2fVrN5yXzmJGinm4JJ1ZGt2bOUFEjRd_oqK3FWUa9u00Np-JhWCfLc3FqG_IBnblUAo=",
+         "name": "Seat 22D \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "22D",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBy1d5KmT7vGUwfs9G98U-k0MOgeyxEV6COIYk7Bg_3IOZ53eCmYqh9MU51TEgKkRQiC_PvaxOLwBZ6KNOvfxwQ7VbcjMQUo3sRZ1WQrCSkp9BNaVIG5fnZQyiCUV4mj3_l5EZl8kOeYf9B1RhgHI=",
+         "name": "Seat 22E \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "22E",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB7giIjet4H4vfYtd6rwol13I4yUBENQ_ahFlR19gjO0UsKK_TbCa8Zmp4CDnjA8Y7yhyf7WQxSFaBMlusZIPLCsmEfzwjGyYw0AWclq8z8jmkn6WLrQ1jPoN1QUGvUJXaWytTUoqLeQQeL4_3ZiE=",
+         "name": "Seat 22F \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 13.46,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "22F",
+           "seatRow": 22,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBCK9rGfVCK33hYCvAw_5pMtbjnyeNg_R_mUCsjA_DPmFuihhENUsohSRjHlHqAs1wBzdFSUSdF5W9uIgJwabiNC-PvpMNzJpPUODQq8F_N8zqhOsPyw8gKFGGohjIXyDGmso3HdcHyHKiiPcQns4=",
+         "name": "Seat 25A \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "25A",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBfCVBHpQq5j6ifAVi7McYYuBvL-XiQjVhYoGRxWmcCp5XKiDm7HXvAB1NS71HCJPXws0MQkD8KkKWwYGiZHhkhTHeDPJZDNTBZSzMWo4c0SyUb4xJ2IFtfcTn70xXqVE0jLJRiZm5EQ9txrnqFfk=",
+         "name": "Seat 25B \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "25B",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBe_dc7m409dNh53Tyv6bHYOmuQuawwxDonaYQ_ag0U4_Jjr0Crr0eWahuGO1VSGFMU31MKxEY521xmxY2KiQg_RxbJ2jQN_YpXbgAiy8cTGAWU9TtmM8Hs_0apYoZnYvmZ78=",
+         "name": "Seat 25C \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "25C",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBZzZVmgK45r9XgglMzfWqU9H0pzkWpvm4tO4HdEyJWnbMUFYwKJMsTgOytuAWKGw-KjKGcstUtl21KgPZSqKRdysC5R5crP1War_3KGpoe5-d6WnNrwDjDeV3aSpSFICgARI=",
+         "name": "Seat 25D \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "25D",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TB-eyXpgRLfRd2b-UwS737XElJ8S7uh8kDJmQvZPBJySvZ2EhkY_-fHPtNJh4Jm7OCKSPeqzo6F1uFw6ByvjupYsPyVhIwj8X4MwFGnvKGY9C8kEkZ6j-U-Lxrr7FWQkBX3dvyzGyCHC83RpMCjuU=",
+         "name": "Seat 25E \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "25E",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBBRwFamiregQezIcazc3jPNjT8uOPAAsvHfqjg2hDCjjbUHD0DsILnmy70RKQO7lBgAmwS7Elorq2lEAdI4cJ3sxGq6cZBpeCfNlrwnMqrMeoVKfNj_nISSOLMJPZLKdFAbBUCrW5P2-hqCjtFPY=",
+         "name": "Seat 25F \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "25F",
+           "seatRow": 25,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBkfJOzhfbWIHQ75bPb1agRIlfnMUnDtzw5j_FbQ1PXEFntBVZ2e_WeiH5W6PtTKeHN3Q-P11R19M8hPtYsLL7n1r4Ys9FrvP3KCHswbv8-nbYCY4JgXwO9o2Sr7Zl37bdr1G3vPzPNwZ-pz4epRY=",
+         "name": "Seat 26A \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "26A",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBv13tjsaJt68-7axXtRS43clS-eop9vDDaM0dgl7-ypZR5QTmYPFtr0yeOzswaLekV8VWVVPyu1fIlv-pb-VfdasqS7pg8w9bEF0-_-ryUFXaxS629j_rruCy5Lj0Yk13Fu6gzlsUb_VA9cVTDtM=",
+         "name": "Seat 26B \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "B",
+           "seatNumber": "26B",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBLHU5EdQfHBeSDn44w7MRnXAjh_a9-8NFrc3yKmlbhz0XLBY1NT4Vq3CptI9OXITeOmzaP_KGddCECs93PdMXX3VbIbJyIloF9NGABzyFAO3HVSo0Fi_8hhgIiyvLn7Cc4J6C869Joua_sg8mZcY=",
+         "name": "Seat 26C \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "C",
+           "seatNumber": "26C",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBu2HuEmlRQxE031GAdxbR57KXAjdZmQ3oSO13-XoU-q9hdzHnDqM8vdsXDbPuKymZijXilzhtDtcrbopql3HVRkU9Bd_U9Msx3g4k7uZaDBSx0ozz7BwtU7CTDA53EcZsN1dpoX8mi954r0-4jEU=",
+         "name": "Seat 26D \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "aisle",
+           "seatColumn": "D",
+           "seatNumber": "26D",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBJcnYwGPjSk9b-034te0NxPeLzvreGzv-5WjUOT2I6LeyNFQu9byphPcOtDgBoHvPYx0CzOwriQ1y5sYGmvYGOCCjlBRtb6wKNvSIBFMQYYPQR-OPHTv6uT-ITRq7pHoQUal7stqrqvTYlcYtZug=",
+         "name": "Seat 26E \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "middle",
+           "seatColumn": "E",
+           "seatNumber": "26E",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBiT-hwebvU9KTOVzKWSyruPOdjUGbgZQ4ja7aLQHTyKHwZ0_ZqQA7pPksKb0Z5HyPQjnrOtbWoLY62tyKR-VRW2-TaQlnJvY9gNbe_Ab4m4D9NMcluPV05tQmqcWWc9PADiYScGiQKNyE84SdQAE=",
+         "name": "Seat 26F \u2014 Standard (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 11.22,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "26F",
+           "seatRow": 26,
+           "seatType": "standard"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBk3wIsgvQ80bR0vI9nsJlpK5fw8Rm9q0BxMNtVbK0263FkCpm2sbAhaVbZ-3tdS4bcL2w7595VCEuWqFZ8ullREQVhscg4ZjlLHWpchNAtuxTkmF3Ef0mJOUjv7YFB8M9TCk=",
+         "name": "Seat 30A \u2014 Window (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": false,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "30A",
+           "seatRow": 30,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBGsw4U0nZLfHuRPOOVPJwkrqC-WQVEkWzKgbAb0AZfADowuhMriX21RXHA96PLzJLx3z4rpui__aC_gxAEfjXhb-j4gBaWahI9JnrchPeMup49pZH-ZT6fPyiJ0EUACEy_QPM2MognXgjIuhumzw=",
+         "name": "Seat 30F \u2014 Window (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "30F",
+           "seatRow": 30,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBGQ2iAKWBmH6PIumMcb-ovTqoVPIwQonCYYpFeeUY0p3dt0mwQ8h5jrlgmC-clNJKsmb9AFDZlE6KW9cupChTzCLrDe6Dl3BwL9cuxco0Z2_18EZw75zoHnHkajSLN8TWWRV4rMxu1eOLRrig_EU=",
+         "name": "Seat 31A \u2014 Window (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "A",
+           "seatNumber": "31A",
+           "seatRow": 31,
+           "seatType": "window"
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBnkf_H4bYnc3RyLZeRNQO5WpJd1KgV6PjTQ42vT-v3MKvz2bEqsMbb6bjNWI6bDIfi2FmgnKP68bHossSSK1SVDZtXfukNi2HNiqfJyDFrVpMuYg4GGOUfcRd1eqdu68SrWNwdc3LungXimKMKXk=",
+         "name": "Seat 31F \u2014 Window (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 8.98,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "seat",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "seat": {
+           "available": true,
+           "position": "window",
+           "seatColumn": "F",
+           "seatNumber": "31F",
+           "seatRow": 31,
+           "seatType": "window"
+          }
+         }
+        }
+       ]
+      },
+      {
+       "category": "baggage",
+       "label": "Extra Baggage",
+       "services": [
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBumkYFvW9CUUIjSkrReNiVEvHtGYmjf3hMZstgyoO1JO2B6pbdgQW7c3FA6Sxc29vBgrYjjYwxIEw_BrsC0-A5OF3vVZ5LEcaFfY9Q458sZ5wl4ERkUtnNJhCpl_k-z_Pv5cCxt_H8Fq9Ry7PxmBH6ZE=",
+         "name": "Checked Bag 23kg (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 39.27,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "baggage": {
+           "bagType": "checked",
+           "maxBagsAllowed": 3,
+           "maxQuantity": 1,
+           "pieces": 1,
+           "weightKg": 23
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBFhpBso_rqUVdvntmrDmKxG8BFzYu1tq_OxoCz1h7oIeXbF1vgmhqdkyIrf3D9LZvp2CuBqsqFmlO88skF1Dr8aXfQbs-EvCKL7dmYEdGPXp0aUjBMUuh79n9eYMkYvQxJx9vBgC7XQiiEleT1LXDBsk=",
+         "name": "Checked Bag 32kg (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 61.7,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "baggage": {
+           "bagType": "checked",
+           "maxBagsAllowed": 3,
+           "maxQuantity": 2,
+           "pieces": 1,
+           "weightKg": 32
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBGe3vHOdO8TxqI5gwGJdAD3jFrbb8XSNa7__73i7rX4VIlN1JltHdyGARTENe1MwXyquHYA9WeV9pF1qLXr2S3ORoFYjwsuHxJCs42RFLxl6T54Bm4DfefTGWzowzChXJ0GGZgt4aM2plgxuKw0i85Ik=",
+         "name": "Extra Cabin Bag 10kg (SFO\u2192SAN)",
+         "pricing": {
+          "display": {
+           "amount": 22.44,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "3f8e3666",
+         "metadata": {
+          "baggage": {
+           "bagType": "cabin",
+           "maxBagsAllowed": 1,
+           "maxQuantity": 1,
+           "pieces": 1,
+           "weightKg": 10
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBeft-t5g3mT88ksrmWdrox0UKyWKDez3UIShthg8uunT3pIV5eSQK2775OZ0wNkgyklrzmrXybqpHFvPTwQMCCw5O-jipuvln0X_EOlCSOZDUvihZqj-LuNtmjKaaqCwkiVwxmEpx3xm5ekzsdjNMj4I=",
+         "name": "Checked Bag 23kg (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 39.27,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "baggage": {
+           "bagType": "checked",
+           "maxBagsAllowed": 3,
+           "maxQuantity": 1,
+           "pieces": 1,
+           "weightKg": 23
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBKX3yPJclirCDCKOfvnaPpYSAb68zj1xc0QJjRYg18XxWrdtgY2SQZDSBjzbf2AEFwiFkw6d71W2FfD5TVPOnKN49GevpnKA4Ds2eMh2AyhiRXlNsNILhFRESd8vcPMI-_9Rnv9TVF3qMlKGNdqBjH_E=",
+         "name": "Checked Bag 32kg (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 61.7,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "baggage": {
+           "bagType": "checked",
+           "maxBagsAllowed": 3,
+           "maxQuantity": 2,
+           "pieces": 1,
+           "weightKg": 32
+          }
+         }
+        },
+        {
+         "serviceId": "AwJ2MQAAAABq_0TBk2ylRHS8T2gyf_3R57PmLG6B3t5OMnqLs4oaABBk4upl90LkVEE_yObjIB9hsTYvv9SRtBOggGKl3jUd5oUiZNuJLrrPKpHXESA0KG0jR7vwpqjemCQjM9ahgNUSj8TaCIvWObkcNVuLRsclx_azOzI=",
+         "name": "Extra Cabin Bag 10kg (SAN\u2192SFO)",
+         "pricing": {
+          "display": {
+           "amount": 22.44,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "category": "baggage",
+         "passengerType": "ALL",
+         "segmentKey": "4002c16c",
+         "metadata": {
+          "baggage": {
+           "bagType": "cabin",
+           "maxBagsAllowed": 1,
+           "maxQuantity": 1,
+           "pieces": 1,
+           "weightKg": 10
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "paymentTypes": [
+     "TRANSACTION_ID",
+     "ACC_CREDIT_CARD"
+    ],
+    "searchId": "01a1effe08017027aa94eb4cc6a59079",
+    "sessionId": "session_01a1effe07f8iDfWwFGAyFQ0tI71i9WXe3G2MUTy"
+   }
+  ]
+ }
+}

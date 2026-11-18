@@ -1,0 +1,12 @@
+{
+ "status": 400,
+ "seconds": 0.1,
+ "body": {
+  "error": {
+   "code": 47002,
+   "description": "Booking ID is required and must be a valid UUID",
+   "key": "pathParam.bookingId",
+   "message": "booking not found"
+  }
+ }
+}

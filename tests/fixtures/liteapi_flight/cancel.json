@@ -1,0 +1,15 @@
+{
+ "status": 200,
+ "seconds": 0.4,
+ "body": {
+  "data": {
+   "bookingId": "01a1effe-73a6-7128-89a4-fc2295470c71",
+   "status": "CANCELLED_WITH_CHARGES",
+   "cancellation_fee": 497.94,
+   "refund_amount": 71.14,
+   "currency": "USD",
+   "refund_type": "partial",
+   "destination": "original_payment"
+  }
+ }
+}

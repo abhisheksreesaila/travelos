@@ -1,0 +1,340 @@
+{
+ "status": 200,
+ "seconds": 0.2,
+ "body": {
+  "data": [
+   {
+    "booking": {
+     "bookingId": "01a1effe-73a6-7128-89a4-fc2295470c71",
+     "bookingRef": "FH-26B-1VO6TJ6Z",
+     "status": "CONFIRMED",
+     "timestamp": "2026-11-18T18:49:48.198Z",
+     "journey": {
+      "journeyKey": "e668f40cd3b26f83",
+      "segments": [
+       {
+        "arrivalTime": "2026-12-18T17:29:00",
+        "carrier": {
+         "marketingCode": "ND",
+         "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "marketingName": "Nuit\u00e9e Air",
+         "operatingCode": "ND",
+         "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "operatingName": "Nuit\u00e9e Air"
+        },
+        "departureTime": "2026-12-18T15:50:00",
+        "originCode": "SFO",
+        "destinationCode": "SAN",
+        "direction": "OUTBOUND",
+        "duration": {
+         "iso8601": "PT1H39M",
+         "minutes": 99
+        },
+        "flight": {
+         "marketingNumber": "6278",
+         "operatingNumber": "6278"
+        },
+        "segmentKey": "3f8e3666",
+        "originName": "San Francisco International Airport",
+        "destinationName": "San Diego International Airport",
+        "stopCount": 0
+       },
+       {
+        "arrivalTime": "2026-12-22T20:34:00",
+        "carrier": {
+         "marketingCode": "ND",
+         "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "marketingName": "Nuit\u00e9e Air",
+         "operatingCode": "ND",
+         "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+         "operatingName": "Nuit\u00e9e Air"
+        },
+        "departureTime": "2026-12-22T18:55:00",
+        "originCode": "SAN",
+        "destinationCode": "SFO",
+        "direction": "INBOUND",
+        "duration": {
+         "iso8601": "PT1H39M",
+         "minutes": 99
+        },
+        "flight": {
+         "marketingNumber": "3060",
+         "operatingNumber": "3060"
+        },
+        "segmentKey": "4002c16c",
+        "originName": "San Diego International Airport",
+        "destinationName": "San Francisco International Airport",
+        "stopCount": 0
+       }
+      ],
+      "pricing": {
+       "display": {
+        "total": 569.07,
+        "currency": "USD",
+        "base": 426.8,
+        "fees": 0,
+        "taxes": 142.27,
+        "perPassenger": {
+         "adult": {
+          "base": 155.2,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 51.73,
+          "total": 206.93
+         },
+         "child": {
+          "base": 116.4,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 38.81,
+          "total": 155.21
+         },
+         "infant": {
+          "base": 15.52,
+          "currency": "USD",
+          "fees": 0,
+          "taxes": 5.18,
+          "total": 20.7
+         }
+        }
+       },
+       "converted": true
+      },
+      "baggage": {
+       "hasCarryOnBag": false,
+       "hasCheckedBag": false,
+       "included": [
+        {
+         "bagType": "personal",
+         "description": "Personal item (backpack/handbag)",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 0,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "size": "40x30x20cm",
+         "weightKg": 5
+        }
+       ],
+       "paid": [
+        {
+         "bagType": "cabin",
+         "description": "Carry-on bag",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 33.66,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 8
+        },
+        {
+         "bagType": "checked",
+         "description": "Checked bag 23kg",
+         "passengerType": "ALL",
+         "pieces": 1,
+         "pricing": {
+          "display": {
+           "amount": 50.48,
+           "currency": "USD"
+          },
+          "converted": true
+         },
+         "weightKg": 23
+        }
+       ]
+      },
+      "terms": {
+       "changeable": false,
+       "refundable": false,
+       "summary": [
+        {
+         "level": "warning",
+         "message": "Non-refundable ticket"
+        },
+        {
+         "level": "danger",
+         "message": "Non-changeable ticket"
+        }
+       ]
+      },
+      "cabinClass": "ECONOMY",
+      "fare": {
+       "family": "Economy Light",
+       "mixedCabin": false,
+       "mixedFareFamily": false,
+       "seatsRemaining": 9
+      },
+      "segmentFares": [
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "3f8e3666"
+       },
+       {
+        "bookingCode": "L",
+        "cabin": "Economy",
+        "fareBasisCode": "LOWSFO",
+        "fareFamily": "Economy Light",
+        "seatsRemaining": 9,
+        "segmentKey": "4002c16c"
+       }
+      ]
+     },
+     "passengers": [
+      {
+       "title": "MS",
+       "firstName": "MAYA",
+       "lastName": "OKAFOR",
+       "birthday": "1985-04-12",
+       "gender": "F",
+       "nationality": "US"
+      },
+      {
+       "title": "MR",
+       "firstName": "DANIEL",
+       "lastName": "OKAFOR",
+       "birthday": "1983-09-03",
+       "gender": "M",
+       "nationality": "US"
+      },
+      {
+       "firstName": "LEO",
+       "lastName": "OKAFOR",
+       "birthday": "2019-10-11",
+       "gender": "M",
+       "nationality": "US",
+       "passengerType": 1
+      }
+     ],
+     "order": {
+      "reference": {
+       "orderId": "JSS7LG",
+       "airlineBookings": [
+        {
+         "airlineCode": "ND",
+         "airlineName": "Nuit\u00e9e Air",
+         "airlinePnr": "50CVYQ"
+        }
+       ]
+      },
+      "currency": "USD",
+      "status": "confirmed",
+      "price": {
+       "base": 426.8,
+       "currency": "USD",
+       "taxes": 142.27,
+       "total": 569.07
+      },
+      "ticketLimitTime": "2026-11-18T19:49:48.185Z",
+      "timestamp": "2026-11-18T18:49:48.185Z"
+     },
+     "contact": {
+      "firstName": "MAYA",
+      "lastName": "OKAFOR",
+      "email": "maya.okafor@example.com",
+      "phoneCountryCode": "1",
+      "phoneNumber": "4155550100"
+     },
+     "airlineLocators": [
+      {
+       "airlineCode": "ND",
+       "airlinePnr": "50CVYQ"
+      }
+     ],
+     "payment": {
+      "amount": 569.07,
+      "currency": "USD"
+     },
+     "paymentStatus": "completed",
+     "pricing": {
+      "subtotal": 569.07,
+      "totalAmount": 569.07,
+      "currency": "USD"
+     },
+     "settings": {
+      "autoTicket": true
+     },
+     "ticketData": {
+      "confirmationId": "JSS7LG",
+      "ticketedAt": "2026-11-18T18:49:53.415Z",
+      "ticketedBy": "lite-api-prd-sandbox",
+      "tickets": [
+       {
+        "birthday": "1985-04-12",
+        "documentExpiry": "",
+        "documentNumber": "",
+        "documentType": "",
+        "firstName": "MAYA",
+        "fullName": "OKAFOR/MAYA",
+        "gender": "F",
+        "lastName": "OKAFOR",
+        "middleName": null,
+        "nationality": "US",
+        "passengerIndex": 0,
+        "status": "issued",
+        "ticketNumber": "9998457201930"
+       },
+       {
+        "birthday": "1983-09-03",
+        "documentExpiry": "",
+        "documentNumber": "",
+        "documentType": "",
+        "firstName": "DANIEL",
+        "fullName": "OKAFOR/DANIEL",
+        "gender": "M",
+        "lastName": "OKAFOR",
+        "middleName": null,
+        "nationality": "US",
+        "passengerIndex": 1,
+        "status": "issued",
+        "ticketNumber": "9995566348947"
+       },
+       {
+        "birthday": "2019-10-11",
+        "documentExpiry": "",
+        "documentNumber": "",
+        "documentType": "",
+        "firstName": "LEO",
+        "fullName": "OKAFOR/LEO",
+        "gender": "M",
+        "lastName": "OKAFOR",
+        "middleName": null,
+        "nationality": "US",
+        "passengerIndex": 2,
+        "status": "issued",
+        "ticketNumber": "9992232619136"
+       }
+      ],
+      "pointOfSale": {
+       "currency": "EUR",
+       "customerCurrency": "USD",
+       "environment": "sandbox",
+       "providerCurrency": "EUR"
+      }
+     },
+     "ticketLimitTime": "2026-11-18T19:49:48.185Z",
+     "lastRefreshedAt": "2026-11-18T18:49:53.493Z",
+     "timings": {
+      "startedAt": "2026-11-18T18:49:48.184Z",
+      "persistedAt": "2026-11-18T18:49:48.225Z",
+      "orderSentAt": "2026-11-18T18:49:48.184Z",
+      "pnrReceivedAt": "2026-11-18T18:49:48.185Z",
+      "completedAt": "2026-11-18T18:49:48.241Z"
+     },
+     "canAddServicesAfterTicketing": false
+    }
+   }
+  ]
+ }
+}

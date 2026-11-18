@@ -1,0 +1,38 @@
+{
+ "status": 200,
+ "seconds": 2.9,
+ "body": {
+  "data": [
+   {
+    "confidence": "confirmed",
+    "timestamp": "2026-11-18T18:50:02.032Z",
+    "refund": {
+     "display": {
+      "amount": 71.14,
+      "currency": "USD"
+     }
+    },
+    "penalty": {
+     "display": {
+      "amount": 497.94,
+      "currency": "USD"
+     }
+    },
+    "penalties": [
+     {
+      "type": "cancellation_fee",
+      "description": "Cancellation penalty",
+      "pricing": {
+       "display": {
+        "amount": 497.94,
+        "currency": "USD"
+       }
+      }
+     }
+    ],
+    "destination": "original_payment",
+    "pnr": "JSS7LG"
+   }
+  ]
+ }
+}

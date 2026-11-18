@@ -1,0 +1,222 @@
+{
+ "status": 200,
+ "seconds": 0.5,
+ "body": {
+  "data": [
+   {
+    "journey": {
+     "expiration": "2026-11-18T19:04:32.345Z",
+     "timestamp": "2026-11-18T18:47:41.276Z",
+     "pricing": {
+      "display": {
+       "total": 569.07,
+       "currency": "USD",
+       "base": 426.8,
+       "fees": 0,
+       "taxes": 142.27,
+       "perPassenger": {
+        "adult": {
+         "base": 155.2,
+         "currency": "USD",
+         "fees": 0,
+         "taxes": 51.73,
+         "total": 206.93
+        },
+        "child": {
+         "base": 116.4,
+         "currency": "USD",
+         "fees": 0,
+         "taxes": 38.81,
+         "total": 155.21
+        },
+        "infant": {
+         "base": 15.52,
+         "currency": "USD",
+         "fees": 0,
+         "taxes": 5.18,
+         "total": 20.7
+        }
+       }
+      },
+      "converted": true
+     },
+     "baggage": {
+      "hasCarryOnBag": false,
+      "hasCheckedBag": false,
+      "included": [
+       {
+        "bagType": "personal",
+        "description": "Personal item (backpack/handbag)",
+        "passengerType": "ALL",
+        "pieces": 1,
+        "pricing": {
+         "display": {
+          "amount": 0,
+          "currency": "USD"
+         },
+         "converted": true
+        },
+        "size": "40x30x20cm",
+        "weightKg": 5
+       }
+      ],
+      "paid": [
+       {
+        "bagType": "cabin",
+        "description": "Carry-on bag",
+        "passengerType": "ALL",
+        "pieces": 1,
+        "pricing": {
+         "display": {
+          "amount": 33.66,
+          "currency": "USD"
+         },
+         "converted": true
+        },
+        "weightKg": 8
+       },
+       {
+        "bagType": "checked",
+        "description": "Checked bag 23kg",
+        "passengerType": "ALL",
+        "pieces": 1,
+        "pricing": {
+         "display": {
+          "amount": 50.48,
+          "currency": "USD"
+         },
+         "converted": true
+        },
+        "weightKg": 23
+       }
+      ]
+     },
+     "fare": {
+      "family": "Economy Light",
+      "mixedCabin": false,
+      "mixedFareFamily": false,
+      "seatsRemaining": 9
+     },
+     "journeyKey": "e668f40cd3b26f83",
+     "passengers": {
+      "adults": 2,
+      "children": 1,
+      "infants": 0
+     },
+     "seats": {
+      "extraRoom": {
+       "description": "Not available",
+       "status": "not-offered"
+      },
+      "seatReservation": {
+       "description": "Seat selection available for purchase",
+       "pricing": {
+        "display": {
+         "amount": 16.83,
+         "currency": "USD"
+        },
+        "converted": true
+       },
+       "status": "chargeable"
+      }
+     },
+     "segmentFares": [
+      {
+       "bookingCode": "L",
+       "cabin": "Economy",
+       "fareBasisCode": "LOWSFO",
+       "fareFamily": "Economy Light",
+       "seatsRemaining": 9,
+       "segmentKey": "3f8e3666"
+      },
+      {
+       "bookingCode": "L",
+       "cabin": "Economy",
+       "fareBasisCode": "LOWSFO",
+       "fareFamily": "Economy Light",
+       "seatsRemaining": 9,
+       "segmentKey": "4002c16c"
+      }
+     ],
+     "segments": [
+      {
+       "arrivalTime": "2026-12-18T17:29:00",
+       "carrier": {
+        "marketingCode": "ND",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "marketingName": "Nuit\u00e9e Air",
+        "operatingCode": "ND",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "operatingName": "Nuit\u00e9e Air"
+       },
+       "departureTime": "2026-12-18T15:50:00",
+       "originCode": "SFO",
+       "destinationCode": "SAN",
+       "direction": "OUTBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "flight": {
+        "marketingNumber": "6278",
+        "operatingNumber": "6278"
+       },
+       "segmentKey": "3f8e3666",
+       "originName": "San Francisco International Airport",
+       "destinationName": "San Diego International Airport",
+       "stopCount": 0
+      },
+      {
+       "arrivalTime": "2026-12-22T20:34:00",
+       "carrier": {
+        "marketingCode": "ND",
+        "marketingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "marketingName": "Nuit\u00e9e Air",
+        "operatingCode": "ND",
+        "operatingLogo": "https://assets.nuitee.flights/static/images/airlines/ND.png",
+        "operatingName": "Nuit\u00e9e Air"
+       },
+       "departureTime": "2026-12-22T18:55:00",
+       "originCode": "SAN",
+       "destinationCode": "SFO",
+       "direction": "INBOUND",
+       "duration": {
+        "iso8601": "PT1H39M",
+        "minutes": 99
+       },
+       "flight": {
+        "marketingNumber": "3060",
+        "operatingNumber": "3060"
+       },
+       "segmentKey": "4002c16c",
+       "originName": "San Diego International Airport",
+       "destinationName": "San Francisco International Airport",
+       "stopCount": 0
+      }
+     ],
+     "terms": {
+      "changeable": false,
+      "refundable": false,
+      "summary": [
+       {
+        "level": "warning",
+        "message": "Non-refundable ticket"
+       },
+       {
+        "level": "danger",
+        "message": "Non-changeable ticket"
+       }
+      ]
+     }
+    },
+    "changes": {
+     "cabinChanged": false,
+     "fareChanged": false,
+     "priceChanged": false
+    },
+    "searchId": "01a1effe08017027aa94eb4cc6a59079",
+    "sessionId": "session_01a1effe07f8iDfWwFGAyFQ0tI71i9WXe3G2MUTy"
+   }
+  ]
+ }
+}
