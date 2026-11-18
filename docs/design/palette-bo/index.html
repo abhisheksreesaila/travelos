@@ -1317,7 +1317,6 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 :root[data-look="stage"] .wk-rain svg { color: var(--wx-rain); }
 :root[data-look="stage"] .sq.pick .wxs svg { color: inherit; }
 :root[data-look="stage"] .sq.pick .wk-sun svg, :root[data-look="stage"] .sq.pick .wk-partly .ws { color: var(--wx-sun); }
-:root[data-look="stage"] .xc[data-kind="wx"] .ic { color: var(--wx-sun) !important; }
 :root[data-look="stage"] .seg i { box-shadow: inset 0 0 0 1px var(--line-2); }
 :root[data-look="stage"] .realcost { background: #1D1D1F; color: #F5F5F7; }
 :root[data-look="stage"] .realcost .eq .hot { color: #FF9A4D; }
@@ -1325,6 +1324,43 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 :root[data-look="stage"][data-theme="dark"] .realcost .eq .hot { color: #B84A00; }
 :root[data-look="stage"] .gal .cap, :root[data-look="stage"] .stage .cap { background: rgb(0 0 0 / .6); }
 :root[data-look="stage"] .picker .seg button { font-size: 13px; padding: 0 4px; }
+
+/* Stage: "More to know before you pick" is a dark band on the light page (Apple's contrasting section), the second thing you see after the search card.
+   Light: #1D1D1F panel; dark: a raised #2C2C2E panel with a hairline. Words: white 16.0 on #1D1D1F (13.0 on #2C2C2E); #A1A1A6 on #1D1D1F 6.5, on its tiles #2C2C2E 5.4; dark mode #AEAEB2 on its tiles #3A3A3C 5.1, on the panel 6.3;
+   the "−$88" badge white on #0F766E 5.5. Icon squares are vivid fills (non-text) with white icons. */
+:root[data-look="stage"] .xtra.sky { margin: 20px 0; padding: 28px 28px 26px; border-radius: 28px; background: #1D1D1F; gap: 18px; box-shadow: var(--sh2); }
+:root[data-look="stage"][data-theme="dark"] .xtra.sky { background: #2C2C2E; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); }
+:root[data-look="stage"][data-chips] .xtra.sky .xhead { display: grid; grid-auto-flow: row; gap: 6px; flex: 1 1 100%; }
+:root[data-look="stage"] .xtra.sky .xhead b { color: #FFFFFF; font: 800 clamp(1.7rem, 2.4vw, 2.2rem)/1.05 var(--f-display); letter-spacing: -0.035em; }
+:root[data-look="stage"] .xtra.sky .xhead small { color: #A1A1A6; font-size: 16px; }
+:root[data-look="stage"] .xtra.sky .xchips { gap: 10px; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc { min-height: 64px; padding: 10px 14px 10px 10px; border-radius: 20px; color: #FFFFFF; box-shadow: none;
+  transition: transform 420ms var(--spring), background-color var(--t-quick); }
+:root[data-look="stage"][data-chips] .xtra.sky .xc:not([aria-expanded="true"]) { background: #2C2C2E; }
+:root[data-look="stage"][data-theme="dark"][data-chips] .xtra.sky .xc:not([aria-expanded="true"]) { background: #3A3A3C; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc:is(:hover, :focus-visible) { transform: translateY(-3px) scale(1.02); }
+:root[data-look="stage"][data-chips] .xtra.sky .xc:not([aria-expanded="true"]):hover { background: #3A3A3C; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc:focus-visible { outline-color: #FFFFFF; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc .tx small { color: #A1A1A6; }
+:root[data-look="stage"][data-theme="dark"][data-chips] .xtra.sky .xc .tx small, :root[data-look="stage"][data-theme="dark"] .xtra.sky .xhead small { color: #AEAEB2; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc .ic { width: 44px; height: 44px; border-radius: 13px; color: #FFFFFF; background: #636366; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[data-kind="wx"] .ic { background: #F5A300; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[data-kind="guide"] .ic { background: #00A6A6; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[data-kind="oak"] .ic { background: #1F9D55; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[data-kind="food"] .ic { background: #E5246B; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[data-kind="drive"] .ic { background: #7D4CF0; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc .ct { background: rgb(255 255 255 / .14); color: #FFFFFF; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc.sig .ct { background: #0F766E; color: #FFFFFF; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[aria-expanded="true"] { background: #FFFFFF; color: #1D1D1F; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[aria-expanded="true"] .tx small { color: #6E6E73; opacity: 1; }
+:root[data-look="stage"][data-chips] .xtra.sky .xc[aria-expanded="true"] .ct { background: #F0F0F3; color: #1D1D1F; }
+@media (max-width: 760px) {
+  :root[data-look="stage"] .xtra.sky { padding: 22px 0 20px; border-radius: 24px; }
+  :root[data-look="stage"][data-chips] .xtra.sky .xhead { padding: 0 18px; }
+  :root[data-look="stage"] .xtra.sky .xhead b { font-size: 1.55rem; }
+  :root[data-look="stage"] .xtra.sky .xchips { margin: 0; padding: 4px 18px 6px; scroll-snap-type: x mandatory; scroll-padding: 0 18px; }
+  :root[data-look="stage"][data-chips] .xtra.sky .xc { scroll-snap-align: start; min-height: 64px; }
+}
 @media (max-width: 760px) { :root[data-look="stage"] .pband { min-height: 120px; padding: 18px 16px; } :root[data-look="stage"] .hname h3 { font-size: 28px; } }
 
 @media (prefers-reduced-motion: reduce) {
