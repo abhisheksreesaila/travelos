@@ -35,6 +35,7 @@ def family(client):
 @pytest.fixture
 def live(family, monkeypatch):      # signed in first: the dev sign-in is off once production is pretended
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setattr(auth, "production", lambda: True)
     monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
@@ -197,16 +198,36 @@ def test_the_ids_the_flights_and_the_facts_are_saved_the_moment_the_prebook_answ
     assert fb.load(got["travellers"])[1].email == "maya.okafor@example.com"      # kept only until it is booked
 
 
-def test_a_second_prebook_for_the_same_token_replaces_an_unbooked_one_and_never_a_booked_one(live, family):
-    db, user, _ = family
-    prebooked(db, user)
-    prebooked(db, user)
-    assert len(familydb.rows(db, "SELECT * FROM matrix_flight_payments")) == 1
-    assert fb.finish(db, "fam", "tok-1", user).ok
+def second(db, user):
     fp = fb.prepare(PART, "fam")
     people, contact, _ = clean()
-    assert fb.save_prebook(db, "tok-1", user, fp, liteapi.flight_prebook(OFFER, {}, [], "", "fam").items[0], people, contact, "t", "s", "/", "p") is False
+    return fb.save_prebook(db, "tok-1", user, fp, liteapi.flight_prebook(OFFER, {}, [], "", "fam").items[0], people, contact, "t", "s", "/", "p")
+
+
+def test_a_form_still_open_is_never_replaced_by_a_second_prebook_and_its_return_still_books(live, family):
+    """D-980 review: the first form may be paid. A second prebook of the token within 15 minutes is refused, the first row (its transaction) is untouched and its return books it."""
+    db, user, _ = family
+    prebooked(db, user)
+    assert fb.form_open(db, "tok-1") is True
+    assert second(db, user) is False
+    rows = familydb.rows(db, "SELECT * FROM matrix_flight_payments")
+    assert len(rows) == 1 and rows[0]["transaction_id"] == TRANSACTION and rows[0]["travellers"] != ""
+    assert fb.finish(db, "fam", "tok-1", user).ok      # the return of the first form
+    assert second(db, user) is False and fb.form_open(db, "tok-1") is True      # and a booked one is never touched
     assert familydb.rows(db, "SELECT status FROM matrix_flight_payments")[0]["status"] == "booked"
+
+
+def test_an_older_unbooked_form_is_set_aside_with_its_ids_and_no_passengers_never_deleted(live, family):
+    db, user, _ = family
+    prebooked(db, user)
+    with familydb.transaction(db):
+        familydb.run(db, "UPDATE matrix_flight_payments SET updated_at = :t", t=(datetime.fromisoformat(familydb.now()) - timedelta(minutes=16)).isoformat(timespec="seconds"))
+    assert fb.form_open(db, "tok-1") is False and second(db, user) is True
+    rows = familydb.rows(db, "SELECT id, status, transaction_id, travellers FROM matrix_flight_payments ORDER BY created_at")
+    assert len(rows) == 2 and {r["transaction_id"] for r in rows} == {TRANSACTION}
+    old = next(r for r in rows if r["id"] != "tok-1")
+    assert old["id"].startswith("tok-1~") and old["status"] == "paying" and old["travellers"] == ""
+    assert next(r for r in rows if r["id"] == "tok-1")["travellers"] != ""
 
 
 # ---- the book: once, from the form's return only -----------------------------------------------------------------------------
@@ -282,11 +303,13 @@ def test_two_returns_at_once_book_one_flight(live, family):
     assert res.status == fb.BOOKING and live.calls("https://api.liteapi.travel/v3.0/flights/bookings/") == []
 
 
-def test_a_busy_gate_books_nothing_and_leaves_the_form_waiting(live, family, monkeypatch):
+def test_a_book_after_payment_is_never_refused_by_the_daily_booking_budgets(live, family, monkeypatch):
+    """D-980 review: the money is already taken, so neither the family's nor the site's daily booking budget may refuse the book."""
     db, user, _ = family
     prebooked(db, user)
     monkeypatch.setattr(liteapi, "PER_FAMILY_BOOK_A_DAY", 0)
-    assert fb.finish(db, "fam", "tok-1", user).status == liteapi.OVER and fb.payment(db, "tok-1")["status"] == "paying"
+    monkeypatch.setattr(liteapi, "BOOK_A_DAY", 0)
+    assert fb.finish(db, "fam", "tok-1", user).ok and liteapi.flight_verify(OFFER, "fam").status == liteapi.OVER      # a verify (new business) is still counted
 
 
 def test_a_sample_flight_is_a_row_with_no_call_and_pressing_book_twice_finds_it(live, family):

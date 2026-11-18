@@ -247,6 +247,7 @@ def test_no_flight_call_carries_the_sandbox_card_with_any_key(monkeypatch):
     from tests.flight_support import BOOKING_ID, Fly, OFFER, PREBOOK_ID, TRANSACTION
     for key in (LIVE, "sand_test-key-not-real"):
         monkeypatch.setenv("LITEAPI_KEY", key)
+        monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
         monkeypatch.setattr(auth, "production", lambda: True)
         f = Fly()
         monkeypatch.setattr(liteapi, "TRANSPORT", f)

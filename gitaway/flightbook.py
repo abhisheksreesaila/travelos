@@ -35,6 +35,10 @@ NEEDS_QUOTE = "needs quote"
 GENDERS = (("F", "Female"), ("M", "Male"), ("X", "Another or unspecified"))      # as on the passport or ID (LiteAPI: M, F, X)
 KINDS = {0: "adult", 1: "child", 2: "infant"}
 US_ZONES = {"America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Phoenix", "America/Anchorage", "Pacific/Honolulu"}
+SOON_WORDS = "Flight booking opens soon. Your flight isn't booked yet."
+HAVE_WORDS = "Your flight is already booked."
+OPEN_AFTER = timedelta(minutes=15)      # a flight's payment form younger than this may still be paid: a second prebook of the same token waits for it
+PAID_OK = ("succeeded", "completed")      # LiteAPI's paymentStatus after a book; anything else present is not a paid flight
 SAID = {liteapi.GONE: "That fare is no longer available. Go back to the matrix and open the square again for today’s flights.",
         liteapi.OVER: "Today’s booking calls are used up. Try again tomorrow.",
         liteapi.BUSY: "LiteAPI is busy right now. Try again in a minute.",
@@ -124,6 +128,13 @@ class FPrep:
     verified: liteapi.FlightVerified | None = None
     offer_id: str = ""
     shown_cents: int = 0               # what the square said
+    soon: bool = False                 # a live key with flights switched off (D-980): the flight is not booked here yet and the checkout says so
+    have: dict | None = None           # the flight of this square is already booked (a row of matrix_flights): the stay alone is booked now
+
+    @property
+    def real(self) -> bool:
+        """Is this flight booked through LiteAPI by this checkout?"""
+        return not self.sample and not self.soon and self.have is None
 
     @property
     def ok(self) -> bool:
@@ -149,6 +160,8 @@ def prepare(part, family: str = "", sample: bool = False) -> FPrep:
         return FPrep(liteapi.GONE)
     if sample or not part.offer_id:
         return FPrep(liteapi.OK, True, None, "", part.cents)
+    if liteapi.mode() == "live" and not liteapi.flights_live():
+        return FPrep(liteapi.OK, False, None, part.offer_id, part.cents, soon=True)
     got = liteapi.flight_verify(part.offer_id, family)
     if not got.ok:
         return FPrep(got.status)
@@ -305,7 +318,16 @@ def payment(db, token: str) -> dict | None:
 
 
 def payment_for_stay(db, stay_token: str) -> dict | None:
-    return familydb.row(db, "SELECT * FROM matrix_flight_payments WHERE stay_token = :s", s=stay_token)
+    return familydb.row(db, "SELECT * FROM matrix_flight_payments WHERE stay_token = :s ORDER BY created_at DESC", s=stay_token)
+
+
+def booked_for_square(db, back_href: str) -> dict | None:
+    """The flight already booked through LiteAPI from this square (its address is what the prebook kept), not cancelled: a second Book of the square books the stay alone."""
+    if not back_href:
+        return None
+    row = familydb.row(db, "SELECT f.* FROM matrix_flights f JOIN matrix_flight_payments p ON p.booking_id = f.booking_id WHERE p.back_href = :h AND f.sample = 0 "
+                           "AND f.status NOT IN ('CANCELLED', 'CANCELLED_WITH_CHARGES') AND NOT EXISTS (SELECT 1 FROM matrix_cancels c WHERE c.booking_id = f.booking_id) ORDER BY f.created_at DESC", h=back_href)
+    return row
 
 
 def row_for(db, booking_id: str) -> dict | None:
@@ -317,17 +339,34 @@ def row_for_ref(db, ref: str) -> dict | None:
     return familydb.row(db, "SELECT * FROM matrix_flights WHERE ref = :r OR booking_id = :r", r=ref) if ref else None
 
 
+def form_open(db, token: str) -> bool:
+    """Is a payment form for this token open (less than OPEN_AFTER old), or its flight booked or being booked? A second prebook then waits: the first form may be paid, and its return must
+    still find its own prebook (never replaced by another transaction)."""
+    old = familydb.row(db, "SELECT status, updated_at FROM matrix_flight_payments WHERE id = :i", i=token)
+    if not old:
+        return False
+    if old["status"] != PAYING:
+        return True
+    try:
+        return datetime.fromisoformat(familydb.now()) - datetime.fromisoformat(old["updated_at"]) < OPEN_AFTER
+    except (TypeError, ValueError):
+        return False
+
+
 def save_prebook(db, token: str, user_id: str, fp: FPrep, pre: liteapi.FlightPrebook, people, contact: Contact, trip_id: str, stay_token: str, back_href: str, party: str) -> bool:
     """Save the prebook the moment it answers (LiteAPI cannot give its ids back): the ids, the amount, the flights and the facts shown before paying, and the passengers LiteAPI's booking needs,
-    kept only until it is booked. The form's `secretKey` is not saved. A second prebook for the same token replaces an unbooked one; a booked one is never touched. False: it is booked."""
+kept only until it is booked. The form's `secretKey` is not saved. A form under OPEN_AFTER old, or a booked one, is never replaced (False: the caller sends the person to the return page). An older
+    unbooked form is set aside under its own id, passengers blanked, ids kept: it may have been paid, and the captain matches it on /admin."""
     purge(db)
     v = fp.verified
     with familydb.transaction(db):
-        old = familydb.row(db, "SELECT status FROM matrix_flight_payments WHERE id = :i", i=token)
+        old = familydb.row(db, "SELECT status, updated_at FROM matrix_flight_payments WHERE id = :i", i=token)
         if old and old["status"] != PAYING:
             return False
+        if old and datetime.fromisoformat(familydb.now()) - datetime.fromisoformat(old["updated_at"]) < OPEN_AFTER:
+            return False
         if old:
-            familydb.run(db, "DELETE FROM matrix_flight_payments WHERE id = :i", i=token)
+            familydb.run(db, "UPDATE matrix_flight_payments SET id = :n, travellers = '' WHERE id = :i", n=f"{token}~{familydb.now()}", i=token)
         familydb.run(db, "INSERT INTO matrix_flight_payments (id, user_id, trip_id, status, prebook_id, transaction_id, charge_cents, airline, route, legs, facts, party, stay_token, back_href, "
                          "travellers, contact, created_at, updated_at) VALUES (:i, :u, :t, 'paying', :pb, :tx, :c, :a, :r, :l, :f, :p, :s, :b, :tr, :ct, :now, :now)",
                      i=token, u=user_id, t=trip_id, pb=pre.prebook_id, tx=pre.transaction_id, c=pre.cents, a=airline_words(v.segments)[:120], r=route_words(v.segments),
@@ -383,6 +422,12 @@ def finish(db, family: str, token: str, user_id: str, budget: str = "") -> FResu
         log.warning("flight book of %s needs help (%s)", token[:6], got.status)
         return FResult(liteapi.FAILED)
     b = got.items[0]
+    if b.payment_status and b.payment_status not in PAID_OK:      # LiteAPI says the payment is not a paid one: not shown as booked, kept for the captain (D-980)
+        _set(db, token, NEEDS_HELP)
+        with familydb.transaction(db):
+            familydb.run(db, "UPDATE matrix_flight_payments SET booking_id = :b WHERE id = :i", b=b.booking_id, i=token)
+        log.warning("flight book of %s answered payment status %s: needs help", token[:6], b.payment_status[:20])
+        return FResult(liteapi.FAILED)
     try:
         with familydb.transaction(db):
             familydb.run(db, "INSERT INTO matrix_flights (id, trip_id, user_id, booking_id, ref, pnr, locators, status, payment_status, total_cents, airline, legs, facts, party, ticket_limit, sample, "
@@ -459,8 +504,13 @@ def due(db, now) -> list:
     """The bookings the worker should ask LiteAPI about now: still waiting for their tickets (five tries at growing gaps), or cancelled with LiteAPI's answer pending."""
     at = now.isoformat(timespec="seconds")
     waiting = familydb.rows(db, "SELECT * FROM matrix_flights WHERE sample = 0 AND status = 'PENDING_CONFIRMATION' AND COALESCE(checks, 0) < :n AND (next_check_at = '' OR next_check_at <= :t)", n=len(CHECK_AFTER), t=at)
-    pending = familydb.rows(db, "SELECT f.* FROM matrix_flights f JOIN matrix_cancels c ON c.booking_id = f.booking_id WHERE f.sample = 0 AND c.status = 'PENDING'")
+    pending = familydb.rows(db, "SELECT f.* FROM matrix_flights f JOIN matrix_cancels c ON c.booking_id = f.booking_id WHERE f.sample = 0 AND c.status = 'PENDING' AND COALESCE(f.checks, 0) < :n "
+                                "AND (COALESCE(f.next_check_at, '') = '' OR f.next_check_at <= :t)", n=len(CHECK_AFTER), t=at)
     return waiting + [p for p in pending if p["booking_id"] not in {w["booking_id"] for w in waiting}]
+
+
+def _cancel_pending(db, booking_id: str) -> bool:
+    return familydb.row(db, "SELECT 1 AS x FROM matrix_cancels WHERE booking_id = :b AND status = 'PENDING'", b=booking_id) is not None
 
 
 def refresh(db, family: str, row: dict, spender: str = "", now=None) -> dict:
@@ -483,7 +533,7 @@ def refresh(db, family: str, row: dict, spender: str = "", now=None) -> dict:
     with familydb.transaction(db):
         familydb.run(db, "UPDATE matrix_flights SET status = :s, payment_status = :ps, pnr = :pnr, locators = :loc, ticket_limit = :tl, checks = :n, next_check_at = :t WHERE booking_id = :b",
                      s=b.status, ps=b.payment_status, pnr=b.pnr or row["pnr"], loc=json.dumps(b.airline_pnrs), tl=b.ticket_limit.isoformat() if b.ticket_limit else row["ticket_limit"],
-                     n=n, t=(now + timedelta(minutes=wait)).isoformat(timespec="seconds") if b.pending else "", b=row["booking_id"])
+                     n=n, t=(now + timedelta(minutes=wait)).isoformat(timespec="seconds") if b.pending or _cancel_pending(db, row["booking_id"]) else "", b=row["booking_id"])
         if b.status in ("CANCELLED", "CANCELLED_WITH_CHARGES"):      # a cancel LiteAPI had only accepted is done: say so with the amounts quoted
             familydb.run(db, "UPDATE matrix_cancels SET status = :s WHERE booking_id = :b AND status = 'PENDING'", s=b.status, b=row["booking_id"])
     fresh = familydb.row(db, "SELECT * FROM matrix_flights WHERE booking_id = :b", b=row["booking_id"])
@@ -540,6 +590,8 @@ def cancel(db, family: str, booking_id: str, user_id: str) -> tuple:
                      b=booking_id, u=user_id, s=c.status, r=c.refund_cents, f=c.fee_cents, now=familydb.now())
         if c.status != "PENDING":
             familydb.run(db, "UPDATE matrix_flights SET status = :s WHERE booking_id = :b", s=c.status, b=booking_id)
+        else:      # LiteAPI has not finished: the worker follows it at the same capped gaps, five tries counted from now
+            familydb.run(db, "UPDATE matrix_flights SET checks = 0, next_check_at = '' WHERE booking_id = :b", b=booking_id)
     return (liteapi.PENDING if c.status == "PENDING" else liteapi.OK), c
 
 
@@ -582,6 +634,19 @@ def purge(db) -> None:
     with familydb.transaction(db):
         familydb.run(db, "DELETE FROM matrix_flight_payments WHERE status = 'expired'")
         familydb.run(db, "UPDATE matrix_flight_payments SET travellers = '', contact = '' WHERE created_at < :t AND (travellers != '' OR contact != '')", t=cut)
+        familydb.run(db, "UPDATE matrix_flight_payments SET travellers = '' WHERE status = 'paying' AND travellers != '' AND created_at < :t",      # a form left open for a day: the passengers go, the ids and the amount stay (like the stay's PURGE_UNPAID)
+                     t=(datetime.now(timezone.utc) - timedelta(days=mb.PURGE_UNPAID)).isoformat(timespec="seconds"))
+
+
+def to_match(db, now=None) -> list:
+    """Flight payments the captain may need to match in LiteAPI's dashboard (D-980): a form opened and left over OPEN_AFTER ("maybe paid"), a book that may have gone through (`needs_help`) or was
+    started and never finished (`booking`), from the last 7 days. Only the ids and the date: never a traveller."""
+    from datetime import timezone
+    now = now or datetime.now(timezone.utc)
+    rows = familydb.rows(db, "SELECT id, status, transaction_id, charge_cents, created_at, updated_at FROM matrix_flight_payments WHERE status IN ('paying', 'booking', 'needs_help') AND created_at > :w ORDER BY created_at",
+                         w=(now - timedelta(days=mb.PURGE_GUEST)).isoformat(timespec="seconds"))
+    cut = (now - OPEN_AFTER).isoformat(timespec="seconds")
+    return [r for r in rows if r["updated_at"] < cut]
 
 
 def stuck(db, before: str) -> list:

@@ -54,7 +54,7 @@ def stuck_count(now=None) -> int:
             log.warning("booking jobs: a family could not be read (%s)", type(e).__name__)
             continue
         try:
-            n += len(mb.stuck(db, cut)) + len(fb.stuck(db, cut))
+            n += len(mb.stuck(db, cut)) + len(fb.to_match(db, now or datetime.now(timezone.utc)))
         finally:
             db.conn.close()
     return n
@@ -120,6 +120,23 @@ def needing_help() -> list:
         try:
             for r in familydb.rows(db, "SELECT * FROM matrix_payments WHERE status = 'needs_help' ORDER BY created_at"):
                 out.append({"family": tid, "token": r["id"], "created_at": r["created_at"], "transaction_id": r["transaction_id"], "reference": mb.reference(tid, r["id"], 0)})
+        finally:
+            db.conn.close()
+    return out
+
+
+def flights_to_match(now=None) -> list:
+    """Every flight payment the captain may need to match in LiteAPI (a form left open over 15 minutes, a book that may have gone through or never finished), over every family: the family, the
+    token, its status, the date, LiteAPI's transaction id and the amount. No traveller data (D-980)."""
+    out = []
+    for tid in members.tenant_ids():
+        try:
+            db = _tenant(tid)
+        except Exception:  # noqa: BLE001
+            continue
+        try:
+            out += [{"family": tid, "token": r["id"], "status": r["status"], "created_at": r["created_at"], "transaction_id": r["transaction_id"], "charge_cents": r["charge_cents"]}
+                    for r in fb.to_match(db, now or datetime.now(timezone.utc))]
         finally:
             db.conn.close()
     return out

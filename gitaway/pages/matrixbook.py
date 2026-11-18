@@ -38,6 +38,7 @@ CODE = mx.BOOK + "/code"
 RETURN = mx.BOOK + "/return"
 FLIGHT_RETURN = mx.BOOK + "/flight/return"
 SIGNIN = "Sign in to book."
+FORM_OPEN = "A payment form for this flight is already open. Finish paying in it. If you already paid, open your booking from here; do not pay twice."
 STALE = "That room check has expired or is not for this square. Close this and press Book this trip on the square again."
 TICK = "Tick the box to say you have read the fare and hotel rules."
 SLOW_DOWN = "That is a lot of booking tries. Wait a minute, or try again tomorrow."
@@ -141,7 +142,8 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     A flight LiteAPI books (F-276: `prep.flight` real) changes the first two questions to an airline's: one card a seat (names as on the ID, birth date, gender, nationality, and a passport for an
     international route), then the lead's email and mobile number; the review says the flight's facts and the two charges (the flight first, then the stay), each in LiteAPI's payment form."""
     fp = prep.flight
-    real = fp is not None and not fp.sample
+    real = fp is not None and fp.real
+    held_off = fp is not None and (fp.soon or fp.have is not None)      # the flight is not booked by this checkout: not yet (D-980), or it already is
     form, live = mb.pays_by_form() and not prep.sample, mb.mode() == mb.LIVE
     values = values or (_made_up(s, w.depart) if real and not live else {} if live else dict(zip(("first", "last", "email"), MADE_UP)))
     errors = errors or {}
@@ -175,12 +177,12 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     nights = (w.return_ - w.depart).days
     name = " ".join(x for x in (values.get("first", ""), values.get("last", "")) if x)
     f = sq.flight
-    flight_cents = fp.cents if fp is not None else f.cents
+    flight_cents = 0 if held_off else fp.cents if fp is not None else f.cents
     stays = " + ".join(r.part.name for r in prep.rows)
     if real:
         flights = _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {fb.airline_words(fp.segments)}", " · ".join(fb.seg_words(x) for x in fp.segments))
     else:
-        flights = _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {f.airline}", f"{v2drawer.times(f.out)} · {v2drawer.stops_words(f.stops).lower()}. {fb.SAMPLE_WORDS}.")
+        flights = _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {f.airline}", f"{v2drawer.times(f.out)} · {v2drawer.stops_words(f.stops).lower()}. " + (fb.HAVE_WORDS if fp is not None and fp.have is not None else fb.SOON_WORDS if held_off else fb.SAMPLE_WORDS + "."))
     rv = Div(_rv("Trip", lane.name, f"{tm.when(w)} · {nights} nights"), flights,
              _rv("Stay", stays, " · ".join(f"{r.prebook.room or r.part.room} · {'Refundable' if r.prebook.refundable else 'Non-refundable'}" + (f" · {catalog.money(r.prebook.due_at_stay_cents)} of it is paid at the hotel" if r.prebook.due_at_stay_cents else "") for r in prep.rows)),
              _rv("Travellers" if real else "Guest", f"{name} + {s.travelers - 1}", "", 0, "guest"), _rv("Contact", values.get("email", ""), (f"+{values.get('cc') or '1'} " if real and values.get("phone") else "") + values.get("phone", ""), 1, "contact"),
@@ -191,7 +193,7 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
                      Span(catalog.money(r.total_cents), cls="num", data_sum="stay")) for r in prep.rows], cls="mxb-sum-rows")
     discount = sum(r.prebook.discount_cents for r in prep.rows)
     off = Div(Span(f"Code {prep.voucher}", data_sum="code"), Span("−" + catalog.money(discount) if discount else "", cls="num", data_sum="discount"), cls="mxb-off", hidden=not discount) if form else ""
-    summary = Div(Div(Span(f"Flight · {s.travelers} seats, {fb.airline_words(fp.segments) if real else f.airline}"), Span(catalog.money(flight_cents), cls="num", data_sum="flight")), sums, off,
+    summary = Div(*([] if held_off else [Div(Span(f"Flight · {s.travelers} seats, {fb.airline_words(fp.segments) if real else f.airline}"), Span(catalog.money(flight_cents), cls="num", data_sum="flight"))]), sums, off,
                   Div(Span("Total for the trip", cls="mxb-tl"), Span(catalog.money(flight_cents + stays_total), cls="num mxb-total", data_sum="total"), cls="t"), cls="mxb-sum")
     agree = Label(Input(type="checkbox", name="agree", required=True, checked=values.get("agree") == "on", cls="mxb-tick"), Span(icon("check", 16, 3), cls="mxb-cb", aria_hidden="true"),
                   Span("I have read the fare and hotel rules, including whether the flight and each stay are refundable." if real else "I have read the fare and hotel rules, including whether each stay is refundable."),
@@ -202,7 +204,8 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
         covers = P(f"Two charges from Nuitée: the flight {catalog.money(flight_cents)}, then the stay {catalog.money(stay_charge)}" + (f" ({catalog.money(prep.rows[0].prebook.due_at_stay_cents)} more is paid at the hotel)" if prep.rows[0].prebook.due_at_stay_cents else "")
                    + ". The flight goes first: LiteAPI holds its price only for a few minutes.", cls="mxb-fine", data_two="1")
     else:
-        covers = P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. The flight is a sample: nothing is booked or charged for it.", cls="mxb-fine")
+        why = (fb.HAVE_WORDS if fp is not None and fp.have is not None else fb.SOON_WORDS if held_off else "The flight is a sample: nothing is booked or charged for it.")
+        covers = P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. {why}", cls="mxb-fine", **({"data_flight_held": "1"} if held_off else {}))
     review = (rv, Div(_moved(prep), data_moved="1"), fc.rules(fp) if real else "", _policy(prep) if form else "", _code_box(prep) if form else "", summary, covers,
               agree, P(errors["agree"], id="mxb-agree-e", cls="mxb-err", role="alert") if errors.get("agree") else "", last)
     panes = [Div(H3(steps[i][1], cls="mxb-q"), *body, cls="mxb-pane", data_pane=str(i), data_small=steps[i][0]) for i, body in enumerate((guest, contact, requests, review))]
@@ -295,7 +298,7 @@ def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = ""
     return FtResponse(out, status_code=status, headers={"Cache-Control": "no-store"})
 
 
-def _flight_page(request, row, prep, pay, stay_secret: str = "", problem: str = "", status: int = 200):
+def _flight_page(request, row, prep, pay, stay_secret: str = "", problem: str = "", status: int = 200, booked_link: str = ""):
     """The page the flight's payment form returns to (F-276): the flight just booked, on the pass in LiteAPI's honest words, and next the stay's own payment form (the held room's key is
     given to the form and left out of the page's data once it is mounted). A flight not booked says why in one plain sentence and what to do."""
     if row is None:
@@ -313,7 +316,8 @@ def _flight_page(request, row, prep, pay, stay_secret: str = "", problem: str = 
             back = (pay or {}).get("back_href") or ""
             body = Div(Div(Div(fc.pass_row(row), cls="mxb-pass-mid"), stub, cls="mxb-pass mxb-pass-flightonly"),
                        P(icon("bell", 18, 2.4), problem or "Your room is no longer held, so the stay is not booked yet. The flight is booked.", cls="mxb-note is-warn", role="status", data_stay_lost="1"),
-                       A("Book the stay again", href=back, cls="btn mxb-back", data_try_stay="1") if back.startswith("/plan/matrix") else "",
+                       A("See your booking", href=booked_link, cls="btn mxb-back", data_see_pass="1") if booked_link else "",
+                       A("Book the stay again", href=back, cls="btn mxb-back", data_try_stay="1") if back.startswith("/plan/matrix") and not booked_link else "",
                        A("See your flight", href="/trip/booking?block=b-out", cls="btn mxb-back", data_see_flight="1"), cls="mxb-confirm", data_step="stay-lost")
         inner = Div(head, body, cls="mxb", data_at="flight-booked")
     out = page("Your flight", Div(Div(inner, cls="mx-side mx-alone mxb-page"), cls="mx mx-one"), current="/plan/matrix", head=mx.HEAD, noindex=True, v2=True, quiet=True)
@@ -363,16 +367,17 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
                cls="mxb-confirm", data_step="booked")
 
 
-def _problem(words: str):
-    return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
+def _problem(words: str, link=None):
+    return Div(P(icon("bell", 18, 2.4), words, cls="mxb-note is-warn", role="alert"), A(link[1], href=link[0], cls="btn mxb-back", data_flight_return="1") if link else "",
+               A("Back to the square", href="#", cls="btn mxb-back", data_close="1"), cls="mxb-problem", data_step="problem")
 
 
-def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who="", extras=None, pay=None, family="", flight=None):
+def sheet(s, lane, w, *, sq=None, prep=None, pk=(0, (), ()), values=None, errors=None, note="", res=None, problem="", sample=False, who="", extras=None, pay=None, family="", flight=None, link=None):
     """The checkout's inside (a fragment: assets/js/matrixbook.js puts it in the sheet and settles it): the head and one body, the four questions or the pass."""
     if problem:
-        body, at = _problem(problem), "room"
+        body, at = _problem(problem, link), "room"
     elif pay is not None:      # (the form's key, where it returns) of the stay, or with a third word "flight" the flight's own form, which is paid first (F-276)
-        body, at = (fc.pay_pane(prep, pay[0], pay[1], sum(r.prebook.charge_cents for r in prep.rows)) if len(pay) > 2 else pay_form(prep, *pay)), "pay"
+        body, at = (fc.pay_pane(prep, pay[0], pay[1], sum(r.prebook.charge_cents for r in prep.rows), pay[3]) if len(pay) > 2 else pay_form(prep, *pay)), "pay"
     elif res is not None and res.ok:
         body, at = _confirmation(s, lane, w, sq, prep, res, who, extras, family, flight), "booked"
     else:
@@ -428,20 +433,33 @@ def _same_offers(sq, prep) -> bool:
     """The held rooms are the square's chosen stays: LiteAPI's offer ids, or for the sample (no ids) the hotel and its price."""
     mark = lambda p: p.offer_id or (p.name, p.cents)
     fp = prep.flight
-    flight_same = fp is None or fp.sample or (sq.flight is not None and sq.flight.offer_id == fp.offer_id)      # a verified flight is the square's chosen one (F-276)
+    flight_same = fp is None or fp.sample or fp.soon or fp.have is not None or (sq.flight is not None and sq.flight.offer_id == fp.offer_id)      # a verified flight is the square's chosen one (F-276)
     return flight_same and tuple(mark(p) for p in sq.stays) == tuple(mark(r.part) for r in prep.rows)
 
 
-def _flight_prep(sq, family):
-    """The square's flight, verified with LiteAPI when it is booked here (a LiteAPI flight with real booking on), else a labelled sample (no call). None: the square has no flight."""
-    return fb.prepare(sq.flight, family, sample=not _form(sq.sample)) if sq.flight is not None else None
+def _flight_prep(sq, family, have=None):
+    """The square's flight, verified with LiteAPI when it is booked here (a LiteAPI flight with real booking on), else a labelled sample (no call), or "opens soon" for a live key with flights off
+    (D-980). `have`: the flight already booked from this square (a second Book books the stay alone, and asks LiteAPI nothing about the flight). None: the square has no flight."""
+    if sq.flight is None:
+        return None
+    if have is not None:
+        return fb.FPrep(liteapi.OK, False, None, sq.flight.offer_id, sq.flight.cents, have=have)
+    return fb.prepare(sq.flight, family, sample=not _form(sq.sample))
+
+
+def _flight_have(session, s, lane, w, sq, pk):
+    """The flight already booked through LiteAPI from this very square (and not cancelled), else None."""
+    if sq.flight is None or not _form(sq.sample):
+        return None
+    with ses.family(session) as fam:
+        return fb.booked_for_square(fam.db, mx.href(s, mx.SQUARE, lane=lane.key, w=w.key)) if fam else None
 
 
 def _first_step(request, session, s, lane, w, sq, pk, user_id, note=""):
     family = _family(session)
     if not sq.ok or not sq.stays:
         return _answer(request, s, lane, w, sheet(s, lane, w, problem=tm.SAID.get(sq.status, "That square has no stay to book."), sample=mb.stands_in(sq.sample)))
-    fp = _flight_prep(sq, family)
+    fp = _flight_prep(sq, family, _flight_have(session, s, lane, w, sq, pk))
     if fp is not None and not fp.ok:
         return _answer(request, s, lane, w, sheet(s, lane, w, problem=fb.SAID.get(fp.status, fb.SAID[liteapi.FAILED]), sample=mb.stands_in(sq.sample)))
     prep = _prepare(s, lane, w, sq, family)
@@ -488,6 +506,9 @@ def _flight_step(request, session, s, lane_, w_, sq, pk, prep, me, guest, extras
     """The flight first (F-276, D-973): prebook it for LiteAPI's payment form with the travellers, save the ids at once, keep the stay's guest for after, and answer the flight's form. The
     flight's offer lives about 15 minutes, so it is paid before the stay; a price that moved between the verify and the prebook is said, and nothing is paid until the person sees it."""
     family, fp = _family(session), prep.flight
+    with ses.family(session) as fam:
+        if fam and fb.form_open(fam.db, prep.token):      # a payment form for this flight is open (or paid): never a second transaction beside it (D-980)
+            return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=FORM_OPEN, link=(flight_return_url(request, prep.token), "I already paid: show my booking"), sample=False))
     got = liteapi.flight_prebook(fp.offer_id, fb.contact_body(contact), fb.passengers_body(people), fp.verified.session_id, family)
     if not got.ok:
         return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=fb.SAID.get(got.status, fb.SAID[liteapi.FAILED]), sample=False))
@@ -507,7 +528,7 @@ def _flight_step(request, session, s, lane_, w_, sq, pk, prep, me, guest, extras
         kept = mb.pay_start(fam.db, prep.token, me.id, mb.with_extras(guest, extras), trip_id)      # the stay's guest, for after the flight
     if not (saved and kept):
         return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE))
-    return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, pay=(pre.secret_key, flight_return_url(request, prep.token), "flight")))
+    return _answer(request, s, lane_, w_, sheet(s, lane_, w_, sq=sq, prep=prep, pk=pk, pay=(pre.secret_key, flight_return_url(request, prep.token), "flight", pre.cents)))
 
 
 def _typed(s, contact, people, guest, extras) -> dict:
@@ -555,7 +576,7 @@ def _confirm(request, session, v: dict):
     if prep is None:      # restarted, kept too long, another family's or another square's (or another choice's) token: nothing is asked of LiteAPI
         return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=STALE, sample=mb.stands_in(sq.sample)))
     fp = prep.flight
-    real = fp is not None and not fp.sample
+    real = fp is not None and fp.real
     form = _form(prep.sample)
     guest, errors = mb.clean_guest(g("first"), g("last"), g("email"))
     people, contact, more_f = (), None, {}
@@ -591,7 +612,7 @@ def _confirm(request, session, v: dict):
             return _answer(request, s, lane_, w_, sheet(s, lane_, w_, problem=SIGNIN, sample=prep.sample))
         res = mb.book(prep, guest, fam.db, family, trip_id, me.id)
         frow = None
-        if res.ok and fp is not None:      # F-276: a labelled sample flight (no call) beside the stays this press booked
+        if res.ok and fp is not None and fp.sample:      # F-276: a labelled sample flight (no call) beside the stays this press booked
             frow = fb.book_sample(fam.db, family, prep.token, trip_id, me.id, fp, fb.sample_segments(sq.flight, w_.depart, w_.return_), _party(s))
     if res.done:
         mb.add_to_trip(session, trip_id, res.done)
@@ -667,9 +688,9 @@ def register(app):
             if not fam:
                 return refuse(SIGNIN, 401)
             mb.save_prebook(fam.db, prep.token, me.id, prep.rows[0], guests=_party(s))
-        flight_cents = prep.flight.cents if prep.flight is not None else sq.flight.cents
+        flight_cents = 0 if prep.flight is not None and not prep.flight.real and not prep.flight.sample else prep.flight.cents if prep.flight is not None else sq.flight.cents
         discount = sum(r_.prebook.discount_cents for r_ in prep.rows)
-        real = prep.flight is not None and not prep.flight.sample
+        real = prep.flight is not None and prep.flight.real
         return JSONResponse({"token": prep.token, "code": voucher, "stay": catalog.money(prep.total_cents), "total": catalog.money(flight_cents + prep.total_cents), "discount": catalog.money(discount) if discount else "",
                              "go": f"Continue · {catalog.money(flight_cents if real else prep.total_cents)}", "moved": to_xml(_moved(prep)) if prep.changed else "",
                              "said": f"Code {voucher} applied." if discount else ("Code removed." if not voucher else f"Code {voucher} did not change the price.")},
@@ -745,6 +766,11 @@ def register(app):
             return _flight_page(request, None, None, None, problem="Your payment may have gone through, but we could not confirm the flight just now. Do not pay again. We will look at it." + ref, status=502)
         row = res.row
         fb.add_to_trip(session, row["trip_id"], row)
-        stay = mb.held_by_token(family, pay["stay_token"]) if pay and pay.get("stay_token") else None
+        with ses.family(session) as fam:
+            spay = mb.payment(fam.db, pay["stay_token"]) if fam and pay and pay.get("stay_token") else None
+        stay_open = spay is not None and spay.get("status") == "paying"      # the stay's form only while its payment is still to make (a reload after paying shows the pass link instead)
+        stay = mb.held_by_token(family, pay["stay_token"]) if stay_open else None
         secret = stay.rows[0].prebook.secret_key if stay is not None and stay.rows else ""
+        if spay is not None and spay.get("status") == "booked":
+            return _flight_page(request, row, None, pay, problem="Your stay is booked too.", booked_link=f"{RETURN}?token={pay['stay_token']}")
         return _flight_page(request, row, stay, pay, secret)

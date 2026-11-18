@@ -90,15 +90,15 @@ def route_lines(segs) -> list:
     return [P(fb.seg_words(s), cls="mx-r-s") for s in segs]
 
 
-def pay_pane(prep, secret: str, return_url: str, stay_charge_cents: int) -> Div:
+def pay_pane(prep, secret: str, return_url: str, stay_charge_cents: int, charge_cents: int) -> Div:
     """The step after the travellers for a real flight: LiteAPI's payment form for the flight in our sheet. Two charges, said again: the flight now, the stay in its own form next."""
     fp = prep.flight
     sandbox = liteapi.mode() != "live"
     segs = fp.segments
     return Div(H3("Pay for your flight", cls="mxb-q"),
                P(f"{fb.route_words(segs)} · {fb.airline_words(segs)}", cls="mxb-lede"), *route_lines(segs),
-               Div(Span("Charged now", cls="mxb-tl"), Span(catalog.money(fp.cents), cls="num mxb-total", data_charge="1"), cls="mxb-sum t"),
-               P(f"Two charges from Nuitée: the flight {catalog.money(fp.cents)} now, then the stay {catalog.money(stay_charge_cents)} in its own payment form.", cls="mxb-fine", data_two="1"),
+               Div(Span("Charged now", cls="mxb-tl"), Span(catalog.money(charge_cents), cls="num mxb-total", data_charge="1"), cls="mxb-sum t"),
+               P(f"Two charges from Nuitée: the flight {catalog.money(charge_cents)} now, then the stay {catalog.money(stay_charge_cents)} in its own payment form.", cls="mxb-fine", data_two="1"),
                rules(fp),
                P("Sandbox: use LiteAPI’s test card 4242 4242 4242 4242, any future date, any 3 digits. Nothing is charged.", cls="mxb-fine") if sandbox else "",
                Div(id="mxb-pay-el", cls="mxb-payel", data_pay_root="1", data_key="sandbox" if sandbox else "live", data_secret=secret, data_return=return_url, aria_label="Payment form for the flight"),

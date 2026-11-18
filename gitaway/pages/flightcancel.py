@@ -93,6 +93,8 @@ def register(app):
             if not fam:
                 return RedirectResponse(ses.signin_href(back), status_code=303)
             if step == "quote":
+                if not mb.allow(me.id):      # the per-person limit on booking presses counts a quote too (D-980)
+                    return RedirectResponse(f"{back}{sep}err=flight_slow", status_code=303)
                 status, _ = fb.quote(fam.db, family, booking, me.id)
                 return RedirectResponse(back if status == liteapi.OK else f"{back}{sep}err=flight_quote", status_code=303)
             if sure != "1":

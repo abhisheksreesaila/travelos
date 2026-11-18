@@ -41,6 +41,7 @@ def flying(monkeypatch, stand):  # noqa: F811
     """A live key where real booking is on, LiteAPI answering the stay and the flight from the recordings (the flight $600, the shown stay $1,540 with its $120 fee at the hotel)."""
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "1")
     stays = Live()
     stays.shown = 1540.0

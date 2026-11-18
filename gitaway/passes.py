@@ -41,6 +41,7 @@ ERRORS = {
     "cancel_tick": "Tick the box to say you mean to cancel this stay.",
     "flight_quote": "LiteAPI could not say what cancelling would cost just now. Nothing changed. Try again in a minute.",
     "flight_cancel": "LiteAPI could not cancel the flight just now. Nothing changed. Try again in a minute.",
+    "flight_slow": "That is a lot of tries. Wait a minute, then see what cancelling would cost.",
     "flight_tick": "Tick the box to say you mean to cancel this flight.",
     "flight_stale": "That quote is out of date. See what cancelling would cost again, then confirm.",
     "flight_name": "Give the airline and the flight number, like UA 1234.",

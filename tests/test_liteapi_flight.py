@@ -26,6 +26,7 @@ def sandbox(monkeypatch):
 def live(monkeypatch):
     """A live key where real booking is on (production)."""
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setattr(auth, "production", lambda: True)
     monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
     f = Fly()
@@ -172,6 +173,7 @@ def test_a_live_key_may_verify_prebook_for_the_form_book_with_the_transaction_lo
 @pytest.mark.parametrize("flag", ["0", None])
 def test_the_kill_switch_stops_a_new_flight_prebook_and_nothing_else(monkeypatch, flag):
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setattr(auth, "production", lambda: True)
     monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
     if flag is not None:
@@ -179,12 +181,14 @@ def test_the_kill_switch_stops_a_new_flight_prebook_and_nothing_else(monkeypatch
     f = Fly()
     monkeypatch.setattr(liteapi, "TRANSPORT", f)
     assert (liteapi.flight_prebook(OFFER, CONTACT, PAX, "", "fam").ok) is (flag is None)
-    for done in (liteapi.flight_book(PREBOOK_ID, TRANSACTION, "fam"), liteapi.flight_booking(BOOKING_ID, "fam"), liteapi.flight_cancel(BOOKING_ID, "fam"), liteapi.flight_verify(OFFER, "fam")):
+    for done in (liteapi.flight_book(PREBOOK_ID, TRANSACTION, "fam"), liteapi.flight_booking(BOOKING_ID, "fam"), liteapi.flight_cancel(BOOKING_ID, "fam")):
         assert done.ok      # a guest who paid is finished, and can cancel, whatever the switch says
+    assert liteapi.flight_verify(OFFER, "fam").ok is (flag is None)      # a verify is new business: only where real booking is on
 
 
 def test_a_live_key_off_production_prebooks_no_flight(monkeypatch):
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setattr(auth, "production", lambda: False)
     monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
     f = Fly()

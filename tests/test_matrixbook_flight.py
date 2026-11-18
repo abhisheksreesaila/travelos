@@ -31,6 +31,7 @@ def flying(client, monkeypatch):
     """A live key where real booking is on, signed in; the square's stay and flight answered from the recordings, the flight's price at what the square shows."""
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.setenv("GITAWAY_LIVE_BOOKING", "1")
     monkeypatch.setattr(auth, "production", lambda: False)
     stays = Live()
@@ -325,6 +326,7 @@ def test_the_kill_switch_books_no_flight_and_asks_liteapi_nothing(flying, client
 def test_a_live_key_off_production_plays_a_sample_flight_and_asks_liteapi_nothing_about_it(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     monkeypatch.setenv("LITEAPI_KEY", LIVE)
+    monkeypatch.setenv("GITAWAY_LIVE_FLIGHTS", "1")
     monkeypatch.delenv("GITAWAY_LIVE_BOOKING", raising=False)
     monkeypatch.setattr(auth, "production", lambda: False)
     stays = Live()

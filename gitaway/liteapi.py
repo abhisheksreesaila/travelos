@@ -200,6 +200,12 @@ def margin() -> float | None:
     return m if 0 <= m <= 40 else MARGIN
 
 
+def flights_live() -> bool:
+    """May a live key book flights (D-980)? Only with GITAWAY_LIVE_FLIGHTS=1, off by default: nothing proves a flight was paid (no payment-status call or webhook, and the sandbox booked an unpaid
+    transaction), so a live flight is not offered until LiteAPI confirms in writing that its live book refuses an unpaid TRANSACTION_ID. A sandbox key is not affected."""
+    return os.environ.get("GITAWAY_LIVE_FLIGHTS", "").strip() == "1"
+
+
 def real_booking() -> bool:
     """May a live key book (and so charge a real card)? In production unless GITAWAY_LIVE_BOOKING=0; anywhere else only with GITAWAY_LIVE_BOOKING=1 (D-841), so a dev box with the
     live key reads prices and plays the sample booking by default."""
@@ -1177,22 +1183,22 @@ def _allowed(body: dict | None) -> bool:
         return False
     body = body or {}
     if set(body) == {"offerId"}:      # a flight verify (F-276): asks LiteAPI whether the offer still stands and at what price; it books and charges nothing
-        return bool(body["offerId"])
+        return bool(body["offerId"]) and real_booking() and flights_live()      # new flight business: only where booking is on and flights are (D-980)
     if "usePaymentSdk" in body:      # a prebook (a stay's or a flight's): new business, only where booking is on, and never with a payment of its own in it
-        return body["usePaymentSdk"] is True and "payment" not in body and real_booking()
+        return body["usePaymentSdk"] is True and "payment" not in body and real_booking() and (flights_live() or "passengers" not in body)
     if "payment" in body:           # a book: only what a paid form's transaction can finish
         pay = body["payment"]
         return isinstance(pay, dict) and pay.get("method") == "TRANSACTION_ID" and bool(pay.get("transactionId"))
     return not body                 # a cancel or a lookup: no body
 
 
-def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "", ok=(200,), pending=()) -> Answer:
+def _order(what: str, path: str, body: dict | None, timeout: float, family: str, read, gone=(), wait: float | None = None, base: str = BOOK_API, method: str = "", ok=(200,), pending=(), paid: bool = False) -> Answer:
     """One booking call: sandbox key only, one at a time across the site, through the gate and the booking budgets, never cached, never asked again by itself (the first may
     have gone through), and a failure logs the call and its HTTP status, never the body (it can hold a guest's email). `gone`: the HTTP statuses that mean the room or rate is
-    no longer there. No `body`: a GET, or `method` (a PUT). `ok`: the HTTP statuses that are an answer to read (a flight booking is 201); `pending`: statuses that mean accepted, not done (202)."""
+    no longer there. No `body`: a GET, or `method` (a PUT). `ok`: the HTTP statuses that are an answer to read (a flight booking is 201); `pending`: statuses that mean accepted, not done (202). `paid`: the money is already taken (a book after the payment form), so the daily booking budgets never refuse it (the gate and the one-at-a-time rule still hold)."""
     if not _allowed(body):
         return Answer(OFF)
-    if not can_search(family, True):
+    if not paid and not can_search(family, True):
         return Answer(OVER)
     wait = TILE_WAIT if wait is None else wait
     if not _BOOK_TURN.acquire(timeout=wait):
@@ -1201,7 +1207,7 @@ def _order(what: str, path: str, body: dict | None, timeout: float, family: str,
         with _Gate(wait=wait) as gate:
             if not gate.ok:
                 return Answer(BUSY)
-            if not _spend(family, True):
+            if not paid and not _spend(family, True):
                 return Answer(OVER)
             at = now()
             try:
@@ -1450,7 +1456,7 @@ def flight_book(prebook_id: str, transaction_id: str, family: str = "") -> Answe
     """Book the prebooked flight with the payment form's transaction (the only method: never a card of the sandbox's own). The path ends in a slash: the bare one answers 307. An Answer
     of one FlightBooking, usually PENDING_CONFIRMATION. NOT_PAID when LiteAPI says the payment was not made; a failure may mean the booking went through (no way to ask by reference)."""
     body = {"prebookId": str(prebook_id), "payment": {"method": "TRANSACTION_ID", "transactionId": str(transaction_id)}}
-    return _order("flight book", "/flights/bookings/", body, BOOK_TIMEOUT, family, read_flight_booking, gone=(410,), base=API, ok=(200, 201))
+    return _order("flight book", "/flights/bookings/", body, BOOK_TIMEOUT, family, read_flight_booking, gone=(410,), base=API, ok=(200, 201), paid=True)
 
 
 def flight_booking(booking_id: str, family: str = "") -> Answer:

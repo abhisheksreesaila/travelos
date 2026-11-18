@@ -16,10 +16,10 @@ def test_the_squares_drawer_says_the_flight_books_here_too(flying, client):  # n
 
 def test_a_held_room_is_used_only_with_the_flight_the_square_still_names():
     stay = N(offer_id="of-a", name="A", cents=1)
-    held = lambda offer: N(rows=[N(part=stay)], flight=N(sample=False, offer_id=offer))      # noqa: E731
+    held = lambda offer: N(rows=[N(part=stay)], flight=N(sample=False, soon=False, have=None, offer_id=offer))      # noqa: E731
     assert _same_offers(N(stays=[stay], flight=N(offer_id="fl-1")), held("fl-1"))
     assert not _same_offers(N(stays=[stay], flight=N(offer_id="fl-2")), held("fl-1"))      # the square was read again and names another flight: the hold is stale
-    assert _same_offers(N(stays=[stay], flight=N(offer_id="")), N(rows=[N(part=stay)], flight=N(sample=True, offer_id="")))
+    assert _same_offers(N(stays=[stay], flight=N(offer_id="")), N(rows=[N(part=stay)], flight=N(sample=True, soon=False, have=None, offer_id="")))
 
 
 def test_a_held_room_is_found_by_its_token_only_for_the_family_that_holds_it(flying, client):  # noqa: F811
