@@ -121,7 +121,7 @@ def booked_mail(d: dict) -> Mail:
     text = "\n".join([hello, "", lead, *([tag] if tag else []), "", *[f"{k}: {v}" for k, v in rows], "", f"Cancelling: {policy}", "", note, "", "What's next", check_in, ahead, "",
                       f"Open your booking: {mine}", *[f"{label}: {url}" for label, url in wallet], f"Open Today: {today}", f"Plan this trip: {plan}", "", who, ""])
     html = _shell(f"Booked: {hotel}", hello, lead, tag, rows, [("Cancelling", policy), ("What's next", f"{check_in} {ahead}")], note,
-                  [("Open your booking", mine, True), *[(label, url, False) for label, url in wallet], ("Open Today", today, False), ("Plan this trip", plan, False)], who)
+                  [("Open your booking", mine, True), *[(label, url, False) for label, url in wallet], ("Open Today", today, False), ("Plan this trip", plan, False)], who, status="Booked")
     return Mail(f"Booked: {hotel}, {_span(d['checkin'], d['checkout'])}", text, html)
 
 
@@ -141,15 +141,15 @@ def cancelled_mail(d: dict) -> Mail:
     return Mail(f"Cancelled: {hotel}, {_span(d['checkin'], d['checkout'])}", text, html)
 
 
-# The site's look in tables and inline styles. Colours: the Harbour band (`--hb-a`), a pale sky, a card that is never pure white (a mail app's dark mode inverts white to a glare; these soft
-# tones keep their ink readable either way), and the indigo of the one bold button.
-_INK, _INK2, _LINE, _SKY, _CTA, _BAND, _CARD, _ON_BAND = "#0F1124", "#41455E", "#DCE2F0", "#DCEBF9", "#4338CA", "#1B2A41", "#F6F8FC", "#EAF0FA"
+# The site's look in tables and inline styles (the Stage, F-296 follow-ups, D-969): a near-black band, ink type on the Stage's grey, a card that is never pure white (a mail app's dark mode inverts white to a
+# glare; this soft tone keeps its ink readable either way), the one action ink, orange only as the signal (a heads-up note) and green only for good news ("Booked").
+_INK, _INK2, _LINE, _SKY, _CTA, _BAND, _CARD, _ON_BAND = "#1D1D1F", "#5F5F64", "#E3E3E8", "#F5F5F7", "#1D1D1F", "#1D1D1F", "#FBFBFD", "#FFFFFF"
+_SIG, _SIG_BG, _GOOD, _GOOD_BG = "#B84A00", "#FFF1E6", "#0F766E", "#E3F4F1"
 _SANS = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-_SERIF = "Newsreader, Georgia, 'Times New Roman', serif"
 
 
-def _shell(title, hello, lead, tag, rows, blocks, note, buttons, foot) -> str:
-    """One layout for both emails (F-294): a deep band with the logo word, then a soft card with the headline, the facts, the blocks and one bold button, then who sold it. Everything dynamic goes through `escape`."""
+def _shell(title, hello, lead, tag, rows, blocks, note, buttons, foot, status="") -> str:
+    """One layout for both emails (F-294): a near-black band with the logo word, then a soft card with the headline, the facts, the blocks and one bold button, then who sold it. Everything dynamic goes through `escape`."""
     e = lambda v: escape(str(v), quote=True)      # noqa: E731
     table = "".join(f'<tr><td style="padding:9px 0;border-top:1px solid {_LINE};font:14px/1.4 {_SANS};color:{_INK2};width:38%;vertical-align:top">{e(k)}</td>'
                     f'<td style="padding:9px 0;border-top:1px solid {_LINE};font:15px/1.4 {_SANS};color:{_INK};font-weight:600;vertical-align:top">{e(v)}</td></tr>' for k, v in rows)
@@ -158,15 +158,16 @@ def _shell(title, hello, lead, tag, rows, blocks, note, buttons, foot) -> str:
         f'<a href="{e(u)}" style="display:block;padding:15px 22px;border-radius:12px;font:700 16px/1.25 {_SANS};text-align:center;text-decoration:none;background:{_CTA};color:#FFFFFF;border:1px solid {_CTA}">{e(label)}</a>' if main else
         f'<a href="{e(u)}" style="display:block;padding:12px 20px;border-radius:12px;font:600 15px/1.25 {_SANS};text-align:center;text-decoration:none;background:{_CARD};color:{_CTA};border:1px solid {_LINE}">{e(label)}</a>')
         + '</td></tr>' for label, u, main in buttons)
-    badge = (f'<p style="margin:14px 0 0;padding:10px 12px;border-radius:10px;background:#FFF4C2;font:14px/1.4 {_SANS};color:#5C4300">{e(tag)}</p>') if tag else ""
+    badge = (f'<p style="margin:14px 0 0;padding:10px 12px;border-radius:10px;background:{_SIG_BG};font:14px/1.4 {_SANS};color:{_SIG}">{e(tag)}</p>') if tag else ""
+    pill = (f'<p style="margin:0 0 12px"><span style="display:inline-block;padding:5px 12px;border-radius:99px;background:{_GOOD_BG};font:700 13px/1.2 {_SANS};color:{_GOOD}">{e(status)}</span></p>') if status else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark">'
             f'<meta name="supported-color-schemes" content="light dark"><title>{e(title)}</title></head><body style="margin:0;padding:0;background:{_SKY}">'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_SKY}"><tr><td align="center" style="padding:24px 12px">'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">'
-            f'<tr><td style="background:{_BAND};border-radius:20px 20px 0 0;padding:22px 24px;font:700 22px/1 {_SERIF};letter-spacing:-0.01em;color:{_ON_BAND}">GitAway</td></tr>'
+            f'<tr><td style="background:{_BAND};border-radius:20px 20px 0 0;padding:22px 24px;font:750 22px/1 {_SANS};letter-spacing:-0.03em;color:{_ON_BAND}">GitAway</td></tr>'
             f'<tr><td style="background:{_CARD};border-radius:0 0 20px 20px;padding:28px 24px;border:1px solid {_LINE};border-top:0">'
-            f'<p style="margin:0 0 6px;font:15px/1.4 {_SANS};color:{_INK2}">{e(hello)}</p>'
-            f'<h1 style="margin:0;font:600 28px/1.15 {_SERIF};color:{_INK};letter-spacing:-0.01em">{e(lead)}</h1>{badge}'
+            f'{pill}<p style="margin:0 0 6px;font:15px/1.4 {_SANS};color:{_INK2}">{e(hello)}</p>'
+            f'<h1 style="margin:0;font:800 28px/1.12 {_SANS};color:{_INK};letter-spacing:-0.035em">{e(lead)}</h1>{badge}'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px">{table}</table>{more}'
             f'<p style="margin:20px 0 0;font:14px/1.5 {_SANS};color:{_INK2}">{e(note)}</p>'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px">{btns}</table></td></tr>'

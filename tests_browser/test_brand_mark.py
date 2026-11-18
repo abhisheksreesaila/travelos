@@ -1,6 +1,6 @@
-"""D-61, F-200: the logo looks identical on every page, in light and in dark. Direction A's mark (docs/design/reskin): an ink tile (a white one in dark mode) with the fork's
-three nodes in kind colours, so the colour belongs to the trip, and the wordmark in Geist 750 (the old orange tile and Bricolage wordmark were D-61's; the brief dropped "orange everywhere").
-Measured in a real browser on the landing, sign-in, the old pages, /plan, the creators, the partners log, the trip canvas with its top bar and the phone's pages."""
+"""D-61, F-200, F-296 follow-ups (D-966): the logo looks identical on every page, in light and in dark: one mark (layout.mark()), a near-black tile (a white one in dark mode) with a white fork
+(black in dark) and one orange dot, and the wordmark (Inter 560 in the v2 bar, 25px, 22px on a phone; the cover draws its own Geist 750). Measured in a real browser on the cover, sign-in, the
+reading pages, the creators, the family and import pages: every page now wears the v2 bar (F-272), which this test once did not count (it found one logo and failed)."""
 import pytest
 
 from tests_browser.helpers import DESKTOP, PHONE

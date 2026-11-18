@@ -378,7 +378,7 @@ def page_data(s: State, lanes, windows, known) -> str:
     lo, hi = nights_range(s)
     by = {n: windows_of(s, n) for n in range(lo, hi + 1)}
     cell = {tm.key(x.key, w.key): (x, w) for x in lanes for w in windows}
-    data = {"lanes": [{"k": x.key, "n": x.name, "a": x.asked, "c": x.combo, "pc": placecolor.style(x.places[0])} for x in lanes],      # "pc": the first place's colour, so the waiting header is coloured from the first paint (D-969)
+    data = {"lanes": [{"k": x.key, "n": x.name, "a": x.asked, "c": x.combo, "pc": placecolor.style(x.places[0])} for x in lanes],      # "pc": the first place's colour, so the waiting header is coloured from the first paint (D-968)
             "windows": [{"k": w.key, "a": w.asked, "n": w.nights, "when": tm.when(w)} for w in windows],
             "nights": s.nights, "lo": lo, "hi": hi,
             "returns": {n: (s.depart + timedelta(days=n)).isoformat() for n in by}, "whens": {n: [tm.when(w) for w in ws] for n, ws in by.items()},

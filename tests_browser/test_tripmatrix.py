@@ -167,7 +167,7 @@ def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_
 
 
 def test_the_opened_squares_waiting_header_wears_the_places_colour_from_the_first_paint(matrix, slow_server):
-    """F-296 follow-ups (D-969): the placeholder header of a square still searching was plain until the answer brought the place's colour; the server sends the colour with the page."""
+    """F-296 follow-ups (D-968): the placeholder header of a square still searching was plain until the answer brought the place's colour; the server sends the colour with the page."""
     slow_server(r"/plan/matrix/tile", 4)
     page = matrix(DESKTOP, wait=False)
     page.locator(".mx-lane").last.locator(".mx-sq").last.dispatch_event("click")      # a square the first paint did not already answer (the floating note may sit over it)
