@@ -1827,3 +1827,13 @@ Founder: "send this off to like 50 creators … incentive: another distribution 
 - [x] the creator path reads as that offer: /guides/make leads with "Your post becomes a guide people can plan and book from. Your words and your links stay yours." and the one-paste flow; a creator's guide shows their name and links prominently
 - [x] docs/launch/creator-outreach.md: a short email for creators and one for travel blogs (what it is, why it helps them, the founder's own guide as the example, one link), plus a checklist of what a creator sees in the first minute
 - [x] no new features: only words, order and polish of what exists
+
+## F-296 The Stage look: an Apple-grey stage, colour from the trips [todo]
+Founder, 2026-11-17/18: indigo and purple "looks like booking.com or expedia"; liked black and orange; the cream canvas was "too Claude-codish and too mono"; "I like the Apple website, where it's grey, but you can slap in any color and the contrast is striking … I want that"; "we need to emphasize 'More to know before you pick'"; Stage: "yah looks good". Approved prototype: docs/design/palette-bo/ (look C · Stage, index.html and cover.html; shots/stage-*, cover-stage-*). Memory: palette-direction. Decisions D-956..D-965.
+- [ ] tokens: light #F5F5F7 stage, white cards, #1D1D1F ink, #6E6E73 secondary, the one action #1D1D1F; dark #000 stage, #1C1C1E and #2C2C2E cards, white ink, the action white with black text; no indigo, purple or cream anywhere in v2; the Harbour ground and its ridges retire (keep the tokens' names only where tests or other pages need them, documented)
+- [ ] signals: Heads up orange #F25500 (words #B84A00 light), good news green #0F766E (cheapest, saves, refundable, booked); the selected square black (white in dark)
+- [ ] colour from content: each place its own vivid colour (the prototype's set) on its lane tile with the place art, the opened square's band and the cover's postcard; weather icons in their real colours
+- [ ] "More to know before you pick" is the dark band (near-black in light, raised #2C2C2E in dark) with vivid icon tiles and counts
+- [ ] headlines in heavy Inter as the prototype; body as now; the liquid motion unchanged
+- [ ] the cover in Stage (postcard, ring, gallery as vivid colour cards, a black Start a trip)
+- [ ] every page in both modes passes AA (the sweeps in tests_browser/test_harbour.py, test_direction_a_pages.py, test_calm_palette.py stay, updated to the new colours, never loosened)
