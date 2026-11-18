@@ -125,10 +125,5 @@ def pass_row(row, *, charged: bool = True) -> Div:
                P(f"Paid {catalog.money(row['total_cents'])} to Nuitée (LiteAPI).", cls="mx-r-s") if charged and not row["sample"] else "", cls="mxb-pass-row mxb-pass-flight")
 
 
-def sample_pass_row(row) -> Div:
-    return Div(P("Flight", cls="mxb-k"), P(f"{fb.route_words(fb.segs_of(row))} · {row['airline']}", cls="mxb-pass-h"), *route_lines(fb.segs_of(row)),
-               P(icon("shield", 14, 2.2), fb.SAMPLE_WORDS, cls="mx-r-s", data_status="SAMPLE"), cls="mxb-pass-row mxb-pass-flight")
-
-
 def flight_stub(row) -> Div:
     return Div(*_refs(row), cls="mxb-stub-i")

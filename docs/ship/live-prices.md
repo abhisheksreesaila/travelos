@@ -87,3 +87,21 @@ The founder books their own stay here after a deploy. Money moves: Nuitée charg
 - `.railwayignore` now keeps docs/report and scratch off the upload (233 MB hit Railway's limit).
 - Launch polish deployed the same day (`c75b4524`, then `a345231e` and `5138bb5b` for the Heads up chips): /trust, the calm hotel dashboard with Ask the reviews in the drawer, the gotchas line, "Sold by Nuitée through LiteAPI", More menus, the creator offer, polished emails. Checked live on Margaritaville Resort Lake Tahoe: score 8.4, the last-100 strip, clean Heads up chips (LiteAPI does send `hotelImportantInformation`).
 - 2026-11-18: the Stage look live (F-296: Apple-grey stage, colour from the trips, black action, orange heads-up, green good news, the new black logo with an orange dot), deploys `f9fb1811` then `5389822c` (a pick cheaper by under 50 cents says "the same as"). Checked live: the cover and a Tahoe search (14 of 15 squares priced).
+
+# Flights booked on gitaway.me (F-276, D-972..D-979): before this is deployed
+
+Not deployed. The checkout now books the flight too (two LiteAPI payment forms, the flight first); nothing here changes until it ships.
+
+## Before (the founder, once)
+- **Seller of travel (D-979):** register with the California Attorney General ($100 a year) and put the registration number in the site's footer. This is not legal advice (docs/research/booking-apis-and-payments.md).
+- **Flight earnings:** LiteAPI's flight search takes no `margin` (D-976): GitAway's flight revenue is the markup set in the LiteAPI dashboard. Set it before launch; the price charged is LiteAPI's quote, which the square already shows.
+- **One real sandbox booking through the form** (`GITAWAY_SANDBOX_FORM=1`, a `sand_` key, card 4242 4242 4242 4242, twice: the flight, then the stay), then its cancel quote and cancel on the booking page. The recordings are of calls made without the form's payment: no one has seen LiteAPI's flight form pay and redirect yet.
+- **Ask LiteAPI** whether a flight `TRANSACTION_ID` book is refused when the payment was not made, as it is for stays (code 2014). The sandbox booked an unpaid one (D-978); the server only books from the form's return, but a person could forge that return address.
+
+## How we'd know it works
+- /admin "Paid, not booked" counts a flight whose book call may have gone through (`needs_help`) or is still in flight; the worker never books a flight, so a person who paid and closed the tab is not booked until the captain looks (LiteAPI's dashboard shows the payment).
+- A booked flight turns CONFIRMED within minutes (the worker asks at 1, 3, 10, 30 and 60 minutes); one "tickets issued" email goes once.
+- No passenger name, birth date, passport or phone number is in any log line; `matrix_flight_payments.travellers` is empty once a flight is booked.
+
+## Rollback
+`GITAWAY_LIVE_BOOKING=0` stops new flight and stay prebooks at once and strands nobody who paid (a book, lookup and cancel still work). No table is dropped; the new tables are additive.

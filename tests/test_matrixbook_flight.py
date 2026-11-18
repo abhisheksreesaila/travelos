@@ -291,6 +291,8 @@ def test_if_the_stay_fails_after_the_flight_the_page_says_the_flight_is_booked_a
     words = text(r.text)
     assert "Your flight SFO to SAN is booked" in words and "only the stay is not" in words and "cancel the flight" in words
     assert 'data-see-flight="1"' in r.text and len(booked_flights()) == 1
+    link = re.search(r"<a[^>]*data-try-stay[^>]*>", r.text)
+    assert link and 'href="/plan/matrix/square?' in link[0]      # try again: the square, with its own words
 
 
 def test_a_lost_hold_after_the_flight_says_the_flight_is_booked_and_offers_the_square_again(flying, client):

@@ -245,7 +245,7 @@ def clean_travellers(values, adults: int, kid_ages, depart: date, back: date | N
                 errors[field(i, "docno")] = "Add the passport number: 5 to 12 letters and digits."
             if issuer not in CODES:
                 errors[field(i, "docc")] = "Choose the country that issued it."
-            if expiry is None or expiry <= (back or depart) or expiry > today.replace(year=today.year + 25):
+            if expiry is None or expiry <= (back or depart) or expiry > today + timedelta(days=365 * 25):
                 errors[field(i, "docx")] = "The passport must still be valid after the trip: add its expiry date."
             doc = (number, issuer, expiry)
         if not any(k in errors for k in (field(i, n) for n in ("first", "last", "dob", "sex", "nat", "docno", "docc", "docx"))):

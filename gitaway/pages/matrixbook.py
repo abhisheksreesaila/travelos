@@ -2,7 +2,7 @@
 
 POST /plan/matrix/book           step 1: the stays' offers are prebooked (the rooms checked, their final price read); the answer is the checkout: three folding cards (guest,
                                  payment, confirm) and "Sandbox booking: nothing is charged". A fragment for assets/js/matrixbook.js (header `X-Matrix: 1`), else a page.
-POST /plan/matrix/book/confirm   step 2: the lead guest is checked, the square becomes the family's trip (the same path as Save to trip), each stay is booked once through
+POST /plan/matrix/book/confirm   step 2: the lead guest (or, for a flight LiteAPI books, every traveller) is checked, the square becomes the family's trip (the same path as Save to trip), each stay is booked once through
                                  LiteAPI's sandbox, the stay is added to the trip, and the answer is the stamped pass with LiteAPI's booking id. The script plays the progress
                                  (holding the room, paying with the test card, booking, putting the trip together) while this call runs, then throws the confetti.
 
@@ -14,7 +14,8 @@ its `secretKey` and our return address; GitAway renders no card field and never 
 
 Both take `fl` and `st`, the flight and stays chosen on the square (indexes into the square's alternatives; gitaway/tripmatrix.py `pick`): the server prices the chosen trip
 itself, and a held room is bound to its choice. Both are plain `def` handlers (a prebook or book can wait on the network) and writes, so the access beforeware gives them to editors
-only: a viewer is refused (403) before anything is asked of LiteAPI. Flights are not booked here: the pass links to the flight lane's partner like any other search. The words,
+only: a viewer is refused (403) before anything is asked of LiteAPI. The flight is booked here too (F-276): step 1 verifies it, step 2 asks the travellers and pays it first in its own LiteAPI form, and
+GET /plan/matrix/book/flight/return books it (once, from the form's return only) and draws the stay's own form; a flight with no offer id, or a booking that is not the payment form's, is a labelled sample. The words,
 prices and the guest's name and email come out through FastHTML's escaping; the guest's email is never logged and never put in a URL.
 """
 
@@ -263,13 +264,14 @@ def return_url(request, token: str) -> str:
 _TOKEN = re.compile(r"^[A-Za-z0-9_-]{8,40}\Z")
 
 
-def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = "", flight=None):
+def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = "", flight=None, retry: str = ""):
     """The page the payment form returns to: the pass of the stay just booked (what LiteAPI and the saved prebook say, nothing typed), or why it is not confirmed. `flight`: the flight booked
     just before it (F-276), shown on the same pass; when the stay did not follow, the page says the flight is booked and what to do next."""
     back = A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1")
     if done is None:
         extra = [P(icon("plane", 18, 2.4), f"Your flight {fb.route_words(fb.segs_of(flight))} is booked (reference {flight['ref'] or flight['booking_id']}); only the stay is not. Try the stay again from the square, "
                    "or cancel the flight: its page shows what you would get back before anything is cancelled.", cls="mxb-note", role="status", data_flight_kept="1"),
+                 A("Book the stay again", href=retry, cls="btn mxb-back", data_try_stay="1") if retry.startswith("/plan/matrix") else "",
                  A("See your flight", href="/trip/booking?block=b-out", cls="btn mxb-back", data_see_flight="1")] if flight else []
         inner = Div(Div(Div(Span("Your booking", cls="mxb-k0"), H2("Not confirmed yet", cls="mxb-h"), cls="mxb-top"), cls="mxb-head"),
                     Div(P(icon("bell", 18, 2.4), problem, cls="mxb-note is-warn", role="alert"), *extra, A("Back to the plan", href="/trip/plan", cls="btn mxb-back"), cls="mxb-problem"), cls="mxb", data_at="problem")
@@ -305,7 +307,8 @@ def _flight_page(request, row, prep, pay, stay_secret: str = "", problem: str = 
         head = Div(Div(Span("Flight booked", cls="mxb-k0"), H2("Your flight is booked", cls="mxb-h"), P(f"{fb.route_words(segs)} · {fb.airline_words(segs)}", cls="mxb-sub"), cls="mxb-top"),
                    P(icon("shield", 16, 2.4), mb.words(), cls="mxb-sandbox is-booked", role="status"), cls="mxb-head")
         if stay_secret and prep is not None:
-            body = Div(Div(Div(fc.pass_row(row), cls="mxb-pass-mid"), stub, cls="mxb-pass mxb-pass-flightonly"), pay_form(prep, stay_secret, return_url(request, prep.token), after_flight=True), cls="mxb-confirm", data_step="stay")
+            body = Div(pay_form(prep, stay_secret, return_url(request, prep.token), after_flight=True),      # the next payment first: the flight's pass is below it
+                       Div(Div(fc.pass_row(row), cls="mxb-pass-mid"), stub, cls="mxb-pass mxb-pass-flightonly"), cls="mxb-confirm", data_step="stay")
         else:
             back = (pay or {}).get("back_href") or ""
             body = Div(Div(Div(fc.pass_row(row), cls="mxb-pass-mid"), stub, cls="mxb-pass mxb-pass-flightonly"),
@@ -342,7 +345,7 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
     end = lane.places[0]
     route = Div(Span(s.home or "Home", cls="mxb-iata"), Span(cls="mxb-dash"), Span(icon("plane", 22, 2.2), cls="mxb-plane"), Span(cls="mxb-dash"), Span(end.iata or end.name, cls="mxb-iata"), cls="mxb-route")
     top = Div(mx._arts(lane, "mxb-pass-art"), route, Span("Sample" if sample else "Booked", cls="mxb-stamp", data_d=_day(w.depart.isoformat()).upper()), P(f"{tm.when(w)} · {mx.party_words(s)}", cls="mxb-pass-when"), cls="mxb-pass-top")
-    flight_row = (fc.sample_pass_row(flight) if flight["sample"] else fc.pass_row(flight)) if flight else Div(P("Flight", cls="mxb-k"), P(f"{sq.flight.airline} · {v2drawer.stops_words(sq.flight.stops).lower()}", cls="mxb-pass-h"),
+    flight_row = fc.pass_row(flight) if flight and not flight["sample"] else Div(P("Flight", cls="mxb-k"), P(f"{sq.flight.airline} · {v2drawer.stops_words(sq.flight.stops).lower()}", cls="mxb-pass-h"),
                                                                                                                    P(v2drawer.times(sq.flight.out), cls="mx-r-s"), P(v2drawer.times(sq.flight.back), cls="mx-r-s") if sq.flight.back else "",
                                                                                                                    P(fb.SAMPLE_WORDS, cls="mx-r-s"), cls="mxb-pass-row")
     mid = Div(flight_row,
@@ -696,7 +699,7 @@ def register(app):
         if not res.ok:
             kept = f" Payment reference: {pay['transaction_id']}." if pay and pay.get("transaction_id") and pay.get("status") == "paying" else ""
             paying = bool(pay and pay.get("status") == "paying")
-            return _paid_page(None, None, (PAID_BUT if paying else "We could not find that booking.") + kept, status=502 if paying else 404, flight=flight)
+            return _paid_page(None, None, (PAID_BUT if paying else "We could not find that booking.") + kept, status=502 if paying else 404, flight=flight, retry=(fpay or {}).get("back_href") or "")
         done = res.done[0]
         mb.add_to_trip(session, done.trip_id, res.done)
         return _paid_page(done, pay, family=family, flight=flight)
