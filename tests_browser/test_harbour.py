@@ -1,6 +1,6 @@
-"""F-281 (D-890..D-894, docs/briefs/matrix-v5.md) in a real browser: the Harbour ground and the Fill chips.
+"""F-281 (D-890..D-894, docs/briefs/matrix-v5.md) in a real browser: the Stage (F-296: a flat grey ground; it replaced the Harbour ground) and the Fill chips.
 
-* The v2 pages' sky is the Harbour ground (the approved prototype's colours) in light and dark; a reading page keeps its quiet sky.
+* The v2 pages' sky is the Stage (F-296: a flat grey ground; it replaced the Harbour ground) (the approved prototype's colours) in light and dark; a reading page keeps its quiet sky.
 * Every word on the page (on the ground, on glass, on a card, on the chips' tray) reads 4.5:1 on the pixels the page really paints, light and dark, at 1440 and 390 (the method of test_moods.py:
   hide the words, photograph, compare each word with the median pixel where it sits). `F281_RATIOS=1` prints the lowest ratio per kind of surface for the decision line.
 * The extra-info tray is titled "More to know before you pick"; its chips have a coloured icon, a title, a teaser and, where the server has one, a count; 48px targets; opening one still fetches
@@ -17,11 +17,11 @@ from playwright.sync_api import expect
 
 from tests_browser.helpers import DESKTOP, PHONE, set_mode
 from tests_browser.test_calm_palette import ratio, rgb
-from tests_browser.test_moods import WORDS_JS, lum
+from tests_browser.words import WORDS_JS, lum
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
 
 REPORT = Path(__file__).resolve().parent.parent / "docs" / "report"
-GROUND = {"light": ("rgb(27, 42, 65)", "rgb(58, 69, 88)", "rgb(122, 76, 48)"), "dark": ("rgb(7, 11, 18)", "rgb(17, 22, 33)", "rgb(58, 36, 22)")}      # --hb-a, --hb-b, --hb-c
+STAGE = {"light": "rgb(245, 245, 247)", "dark": "rgb(0, 0, 0)"}      # --stage (F-296, D-956)
 KINDS_JS = """() => [...document.querySelectorAll('.v2-top *, #main *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => {
   const r = e.getBoundingClientRect(), s = getComputedStyle(e);
   const kind = e.closest('.rl-tray') ? 'tray' : e.closest('.v2-glass') ? 'glass' : e.closest('.mx-card, .sentence, .v2-card, [class*=card]') ? 'card' : 'ground';
@@ -62,17 +62,15 @@ def shot(page, name, viewport, scheme):
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
-def test_the_ground_is_the_harbour_and_every_word_reads_4_5_to_1_on_it(matrix, viewport, scheme):  # noqa: F811
+def test_the_ground_is_the_stage_and_every_word_reads_4_5_to_1_on_it(matrix, viewport, scheme):  # noqa: F811
     page = matrix(viewport, scheme=scheme)
     set_mode(page, scheme)
     page.wait_for_selector("#mx-rail .wchip[data-wg]")
     got = page.evaluate("""() => { const e = document.querySelector('.v2-bg'), s = getComputedStyle(e);
-      return {image: s.backgroundImage, ridges: e.querySelectorAll('.ridges path').length, html: getComputedStyle(document.documentElement).backgroundColor,
+      return {image: s.backgroundImage, bg: s.backgroundColor, kids: e.children.length, html: getComputedStyle(document.documentElement).backgroundColor,
               brand: getComputedStyle(document.querySelector('.v2-brand')).color}; }""")
-    for colour in GROUND[scheme]:
-        assert colour in got["image"], (colour, got["image"][:200])      # the three stops of the approved ground
-    assert got["ridges"] == 2 and got["html"] == GROUND[scheme][1]
-    assert got["brand"] == "rgb(244, 247, 251)"      # the logo's word is light on it
+    assert got["image"] == "none" and got["bg"] == STAGE[scheme] and got["html"] == STAGE[scheme] and got["kids"] == 0      # a flat stage, nothing drawn on it
+    assert got["brand"] == ("rgb(29, 29, 31)" if scheme == "light" else "rgb(245, 245, 247)")      # the logo's word is the ground's ink
     shot(page, "matrix", viewport, scheme)
     ratios = []
     for y in (0, 700, 1400, 2100):      # the whole page, a screen at a time
@@ -102,32 +100,32 @@ def test_the_chips_are_filled_a_title_a_teaser_a_count_and_48px(matrix, viewport
         c = chips.nth(i)
         assert c.locator(".ic svg").count() == 1 and c.locator(".tx > span").inner_text().strip() and c.locator(".tx small").inner_text().strip()
         assert c.bounding_box()["height"] >= 47.5
-        assert c.evaluate("e => getComputedStyle(e).backgroundImage").count("gradient") == 1      # the fill
+        assert c.evaluate("e => getComputedStyle(e).backgroundImage") == "none"      # a flat chip on the dark band
     weather = page.locator("#mx-rail .wchip[data-wg='weather']")
     expect(weather.locator(".ct")).to_have_text("5 days")
     assert page.locator("#mx-rail .wchip[data-wg='where'] .ct").count() == 0      # a count only where there is one
     weather.click()
     expect(page.locator("#wg-weather")).to_be_visible()
-    assert weather.evaluate("e => getComputedStyle(e).backgroundColor") == ("rgb(255, 255, 255)" if scheme == "light" else "rgb(43, 52, 66)")      # opened: a card (dark: the slate card, founder 2026-11-17)
+    assert weather.evaluate("e => getComputedStyle(e).backgroundColor") == "rgb(255, 255, 255)"      # opened: a white chip on the dark band, in both modes (F-296)
     shot(page, "chips", viewport, scheme)
     assert [r for r in painted_ratios(page) if r[2] < 4.5] == []
     assert page.errors == []
 
 
-def test_a_reading_page_keeps_its_quiet_sky(browser, base_url):
+def test_a_reading_page_is_marked_quiet_on_the_same_stage(browser, base_url):
     page = browser.new_page(viewport=DESKTOP)
     page.goto(base_url + "/privacy")
     page.wait_for_selector(".v2-bg")
     assert page.get_attribute(".v2-bg", "data-sky") == "quiet"
-    assert page.locator(".v2-bg .ridges").count() == 0
-    assert "rgb(27, 42, 65)" not in page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundImage")
+    assert page.locator(".v2-bg *").count() == 0
+    assert page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundImage") == "none"
     page.close()
 
 
 @pytest.mark.parametrize("path", ["/guides", "/plan/ask"])
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
-def test_every_harbour_page_not_only_the_matrix_reads_4_5_to_1(browser, base_url, path, viewport, scheme):
+def test_every_stage_page_not_only_the_matrix_reads_4_5_to_1(browser, base_url, path, viewport, scheme):
     """Overnight walk 2026-11-17: the guides hub's headline was --ink on the deep ground in light mode, near invisible, because only the matrix was measured. Every page on the
     Harbour ground is read the same way: each word against the pixels really painted under it."""
     page = browser.new_page(viewport=viewport)

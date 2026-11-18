@@ -26,7 +26,7 @@ from fasthtml.common import A, Aside, B, Br, Button, Details, Div, H1, H2, Heade
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
-from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixbook as mb, matrixwarm, moods, placeart, placefacts, session as ses, showcase, stats, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
+from gitaway import catalog, familydb, firstrun, gridsource, guide as gd, importer, interests, liteapi, matrixbook as mb, matrixwarm, placeart, placecolor, placefacts, session as ses, showcase, stats, tripmatrix as tm, tripsentence, tripstart, v2sentence, weather
 from gitaway.icons import icon
 from gitaway.layout import mode_switch, page
 from gitaway.pages import plan_search, v2rail, weather_ui
@@ -209,6 +209,12 @@ def vs_words(diff, asked_name, combo) -> str:
 
 
 def _art(place, cls="mx-art"):
+    """A place's tile picture (F-296, D-959): a flat skyline in the place's own vivid colour (gitaway/placecolor.py); the drawn illustration is `_illustration`."""
+    return Div(NotStr(placecolor.skyline(place)), cls=cls, style=placecolor.style(place), aria_hidden="true")
+
+
+def _illustration(place, cls="mx-art"):
+    """The place's drawn illustration (gitaway/placeart.py), or its plain tint: the drawer's labelled picture slide."""
     svg, kind = placeart.art(place.slug), placeart.kind(place.slug)
     return Div(NotStr(svg) if svg else "", cls=cls + ("" if svg else " is-plain"), data_kind=kind or "", aria_hidden="true")
 
@@ -314,7 +320,7 @@ def lane_el(s: State, lane, windows, skies):
             Div(cls="mx-band", data_band=lane.key, data_l=f"{w0.nights} nights", style=f"grid-column: {at + 2} / span {min(w0.nights, len(windows) - at)}")]
     for i, w in enumerate(windows):
         kids.append(square_el(s, lane, w, None, (), style=f"grid-column: {i + 2}", wx=sky_of(skies, lane, w), on=i == at))
-    return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else ""), data_lane=lane.key)
+    return Div(*kids, cls="mx-lane" + (" is-asked" if lane.asked else "") + (" is-combo" if lane.combo else ""), data_lane=lane.key, style=placecolor.style(lane.places[0]))
 
 
 def skies_of(lanes, windows):
@@ -404,7 +410,7 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     machinery = v2sentence.machinery(spec)
     if s.problems or not windows:
         body = Div(hero_el(spec, problems or s.problems or [MISSING["dates"]]), *machinery, cls="v2-stage mx mx-blank", id="mx", data_v2="results")
-        return page("The trip matrix", H1("The trip matrix", cls="v2-sr"), body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results", mood=moods.choose(s.place, s.depart, s.return_))
+        return page("The trip matrix", H1("The trip matrix", cls="v2-sr"), body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results")
     skies = skies_of(lanes, windows)
     sample = showcase.on()
     total = len(lanes) * len(windows)
@@ -416,7 +422,7 @@ def matrix_page(s: State, family="", typed="", problems=(), picked=()):
     body = Div(H1(f"Trips to {s.place.name}" + (" and nearby" if s.nearby and len(lanes) > 1 else ""), cls="v2-sr"), hero_el(spec, problems), rail, results,
                Script(NotStr(page_data(s, lanes, windows, {})), type="application/json", id="mx-data"), fact_el(s), *machinery,
                cls="v2-stage mx", id="mx", data_v2="results", data_waiting="1")
-    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results", mood=moods.choose(s.place, s.depart, s.return_))
+    return page(f"{s.place.name}: the whole trip, every start day", body, current="/plan/matrix", head=HEAD, noindex=True, footer=False, v2="is-results")
 
 
 def warm(s: State, family="") -> int:
@@ -456,7 +462,7 @@ def square_page(s: State, lane, w, sq, asked_sq, saved="", can_save=True):
     body = Div(A(icon("chev-left", 18, 2.4), "Back to the matrix", href=href(s), cls="btn mx-back"),
                H1(f"{lane.name} · {tm.when(w)}", cls="mx-sr"), Div(panel(s, lane, w, sq, asked_sq, saved, can_save), cls="dr-wrap dr-alone"),
                Div(fine_p(sq is not None and sq.sample), cls="mx-foot"), cls="mx mx-one")
-    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True, mood=moods.choose(s.place, s.depart, s.return_))
+    return page(f"{lane.name}, {tm.when(w)}", body, current="/plan/matrix", head=HEAD, noindex=True, v2=True)
 
 
 def _save_id(trip_id, sq) -> str:

@@ -302,7 +302,7 @@ def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_sta
     assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l") == "4 nights · $2,090"      # the band says its nights and total, never "Found"
     colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find');
         return [c(f)]; }""")
-    assert colours[0] == "rgb(67, 56, 202)", colours      # the find is the one lit square (the flight indigo)
+    assert colours[0] == "rgb(29, 29, 31)", colours      # the find is the one lit square (the black pick, F-296)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
 
 
@@ -310,7 +310,7 @@ def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_sta
 def test_one_square_is_lit_at_a_time(matrix):
     """F-245 (D-591), review: on load the find is the only solid indigo square; open another and that one is lit while the find steps back to the tint and ring."""
     page = matrix(DESKTOP)
-    lit = "() => [...document.querySelectorAll('.mx-lane .mx-sq')].filter(e => getComputedStyle(e).backgroundColor === 'rgb(67, 56, 202)').map(e => e.dataset.sq)"
+    lit = "() => [...document.querySelectorAll('.mx-lane .mx-sq')].filter(e => getComputedStyle(e).backgroundColor === 'rgb(29, 29, 31)').map(e => e.dataset.sq)"
     find = page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => e.dataset.sq")
     assert page.evaluate(lit) == [find]
     other = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq:not(.is-find)").first

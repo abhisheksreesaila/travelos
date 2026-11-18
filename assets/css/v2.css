@@ -7,39 +7,17 @@
 .v2 :is(h1, h2, h3, h4) { font-family: var(--f-display); text-wrap: balance; }
 .v2 :where(button) { font: inherit; color: inherit; }
 html body .ga-page.v2 { background: transparent; }
-html:has(.v2) { background: var(--sky-3); }
+html:has(.v2) { background: var(--stage); }
 html:has(.v2) body { background: transparent; }
 .v2 .num { font-family: var(--f-ui); font-feature-settings: var(--num-feat); font-variant-numeric: tabular-nums; }
 .v2 :focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; border-radius: 0.625rem; }
 .v2-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* ---------- the sky behind everything ---------- */
-.v2-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-/* the Harbour ground (F-281, D-890; docs/design/matrix-v5): deep navy to a warm dusk, a glow high on the right and low on the horizon, the ridges below; the same in light and dark (dark deeper) */
-.v2-bg:not(.is-quiet) { background: radial-gradient(60% 40% at 78% 8%, color-mix(in srgb, var(--hb-glow) 28%, transparent), transparent 70%),
-              radial-gradient(90% 50% at 50% 100%, color-mix(in srgb, var(--hb-glow) 22%, transparent), transparent 70%),
-              linear-gradient(180deg, var(--hb-a) 0%, var(--hb-b) 55%, var(--hb-c) 100%); }
-html:has(.v2-bg:not(.is-quiet)) { background: var(--hb-b); }
-.v2-bg .ridges { position: absolute; left: 0; bottom: 0; width: 100%; height: 34vh; }
-.v2-bg .ridges .r1 { fill: var(--hb-ridge-2); opacity: .55; }
-.v2-bg .ridges .r2 { fill: var(--hb-ridge); opacity: .6; }
-.v2-bg.is-quiet { background: radial-gradient(ellipse 62% 78% at 50% 34%, var(--quiet-glow), transparent 100%), linear-gradient(180deg, var(--quiet-mid), var(--quiet-edge)); }
-html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
-@media (max-width: 719px) { .v2-bg.is-quiet { background: radial-gradient(ellipse 120% 70% at 50% 30%, var(--quiet-glow), transparent 100%), linear-gradient(180deg, var(--quiet-mid), var(--quiet-edge)); } }
-.v2-bg .sunball { position: absolute; right: 7%; top: 13%; width: 10rem; height: 10rem; border-radius: 50%; background: var(--hb-glow);
-  box-shadow: 0 0 0 2.4rem color-mix(in srgb, var(--hb-glow) 20%, transparent), 0 0 0 5.2rem color-mix(in srgb, var(--hb-glow) 9%, transparent);
-  transition: opacity var(--v2-slow) var(--v2-ease), transform var(--v2-slow) var(--spring-soft); }
-:root[data-mode="dark"] .v2-bg .sunball { background: #F3EBD3; box-shadow: 0 0 0 2.4rem rgb(243 235 211 / .08), 0 0 0 5.2rem rgb(243 235 211 / .04); width: 9rem; height: 9rem; }
-.v2-bg .shore { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 30vh; min-height: 11.25rem; transition: transform var(--v2-slow) var(--spring-soft), opacity var(--v2-slow) var(--v2-ease); }
-.v2.is-results .v2-bg .shore, .v2-bg.is-results .shore { transform: translateY(70%); opacity: .55; }
-.v2.is-results .v2-bg .sunball, .v2-bg.is-results .sunball { transform: translateY(-40%) scale(.6); opacity: .85; }      /* the founder: the sun and the moon stay, smaller, while the results take the sky */
-.v2-bg .shore { filter: brightness(.42) saturate(.8); }      /* the foot's cartoon goes down with the light on the Harbour ground, as it did in the dark */
-
-/* the words that sit straight on the Harbour ground are light (--ground-ink, F-281, D-891); a card, a glass widget and a field keep --ink */
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-brand:hover, .ak-h, .ak-into-h, .pl .rail-head b) { color: var(--ground-ink); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.ak-sub, .v2-import, .pl .rail-head span:not(.ic)):not(.sd-sec *) { color: var(--ground-ink-2); }      /* only words straight on the ground: a link inside a card (the planner drawer's Invite someone) keeps --ink-2 */
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-import:hover):not(.sd-sec *) { color: var(--ground-ink); }
-.v2:has(> .v2-bg:not(.is-quiet)) :is(.v2-brand, .v2-import):focus-visible { outline-color: var(--ground-ink); }
+/* ---------- the stage behind everything (F-296, D-956) ----------
+   A flat #F5F5F7 (light) or #000 (dark): the Harbour ground, its sun and moon, ridges, shore and moods are retired. The ground carries nothing, so any colour placed on it is saturated and striking.
+   --ground-ink is the words that sit straight on it. */
+.v2-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--stage); }
+html:has(.v2-bg) { background: var(--stage); }
 
 /* ---------- top bar ---------- */
 .v2-top { position: relative; z-index: 20; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 0.75rem; max-width: 90rem; margin: 0 auto; padding: 1.125rem 1.75rem 0; }
@@ -62,7 +40,7 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 .v2-sections { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 62.4375rem; }
 .v2-sections a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.125rem; border-radius: 62.4375rem; color: var(--ink); text-decoration: none; font: 620 1rem/1 var(--f-ui); white-space: nowrap; transition: background var(--v2-quick) var(--v2-ease), color var(--v2-quick) var(--v2-ease); }
 .v2-sections a:hover { background: var(--cell-hover); color: var(--ink); }
-.v2-sections a[aria-current="page"], .v2-sections a[aria-current="page"]:hover { background: var(--pick); color: var(--on); }
+.v2-sections a[aria-current="page"], .v2-sections a[aria-current="page"]:hover { background: var(--pick); color: var(--pick-on); }
 /* the account: the avatar opens a small frosted menu that grows out of it (a calm fade on a laptop, assets/js/v2top.js) */
 .v2-account { position: relative; flex: none; }
 .v2-account .v2-round { position: relative; }
@@ -91,7 +69,7 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 }
 
 /* ---------- the sentence: every part a word you tap ---------- */
-.v2-sent { margin: 0; max-width: 70rem; font-family: var(--f-display); font-weight: var(--d-wt); letter-spacing: var(--d-track); line-height: 1.16; font-size: clamp(2.1rem, 4.3vw, 4.1rem); text-wrap: balance; color: var(--ink); transform-origin: 0 0; view-transition-name: v2-sent; }
+.v2-sent { margin: 0; max-width: 70rem; font-family: var(--f-display); font-weight: 600; letter-spacing: var(--d-track); line-height: 1.16; font-size: clamp(2.1rem, 4.3vw, 4.1rem); text-wrap: balance; color: var(--ink); transform-origin: 0 0; view-transition-name: v2-sent; }
 .v2-sent .fill { color: var(--ink-2); }
 .v2-w { display: inline; padding: 0 .06em; margin: 0; border: 0; background: none; cursor: pointer; font: inherit; letter-spacing: inherit; color: var(--word);
   text-decoration: underline; text-decoration-thickness: .1em; text-underline-offset: .14em; text-decoration-color: color-mix(in srgb, var(--word) 30%, transparent);
@@ -145,7 +123,7 @@ html:has(.v2-bg.is-quiet) { background: var(--quiet-edge); }
 .v2-cal span { font: 600 max(var(--label-min), 0.8125rem)/2 var(--f-ui); color: var(--ink-3); letter-spacing: .05em; }
 .v2-cal button { aspect-ratio: 1; border: 0; border-radius: 0.75rem; background: var(--card-2); cursor: pointer; font: 600 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }
 .v2-cal button:disabled { background: none; color: var(--ink-3); opacity: .5; cursor: default; }
-.v2-cal button[aria-pressed="true"] { background: var(--k-flight); color: var(--on); }
+.v2-cal button[aria-pressed="true"] { background: var(--cta-bg); color: var(--cta-fg); }
 .v2-cal button.wk:not([aria-pressed="true"]):not(:disabled) { background: color-mix(in srgb, var(--flight-t) 70%, var(--card-2)); }
 .v2-range { width: 100%; margin: 0.5rem 0 0.25rem; accent-color: var(--flight); height: 2.25rem; }
 .v2-ticks { display: flex; justify-content: space-between; color: var(--ink-3); font: 500 1rem/1 var(--f-ui); font-feature-settings: var(--num-feat); }

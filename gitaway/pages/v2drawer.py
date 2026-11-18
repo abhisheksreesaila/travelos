@@ -17,7 +17,7 @@ from urllib.parse import quote
 
 from fasthtml.common import A, Button, Div, Form, H2, H3, Header, Img, Input, Nav, P, Section, Small, Span, Sup
 
-from gitaway import catalog, matrixbook as mb, reviewtrend, tripmatrix as tm, weather
+from gitaway import catalog, matrixbook as mb, placecolor, reviewtrend, tripmatrix as tm, weather
 from gitaway.icons import icon
 from gitaway.pages.skystrip import weather_for
 
@@ -67,7 +67,7 @@ def _stay_media(st: tm.StayPart, place, sample=False):
         slides = [Div(Img(src=url, alt=cap, loading="lazy"), Span(cap, cls="dr-cap"), cls="dr-slide") for url, cap in hotelview.sample_slides()]
     if st.photo:
         slides.append(Div(Img(src=st.photo, alt=f"{st.name}, the hotel’s own photo", loading="lazy", referrerpolicy="no-referrer"), Span(PHOTO, cls="dr-cap"), cls="dr-slide"))
-    slides.append(Div(mx._art(place, "dr-art"), Span(ILLUSTRATION, cls="dr-cap"), cls="dr-slide"))
+    slides.append(Div(mx._illustration(place, "dr-art"), Span(ILLUSTRATION, cls="dr-cap"), cls="dr-slide"))
     return slides
 
 
@@ -115,7 +115,7 @@ def _rooms_row(st: tm.StayPart, j: int):
 
 def _alt_btn(sq, st: tm.StayPart, place, j: int, on: bool, base: int):
     from gitaway.pages import tripmatrix as mx
-    thumb = Img(src=st.photo, alt="", loading="lazy", referrerpolicy="no-referrer") if st.photo else mx._art(place, "dr-art")
+    thumb = Img(src=st.photo, alt="", loading="lazy", referrerpolicy="no-referrer") if st.photo else mx._illustration(place, "dr-art")
     rate = st.rating.split(" · ")[0] if st.rating else ""
     return Button(Span(thumb, cls="dr-thumb"), Span(st.name, cls="dr-an"),
                   Span(Span(f"★ {rate}" if rate else "", cls="dr-ar"), Span("Chosen" if on else signed(st.cents - base), cls="dr-d num", data_d="1"), cls="dr-as"),
@@ -250,11 +250,11 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     from gitaway.pages import tripmatrix as mx
     sub = f"{_day(w.depart)} → {_day(w.return_)} · {w.nights} nights · {party_long(s)}"
     close = Button(icon("x", 18, 2.4), type="button", cls="dr-x", data_act="close", aria_label="Close")
-    head_art = mx._arts(lane, "dr-hart")
+    head_art = mx._art(lane.places[0], "dr-hart")      # the band's skyline, in the first place's own colour (D-959)
     if sq is None or not sq.ok:
         note = "Searching this square…" if sq is None else tm.SAID[sq.status]
         way = A("Sign in to keep comparing", href="/signin?next=" + quote(mx.href(s), safe=""), cls="btn") if sq is not None and sq.status == tm.LIMIT else ""      # F-265: the way on
-        return Div(Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), cls="dr-ti"), close, cls="dr-head"), Div(P(note, cls="dr-note", role="status"), way, cls="dr-quiet"),
+        return Div(Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), cls="dr-ti"), close, cls="dr-head has-pc", style=placecolor.style(lane.places[0])), Div(P(note, cls="dr-note", role="status"), way, cls="dr-quiet"),
                    cls="dr is-quiet", data_open=tm.key(lane.key, w.key))
     alts_by_stay = _alts(sq)
     multi = len(sq.stays) > 1
@@ -289,7 +289,7 @@ def drawer(s, lane, w, sq, asked_sq=None, saved="", can_save=True):
     foot = Div(Span(Span(_foot_words(sq), cls="dr-soon-h"), " Save the trip, then plan it day by day." if soon else f" The stay{'s' if multi else ''} book{'' if multi else 's'} here; the flight books on its airline’s site.", cls="dr-fnote"), save, book, cls="dr-foot", id="dr-foot")
     znav = _znav(total, has_book)
     head = Div(head_art, Div(H2(lane.name, cls="dr-h"), P(sub), why, cls="dr-ti"),
-               Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head", id="dr-head")
+               Div(Span(total, cls="dr-n num", data_slot="total"), Span(f"total for {s.travelers} · flights + stays", cls="dr-tl"), cls="dr-tot"), close, cls="dr-head has-pc", style=placecolor.style(lane.places[0]), id="dr-head")
     gap = Div(Span(icon("plane", 18, 2.2), cls="dr-gapi"), "Now, getting there", cls="dr-gap")
     out = Div(head, znav, Div(stay, gap, fly, cls="dr-panels", data_open="stay"), foot, cls="dr", data_open=sq.key, data_nights=str(w.nights), data_party=str(s.travelers))
     return out

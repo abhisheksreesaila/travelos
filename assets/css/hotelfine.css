@@ -104,7 +104,7 @@ body.rv-open { overflow: hidden; }
   .rv::before { content: ""; position: absolute; top: 0.5rem; left: 50%; margin-left: -1.25rem; width: 2.5rem; height: 0.3125rem; border-radius: 0.5625rem; background: var(--line-2); }
 }
 .rv-top { display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem 1.25rem 0.75rem; }
-.rv-n { display: grid; place-items: center; min-width: 3.25rem; height: 3.25rem; padding: 0 0.5rem; border-radius: 1rem; background: var(--k-flight); color: var(--on); font: 760 1.5rem/1 var(--f-ui); }      /* the solid fill: white keeps 5:1 in both modes (--flight is a text colour in dark) */
+.rv-n { display: grid; place-items: center; min-width: 3.25rem; height: 3.25rem; padding: 0 0.5rem; border-radius: 1rem; background: var(--cta-bg); color: var(--cta-fg); font: 760 1.5rem/1 var(--f-ui); }      /* the solid fill: white keeps 5:1 in both modes (--flight is a text colour in dark) */
 .rv-top > div { min-width: 0; flex: 1; }
 .rv-title { margin: 0; font: 560 1.5rem/1.15 var(--f-display); }
 .rv-top small { display: block; color: var(--ink-2); font-size: 1rem; line-height: 1.3; }

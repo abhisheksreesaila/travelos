@@ -21,7 +21,7 @@
 .lg .i-pick { background: var(--pick); }
 .lg .i-cheap { background: var(--see); }
 .lg .i-over { background: repeating-linear-gradient(135deg, var(--line-2) 0 0.1875rem, transparent 0.1875rem 0.375rem); box-shadow: inset 0 0 0 1px var(--line-2); }
-.lg .i-band { background: color-mix(in srgb, var(--stay) 20%, transparent); box-shadow: inset 0 0 0 0.125rem var(--stay); }
+.lg .i-band { background: color-mix(in srgb, var(--stay) 8%, transparent); box-shadow: inset 0 0 0 0.125rem color-mix(in srgb, var(--stay) 55%, transparent); }
 .mx-slow, .mx-est-note { display: none; margin: 0; color: var(--ink-2); font-size: 1rem; }
 .mx[data-slow="1"] .mx-slow, .mx[data-est="1"] .mx-est-note { display: inline; }
 
@@ -42,9 +42,9 @@
 .mx-credit-a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 0.1875rem; display: inline-flex; align-items: center; min-height: 2.75rem; }
 
 /* the pick bar: the find (a nearby trip that beats or nearly matches the asked place), the focal point of the card */
-.mx-find { position: relative; margin: 0 1.375rem 0.5rem; display: flex; align-items: center; gap: 1rem; padding: 0.625rem 0.75rem 0.625rem 0.625rem; border-radius: 1.375rem; background: var(--pick); color: var(--on); text-decoration: none;
+.mx-find { position: relative; margin: 0 1.375rem 0.5rem; display: flex; align-items: center; gap: 1rem; padding: 0.625rem 0.75rem 0.625rem 0.625rem; border-radius: 1.375rem; background: var(--pick); color: var(--pick-on); text-decoration: none;
   box-shadow: var(--sh2); transition: transform var(--v2-quick) var(--v2-ease); width: calc(100% - 2.75rem); box-sizing: border-box; }
-.mx-find:hover { color: var(--on); }
+.mx-find:hover { color: var(--pick-on); }
 .mx-find.is-empty { display: none; }
 .mx[data-waiting="1"] .mx-find.is-empty, .mx-find.is-skel { display: flex; min-height: 4.25rem; background: var(--card-2); box-shadow: none; pointer-events: none; }
 .mx[data-waiting="1"] .mx-find.is-empty > *, .mx-find.is-skel > * { visibility: hidden; }
@@ -52,10 +52,10 @@
 .mx-pk-art .mx-thumb { width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
 .mx-pk-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .mx-pk-h { font: var(--d-wt) 1.3125rem/1.15 var(--f-display); letter-spacing: var(--d-track); }
-.mx-pk-s { color: color-mix(in srgb, var(--on) 86%, transparent); font-size: 1rem; }
-.mx-pk-badge { flex: none; background: var(--ride); color: var(--ride-on); font: 700 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 0.4375rem 0.625rem; border-radius: 62.4375rem; }
+.mx-pk-s { color: color-mix(in srgb, var(--pick-on) 86%, transparent); font-size: 1rem; }
+.mx-pk-badge { flex: none; background: var(--pick-cap); color: var(--pick-cap-i); font: 700 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 0.4375rem 0.625rem; border-radius: 62.4375rem; }
 .mx-pk-p { font: 760 1.875rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.02em; }
-.mx-pk-open { display: inline-flex; align-items: center; gap: 0.375rem; height: 2.5rem; padding: 0 0.875rem; border-radius: 62.4375rem; background: color-mix(in srgb, var(--on) 12%, transparent); font-weight: 620; }
+.mx-pk-open { display: inline-flex; align-items: center; gap: 0.375rem; height: 2.5rem; padding: 0 0.875rem; border-radius: 62.4375rem; background: color-mix(in srgb, var(--pick-on) 14%, transparent); font-weight: 620; }
 
 /* the grid */
 .mx-cal { min-width: 0; }
@@ -77,7 +77,7 @@
 .mx-dw { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 .mx-dn { font: var(--d-wt) 1.375rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
 .mx-mo { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
-.mx-day.is-wkend { background: color-mix(in srgb, var(--flight-t) 45%, transparent); }
+.mx-day.is-wkend { background: color-mix(in srgb, var(--card-2) 70%, transparent); }
 .mx-day.is-ask .mx-dn::after { content: ""; display: block; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--food); margin: 0.125rem auto 0; }
 .mx-day.is-skel { background: none; }
 .mx-day.is-skel::after { content: ""; width: 1.5rem; height: 1.75rem; border-radius: 0.375rem; background: var(--card-2); }
@@ -98,10 +98,10 @@
 .mx-sq.is-over .mx-v { font-weight: 560; color: var(--ink-3); }
 .mx-sq.is-over .mx-sqw { color: var(--ink-3); }
 /* the lit square: the find, or the one opened; open another and the find steps back to a ringed tint, so only one square is lit */
-.mx-sq:is(.is-find, .is-open) { background: var(--pick); color: var(--on); box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--pick) 22%, transparent), var(--sh2); }
-.mx-sq:is(.is-find, .is-open) :is(.mx-v, .mx-sqw) { color: var(--on); }
-.mx-sq:is(.is-find, .is-open) .mx-sqw-i { color: var(--ride); }
-.mx-sq.is-find::after, .mx-sq.is-find.is-low::after { content: "Our pick"; position: absolute; top: -0.75rem; left: 50%; translate: -50% 0; white-space: nowrap; padding: 0.3125rem 0.5625rem; border-radius: 62.4375rem; background: var(--ride); color: var(--ride-on);
+.mx-sq:is(.is-find, .is-open) { background: var(--pick); color: var(--pick-on); box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--pick) 14%, transparent), var(--sh2); }
+.mx-sq:is(.is-find, .is-open) :is(.mx-v, .mx-sqw) { color: var(--pick-on); }
+.mx-sq:is(.is-find, .is-open) .mx-sqw-i { color: var(--wx-sun); }
+.mx-sq.is-find::after, .mx-sq.is-find.is-low::after { content: "Our pick"; position: absolute; top: -0.75rem; left: 50%; translate: -50% 0; white-space: nowrap; padding: 0.3125rem 0.5625rem; border-radius: 62.4375rem; background: var(--pick-cap); color: var(--pick-cap-i);
   font: 700 max(var(--label-min), 0.75rem)/1 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; box-shadow: var(--sh1); z-index: 2; }
 .mx-sq.is-find.is-low::after { content: "Pick · cheapest"; }
 .mx:has(.mx-sq.is-open:not(.is-find)) .mx-sq.is-find:not(.is-open) { background: var(--flight-t); color: var(--flight-i); box-shadow: inset 0 0 0 0.125rem var(--flight); }
@@ -121,11 +121,11 @@
 .mx-sq.is-est .mx-est-n { font-size: 1rem; }
 
 /* the nights: a ringed band across the lane's start days, labelled on its top edge (it moves to the square you tap) */
-.mx-band { position: relative; z-index: 0; grid-row: 1; align-self: stretch; margin: -0.375rem 0; border-radius: 1.375rem; pointer-events: none; background: color-mix(in srgb, var(--stay) 11%, transparent);
-  box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--stay) 70%, transparent); }
-.mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.6875rem; padding: 0.3125rem 0.625rem; border-radius: 62.4375rem; background: var(--band-label); color: var(--on); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); white-space: nowrap; }
+.mx-band { position: relative; z-index: 0; grid-row: 1; align-self: stretch; margin: -0.375rem 0; border-radius: 1.375rem; pointer-events: none; background: color-mix(in srgb, var(--pc, var(--stay)) 8%, transparent);
+  box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--pc, var(--stay)) 55%, transparent); }
+.mx-band::after { content: attr(data-l); position: absolute; right: 0.5rem; top: -0.6875rem; padding: 0.3125rem 0.625rem; border-radius: 62.4375rem; background: var(--band-label); color: var(--pick-on); font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); white-space: nowrap; }
 .mx-lane.is-lit .mx-band { background: color-mix(in srgb, var(--pick) 12%, transparent); box-shadow: inset 0 0 0 0.1875rem var(--pick); }
-.mx-lane.is-lit .mx-band::after { background: var(--ride); color: var(--ride-on); top: auto; bottom: -0.6875rem; }      /* F-251: the find's lane wears "Our pick" on the square's top edge, so its band's label sits on the bottom edge: two labels never overlap */
+.mx-lane.is-lit .mx-band::after { background: var(--pick-cap); color: var(--pick-cap-i); top: auto; bottom: -0.6875rem; }      /* F-251: the find's lane wears "Our pick" on the square's top edge, so its band's label sits on the bottom edge: two labels never overlap */
 .mx-lane.is-lit { padding-bottom: 0.75rem; }
 
 /* the art: the place's own drawing (gitaway/placeart.py), or its plain tint */
@@ -156,7 +156,7 @@
 .mx-rows { display: grid; }
 .mx-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: start; padding: 0.625rem 0; border-top: 1px solid var(--line); }
 .mx-kt { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; color: var(--on); }
-.mx-kt.k-flight { background: var(--flight); } .mx-kt.k-stay { background: var(--stay); } .mx-kt.k-car { background: var(--see); }
+.mx-kt.k-flight { background: var(--k-flight); } .mx-kt.k-stay { background: var(--k-stay); } .mx-kt.k-car { background: var(--k-see); }
 .mx-r-h { margin: 0; font-size: 1rem; font-weight: 650; line-height: 1.25; }
 .mx-r-s { margin: 0.125rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.35; }
 .mx-r-due { color: var(--tix-i); }
@@ -208,9 +208,9 @@
 /* F-279 (D-872): the sentence is a search, so it is a card of its own: a title with a search icon, a brand-tinted outline and a deeper shadow that set it apart from the results, the words in a
    field-like area, the Try chips in a footer band of the card. The card's padding is two variables so the band can run to its edges. */
 .v2-qcard { --qx: 1.75rem; --qb: 1.375rem; width: 100%; box-sizing: border-box; --w-bg: color-mix(in srgb, var(--flight) 11%, var(--card-solid)); --w-line: color-mix(in srgb, var(--flight) 32%, var(--card-solid)); position: relative; padding: 1.375rem var(--qx) var(--qb); border-radius: var(--r-xl); background: var(--card-solid);
-  box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--flight) 42%, var(--card-solid)), var(--sh3), 0 1.5rem 2.75rem -1.25rem rgb(var(--shadow-c) / .32); text-align: left; }
+  box-shadow: var(--sh3), 0 0 0 1px var(--line); text-align: left; }
 .v2-qhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin-bottom: 0.875rem; }
-.v2-qic { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.75rem; background: var(--k-flight); color: var(--on); }
+.v2-qic { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none; border-radius: 0.75rem; background: var(--ink); color: var(--on-ink); }
 .v2-qic svg { width: 1.25rem; height: 1.25rem; }
 .v2-qtitle { margin: 0; color: var(--ink); font: 700 1.25rem/1.2 var(--f-ui); letter-spacing: -0.01em; }
 .v2-ql { font: 650 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
@@ -271,4 +271,4 @@
 @media (max-width: 719px) { .mx-about .mx-pop { left: 0.75rem; right: 0.75rem; } }
 
 /* captions on every square state read 4.5:1 (live check: "Cheapest" was blue on the blue of the opened square) */
-.mx-sq.is-open.is-low:not(.is-find)::after { color: var(--on); }
+.mx-sq.is-open.is-low:not(.is-find)::after { color: var(--pick-on); }

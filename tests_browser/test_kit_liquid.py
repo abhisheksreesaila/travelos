@@ -1,5 +1,5 @@
 """F-264 in a real browser: the liquid design kit's gallery (kit/liquid/index.html, opened from disk, no server). Every word over each sky (five moods and the quiet one) in light and dark at
-1440 and 390 reads 4.5:1 on the pixels the page really paints (the method of test_moods.py), the sun becomes the moon, every target is 48px, and press, sheet, menu, combobox, folds, toasts
+1440 and 390 reads 4.5:1 on the pixels the page really paints (the method of tests_browser/words.py), the sun becomes the moon, every target is 48px, and press, sheet, menu, combobox, folds, toasts
 and the mode toggle work. Set F264_SHOTS=1 for kit/liquid/shots/gallery-<width>-<scheme>.jpg."""
 import os
 import re
@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from tests_browser.test_moods import lum
+from tests_browser.words import lum
 
 KIT = Path(__file__).resolve().parent.parent / "kit" / "liquid"
 URL = (KIT / "index.html").as_uri()

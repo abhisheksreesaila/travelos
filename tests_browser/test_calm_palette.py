@@ -2,9 +2,9 @@
 
 * A reading page (a creator's book, the details editor, the import) shows no sun, moon, clouds, shore or mood object, only the soft gradient; booking (/plan/ask) and planning (/trip/plan)
   keep theirs.
-* Every primary action (Book my trip, Today's Directions, the pass's Plan this trip) is one solid indigo, never a gradient, and reads 4.5:1; the planning hero is a card with ink on it; the pass is a
-  solid deep indigo. Dark is set through localStorage ga-mode.
-* Every word on a reading page reads 4.5:1 on the pixels the page really paints (the method of test_moods.py), light and dark, at 1440 and 390.
+* Every primary action (Book my trip, Today's Directions, the pass's Plan this trip) is one solid ink (white in dark), never a gradient, and reads 4.5:1; the planning hero is a card with ink on it; the pass is a
+  solid near-black. Dark is set through localStorage ga-mode.
+* Every word on a reading page reads 4.5:1 on the pixels the page really paints (the method of tests_browser/words.py), light and dark, at 1440 and 390.
 Set F261_SHOTS=1 for docs/report/f261-<label>-<page>-<width>.png (F261_LABEL=before on the code before the change, default after)."""
 import os
 import re
@@ -18,7 +18,7 @@ from playwright.sync_api import expect
 from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.test_creator_edit import drafted, lisbon  # noqa: F401 (fixture and helper)
 from tests_browser.test_matrixbook_sheet import open_square, sandbox  # noqa: F401 (fixtures and helper)
-from tests_browser.test_moods import WORDS_JS, lum
+from tests_browser.words import WORDS_JS, lum
 from tests_browser.test_planv2 import plan  # noqa: F401 (fixture)
 from tests_browser.test_tripmatrix import matrix, stand  # noqa: F401 (fixtures)
 
@@ -84,15 +84,14 @@ def test_reading_pages_have_a_quiet_sky_and_every_word_reads_on_it(browser, base
     c.close()
 
 
-def test_booking_and_planning_keep_their_sun_and_shore(browser, base_url, plan):  # noqa: F811
+def test_booking_and_planning_are_on_the_flat_stage_with_nothing_drawn(browser, base_url, plan):  # noqa: F811
     page = plan(DESKTOP)
     for url in (f"{base_url}/plan/ask", f"{base_url}/trip/plan"):
         page.goto(url)
         page.wait_for_selector(".v2-bg")
         assert page.get_attribute(".v2-bg", "data-sky") is None
-        assert page.locator(".v2-bg .sunball").count() == 1 and page.locator(".v2-bg .shore").count() == 1, url
-        expect(page.locator(".v2-bg .sunball")).to_be_visible()
-        assert page.evaluate("+getComputedStyle(document.querySelector('.v2-bg .sunball')).opacity") > 0.8, url
+        assert page.locator(".v2-bg *").count() == 0, url      # F-296: no sun, moon, ridges or shore
+        assert page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundColor") == "rgb(245, 245, 247)", url
 
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
@@ -109,7 +108,7 @@ def test_planning_is_calm_a_card_for_the_hero_and_a_solid_add_button(plan, schem
 
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["390", "1440"])
-def test_book_my_trip_the_sheet_and_the_pass_are_solid_indigo(matrix, sandbox, viewport, scheme):  # noqa: F811
+def test_book_my_trip_the_sheet_and_the_pass_are_solid_ink(matrix, sandbox, viewport, scheme):  # noqa: F811
     page = matrix(viewport, signed_in=True, scheme=scheme)
     page.evaluate(f"localStorage.setItem('ga-mode', '{scheme}')")
     page.reload()
@@ -118,7 +117,7 @@ def test_book_my_trip_the_sheet_and_the_pass_are_solid_indigo(matrix, sandbox, v
     panel = open_square(page, viewport)
     shot(page, "matrix-drawer", viewport)
     book = page.evaluate(CTA_JS, ".dr-book")[0]
-    want = [67, 56, 202] if scheme == "light" else [79, 70, 229]
+    want = [29, 29, 31] if scheme == "light" else [245, 245, 247]
     assert book["image"] == "none" and rgb(book["bg"]) == want and ratio(rgb(book["fg"]), want) >= 4.5
     panel.locator(".dr-book").click()
     expect(page.locator(".mxb-sheet")).to_be_visible()
@@ -127,7 +126,7 @@ def test_book_my_trip_the_sheet_and_the_pass_are_solid_indigo(matrix, sandbox, v
     sheet = page.evaluate("""() => { const e = document.querySelector('.mxb-b1, [data-cont]'); const s = e && getComputedStyle(e); return s && {image: s.backgroundImage}; }""")
     assert sheet is None or "gradient" not in sheet["image"]
     pass_bg = page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--pass-bg').trim()")
-    assert pass_bg == ("#1E1B4B" if scheme == "light" else "#2A3756") and ratio([255, 255, 255], [int(pass_bg[i:i + 2], 16) for i in (1, 3, 5)]) >= 4.5
+    assert pass_bg == ("#1D1D1F" if scheme == "light" else "#2C2C2E") and ratio([255, 255, 255], [int(pass_bg[i:i + 2], 16) for i in (1, 3, 5)]) >= 4.5
 
 
 @pytest.mark.skipif(not os.environ.get("F261_SHOTS"), reason="screenshots only on request")

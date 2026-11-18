@@ -55,8 +55,8 @@ def test_the_row_is_titled_frosted_one_scroller_and_48px(matrix, viewport, schem
     colours = page.evaluate("""() => { const t = document.querySelector('#mx-rail .rl-chips'), f = document.querySelector('#mx-rail .rl-tray'), l = document.querySelector('#mx-rail .rl-lab');
         return {frost: getComputedStyle(f).backgroundColor, label: getComputedStyle(l).color, overflow: getComputedStyle(t).overflowX}; }""")
     assert colours["overflow"] == "auto"
-    assert colours["frost"] in ("rgba(16, 12, 24, 0.6)", "rgba(8, 10, 14, 0.62)")      # a dark frost of its own over the ground, in light and in dark
-    assert colours["label"] == "rgb(244, 247, 251)"      # its words are the ground's (the painted-pixel ratios are in test_harbour.py)
+    assert colours["frost"] == ("rgb(29, 29, 31)" if scheme == "light" else "rgb(44, 44, 46)")      # the dark band (F-296, D-958): near-black in light, raised grey in dark
+    assert colours["label"] == "rgb(255, 255, 255)"      # its words are the band's own white (the painted-pixel ratios are in test_harbour.py)
     tops = {round(b["y"]) for b in (row.nth(i).bounding_box() for i in range(row.count()))}
     assert len(tops) == 1      # one line: a scroller, never a wrapped pile
     assert min(row.nth(i).bounding_box()["height"] for i in range(row.count())) >= 47.5

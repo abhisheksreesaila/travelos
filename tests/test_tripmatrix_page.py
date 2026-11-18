@@ -166,10 +166,10 @@ def test_save_keeps_the_square_on_the_familys_trip_with_the_price_read_again(sam
 def test_each_place_wears_its_art_and_each_square_its_start_days_sky_above_the_total(sample, client):
     """F-250 (the prototype): every square carries its start day's weather above its total (icon and high); typical weather is dotted and said so in the head cell and the
     ⓘ, never passed off as a forecast. A place with no weather known draws none."""
-    from gitaway import placeart
     from gitaway.pages.skystrip import weather_for
     html = client.get(MATRIX).text
-    assert html.count(placeart.art("sandiego")[:60]) >= 1 and 'class="mx-art-i is-plain"' not in html.split('data-lane="sandiego"')[1].split("data-lane=")[0]
+    lane = html.split('data-lane="sandiego"')[1].split("data-lane=")[0]
+    assert 'class="pc-sk"' in lane and 'style="--pc:#0071E3;--pc-on:#FFFFFF"' in lane      # F-296: the lane's tile wears the place's own colour (gitaway/placecolor.py)
     tw = {p: weather_for(p, date(2026, 12, 10), date(2026, 12, 14)) for p in ("San Diego", "Los Angeles", "Orange County")}
     for attrs, body in re.findall(r'<a ([^>]*data-sq="[^"]+"[^>]*)>(.*?)</a>', html, re.S):
         k = re.search(r'data-sq="([^"]+)"', attrs).group(1)

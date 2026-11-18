@@ -18,7 +18,7 @@ import json
 from fasthtml.common import A, Aside, B, Button, Div, H1, H2, Header, Input, Li, Link, NotStr, P, Script, Section, Small, Span, Ul, to_xml
 from starlette.responses import HTMLResponse, JSONResponse
 
-from gitaway import access, guide as gd, v2, moods, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
+from gitaway import access, guide as gd, v2, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booking, today as todaypage, tripshare
@@ -336,8 +336,7 @@ def plan_page(session, request, arrive=False, day=""):
                Script(NotStr(_safe(data)), type="application/json", id="pl-data"),
                *[NotStr(f'<template id="pl-ico-{n}">{icon(n, 18, 2.6)}</template>') for n in ("x", "minus", "plus", "check", "share")],
                cls="pl" + (" is-arrive" if arrive else ""), data_pl="1")
-    return page("Your itinerary", body, current="trip", head=HEAD, noindex=True, footer=False, v2=True,
-                mood=moods.of_text(v.place, v.days[0][1], v.days[-1][1]) if v.days else "")
+    return page("Your itinerary", body, current="trip", head=HEAD, noindex=True, footer=False, v2=True)
 
 
 def register(app):
