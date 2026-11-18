@@ -2,8 +2,8 @@
 
 FastHTML's default headers loaded htmx, fasthtml-js, surreal and css-scope-inline from jsDelivr on every page (the last two from a
 moving @main branch, none with an integrity hash): a push to one of those repos would have run on gitaway.me with the person's
-session. main.py turns them off (htmx=False, surreal=False) and keeps the charset and viewport tags. The one script allowed from
-another site is Travelpayouts Drive, on the signed-out landing only, when TRAVELPAYOUTS_DRIVE_ID is set (tests/test_travelpayouts_drive.py)."""
+session. main.py turns them off (htmx=False, surreal=False) and keeps the charset and viewport tags. No page loads
+a script from another site (F-297 removed the one exception, the Travelpayouts Drive tag)."""
 
 import re
 from html.parser import HTMLParser
@@ -12,7 +12,6 @@ import pytest
 
 from tests.test_signin import sign_in
 
-DRIVE = "https://tp-em.com/NTk2NTM0.js?t=596534"  # what TRAVELPAYOUTS_DRIVE_ID=596534 loads
 CHARSET = '<meta charset="utf-8">'
 VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
 
@@ -45,30 +44,19 @@ def assert_own_scripts_only(r, path):
 
 @pytest.mark.parametrize("path", ["/", "/signin", "/privacy"])
 def test_signed_out_pages_load_no_script_from_elsewhere(client, monkeypatch, path):
-    monkeypatch.delenv("TRAVELPAYOUTS_DRIVE_ID", raising=False)
     assert_own_scripts_only(client.get(path), path)
 
 
 @pytest.mark.parametrize("path", ["/", "/trip/canvas", "/trip/ask", "/family"])
 def test_signed_in_pages_load_no_script_from_elsewhere(client, monkeypatch, path):
-    monkeypatch.setenv("TRAVELPAYOUTS_DRIVE_ID", "596534")  # switched on, and still never for a signed-in person
     sign_in(client, "ari")
     assert_own_scripts_only(client.get(path), path)
-
-
-def test_the_drive_is_the_one_script_allowed_from_elsewhere(client, monkeypatch):
-    """Switched on, the signed-out landing loads Travelpayouts Drive and nothing else from another site; no other page loads it."""
-    monkeypatch.setenv("TRAVELPAYOUTS_DRIVE_ID", "596534")
-    assert scripts_from_elsewhere(client.get("/").text) == [DRIVE]
-    for path in ("/signin", "/privacy", "/plan/matrix", "/plan/ask"):
-        assert scripts_from_elsewhere(client.get(path).text) == [], path
 
 
 @pytest.mark.parametrize("signed_in", [False, True], ids=["out", "in"])
 def test_no_page_loads_a_script_from_elsewhere(client, monkeypatch, signed_in):
     """Every GET page, signed out and signed in: a page's own scripts are held to the same rule as the shared head."""
     from main import app
-    monkeypatch.delenv("TRAVELPAYOUTS_DRIVE_ID", raising=False)
     if signed_in:
         sign_in(client, "ari")
     paths = {r.path for r in app.routes if "GET" in (getattr(r, "methods", None) or ()) and "{" not in r.path}

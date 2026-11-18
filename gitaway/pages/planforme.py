@@ -4,10 +4,9 @@ GET  /plan-for-me                     the offer (F-197): the outcome, the foundi
 GET  /plan-for-me/start               the intake: where, dates, home airport, adults, kids with ages and heights, budget, must-dos, pace (`?from=<a creator's trip>` carries its place and title)
 GET  /plan-for-me/example/<slug>      an example plan, read-only, drawn like a delivered trip, with "What to book and when" (gitaway/planexamples.py)
 POST /plan-for-me                     check it, make the order at the server's price, and go to Stripe Checkout (locally: the stand-in checkout); signed out goes to sign-in first
-GET  /plan-for-me/<order>             the order: awaiting payment, paid, building, being checked (F-197), ready (the link to the trip, what to book and when, booking links) or failed ("we'll refund you"); its buyer only, anyone else a 404
+GET  /plan-for-me/<order>             the order: awaiting payment, paid, building, being checked (F-197), ready (the link to the trip, what to book and when) or failed ("we'll refund you"); its buyer only, anyone else a 404
 GET  /plan-for-me/<order>/status      {"status": ...} for the page's own polling, buyer only
 POST /plan-for-me/<order>/pay         pay for an order that has not been paid (a new Checkout session)
-GET  /plan-for-me/<order>/go/<lane>   a booking link (flight, stay or todo) with the order id as the SubID, buyer only; nothing without TRAVELPAYOUTS_MARKER
 GET/POST /sandbox/plan-for-me/<order> the local stand-in checkout (404 in production and whenever the showcase is off)
 POST /stripe/webhook                  Stripe's `checkout.session.completed`: verified with STRIPE_WEBHOOK_SECRET, idempotent by event id (400 for a body Stripe did not sign, 503 with no secret set)
 
@@ -19,7 +18,6 @@ import json
 import logging
 import re
 from datetime import date
-from types import SimpleNamespace
 from urllib.parse import quote, urlencode
 
 from fasthtml.common import A, Blockquote, Button, Datalist, Details, Div, Fieldset, Form, H1, H2, H3, Input, Label, Legend, Li, Link, Main, Ol, Option, P, Script, Section, Select, Span, Summary, Textarea, Ul
@@ -27,17 +25,15 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
-from gitaway import access, auth, catalog, community, partners, pickers, planexamples as px, planfacts, planforme as pfm, publish, reports, session as ses, showcase, tripbuild, v2pages
+from gitaway import access, auth, catalog, community, pickers, planexamples as px, planfacts, planforme as pfm, reports, session as ses, showcase, tripbuild, v2pages
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import legal, planview
-from gitaway.partners import travelpayouts
 
 log = logging.getLogger("gitaway.planforme")
 PATH = "/plan-for-me"
 START = PATH + "/start"
 HEAD = (*pickers.HEAD, Link(rel="stylesheet", href="/assets/css/planforme.css"), *v2pages.HEAD, Script(src="/assets/js/planforme.js", defer=True))
-LANES = {"flight": ("plane", "Flights", "aviasales"), "stay": ("bed", "Stays", "klook"), "todo": ("star", "Things to do", "klook")}
 MAX_KIDS = tripbuild.MAX_KIDS
 
 
@@ -156,8 +152,7 @@ def intake_page(session, vals=None, errors=None, status=200, note=""):
 
 GETS = (("calendar", "Day-by-day plan in your family's shared planner", "Everyone in the family sees it, and anyone can move or change a plan."),
         ("target", "Ride order and rest breaks matched to your kids' ages and heights", "Rope drop for the rides they can do, a midday rest, meals at kid times, a rain backup."),
-        ("clipboard", "What to book and when", "A countdown with real dates, from dining reservations to the day's ride passes."),
-        ("link", "Booking links", "For flights, stays and things to do. You book with the partner, who keeps your booking."))
+        ("clipboard", "What to book and when", "A countdown with real dates, from dining reservations to the day's ride passes."))
 
 
 def price_block():
@@ -181,7 +176,7 @@ def _faq():
     qs = (("How soon do we get it?", f"Our agent builds it as soon as you {asked}. Then a person checks it, usually within a few hours, and it appears in your family's planner." if review
            else f"A few minutes after you {asked}, it is in your family's planner."),
           ("We're not going to Disneyland. Does it still work?", "Yes, tell us any place. For Disneyland, New York City and Oahu the booking dates come from the official sites; anywhere else you get an honest general list."),
-          ("Do you book anything for us?", "No. You get the plan, the dates to book by and the links. You book with the partner yourself, and they keep your booking."),
+          ("Do you book anything for us?", "No. You get the plan and the dates to book by. You book what you need yourself."),
           ("Can we change the plan?", "Yes. It is your trip in your planner: move, add or delete anything, or ask GitAway in plain words to change a day."))
     return Section(H2("Questions parents ask"), *[Details(Summary(q), P(a), cls="pf-q") for q, a in qs], cls="pfo-faq", id="pf-faq")
 
@@ -246,29 +241,6 @@ def _steps(status):
                    aria_current="step" if i == at else None) for i, k in enumerate(order)], cls="pf-steps")
 
 
-def _links(order):
-    """Booking links (flights, stays, things to do), only when a Travelpayouts marker is set; a flight only when the home airport and a destination airport we know are both there."""
-    if not travelpayouts.marker():
-        return ""
-    intake, out = order["intake"], []
-    for lane, (ico, label, _partner) in LANES.items():
-        if lane == "flight" and not (intake["home"] and _airport(intake["where"])):
-            continue
-        out.append(A(icon(ico, 18, 2.2), label, href=f"{PATH}/{order['id']}/go/{lane}", rel="sponsored nofollow noopener", target="_blank", cls="btn pf-link", id=f"pf-go-{lane}"))
-    return Div(H2("Book what you need"), Div(*out, cls="pf-links"), P(f"We may earn a commission if you book through these links, at no cost to you. {partners_fine()}", cls="pf-hint"), cls="pf-book", id="pf-book") if out else ""
-
-
-def partners_fine() -> str:
-    return "Partners keep your booking, refunds and customer service."
-
-
-def _airport(where) -> str:
-    """The main airport of a destination the catalog knows, else "": no guessed code. Disneyland here is the California resort (planfacts.DISNEYLAND leaves out Paris, Tokyo, Walt Disney
-    World), which is Los Angeles to the catalog: publish.place_key, narrowed by F-194 so a bare "Disneyland" is no place, does not know that."""
-    key = publish.place_key(where) or ("la" if planfacts.place_for(where) is planfacts.DISNEYLAND else "")
-    return next((d.airports[0] for d in catalog.DESTINATIONS if d.key == key), "")
-
-
 TROUBLE = {"1": "We could not open the payment page just now. Nothing was charged. Try again in a moment.",
            "limit": "You have tried to pay several times in the last hour. Nothing was charged. Please wait a little and try again.", "off": "Plan it for me is not for sale here yet. Nothing was charged."}
 
@@ -294,7 +266,6 @@ def order_page(order, paid_back=False, trouble=""):
         body.append(Div(A(icon("calendar", 20, 2.4), "Open your trip", href=f"/trip/plan?trip={order['trip_id']}", cls="btn btn-primary pf-go", id="pf-open"), cls="pf-act"))
         if order["sample"]:
             body.append(P("This is a sample trip: this copy of GitAway has no AI key, so the days are placeholders.", role="status", cls="pf-note", id="pf-sample"))
-        body.append(_links(order))
         body.append(planview.checklist(planfacts.checklist(intake["where"], date.fromisoformat(intake["start"]), catalog.today()), planfacts.intro(intake["where"])))
     if status == "failed":
         body.append(P(f"Reference {order['id']}. ", legal.contact(), cls="pf-hint", id="pf-ref"))
@@ -391,20 +362,6 @@ def register(app):
             return RedirectResponse(f"{PATH}/{order_id}", status_code=303)
         url, why = await _checkout(request, found)
         return RedirectResponse(url or f"{PATH}/{order_id}?err={why}", status_code=303)
-
-    @app.get(PATH + "/{order_id}/go/{lane}")
-    def go(session, order_id: str, lane: str):
-        found = _mine(session, order_id)
-        if not found or lane not in LANES or found["status"] not in ("ready",) or not travelpayouts.marker():
-            return _gone()
-        intake_ = found["intake"]
-        start, end = date.fromisoformat(intake_["start"]), date.fromisoformat(intake_["end"])
-        trip = catalog.TripSearch(intake_["home"], intake_["home"], intake_["where"], (), start, end, intake_["adults"], tuple(intake_["kids"]), home=intake_["home"],
-                                  focus="disney" if planfacts.place_for(intake_["where"]) is planfacts.DISNEYLAND else "")      # the same search the other pages hand the partner links (F-195)
-        if lane == "flight" and not (intake_["home"] and _airport(intake_["where"])):
-            return _gone()
-        offer = SimpleNamespace(kind=lane, airport=_airport(intake_["where"]))
-        return RedirectResponse(travelpayouts.link_for(partners.get(LANES[lane][2]), offer, trip, found["id"]), status_code=302)
 
     @app.get("/sandbox/plan-for-me/{order_id}")
     def standin_get(session, order_id: str):

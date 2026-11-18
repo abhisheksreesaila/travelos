@@ -74,11 +74,8 @@ def test_the_prompt_tells_the_model_which_destinations_are_not_ours():
 
 # ---- the trip page says when a place cannot be planned -------------------------------------------------------------------------------------------------
 
-def _tahoe(client, marker=False):
-    from gitaway import affiliate
+def _tahoe(client):
     row, handle, owner = live_trip(place="Lake Tahoe, California", plan_to="")
-    if marker:
-        affiliate.set_marker(owner["user_id"], "555111")
     return without_bar(client.get(f"/trips/{row['slug']}").text)
 
 
@@ -96,8 +93,8 @@ def test_the_lede_names_the_place_the_post_is_about_never_los_angeles():
 
 
 def test_a_trip_with_no_booking_path_does_not_claim_anyone_earns_from_bookings(client):
-    page = _tahoe(client, marker=True)
-    assert "Flights booked from this trip" not in page
+    page = _tahoe(client)
+    assert "paid through Nuit" not in page
     assert re.search(r'id="who-earns"[^>]*>Nothing on this page can be booked, so nobody earns from it\.<', page)
 
 

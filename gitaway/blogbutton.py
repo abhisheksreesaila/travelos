@@ -1,7 +1,7 @@
 """F-191: the "Plan this trip on GitAway" button a creator pastes into their blog.
 
 Pure functions, no framework: the badge SVG (a stable public URL, no script, no tracking), the absolute link a reader taps, and the two things the creator copies (an HTML snippet and
-a plain link). The link is built on GITAWAY_PUBLIC_URL, never on the request's Host, and carries `via=<handle>` (F-184). The screens are gitaway/pages/blogbutton.py.
+a plain link). The link is built on GITAWAY_PUBLIC_URL, never on the request's Host. The screens are gitaway/pages/blogbutton.py.
 """
 
 from html import escape
@@ -26,7 +26,7 @@ def base_url() -> str:
 
 
 def trip_link(slug, handle) -> str:
-    return f"{base_url()}/trips/{quote(str(slug), safe='')}?via={quote(str(handle), safe='')}"
+    return f"{base_url()}/trips/{quote(str(slug), safe='')}"
 
 
 def badge_svg(dark=False) -> str:

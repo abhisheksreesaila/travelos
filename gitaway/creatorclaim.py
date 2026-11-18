@@ -23,7 +23,7 @@ from pathlib import Path
 
 from sqlalchemy import text
 
-from gitaway import affiliate, blogbutton, creatordraft as cd, importsource
+from gitaway import blogbutton, creatordraft as cd, howpaid, importsource
 from gitaway.hub import HubError
 
 UNCLAIMED = "*unclaimed*"      # the owner of a draft nobody has claimed (no sign-in id looks like this)
@@ -218,7 +218,7 @@ def outreach(person, title, link, captain) -> str:
             f"I turned your post into a trip so you can see how it looks. Nothing is public until you say so:\n\n{link}\n\n"
             "Three promises:\n"
             "1. It takes under a minute: one tap to publish, or edit first.\n"
-            f"2. Flights pay you: {affiliate.pays_you()}\n"
+            f"2. {howpaid.LINKS_YOURS}\n"
             "3. Every trip links back to your post.\n\n"
             "It is free, and you can take it down any time.\n\n"
             f"{captain}")

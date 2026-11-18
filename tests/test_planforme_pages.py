@@ -1,4 +1,4 @@
-"""F-193 Plan it for me: the screens, through the HTTP seam. The intake, who may order, the order's states, who may see it, the local stand-in checkout, the booking links, and the cards that
+"""F-193 Plan it for me: the screens, through the HTTP seam. The intake, who may order, the order's states, who may see it, the local stand-in checkout, and the cards that
 lead here. Stripe and the model are fakes (`planforme.CHECKOUT`, tests/creator_import_support.py `Model`); the whole flow runs once from the card to the trip on the calendar."""
 
 import re
@@ -7,7 +7,6 @@ from html import unescape
 import pytest
 
 from gitaway import ai, auth, planforme as pfm
-from gitaway.partners import travelpayouts
 from tests.creator_import_support import Model
 from tests.live_trips import live_trip
 from tests.test_members import addr, browser, invite
@@ -79,7 +78,7 @@ def test_with_a_stripe_key_there_is_no_stand_in_even_on_a_local_copy(client, mon
 
 
 def test_on_a_local_copy_the_stand_in_checkout_is_its_own_page_not_a_partners_sandbox(client):
-    """M5: `/sandbox/{partner}/{click}` (partners) was registered before this page and answered "Nothing here" for it, so the stand-in checkout was unreachable."""
+    """M5: a stand-in checkout address of the retired partners (`/sandbox/{partner}/{click}`) must not shadow this page: it answers "Nothing here" for it."""
     sign_in(client)
     o = order()
     r = client.get(f"/sandbox/plan-for-me/{o['id']}")
@@ -166,7 +165,7 @@ def test_only_the_buyer_opens_an_order_not_a_stranger_not_a_member_of_the_family
     invite(client, teammate, "editor")
     for who in (browser(client), browser(client)):
         sign_in(who, teammate)
-        for path in (f"/plan-for-me/{o['id']}", f"/plan-for-me/{o['id']}/status", f"/plan-for-me/{o['id']}/go/stay"):
+        for path in (f"/plan-for-me/{o['id']}", f"/plan-for-me/{o['id']}/status"):
             assert who.get(path).status_code == 404, path
         assert who.post(f"/plan-for-me/{o['id']}/pay", follow_redirects=False).status_code == 404
         assert who.get(f"/sandbox/plan-for-me/{o['id']}").status_code == 404
@@ -207,60 +206,16 @@ def test_the_status_route_is_what_the_page_polls(client):
 
 # ---- the stand-in checkout ---------------------------------------------------------------------------------------
 
-# ---- booking links -------------------------------------------------------------------------------------------------
+# ---- no booking links (F-297) --------------------------------------------------------------------------------------
 
-@pytest.fixture
-def ready(client, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
+def test_a_ready_order_sells_no_partner_links_and_the_old_link_addresses_go_to_the_way_in(client):
     sign_in(client)
-    return order(status="ready", trip_id="abc123def456")
-
-
-def test_the_flight_link_carries_our_marker_and_the_order_id_as_the_subid(client, ready):
-    r = client.get(f"/plan-for-me/{ready['id']}/go/flight", follow_redirects=False)
-    assert r.status_code == 302
-    assert r.headers["location"] == f"https://www.aviasales.com/search/SFO1203LAX150322?marker=801445.{ready['id']}&sub_id={ready['id']}"
-
-
-def test_the_stay_and_things_to_do_links_go_through_the_partner_links_call_with_the_order_id(client, ready, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tok")
-    monkeypatch.setenv("TRAVELPAYOUTS_TRS", "596534")
-    asked = []
-
-    def post(url, headers, body, timeout):
-        asked.append(body["links"][0])
-        return {"code": 200, "result": {"links": [{"code": "success", "partner_url": f"https://klook.tpx.lv/x{len(asked)}"}]}}
-    monkeypatch.setattr(travelpayouts, "_post", post)
-    travelpayouts._CACHE.clear()
-    stay = client.get(f"/plan-for-me/{ready['id']}/go/stay", follow_redirects=False)
-    todo = client.get(f"/plan-for-me/{ready['id']}/go/todo", follow_redirects=False)
-    assert (stay.headers["location"], todo.headers["location"]) == ("https://klook.tpx.lv/x1", "https://klook.tpx.lv/x2")
-    assert asked == [{"url": "https://www.klook.com/en-US/search/result/?query=Anaheim%20hotels", "sub_id": ready["id"]},
-                     {"url": "https://www.klook.com/en-US/destination/p50042790-disneyland-resort/", "sub_id": ready["id"]}]
-
-
-def test_the_order_page_draws_the_links_only_with_a_marker_and_a_flight_only_with_an_airport_we_know(client, ready, monkeypatch):
+    ready = order(status="ready", trip_id="abc123def456")
     html = client.get(f"/plan-for-me/{ready['id']}").text
-    assert all(f'id="pf-go-{lane}"' in html for lane in ("flight", "stay", "todo")) and 'rel="sponsored nofollow noopener"' in html and "We may earn a commission" in text_of(html)
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "")
-    quiet = client.get(f"/plan-for-me/{ready['id']}").text
-    assert "pf-book" not in quiet and client.get(f"/plan-for-me/{ready['id']}/go/stay").status_code == 404
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
-    uid, tenant, email = buyer()
-    paris = pfm.create_order(uid, tenant, email, {**pfm.read_intake(GOOD)[0], "where": "Paris, France"})
-    with pfm._db() as db:
-        from sqlalchemy import text
-        db.conn.execute(text("UPDATE plan_orders SET status = 'ready' WHERE id = :i"), {"i": paris["id"]})
-        db.conn.commit()
-    html = client.get(f"/plan-for-me/{paris['id']}").text
-    assert 'id="pf-go-stay"' in html and 'id="pf-go-flight"' not in html
-    assert client.get(f"/plan-for-me/{paris['id']}/go/flight").status_code == 404 and client.get(f"/plan-for-me/{ready['id']}/go/bogus").status_code == 404
-
-
-def test_no_link_before_the_trip_is_ready(client, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
-    sign_in(client)
-    assert client.get(f"/plan-for-me/{order(status='building')['id']}/go/stay").status_code == 404
+    assert "pf-book" not in html and "sponsored" not in html and "We may earn a commission" not in text_of(html)
+    for lane in ("flight", "stay", "todo"):
+        r = client.get(f"/plan-for-me/{ready['id']}/go/{lane}", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (303, "/plan/ask")
 
 
 # ---- the cards that lead here ------------------------------------------------------------------------------------

@@ -28,8 +28,9 @@ def test_the_offer_sells_the_outcome_with_everything_a_parent_needs_to_decide(cl
     t = text_of(html)
     assert re.search(r"<h1[^>]*>.*calm Disneyland trip.*kids", html, re.S)
     assert "$29 for the first 10 families, then $49" in t
-    for line in ("Day-by-day plan in your family's shared planner", "Ride order and rest breaks matched to your kids' ages and heights", "What to book and when", "Booking links"):
+    for line in ("Day-by-day plan in your family's shared planner", "Ride order and rest breaks matched to your kids' ages and heights", "What to book and when"):
         assert line in t, line
+    assert "Booking links" not in t
     assert "We just did Disneyland with our kids" in t and "I check every plan before it reaches you" in t
     assert pfm.PROMISE in t
     assert html.count('class="pf-q"') == 4

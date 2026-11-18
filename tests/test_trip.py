@@ -207,20 +207,6 @@ def test_the_sample_trip_in_another_place_keeps_what_the_reader_said():
     assert (t.home, t.focus, t.depart) == ("ORD", "disney", SAMPLE.depart)
 
 
-@pytest.mark.parametrize("adults,ages,expected", [
-    (2, (), (2, 0, 0)),
-    (2, (4, 7), (2, 2, 0)),
-    (2, (1,), (2, 0, 1)),
-    (2, (0, 3, 11), (2, 2, 1)),
-    (2, (12, 17), (4, 0, 0)),              # Aviasales: adults are 12 and over, children 2 to 11, infants under 2
-    (1, (0, 1), (1, 1, 1)),                # one lap infant per adult; the second is booked as a child with a seat
-])
-def test_the_party_is_split_the_way_aviasales_counts_it(adults, ages, expected):
-    t = catalog.TripSearch("SFO", "San Francisco", "Los Angeles", ("LAX",), date(2027, 3, 16), date(2027, 3, 20), adults, ages)
-    assert t.passengers == expected
-    assert sum(t.passengers) == t.travelers
-
-
 def test_an_imported_trip_keeps_its_name_and_zone_whatever_fields_the_search_has():
     """TripSearch gained fields (home, focus) after the party, and ImportedTrip adds its own after them: built by position, the title and the time zone landed in the wrong fields."""
     from datetime import datetime

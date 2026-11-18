@@ -1,6 +1,6 @@
-"""The captain's page (F-185): reports, creators, published trips, clicks, and what GitAway earns.
+"""The captain's page (F-185): reports, creators, published trips and the orders.
 
-GET  /admin                a summary, the reports, every creator with their trips (take down / restore), and the commission figures (moved here from /partners)
+GET  /admin                a summary, the reports, and every creator with their trips (take down / restore)
 POST /admin/takedown       hide a published trip and its public photos
 POST /admin/restore        bring it back
 POST /admin/seen           mark the reports up to an id read (F-196): the "N new" count shows on /admin, in the account menu and in the header until then
@@ -21,14 +21,12 @@ from fasthtml.common import A, Button, Div, Form, H1, H2, H3, Input, Label, Li, 
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, bookingjobs, catalog, community, creatordraft as cd, liteapi, members, partners, planforme as pfm, reports, session as ses, showcase, stats
+from gitaway import bookingjobs, catalog, community, creatordraft as cd, liteapi, members, planforme as pfm, reports, showcase, stats
 from gitaway.icons import icon
 from gitaway.layout import reading
 from gitaway.pages import creatorclaim as claims
-from gitaway.partners import failures, log
 
 GOAL = 150
-KLOOK_DAYS = 7    # how far back the "Klook links not tracked" count looks (F-195)
 logger = logging.getLogger(__name__)
 HEAD = (Link(rel="stylesheet", href="/assets/css/admin.css"), *claims.HEAD)
 
@@ -40,30 +38,6 @@ def admin_emails() -> set:
 def is_admin(session) -> bool:
     email = str((session or {}).get("email") or "").strip().lower()
     return bool(email) and email in admin_emails() and (session or {}).get("verified") == 1   # a Google address Google has not verified is not proof of who you are (members.after_sign_in sets the flag)
-
-
-def commission_summary(rows) -> list:
-    """[(partner name, clicks, booked, estimated commission cents)] for every partner that has a click, plus the totals row's numbers via sum()."""
-    out = []
-    for p in partners.PARTNERS:
-        mine = [r for r in rows if r["partner"] == p.key]
-        if mine:
-            booked = [r for r in mine if r["state"] == "booked"]
-            out.append((p.name, len(mine), len(booked), sum(r["commission_cents"] for r in booked)))
-    return out
-
-
-def plain_clicks(rows, days=7) -> dict:
-    """{lane: clicks} on plain links (no commission) in the last `days` days (F-198 review): what a program not yet connected loses, Klook's included where it was skipped."""
-    from datetime import datetime, timedelta, timezone
-    from gitaway.partners import registry
-    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-    paying = {"aviasales", "klook"} | registry.tracked_sites()
-    out = {}
-    for r in rows:
-        if r["clicked_at"] >= since and r["offer_id"].startswith(f"{r['lane']}-") and r["partner"] not in paying:
-            out[r["lane"]] = out.get(r["lane"], 0) + 1
-    return out
 
 
 def _button(action, slug, label, cls):
@@ -87,12 +61,9 @@ def _waiting(w):
               Div(_button("approve", w["slug"], "Approve", ""), _button("takedown", w["slug"], "Take down", "ad-danger"), cls="cc-acts"), cls="ad-trip", id=f"wait-{w['slug']}")
 
 
-def _creator(c, trips, clicks):
-    marker = affiliate.marker_of(c["owner_user"])
-    all_, own = clicks.get(c["handle"], (0, 0))
+def _creator(c, trips):
     return Li(Div(A(c["name"], href=f"/creators/{c['handle']}", cls="ad-link ad-name"),
-                  Span(f"marker {marker}" if marker else "no marker: GitAway's", cls="ad-chip"),
-                  Span(f"{(n := stats.readers_all_time(t['slug'] for t in trips))} reader{'s' if n != 1 else ''} · {all_} click{'s' if all_ != 1 else ''} from their trips, {own} with their marker · bookings: not reported yet", cls="ad-meta")),
+                  Span(f"{(n := stats.readers_all_time(t['slug'] for t in trips))} reader{'s' if n != 1 else ''}", cls="ad-meta")),
               Ul(*[_trip_row(t) for t in trips], cls="ad-trips") if trips else P("No trips.", cls="ad-meta"), cls="ad-creator", id=f"c-{c['handle']}")
 
 
@@ -177,22 +148,13 @@ def admin_page(drafted=()):
     people = community.real_creators()
     waiting = [w for w in community.waiting() if w["row"]]
     every = community.creators_all()
-    clicks = affiliate.clicks_by_creator()
     live = sum(len(c["trips"]) for c in people)
-    sheet, skipped = log.all_clicks()
-    summary = commission_summary(sheet)
-    total = sum(s[3] for s in summary)
     rep = reports.all_reports()
-    broken, why = failures.recent(KLOOK_DAYS)
-    plain = plain_clicks(sheet)
     orders = pfm.admin_rows()
     owed = pfm.refunds_due()
     pt = pfm.totals(orders, owed)
     searches = liteapi.searches_today()
-    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"), ("Estimated commission", catalog.money(total), "ad-commission"),
-             ("Klook links not tracked", str(broken), "ad-klook-failures"),
-             ("Plain links, no commission (7 days)", " · ".join(f"{lane} {n}" for lane, n in sorted(plain.items())) or "none", "ad-plain"),
-             ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
+    cards = (("Creators", f"{len(people)} of {GOAL}", "ad-goal"), ("Live trips", str(live), "ad-live"), ("Reports", str(len(rep)), "ad-reports"),              ("Plan it for me", f"{pt['paid']} paid · {catalog.money(pt['revenue_cents'])}", "ad-pfm"), ("Refunds due", f"{pt['refunds']} · {catalog.money(pt['refund_cents'])}", "ad-refunds"),
              ("Agent cost", _dollars(pt["ai_cost_micros"]), "ad-pfm-cost"),
              ("LiteAPI", f"{liteapi.mode()} · {searches} search{'es' if searches != 1 else ''} today", "ad-liteapi"),     # F-220: the key's kind, never the key
              ("Paid, not booked (10+ min)", str(bookingjobs.stuck_count()), "ad-stuck"))     # F-274: a guest paid in LiteAPI's form and the stay is not booked yet: the worker keeps trying (D-848)
@@ -200,9 +162,6 @@ def admin_page(drafted=()):
     return reading("Admin", Div(
         Div(H1("Admin", cls="ad-title"),
             Div(*[Div(Span(label, cls="ad-k"), Span(value, cls="ad-v", id=i)) for label, value, i in cards], cls="ad-cards"),
-            P(f"{skipped} {'family' if skipped == 1 else 'families'} could not be read, so {'its' if skipped == 1 else 'their'} clicks are not in these totals.", role="alert", cls="ad-meta", id="ad-skipped") if skipped else "",
-            P(f"{broken} Klook link{'s' if broken != 1 else ''} could not be tracked in the last {KLOOK_DAYS} days (latest: {why}). Those clicks went to the plain Klook link and lost their SubID: check TRAVELPAYOUTS_TRS "
-              "and the token on Railway.", role="alert", cls="ad-meta", id="ad-klook-last") if broken else "",
             Div(Span(cls="ad-bar-fill", style=f"width:{min(100, round(100 * len(people) / GOAL))}%"), cls="ad-bar", role="img", aria_label=f"{len(people)} of {GOAL} creators"),
             Section(H2("Plan it for me orders"), P("Refunds are yours, by hand in Stripe: a failed order that was paid, and a payment that paid an order twice or one that is gone, say Refund due.", cls="ad-meta"),
                     Ul(*[_owed(p) for p in owed], *[_order(o) for o in orders], cls="ad-list", id="ad-orders") if orders or owed else P("No orders yet.", cls="ad-meta", id="ad-no-orders"), cls="ad-sec"),
@@ -213,12 +172,8 @@ def admin_page(drafted=()):
             Section(H2("Reports", Span(f"{fresh} new", cls="ad-badge", id="ad-new") if fresh else ""),
                     Form(Input(type="hidden", name="upto", value=str(rep[0]["id"])), Button("Mark all as read", type="submit", cls="btn btn-sm"), action="/admin/seen", method="post", cls="ad-inline", id="ad-seen") if fresh else "", Ul(*[_report(r) for r in rep], cls="ad-list", id="ad-report-list") if rep else P("No reports.", cls="ad-meta", id="ad-no-reports"), cls="ad-sec"),
             Section(H2("Creators and trips"),
-                    Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True), clicks) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
+                    Ul(*[_creator(c, community.rows(kind="scrapbook", owner=c["owner_user"], hidden=True)) for c in every], cls="ad-list", id="ad-creators") if every else P("Nobody has published yet.", cls="ad-meta"),
                     cls="ad-sec"),
-            Section(H2("Commission"),
-                    P("Estimates from the sandbox and from clicks (flights about 1.1%, stays and cars about 5%); the real figures come with the Travelpayouts statistics, which are not connected yet.", cls="ad-meta"),
-                    Ul(*[Li(Span(n, cls="ad-name"), Span(f"{c} click{'s' if c != 1 else ''} · {b} booked · {catalog.money(cents)}", cls="ad-meta")) for n, c, b, cents in summary], cls="ad-list", id="ad-partners") if summary
-                    else P("No partner clicks yet.", cls="ad-meta"), cls="ad-sec"),
             cls="ad-card"), id="admin", cls="ad-stage"), wide=True, head=HEAD)
 
 

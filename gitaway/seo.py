@@ -15,7 +15,7 @@ from sqlalchemy import text
 from gitaway import blogbutton, community, creatordraft
 
 STATIC = ("/", "/guides", "/guides/make", "/privacy", "/terms", "/trust")      # the pages that exist in both modes and say nothing private
-DISALLOW = ("/admin", "/claim/", "/go/", "/creators/import", "/report")      # the captain's page, a claim link, the partner redirect, a creator's private drafts, the report form
+DISALLOW = ("/admin", "/claim/", "/creators/import", "/report")      # the captain's page, a claim link, a creator's private drafts, the report form
 
 
 def imported(slug) -> bool:

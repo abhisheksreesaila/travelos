@@ -1,8 +1,9 @@
-"""The family's partner clicks and simulated bookings (autopilot M2/M3), one row per click on a "Book on <partner>" link.
+"""The family's old partner clicks and simulated bookings (autopilot M2/M3), one row per click on a "Book on <partner>" link. Nothing writes here any more (F-297, D-971: no affiliate links);
+the table stays so the rows already there are kept and the forget-a-person script still clears them.
 
 Part of the family database (gitaway.familydb appends PARTNER_TABLES to its FAMILY_TABLES; a new table needs no migration). `state` is
 "clicked" until a sandbox booking completes it ("booked"). `sub_id` is the Travelpayouts SubID sent with the click: a short hash of the
-family plus the place, dates and lane, never a name or an address. Written only by gitaway/partners/log.py.
+family plus the place, dates and lane, never a name or an address.
 """
 
 

@@ -4,8 +4,7 @@
 
 Counts every <script src> on the page wherever it comes from and every inline script. Since cover v3 (D-380) the page loads no 3D world, so there
 is nothing else: a page that names a world again (data-world) has it counted with everything it imports. A script from another site is counted
-from EXTERNAL, measured once; one that is not there stops the count (ValueError), so the budget never skips a script silently. The Travelpayouts
-Drive script is off in the tests' settings; switched on (TRAVELPAYOUTS_DRIVE_ID) it is one more external script to measure and add.
+from EXTERNAL, measured once; one that is not there stops the count (ValueError), so the budget never skips a script silently.
 tests/test_cover_budget.py holds the budget; this prints the table.
 """
 import gzip

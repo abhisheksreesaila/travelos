@@ -15,12 +15,13 @@ Written in plain words, never as a certification. Evidence, as of F-292 (file:li
   sign-in   "Google or a passkey ... no password": gitaway/pages/signin.py (Google and passkey buttons, "No password to remember"), gitaway/passkeys.py:4 (only the public key is stored);
             no password field or hash exists in auth.py, passkeys.py, members.py or the sign-in page (tests/test_trust.py).
   scripts   (pages/legal.py "See it from above" and "Resend" entries say what each outside host gets; the payment form also loads Stripe, hCaptcha and Amazon Pay: gitaway/csp.py)
-            "no analytics service ... the only scripts from other sites": tests/test_no_cdn_scripts.py (every page loads its own scripts; the allow-list is Travelpayouts Drive); the payment
-            form (liteapi.py:53); assets/js/aerial.js:10 `HOSTS` (unpkg.com for MapLibre, cdn.jsdelivr.net for Cesium, loaded only after the "See it from above" tap) and its map tiles
-            (OpenFreeMap; Google only with GOOGLE_MAPS_API_KEY); gitaway/pages/home.py:24-30 `_drive`, Travelpayouts' site-verification script on the signed-out front page only, only when
-            TRAVELPAYOUTS_DRIVE_ID is set. "No ad trackers" is NOT claimed: Drive is an affiliate partner's script and this page does not argue what it is (D-944).
+            "no analytics service ... the only scripts from other sites": tests/test_no_cdn_scripts.py (every page loads its own scripts; the allow-list is empty since F-297 removed the
+            Travelpayouts Drive tag); the payment form (liteapi.py:53); assets/js/aerial.js:10 `HOSTS` (unpkg.com for MapLibre, cdn.jsdelivr.net for Cesium, loaded only after the "See it from
+            above" tap) and its map tiles (OpenFreeMap; Google only with GOOGLE_MAPS_API_KEY). "No advertising or affiliate tracker" is claimed since that tag went (D-971).
+  paid      "GitAway has no affiliate links ... paid through Nuitée (LiteAPI)": F-297 removed every Travelpayouts, Aviasales and Klook path (tests/test_retired.py holds the old /go, /book and
+            /sandbox addresses to redirects, tests/test_no_affiliate.py that no page, script or setting names one); the words are gitaway/howpaid.py `PAID`.
   counts    "reader counts ... a short code from a random value thrown away each day, no cookie": gitaway/stats.py:1-9 and `_salt_of` (:44), `searcher` (:70): the salt lives in memory
-            for the day; no cookie is set there (`ga_via` is another thing: gitaway/affiliate.py, only when a creator's trip is tapped, and the privacy page says so).
+            for the day; no cookie is set there, and GitAway sets none for tracking anywhere (the one cookie is the sign-in).
   email     "a booking email never writes the address or name to a log": gitaway/bookingmail.py:197-241 log the booking id only, no exception text (a server's refusal repeats the
             address); fh-saas's `send_email`, which logs the recipient, is not used (module docstring). Tests: tests/test_bookingmail.py, tests/test_trust.py.
   review    "money, sign-in and personal-data changes get a separate security review before they go live": true of the process (docs/plan.md tickets F-274, F-285, F-288 carry the
@@ -30,7 +31,7 @@ Written in plain words, never as a certification. Evidence, as of F-292 (file:li
 
 from fasthtml.common import A, Div, H1, H2, P, Section
 
-from gitaway import matrixbook as mb, planforme
+from gitaway import howpaid, matrixbook as mb, planforme
 from gitaway.layout import reading
 from gitaway.pages import legal
 
@@ -50,9 +51,9 @@ def claims() -> list[tuple[str, str]]:
          f"within {mb.PURGE_GUEST} days. LiteAPI keeps its own record of the booking under its own rules."),
         ("Signing in", "You sign in with Google, or with a passkey (Face ID or your device's lock). GitAway has no password for you to choose, so there is none to store or lose."),
         ("Scripts and tracking",
-         "GitAway uses no analytics service. Its pages load their scripts from GitAway itself, apart from these: LiteAPI's payment form (with its card processor Stripe, Stripe's hCaptcha check and an Amazon Pay button), only when you pay; the map libraries and map pictures "
-         "behind \"See it from above\", only after you tap it; and, only while it is switched on and only on the front page you see signed out, Travelpayouts' site-verification script, "
-         "our affiliate partner's. The privacy policy says what each one gets."),
+         "GitAway uses no analytics service, no advertising tracker and no affiliate script. Its pages load their scripts from GitAway itself, apart from these: LiteAPI's payment form (with its card processor Stripe, Stripe's hCaptcha check and an Amazon Pay button), only when you pay; the map libraries and map pictures "
+         "behind \"See it from above\", only after you tap it. The privacy policy says what each one gets."),
+        ("How GitAway is paid", howpaid.PAID + " Nothing you press here sends you to another site that pays us for the click."),
         ("Counting visitors",
          "Readers of a published trip, and a signed-out visitor's daily searches, are counted from a short code made from a random value that is thrown away each day. It cannot be turned back "
          "into a person, and it needs no cookie."),

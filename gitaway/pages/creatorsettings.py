@@ -1,18 +1,14 @@
-"""A creator's affiliate marker (F-184): GET and POST /creators/settings.
+"""A creator's blog buttons: GET /creators/settings (F-191; it held the affiliate marker too until F-297 removed it, D-971).
 
-A person pastes their own Travelpayouts marker (digits only) and the flight links from their published trips pay them (gitaway/affiliate.py). Signed-in only; it is the
-person's own setting, not a family's, so every role may save it (gitaway/access.py). Registered before /creators/<handle>, which would otherwise take "settings" for a name.
+Signed-in only. One "Put this on your blog" panel per live trip of the creator's (pages/blogbutton.py). Registered before /creators/<handle>, which would otherwise take "settings" for a name.
 """
 
 from urllib.parse import quote
 
-from fasthtml.common import A, Button, Div, Form, H1, Input, Label, Link, P, Section, Span
-from fasthtml.core import FtResponse
+from fasthtml.common import A, H1, Link, P, Div, Section
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, community, session as ses, v2pages
-from gitaway.community import HubError
-from gitaway.icons import icon
+from gitaway import community, howpaid, session as ses, v2pages
 from gitaway.layout import page
 from gitaway.pages import blogbutton
 
@@ -20,22 +16,12 @@ PATH = "/creators/settings"
 HEAD = (Link(rel="stylesheet", href="/assets/css/report.css"), *v2pages.HEAD)
 
 
-def settings_page(owner, *, value=None, error="", saved=False):
-    marker = affiliate.marker_of(owner) if value is None else value
+def settings_page(owner):
     creator = community.creator_of(owner)
-    form = Form(
-        Label(Span("Your Travelpayouts marker", cls="rp-lab"),
-              Span("Digits only, like 801445. In Travelpayouts it is under Profile. Leave it empty to use GitAway's.", cls="rp-hint", id="st-hint"),
-              Input(type="text", name="marker", id="st-marker", value=marker, inputmode="numeric", maxlength="10", autocomplete="off", aria_describedby="st-hint", cls="rp-input")),
-        P(error, role="alert", id="st-error", cls="rp-error") if error else "",
-        P("Saved.", role="status", id="st-saved", cls="rp-ok") if saved else "",
-        Div(Button(icon("check", 20, 2.4), "Save", type="submit", id="st-save", cls="btn btn-primary"), cls="rp-actions"),
-        action=PATH, method="post", id="st-form", cls="rp-form card")
     blogs = [blogbutton.panel(r["slug"], creator["handle"], f"bb{i}") for i, r in enumerate(community.rows(owner=owner))] if creator else []   # F-191: the blog button of each live trip
-    paying = affiliate.pays_you(bool(marker))
-    return page("Your marker", Section(Div(H1("Your affiliate marker"), P(paying, cls="rp-lede", id="st-says"), cls="rp-top"), form, *blogs,
-                                       P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Your stats", href="/creators/stats"), " · ", A("Turn a post into a trip", href="/creators/import"), cls="rp-more") if creator
-                                       else P(A("Turn a post into a trip", href="/creators/import"), cls="rp-more"), cls="rp ga-wrap"), head=HEAD, v2=True, quiet=True)
+    return page("Your blog button", Section(Div(H1("Your blog button"), P(howpaid.LINKS_YOURS, cls="rp-lede", id="st-says"), cls="rp-top"), *blogs,
+                                            P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Your stats", href="/creators/stats"), " · ", A("Turn a post into a trip", href="/creators/import"), cls="rp-more") if creator
+                                            else P(A("Turn a post into a trip", href="/creators/import"), cls="rp-more"), cls="rp ga-wrap"), head=HEAD, v2=True, quiet=True)
 
 
 def register(app):
@@ -45,18 +31,3 @@ def register(app):
         if not me:
             return RedirectResponse(f"/signin?next={quote(PATH, safe='/')}&intent=publish", status_code=303)
         return settings_page(me.id)
-
-    @app.post(PATH)
-    async def settings_post(session, request):
-        me = ses.current_traveler(session)
-        if not me:
-            return RedirectResponse(f"/signin?next={quote(PATH, safe='/')}&intent=publish", status_code=303)
-        from gitaway import reports
-        if not reports.same_site(request):
-            return FtResponse(settings_page(me.id, error="That did not come from GitAway. Open this page again and save."), status_code=403)
-        value = str((await request.form()).get("marker") or "")
-        try:
-            saved = affiliate.set_marker(me.id, value)
-        except HubError as e:
-            return FtResponse(settings_page(me.id, value=value.strip(), error=str(e)), status_code=422)
-        return settings_page(me.id, value=saved, saved=True)

@@ -259,14 +259,14 @@ def captain(client, monkeypatch):
 
 
 def numbers(html):
-    return {k: unescape(re.search(rf'id="{k}"[^>]*>([^<]*)<', html).group(1)) for k in ("ad-goal", "ad-live", "ad-reports", "ad-commission")}
+    return {k: unescape(re.search(rf'id="{k}"[^>]*>([^<]*)<', html).group(1)) for k in ("ad-goal", "ad-live", "ad-reports")}
 
 
 def test_the_summary_counts_creators_toward_150_live_trips_and_reports(captain, trip):
     row, _, _ = trip
     live_trip("lee@example.com", "Lee Park", "Two days in San Diego")
     send(captain, row["slug"])
-    assert numbers(captain.get("/admin").text) == {"ad-goal": "2 of 150", "ad-live": "2", "ad-reports": "1", "ad-commission": "$0"}
+    assert numbers(captain.get("/admin").text) == {"ad-goal": "2 of 150", "ad-live": "2", "ad-reports": "1"}
 
 
 def test_reports_are_listed_newest_first_with_reason_note_and_reply_address(captain, trip):
@@ -280,16 +280,10 @@ def test_reports_are_listed_newest_first_with_reason_note_and_reply_address(capt
     assert f'href="/trips/{row["slug"]}"' in html
 
 
-def test_each_creator_shows_their_marker_and_clicks_from_their_trips(captain, trip):
-    from gitaway import affiliate
-    _, handle, owner = trip
-    html = captain.get("/admin").text
-    assert "no marker: GitAway&#x27;s" in html or "no marker: GitAway's" in unescape(html)
-    affiliate.set_marker(owner["user_id"], "555111")
-    affiliate.log_click(handle, "aviasales", "flight", True)
-    affiliate.log_click(handle, "klook", "stay", False)
+def test_each_creator_shows_their_readers_and_no_marker_or_clicks(captain, trip):
     html = unescape(captain.get("/admin").text)
-    assert "marker 555111" in html and "2 clicks from their trips, 1 with their marker · bookings: not reported yet" in html
+    assert "0 readers" in html
+    assert "marker" not in html and "from their trips" not in html and 'id="ad-commission"' not in html
 
 
 # ---- take down and restore -----------------------------------------------------------------------------------------
@@ -361,43 +355,4 @@ def test_a_creator_with_every_trip_down_has_no_public_page(captain, trip):
     assert f'href="/creators/{handle}"' in captain.get("/admin").text   # the admin still lists them
 
 
-# ---- the commission moved here -------------------------------------------------------------------------------------
-
-def test_commission_is_on_the_admin_page_and_no_longer_on_the_family_page(client, monkeypatch):
-    from tests.test_partners import complete, nokeys as _nokeys  # noqa: F401
-    for name in ("TRAVELPAYOUTS_MARKER", "TRAVELPAYOUTS_TOKEN", "TRAVELPAYOUTS_TRS"):
-        monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
-    monkeypatch.setenv("GITAWAY_ADMIN_EMAILS", "ari.rivera@example.com")
-    sign_in(client, "ari")
-    for offer in ("hif1", "hih1", "hic1"):
-        assert complete(client, offer).status_code == 303
-    family = unescape(client.get("/partners").text)
-    assert "estimated commission" not in family.lower() and "$180.90" not in family and "$11.70" not in family and "$146" not in family
-    html = unescape(client.get("/admin").text)
-    assert numbers(html)["ad-commission"] == "$180.90"
-    text_ = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
-    assert "Aviasales 1 click · 1 booked · $11.70" in text_ and "Klook 2 clicks · 2 booked · $169.20" in text_
-
-
-def test_a_family_database_that_cannot_be_read_is_logged_and_counted_on_the_admin_page(captain, trip, monkeypatch, caplog):
-    """F-182 (reviewer Should 5): the commission total silently left out an unreadable family. It still renders, but says how many were skipped and logs a content-free warning."""
-    from gitaway import familydb
-    real = familydb.ensure_schema
-    hit = []
-
-    def broken(db, tenant_id):
-        import inspect
-        if not hit and any(f.function == "all_clicks" for f in inspect.stack()):
-            hit.append(tenant_id)
-            raise RuntimeError("secret detail: ari@example.com")
-        return real(db, tenant_id)
-    monkeypatch.setattr(familydb, "ensure_schema", broken)
-    with caplog.at_level("WARNING", logger="gitaway.partners.log"):
-        html = captain.get("/admin").text
-    assert re.search(r'id="ad-skipped"[^>]*>1 family could not be read, so its clicks are not in these totals\.<', html)
-    warns = [r.getMessage() for r in caplog.records if r.name == "gitaway.partners.log"]
-    assert warns == [f"all_clicks: skipped family {hit[0]} (RuntimeError)"] and "ari@example.com" not in "".join(warns)
-    caplog.clear()
-    monkeypatch.setattr(familydb, "ensure_schema", real)
-    assert 'id="ad-skipped"' not in captain.get("/admin").text
+# ---- the summary ---------------------------------------------------------------------------------------------------

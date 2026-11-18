@@ -78,7 +78,6 @@ def words(html):
     ("HomeAway", "Vrbo", "https://www.vrbo.com/trips"),
     ("Klook", "Klook", "https://www.klook.com/bookings/"),
     ("GetYourGuide", "GetYourGuide", "https://www.getyourguide.com/"),
-    ("Aviasales", "Aviasales", "https://www.aviasales.com/faq/i-want-to-return-or-exchange-my-ticket-how-do-i-do-that"),
     ("Enterprise Rent-A-Car", "Enterprise", "https://www.enterprise.com/en/reserve/view-modify-cancel.html"),
     ("Hertz", "Hertz", "https://www.hertz.com/us/en"),
     ("Avis", "Avis", "https://www.avis.com/en/reservation/view-modify-cancel"),
@@ -103,11 +102,11 @@ def test_unknown_partners_have_no_button():
     assert manage.find("Expediaa") is None      # whole words only
 
 
-def test_a_flight_from_aviasales_is_changed_with_the_airline_and_a_car_with_its_company():
+def test_a_flight_booked_elsewhere_is_changed_with_the_airline_and_a_car_with_its_company():
     leg = ti.Leg("Alaska Airlines", "AS 1", "SFO", "RNO", datetime(2026, 12, 19, 8), datetime(2026, 12, 19, 9))
     assert manage.for_booking("leg", leg, "Aviasales") == ("Aviasales", manage.SITES["alaska"])
     odd = ti.Leg("Tiny Air", "TA 1", "SFO", "RNO", datetime(2026, 12, 19, 8), datetime(2026, 12, 19, 9))
-    assert manage.for_booking("leg", odd, "Aviasales") == ("Aviasales", manage.SITES["aviasales"])
+    assert manage.for_booking("leg", odd, "Aviasales") == ("Aviasales", None)      # Aviasales is no longer a partner of ours: its name is said, no button
     car = ti.Rental("Hertz", "RNO", datetime(2026, 12, 19, 10), "RNO", datetime(2026, 12, 26, 10))
     assert manage.for_booking("pickup", car, "") == ("Hertz", manage.SITES["hertz"])
     assert manage.for_booking("pickup", car, "Expedia") == ("Expedia", manage.SITES["expedia"])      # booked through Expedia: changed there

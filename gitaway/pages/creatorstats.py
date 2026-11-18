@@ -1,7 +1,6 @@
 """A creator's stats (F-192): GET /creators/stats.
 
-The signed-in creator's own numbers, per published trip and in total, for the last 7 days, 30 days or all time (`?w=7|30|all`, plain links): readers, forks, "Plan this trip" taps,
-partner clicks from their trips and whose marker was on them. No money. Signed out goes to sign-in; someone who has not published sees how to start. Registered before
+The signed-in creator's own numbers, per published trip and in total, for the last 7 days, 30 days or all time (`?w=7|30|all`, plain links): readers, forks, "Plan this trip" taps. No money. Signed out goes to sign-in; someone who has not published sees how to start. Registered before
 /creators/<handle>, which would otherwise take "stats" for a name.
 """
 
@@ -52,19 +51,13 @@ def stats_page(owner, w="30"):
         return page("Your stats", Section(Div(H1("Your stats"), P("Stats start with your first published trip. Turn a post into a trip, publish it, and the readers, forks and taps show up here.", cls="cs-lede"),
                                               A(icon("note", 20, 2.2), "Turn a post into a trip", href="/creators/import", cls="btn btn-primary"), cls="cs-top"),
                                           cls="cs ga-wrap", id="cs-empty"), head=HEAD, v2=True, quiet=True)
-    t, c = r["total"][w], r["clicks"]
-    own, all_ = c[f"own_{w}"], c[w]
+    t = r["total"][w]
     chips = Div(*[A(LABELS[k], href=f"{PATH}?w={k}", aria_current="true" if k == w else None, cls="cs-chip") for k in stats.WINDOWS], cls="cs-chips", role="group", aria_label="Time range")
-    if not all_:
-        marker = "No one has tapped a Book button from your trips in this time."
-    else:
-        marker = f"{plural(all_, 'partner click')} from your trips: {own} with your marker (flights), {all_ - own} through GitAway's (stays and things to do)."
     return page("Your stats", Section(
         Div(H1("Your stats"), P(f"How your trips did in {SAYS[w]}. Readers are counted once a day each, with no cookie and nothing kept about them.", cls="cs-lede"), cls="cs-top"), chips,
-        Div(figure(t["views"], "readers", "cs-readers"), figure(t["forks"], "forks", "cs-forks"), figure(t["plans"], "Plan this trip taps", "cs-taps"), figure(all_, "partner clicks", "cs-clicks"), cls="cs-total card", id="cs-total"),
-        P(marker, cls="cs-says", id="cs-marker"),
-        Section(H2("Your trips"), Ul(*[trip_card(x, w) for x in r["trips"]], cls="cs-list"), P("Partner clicks are counted for you, not per trip: the link a family follows remembers whose trip it came from, not which one.", cls="cs-note"), cls="cs-trips"),
-        P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Marker and links", href="/creators/settings"), " · ", A("How readers are counted", href="/privacy"), cls="cs-more"),
+        Div(figure(t["views"], "readers", "cs-readers"), figure(t["forks"], "forks", "cs-forks"), figure(t["plans"], "Plan this trip taps", "cs-taps"), cls="cs-total card", id="cs-total"),
+        Section(H2("Your trips"), Ul(*[trip_card(x, w) for x in r["trips"]], cls="cs-list"), cls="cs-trips"),
+        P(A("Your creator page", href=f"/creators/{creator['handle']}"), " · ", A("Blog button", href="/creators/settings"), " · ", A("How readers are counted", href="/privacy"), cls="cs-more"),
         cls="cs ga-wrap"), head=HEAD, v2=True, quiet=True)
 
 

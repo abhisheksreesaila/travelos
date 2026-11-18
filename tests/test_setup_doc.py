@@ -1,4 +1,4 @@
-"""F-182 (reviewer Must 1): every environment variable the app reads is in docs/setup.md. A live site without TRAVELPAYOUTS_MARKER 404s every /go link (every Book button dead) and nothing said so.
+"""F-182 (reviewer Must 1): every environment variable the app reads is in docs/setup.md. A live site without LITEAPI_KEY had no trip matrix and nothing said so.
 Names built with an f-string (GITAWAY_AI_PROVIDER_<JOB>) are checked by their prefix."""
 
 import ast
@@ -35,5 +35,5 @@ def test_every_environment_variable_the_app_reads_is_in_the_setup_doc():
 
 def test_the_scan_sees_the_variables_that_were_missing():
     names = _names()
-    for must in ("TRAVELPAYOUTS_MARKER", "TRAVELPAYOUTS_TRS", "TRAVELPAYOUTS_TOKEN", "KLOOK_FALLBACK_URL", "ANTHROPIC_API_KEY", "GITAWAY_ADMIN_EMAILS", "GITAWAY_CREATOR_IMPORT_SITE_LIMIT", "GITAWAY_AI_PROVIDER_<JOB>"):
+    for must in ("LITEAPI_KEY", "ANTHROPIC_API_KEY", "GITAWAY_ADMIN_EMAILS", "GITAWAY_CREATOR_IMPORT_SITE_LIMIT", "GITAWAY_AI_PROVIDER_<JOB>"):
         assert must in names, must

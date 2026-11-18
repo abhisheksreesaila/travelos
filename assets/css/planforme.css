@@ -62,10 +62,6 @@
 @keyframes pf-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .pf-step.is-now .pf-dot { animation: none; } }
 
-.pf-book { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 1.25rem; background: var(--card-solid); box-shadow: var(--sh1); }
-.pf-book h2 { font-size: 1.25rem; font-weight: 650; }
-.pf-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.pf-link { flex: 1 1 9rem; }
 
 /* the cards that lead here: a creator's trip page and the signed-out landing */
 .pf-card { display: grid; gap: 0.75rem; padding: 1.25rem; border-radius: 1.25rem; background: var(--card-solid); box-shadow: var(--sh2); max-width: 46rem; margin: 1.5rem auto; }

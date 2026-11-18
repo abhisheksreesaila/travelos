@@ -26,8 +26,6 @@ def test_the_badge_keeps_its_own_stricter_policy(client):
     assert r.headers["referrer-policy"] == "same-origin"
 
 
-def test_the_landing_keeps_its_external_travelpayouts_script_and_sets_no_script_policy(client, monkeypatch):
-    monkeypatch.setenv("TRAVELPAYOUTS_DRIVE_ID", "123456")
-    r = client.get("/")
-    assert '<script src="https://tp-em.com/MTIzNDU2.js?t=123456" async' in r.text
-    assert "script-src" not in r.headers["content-security-policy"] and "default-src" not in r.headers["content-security-policy"]
+def test_the_landing_sets_no_script_policy(client):
+    policy = client.get("/").headers["content-security-policy"]
+    assert "script-src" not in policy and "default-src" not in policy

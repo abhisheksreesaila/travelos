@@ -20,7 +20,7 @@ from fasthtml.core import FtResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import RedirectResponse
 
-from gitaway import affiliate, ai, creatorclaim as cc, creatordraft as cd, importsource, reports, session as ses, showcase, v2pages
+from gitaway import ai, howpaid, creatorclaim as cc, creatordraft as cd, importsource, reports, session as ses, showcase, v2pages
 from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.itinerary_view import HEAD as VIEW_HEAD, itinerary_body
@@ -151,7 +151,7 @@ def _claim_bar(token, name, domain, error, note=""):
                       Button(icon("check", 24, 2.8), "This is my post — publish it", type="submit", name="do", value="publish", id="cl-publish", cls="btn btn-primary cl-publish"),
                       Button(icon("note", 20, 2.4), "Edit first", type="submit", name="do", value="edit", id="cl-edit", cls="btn cl-editbtn"),
                       P(note, role="note", cls="cl-hint", id="cl-held") if note else "",
-                      P(f"Publishing says this is your own post. {affiliate.pays_you()} The trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions")))
+                      P(f"Publishing says this is your own post. {howpaid.LINKS_YOURS} The trip links back to your post.", cls="cl-hint"), action=f"/claim/{token}", method="post", cls="cl-actions")))
 
 
 def _claim_page(token, d, error="", session=None):

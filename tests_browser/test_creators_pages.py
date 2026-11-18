@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import expect
 
-from gitaway import affiliate, community
+from gitaway import community
 from tests.live_trips import live_trip
 from tests_browser.helpers import DESKTOP, PHONE
 
@@ -115,26 +115,6 @@ def test_text_pasted_before_signing_in_is_still_there_after(visitor, base_url, v
     expect(page.locator("#ci-text")).to_have_value("")      # kept once only
 
 
-# ---- F-184: the marker ---------------------------------------------------------------------------------------------
-
-@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
-def test_a_creator_saves_their_marker(visitor, base_url, viewport):
-    page = visitor(viewport, "maya@example.com").new_page()
-    page.goto(f"{base_url}/creators/settings")
-    assert overflow(page) <= 1
-    if viewport is PHONE:
-        assert not too_small(page, "main .btn, main input, main a")
-    page.fill("#st-marker", "55x")
-    tap(page, viewport, page.locator("#st-save"))
-    expect(page.locator("#st-error")).to_contain_text("digits only")
-    shot(page, f"marker-error-{viewport['width']}", full=False)
-    page.fill("#st-marker", "555111")
-    tap(page, viewport, page.locator("#st-save"))
-    expect(page.locator("#st-saved")).to_have_text("Saved.")
-    expect(page.locator("#st-says")).to_contain_text("Flights booked from your trips carry your Travelpayouts marker")
-    shot(page, f"marker-{viewport['width']}", full=False)
-
-
 # ---- F-185: report and the captain's page ----------------------------------------------------------------------------
 
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
@@ -142,7 +122,7 @@ def test_a_stranger_reports_a_trip_from_its_page(visitor, base_url, viewport):
     row, _, _ = live_trip(photo=True)
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/trips/{row['slug']}")
-    expect(page.locator("#who-earns")).to_have_text("Bookings from this trip support GitAway.")
+    expect(page.locator("#who-earns")).to_have_text("Nobody earns from this page: GitAway has no affiliate links. A hotel or flight booked from it is paid through Nuitée (LiteAPI).")
     shot(page, f"trip-{viewport['width']}")
     tap(page, viewport, page.locator("#report-this"))
     page.wait_for_url("**/report?trip=**")
@@ -167,7 +147,6 @@ def community_reports():
 @pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=IDS)
 def test_the_captain_reads_a_report_and_takes_the_trip_down_and_back(visitor, base_url, viewport):
     row, handle, owner = live_trip(photo=True)
-    affiliate.set_marker(owner["user_id"], "555111")
     from gitaway import reports
     reports.add("trip", row["slug"], "copyright", "These photos are mine.", "mia@example.com", "", "203.0.113.7")
     stranger = visitor(viewport).new_page()
@@ -176,7 +155,7 @@ def test_the_captain_reads_a_report_and_takes_the_trip_down_and_back(visitor, ba
     assert overflow(page) <= 1
     expect(page.locator("#ad-goal")).to_have_text("1 of 150")
     expect(page.locator("#ad-report-list")).to_contain_text("These photos are mine.")
-    expect(page.locator(f"#c-{handle}")).to_contain_text("marker 555111")
+    expect(page.locator(f"#c-{handle}")).to_contain_text("readers")
     if viewport is PHONE:
         assert not too_small(page, "main .btn, main a.ad-link")
     shot(page, f"admin-{viewport['width']}")

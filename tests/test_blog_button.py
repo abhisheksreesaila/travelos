@@ -34,17 +34,17 @@ def box(html, name, uid="bb"):
 
 def test_the_snippet_is_one_plain_link_around_one_picture_with_no_script():
     s = blogbutton.html_snippet("three-easy-days-a1b2c3", "maya-chen")
-    assert s == ('<a href="https://gitaway.me/trips/three-easy-days-a1b2c3?via=maya-chen" target="_blank" rel="noopener">'
+    assert s == ('<a href="https://gitaway.me/trips/three-easy-days-a1b2c3" target="_blank" rel="noopener">'
                  '<picture><source media="(prefers-color-scheme: dark)" srcset="https://gitaway.me/badge/plan-this-trip-dark.svg">'
                  '<img src="https://gitaway.me/badge/plan-this-trip.svg" alt="Plan this trip on GitAway" width="248" height="56"></picture></a>')
     assert "<script" not in s and "<iframe" not in s
-    assert blogbutton.text_link("three-easy-days-a1b2c3", "maya-chen") == "https://gitaway.me/trips/three-easy-days-a1b2c3?via=maya-chen"
+    assert blogbutton.text_link("three-easy-days-a1b2c3", "maya-chen") == "https://gitaway.me/trips/three-easy-days-a1b2c3"
 
 
 def test_everything_in_the_snippet_is_escaped():
     s = blogbutton.html_snippet('x"><script>alert(1)</script>', 'a&b"c')
     assert s.count("<") == 6 and s.count('"') == 18      # <a> <picture> <source> <img> </picture> </a>: nothing the slug or handle held opened a tag or closed an attribute
-    assert 'href="https://gitaway.me/trips/x%22%3E%3Cscript%3Ealert%281%29%3C%2Fscript%3E?via=a%26b%22c"' in s
+    assert 'href="https://gitaway.me/trips/x%22%3E%3Cscript%3Ealert%281%29%3C%2Fscript%3E"' in s
 
 
 def test_links_use_the_public_url_setting_and_never_the_request_host(client, monkeypatch, mode):
@@ -52,10 +52,10 @@ def test_links_use_the_public_url_setting_and_never_the_request_host(client, mon
     row, handle, _ = live_trip()
     sign_in(client, "maya@example.com", next="/")
     html = client.get(f"/trips/{row['slug']}", headers={"host": "evil.example.net"}).text
-    assert box(html, "link") == f"https://trips.example.org/trips/{row['slug']}?via={handle}"
+    assert box(html, "link") == f"https://trips.example.org/trips/{row['slug']}"
     assert "evil.example.net" not in box(html, "html")
     monkeypatch.delenv("GITAWAY_PUBLIC_URL")
-    assert blogbutton.text_link("s", "h") == "https://gitaway.me/trips/s?via=h"
+    assert blogbutton.text_link("s", "h") == "https://gitaway.me/trips/s"
 
 
 # ---- the badge -----------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def test_the_creator_sees_the_panel_on_their_live_trip_and_copies_the_right_text
     html = client.get(f"/trips/{row['slug']}").text
     assert "Put this on your blog" in html and 'data-copy="bb-html"' in html and 'data-copy="bb-link"' in html
     assert box(html, "html") == blogbutton.html_snippet(row["slug"], handle)
-    assert box(html, "link") == f"https://gitaway.me/trips/{row['slug']}?via={handle}"
+    assert box(html, "link") == f"https://gitaway.me/trips/{row['slug']}"
 
 
 def test_nobody_else_sees_the_panel(client, mode):
@@ -109,7 +109,7 @@ def test_settings_lists_a_panel_for_each_of_the_creators_live_trips(client, mode
     sign_in(client, "maya@example.com")
     html = client.get("/creators/settings").text
     assert html.count("Put this on your blog") == 1
-    assert box(html, "link", "bb0") == f"https://gitaway.me/trips/{a['slug']}?via={handle}"
+    assert box(html, "link", "bb0") == f"https://gitaway.me/trips/{a['slug']}"
 
 
 def test_settings_for_someone_who_has_not_published_has_no_panel(client, mode):

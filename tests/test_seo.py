@@ -89,7 +89,7 @@ def test_robots_txt_names_the_sitemap_and_keeps_crawlers_out_of_the_private_and_
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/plain")
     lines = r.text.splitlines()
     assert "User-agent: *" in lines and "Sitemap: https://gitaway.me/sitemap.xml" in lines
-    for path in ("/admin", "/claim/", "/go/", "/creators/import", "/report"):
+    for path in ("/admin", "/claim/", "/creators/import", "/report"):
         assert f"Disallow: {path}" in lines, path
     assert "Disallow: /trips" not in r.text and "Disallow: /trips/" not in r.text      # a crawler must be able to read a trip's noindex
 
@@ -105,7 +105,7 @@ def test_the_sitemap_lists_the_indexable_pages_and_leaves_out_copies_takedowns_a
     assert urls[:6] == ["https://gitaway.me/", "https://gitaway.me/guides", "https://gitaway.me/guides/make", "https://gitaway.me/privacy", "https://gitaway.me/terms", "https://gitaway.me/trust"]
     assert f"https://gitaway.me/trips/{own['slug']}" in urls
     assert not any(copy in u or gone["slug"] in u for u in urls)
-    assert not any(p in u for u in urls for p in ("/admin", "/claim", "/go/", "/trip/", "/family"))
+    assert not any(p in u for u in urls for p in ("/admin", "/claim", "/trip/", "/family"))
     assert 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' in r.text
     assert re.search(rf"<loc>https://gitaway.me/trips/{own['slug']}</loc>\s*<lastmod>\d{{4}}-\d\d-\d\d</lastmod>", r.text)
 

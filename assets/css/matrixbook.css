@@ -159,7 +159,6 @@
   font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: var(--cta-sh); position: sticky; bottom: 0.25rem; z-index: 4; }
 .mxb-plan:hover { color: var(--cta-fg); }
 .mxb-plan:focus-visible, .mxb-go:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
-.mxb-flight { justify-self: center; min-height: var(--target); }
 .mxb-back { justify-self: start; min-height: var(--target); }
 
 /* confetti: CSS only, each piece falls once over the whole screen, spinning; the Stage's vivid tiles (blue, amber, pink, green, teal) and the pick (ink, white in dark), never the orange signal; none under reduced motion */

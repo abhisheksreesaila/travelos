@@ -25,11 +25,10 @@ from fasthtml.common import A, Button, Div, Form, H2, H3, Input, Label, Noscript
 from fasthtml.core import FtResponse
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
-from gitaway import access, auth, blogbutton, catalog, familydb, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, tripstart, walletpass
+from gitaway import access, auth, blogbutton, catalog, familydb, importer, liteapi, matrixbook as mb, session as ses, showcase, tripmatrix as tm, walletpass
 from gitaway.icons import icon
 from gitaway.layout import page
-from gitaway.pages import plan_search, tripmatrix as mx, v2drawer
-from gitaway.partners import registry
+from gitaway.pages import tripmatrix as mx, v2drawer
 
 CONFIRM = mx.BOOK + "/confirm"
 CODE = mx.BOOK + "/code"
@@ -72,7 +71,7 @@ def _flight_row(sq):
     f = sq.flight
     return Div(Span(icon("plane", 16, 2.2), cls="mx-kt k-flight"),
                Div(P(f.airline, cls="mx-r-h"), P(v2drawer.times(f.out), cls="mx-r-s"), P(v2drawer.times(f.back), cls="mx-r-s") if f.back else "",
-                   P("You book this on the airline’s site, after this.", cls="mx-r-s")),
+                   P("Flight booking is next.", cls="mx-r-s")),
                Span(catalog.money(f.cents), cls="mx-r-n"), cls="mx-row mxb-row")
 
 
@@ -146,7 +145,7 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     f = sq.flight
     stays = " + ".join(r.part.name for r in prep.rows)
     rv = Div(_rv("Trip", lane.name, f"{tm.when(w)} · {nights} nights"),
-             _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {f.airline}", f"{v2drawer.times(f.out)} · {v2drawer.stops_words(f.stops).lower()}. You book this on the airline’s site, after this."),
+             _rv("Flights", f"{s.home} ⇄ {lane.places[0].iata} · {f.airline}", f"{v2drawer.times(f.out)} · {v2drawer.stops_words(f.stops).lower()}. Flight booking is next."),
              _rv("Stay", stays, " · ".join(f"{r.prebook.room or r.part.room} · {'Refundable' if r.prebook.refundable else 'Non-refundable'}" + (f" · {catalog.money(r.prebook.due_at_stay_cents)} of it is paid at the hotel" if r.prebook.due_at_stay_cents else "") for r in prep.rows)),
              _rv("Guest", f"{name} + {s.travelers - 1}", "", 0, "guest"), _rv("Contact", values.get("email", ""), values.get("phone", ""), 1, "contact"),
              _rv("Requests", ", ".join(r for r in mb.REQUESTS if r in picked) or "None", f"Arriving in the {values['arrive'].lower()}" if values.get("arrive") else "", 2, "requests"), cls="mxb-rv")
@@ -162,7 +161,7 @@ def _checkout(s, lane, w, sq, prep, pk, values=None, errors=None):
     last = (P(mb.SAMPLE_WORDS if sample else mb.NOTHING_CHARGED + ". LiteAPI’s test card pays; no email is sent.", cls="mxb-fine") if not form else
             P((mb.LIVE_WORDS if live else "Sandbox booking: the form takes LiteAPI’s test card, nothing is charged") + ". Next is LiteAPI’s secure payment form.", cls="mxb-fine"))
     review = (rv, Div(_moved(prep), data_moved="1"), _policy(prep) if form else "", _code_box(prep) if form else "", summary,
-              P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. The flight is booked on its airline’s site.", cls="mxb-fine"),
+              P(f"This booking covers the stay{'s' if len(prep.rows) > 1 else ''}: {catalog.money(stays_total)}. Flight booking is next.", cls="mxb-fine"),
               agree, P(errors["agree"], id="mxb-agree-e", cls="mxb-err", role="alert") if errors.get("agree") else "", last)
     panes = [Div(H3(STEPS[i][1], cls="mxb-q"), *body, cls="mxb-pane", data_pane=str(i), data_small=STEPS[i][0]) for i, body in enumerate((guest, contact, requests, review))]
     prog = Div(*[Span(cls="on" if i == 0 else "") for i in range(len(STEPS))], cls="mxb-prog", aria_hidden="true")
@@ -244,13 +243,6 @@ def _paid_page(done, pay, problem: str = "", status: int = 200, family: str = ""
     return FtResponse(out, status_code=status, headers={"Cache-Control": "no-store"})
 
 
-def _flight_link(s, lane, w):
-    search, _ = tripstart.read({"place": lane.places[0].name, "d": w.depart.isoformat(), "r": w.return_.isoformat(), "a": str(s.adults), "k": ",".join(map(str, s.kid_ages)),
-                                "home": s.home})
-    found = registry.lane("flight", search) if search else []
-    return (found[0].name, plan_search._href(found[0], plan_search.query(search))) if found else None
-
-
 def _day(iso: str) -> str:
     day = date.fromisoformat(iso)
     return f"{day:%b} {day.day}"
@@ -269,7 +261,6 @@ def _pass_stay(d: mb.Done, address: str):
 def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extras=None, family: str = ""):
     """The stamped boarding pass (D-574): where, the flight, each stay with what the answer gives (the booking id, the hotel's confirmation code and its address), the test
     card, and a bold Plan this trip. Only what LiteAPI (or the sample) gave: no phone number or record locator is made up."""
-    flight = _flight_link(s, lane, w)
     email, ex = extras if extras else ("", mb.Extras())
     phone = ex.phone
     sample = any(d.sample for d in res.done)
@@ -278,7 +269,7 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
     route = Div(Span(s.home or "Home", cls="mxb-iata"), Span(cls="mxb-dash"), Span(icon("plane", 22, 2.2), cls="mxb-plane"), Span(cls="mxb-dash"), Span(end.iata or end.name, cls="mxb-iata"), cls="mxb-route")
     top = Div(mx._arts(lane, "mxb-pass-art"), route, Span("Sample" if sample else "Booked", cls="mxb-stamp", data_d=_day(w.depart.isoformat()).upper()), P(f"{tm.when(w)} · {mx.party_words(s)}", cls="mxb-pass-when"), cls="mxb-pass-top")
     mid = Div(Div(P("Flight", cls="mxb-k"), P(f"{sq.flight.airline} · {v2drawer.stops_words(sq.flight.stops).lower()}", cls="mxb-pass-h"), P(v2drawer.times(sq.flight.out), cls="mx-r-s"),
-                  P(v2drawer.times(sq.flight.back), cls="mx-r-s") if sq.flight.back else "", P("Booked on the airline’s site.", cls="mx-r-s"), cls="mxb-pass-row"),
+                  P(v2drawer.times(sq.flight.back), cls="mx-r-s") if sq.flight.back else "", P("Flight booking is next.", cls="mx-r-s"), cls="mxb-pass-row"),
               *[_pass_stay(d, address.get(d.hotel, "")) for d in res.done],
               Div(P("Lead guest", cls="mxb-k"), P(who, cls="mxb-pass-h"), P(" · ".join(x for x in (email, phone) if x), cls="mx-r-s") if (email or phone) else "",
                   P(icon("lock", 14, 2.2), "Paid with the " + ("sample" if sample else "LiteAPI test") + " card · nothing was charged", cls="mx-r-s"), cls="mxb-pass-row"),
@@ -290,7 +281,6 @@ def _confirmation(s, lane, w, sq, prep: mb.Prep, res: mb.Result, who: str, extra
     return Div(_confetti(), H3("You’re going to " + lane.name + "!", cls="mxb-q mxb-going"),
                P(f"{who}, your {'sample ' if sample else ''}booking is confirmed.", cls="mxb-hint"), Div(top, mid, stub, cls="mxb-pass"),
                *[walletpass.buttons(d.booking_id, family) for d in res.done], A(icon("arrow-right", 22, 2.8), Span("Plan this trip"), href="/trip/plan?arrive=1", cls="mxb-plan", data_trip="1"),
-               A(f"Search flights on {flight[0]}", href=flight[1], cls="btn mxb-flight", rel="noopener") if flight else "",
                cls="mxb-confirm", data_step="booked")
 
 

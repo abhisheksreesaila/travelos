@@ -1,10 +1,7 @@
-"""F-198/F-199 review and security-audit fixes, each pinned by a test that failed before the fix. Through the HTTP seam and the modules' own functions; no test reaches the network
-(the one local HTTP server below answers on 127.0.0.1 only)."""
+"""F-198/F-199 review and security-audit fixes, each pinned by a test that failed before the fix. Through the HTTP seam and the modules' own functions; no test reaches the network."""
 
-import http.server
 import logging
 import re
-import socket
 import threading
 from datetime import date
 from html import unescape
@@ -12,30 +9,13 @@ from html import unescape
 import pytest
 from sqlalchemy import text
 
-from gitaway import affiliate, confirmations as cf, planforme as pfm, tripimport as ti
-from gitaway.partners import links, manage, places, travelpayouts
+from gitaway import confirmations as cf, planforme as pfm, tripimport as ti
+from gitaway.partners import manage, places
 from tests.confirmation_samples import AIRBNB, BOOKING
 from tests.live_trips import live_trip
-from tests.test_affiliate import seen_on
 from tests.live_trips import TAHOE_TRIP
 from tests.test_planforme import GOOD, buyer
 from tests.test_signin import person, sign_in
-
-KEYS = ("TRAVELPAYOUTS_MARKER", "TRAVELPAYOUTS_TOKEN", "TRAVELPAYOUTS_TRS", "PARTNER_TRACKED", "PARTNER_STAY")
-
-
-@pytest.fixture(autouse=True)
-def quiet(monkeypatch):
-    for k in KEYS:
-        monkeypatch.delenv(k, raising=False)
-    travelpayouts._CACHE.clear()
-    yield
-
-
-def lane(name, site):
-    """The address a lane's button had on the booking lanes page (it went in F-254): /book/<lane> for the captain's Tahoe trip, still what the matrix's flight link uses."""
-    from urllib.parse import urlencode
-    return f"/book/{name}?" + urlencode({"site": site, "place": "Lake Tahoe", "d": "2026-12-19", "r": "2026-12-26", "a": 2, "k": "8,11", "home": "SFO"})
 
 
 def words(html):
@@ -207,77 +187,6 @@ def test_a_failed_free_plan_is_not_a_refund_due(client, monkeypatch, caplog):
     sign_in(client, "ari")
     page = client.get("/admin").text
     assert 'id="refund-' not in page and re.search(r'id="ad-refunds"[^>]*>([^<]*)<', page).group(1) == "0 · $0"
-
-
-# ---- 12. /book keeps the creator rules /go has -----------------------------------------------------------------------------------
-
-@pytest.fixture
-def marker(monkeypatch):
-    monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    monkeypatch.setenv("TRAVELPAYOUTS_MARKER", "801445")
-
-
-def flight(client):
-    return client.get(lane("flight", "aviasales"), follow_redirects=False)
-
-
-def test_a_flight_from_a_creators_trip_carries_their_marker_and_counts(client, marker):
-    _, handle, owner = live_trip()
-    affiliate.set_marker(owner["user_id"], "555111")
-    client.cookies.set(affiliate.COOKIE, handle)      # what a click on the creator's own page used to leave
-    loc = flight(client).headers["location"]
-    assert "marker=555111.anon_laketahoe_261219_flight_" + handle.replace("-", "_") in loc
-    assert affiliate.clicks_by_creator() == {handle: (1, 1)}
-
-
-def test_a_plain_link_counts_for_the_creator_but_carries_no_marker(client, marker):
-    _, handle, owner = live_trip()
-    affiliate.set_marker(owner["user_id"], "555111")
-    client.cookies.set(affiliate.COOKIE, handle)      # what a click on the creator's own page used to leave
-    loc = client.get(lane("stay", "airbnb"), follow_redirects=False).headers["location"]
-    assert "marker" not in loc and "555111" not in loc
-    assert affiliate.clicks_by_creator() == {handle: (1, 0)}
-
-
-def test_a_click_on_a_waiting_trip_pays_nobody_and_forgets_the_cookie(client, marker):
-    _, handle, owner = live_trip()
-    affiliate.set_marker(owner["user_id"], "555111")
-    client.cookies.set(affiliate.COOKIE, handle)      # what a click on the creator's own page used to leave
-    waiting, _, _ = live_trip("lee@example.com", "Lee Park", "Two days in San Diego")
-    from gitaway import community
-    community.set_review(waiting["slug"], "pending")
-    r = client.get(lane("flight", "aviasales"), headers={"referer": f"http://testserver/trips/{waiting['slug']}"}, follow_redirects=False)
-    assert "marker=801445." in r.headers["location"] and 'ga_via=""' in r.headers.get("set-cookie", "").replace("ga_via=;", 'ga_via="";')
-
-
-def test_a_cross_site_click_is_sent_on_but_not_logged(client):
-    sign_in(client, "ari")
-    href = lane("stay", "vrbo")
-    assert client.get(href, headers={"sec-fetch-site": "cross-site"}, follow_redirects=False).status_code == 302
-    from gitaway.partners import log
-    assert log.clicks(person()) == []
-    client.get(href, headers={"sec-fetch-site": "same-origin"}, follow_redirects=False)
-    assert len(log.clicks(person())) == 1
-
-
-# ---- 17. no redirect carries the token, and no log line keeps part of it --------------------------------------------------------
-
-class _Hop(http.server.BaseHTTPRequestHandler):
-    seen = []
-
-    def do_GET(self):
-        _Hop.seen.append((self.path, self.headers.get("X-Access-Token")))
-        if self.path.startswith("/first"):
-            self.send_response(302)
-            self.send_header("Location", "/second")
-            self.end_headers()
-        else:
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'{"success": true, "data": [{"price": 1}]}')
-
-    def log_message(self, *a):
-        pass
 
 
 # ---- nits --------------------------------------------------------------------------------------------------------------------------

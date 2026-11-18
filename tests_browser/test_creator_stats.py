@@ -8,7 +8,7 @@ import pytest
 from playwright.sync_api import expect
 from sqlalchemy import text
 
-from gitaway import affiliate, community
+from gitaway import community
 from tests.live_trips import live_trip
 from tests_browser.helpers import DESKTOP, PHONE
 
@@ -39,8 +39,6 @@ def seed():
             db.conn.execute(text("INSERT INTO trip_days (slug, day, views, forks, plans) VALUES (:s, :d, :v, :f, :p)"), {"s": row["slug"], "d": day, "v": v, "f": v // 6, "p": v // 3})
         db.conn.execute(text("INSERT INTO trip_days (slug, day, views) VALUES (:s, :d, 3)"), {"s": other["slug"], "d": today.isoformat()})
         db.conn.commit()
-    for own in (True, True, True, False, False):
-        affiliate.log_click(handle, "aviasales" if own else "klook", "flight" if own else "stay", own)
     return row
 
 
@@ -54,8 +52,7 @@ def test_the_stats_page_reads_well_and_never_scrolls_sideways(browser, base_url,
     page.goto(f"{base_url}/creators/stats")
     expect(page.locator("h1")).to_have_text("Your stats")
     expect(page.locator("#cs-readers")).to_have_text(str(sum(SHAPE) + 3))
-    expect(page.locator("#cs-clicks")).to_have_text("5")
-    expect(page.locator("#cs-marker")).to_contain_text("3 with your marker")
+    assert page.locator("#cs-clicks").count() == 0 and page.locator("#cs-marker").count() == 0
     expect(page.locator(".cs-spark")).to_have_count(2)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), "the page scrolls sideways"
     if viewport is PHONE:   # the laptop scales its root down (0.75rem), so 44px is the phone's bar
