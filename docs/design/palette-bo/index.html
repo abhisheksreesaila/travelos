@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-look="canvas" data-chips="fill">
+<html lang="en" data-theme="light" data-look="canvas" data-colour="mono" data-chips="fill">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,7 +18,7 @@
     greys and warm whites = everything else. Orange is a signal, never a theme: no orange header, no orange buttons.
 
   Looks (data-look, the floating picker or ?look=): canvas (A: warm paper, faint map line art) | night (B: the Harbour ground, --hb-* from assets/css/v2-tokens.css).
-  Modes: ?theme=light|dark. Other addresses: ?state=done ?open=1 ?hu=1 (scroll to Heads up) ?drawer=1 ?ck=1 (checkout review) ?picker=0
+  Modes: ?theme=light|dark. Colour: ?colour=mono|warm|good (see the Colour layer). The cover: cover.html. Other addresses: ?state=done ?open=1 ?hu=1 (scroll to Heads up) ?drawer=1 ?ck=1 (checkout review) ?picker=0
 
   Colours
     Black (ink, CTA)           #141416      dark mode: the CTA turns white #F4F3F1 with #141416 text
@@ -383,7 +383,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .sq.cheap .pr, .sq.cheap .cap { color: var(--see); }
 .sq.pick { background: var(--pick); color: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--pick) 22%, transparent), var(--sh2); }
 .sq.pick .wxs, .sq.pick .pr { color: #fff; }
-.sq.pick .cap { color: var(--ride-on); background: var(--ride); padding: 3px 7px; border-radius: 999px; }
+.sq.pick .cap { color: var(--pick-cap-i, var(--ride-on)); background: var(--pick-cap, var(--ride)); padding: 3px 7px; border-radius: 999px; }
 .sq.sel:not(.pick) { box-shadow: inset 0 0 0 2.5px var(--ink); }
 .sq.over:not(.pick) { background: repeating-linear-gradient(135deg, transparent 0 7px, var(--hatch) 7px 14px), color-mix(in srgb, var(--card-2) 70%, transparent); }
 .sq.over:not(.pick) .pr { color: var(--ink-3); font-weight: 560; }
@@ -972,30 +972,30 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 .xc .ic { background: var(--card-2); color: var(--ink); }
 .xtra.sky .xc .ic { background: var(--card-2); color: var(--ink); }
 :root[data-look="night"] .xtra.sky .xc .ic { background: rgb(255 255 255 / .14); color: var(--sky-ink); }
-:root[data-look] .xtra.sky .xc.sig .ic { background: var(--sig-t); color: var(--sig); }
+:root[data-look] .xtra.sky .xc.sig .ic { background: var(--find-t); color: var(--find); }
 :root[data-chips] .xtra.sky .xc .ct { background: var(--card-2); color: var(--ink); }
 :root[data-look="night"][data-chips] .xtra.sky .xc .ct { background: rgb(255 255 255 / .92); color: #141416; }
-:root[data-look][data-chips] .xtra.sky .xc.sig .ct { background: var(--sig-t); color: var(--sig-ink); }
+:root[data-look][data-chips] .xtra.sky .xc.sig .ct { background: var(--find-t); color: var(--find-ink); }
 :root[data-look="canvas"] .xtra.sky .xc[aria-expanded="true"] { background: var(--ink); color: var(--card-solid); }
 :root[data-look="canvas"] .xtra.sky .xc[aria-expanded="true"] .tx small { color: inherit; opacity: .8; }
 .xtra.sky .xc[aria-expanded="true"] .ic { background: rgb(127 127 127 / .22); color: inherit; }
 .wcard { box-shadow: var(--sh2), 0 0 0 1px var(--line); }
 /* the grid: our pick is black; the cheapest in a row gets an orange dot and burnt words; the opened square an orange ring */
-.lg .i-cheap { width: 10px; height: 10px; border-radius: 50%; background: var(--sig); box-shadow: none; }
-.lg .i-sel { width: 14px; height: 14px; border-radius: 5px; background: var(--card-solid); box-shadow: 0 0 0 2px var(--sig); }
+.lg .i-cheap { width: 10px; height: 10px; border-radius: 50%; background: var(--find); box-shadow: none; }
+.lg .i-sel { width: 14px; height: 14px; border-radius: 5px; background: var(--card-solid); box-shadow: 0 0 0 2px var(--sel); }
 .sq.cheap { box-shadow: none; }
 .sq.cheap .pr { color: var(--ink); }
-.sq.cheap .cap { color: var(--sig-ink); }
-.sq.cheap::before { content: ""; position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--sig); }
+.sq.cheap .cap { color: var(--find-ink); }
+.sq.cheap::before { content: ""; position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--find); }
 .sq.pick, .sq.pick .wxs, .sq.pick .pr { color: var(--cta-fg); }
 .sq.pick { box-shadow: var(--sh2); }
-.sq.sel.sel { box-shadow: 0 0 0 2.5px var(--sig), 0 0 0 8px color-mix(in srgb, var(--sig) 16%, transparent); }
-.pscroll .sq.inb.pick.sel { box-shadow: 0 0 0 2.5px var(--sig), 0 0 0 8px color-mix(in srgb, var(--sig) 16%, transparent); }
+.sq.sel.sel { box-shadow: 0 0 0 2.5px var(--sel), 0 0 0 8px color-mix(in srgb, var(--sel) 16%, transparent); }
+.pscroll .sq.inb.pick.sel { box-shadow: 0 0 0 2.5px var(--sel), 0 0 0 8px color-mix(in srgb, var(--sel) 16%, transparent); }
 .day.win { background: var(--card-2); }
 /* the opened square's head and mini-nav */
 .dhead .why { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; color: var(--ink-2); font-size: 15px; line-height: 1.4; }
 .dhead .why svg { width: 16px; height: 16px; margin-top: 2px; color: var(--ink-3); }
-.saves { color: var(--sig-ink); font-weight: 680; }
+.saves { color: var(--find-ink); font-weight: 680; }
 .total b { margin: 0 0 4px; }
 .znav a.zf i { background: transparent; box-shadow: inset 0 0 0 2px var(--ink); }
 .znav a.zt { color: var(--ink-2); }
@@ -1058,7 +1058,7 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 .cat.low .bar i { background: var(--sig); }
 /* rooms, breakfast, flights */
 .room .chosen { color: var(--flight-on); }
-.room .rp.less { color: var(--sig-ink); }
+.room .rp.less { color: var(--find-ink); }
 .bf .ic { background: var(--card-3); color: var(--ink); }
 .bf[aria-checked="true"] .sw { background: var(--ink); }
 .bf[aria-checked="true"] .sw::after { background: var(--card-solid); }
@@ -1067,7 +1067,7 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 .track .stopdot { background: var(--sig); }
 .fl .mid small.stop { color: var(--sig-ink); }
 .al-badge { background: var(--ink-2) !important; color: var(--card-solid); }
-.fopt .dp.cheaper { color: var(--sig-ink); }
+.fopt .dp.cheaper { color: var(--find-ink); }
 /* the sticky foot: who sells it, then Save and the one black button */
 .dfoot { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 12px 14px; padding: 14px 26px calc(14px + env(safe-area-inset-bottom)); background: var(--card-solid); border-top: 1px solid var(--line); box-shadow: 0 -12px 26px -20px rgb(0 0 0 / .35); }
 .dfnote { flex: 1; margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.4; }
@@ -1147,7 +1147,7 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
 .pk-key { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 6px 2px; color: var(--ink-2); font-size: 13px; }
 .pk-key span { display: inline-flex; align-items: center; gap: 6px; }
 .pk-key i { width: 12px; height: 12px; border-radius: 50%; }
-.pk-key .k-ink { background: var(--cta-bg); box-shadow: inset 0 0 0 1px var(--line-2); } .pk-key .k-sig { background: var(--sig); }
+.pk-key .k-ink { background: var(--cta-bg); box-shadow: inset 0 0 0 1px var(--line-2); } .pk-key .k-sig { background: var(--sig); } .pk-key .k-good { background: var(--find); }
 .picker { width: 300px; }
 /* B: the opened square and the matrix sit on the ground as near-opaque cards; the top bar's current tab stays a card */
 :root[data-look="night"] .nav a:hover { background: rgb(255 255 255 / .1); }
@@ -1173,6 +1173,61 @@ footer.foot { margin-top: 26px; padding: 16px 18px; border-radius: 18px; backgro
   .ck-r { grid-template-columns: 72px minmax(0, 1fr) auto; }
   .picker { width: auto; }
 }
+
+
+/* ======================= Colour: mono | warm | good (the picker's third group) =======================
+   mono = the palette as first drawn. warm = a warmer cream, the place art back in the lanes, low-chroma kind tints (stay, flight, weather, guide) on icons and band heads.
+   good = warm + one positive colour, deep green, for cheapest, saves $X, refundable and booked; orange is then only Heads up (the opened ring goes black).
+   New text colours, measured: green #0F766E on card #FFFDF8 5.4, on card-2 #F5EEE2 4.8, on its tint #E3F1EC 4.7; dark #45BFA4 on #24211D 7.1, on #2F2B26 6.2, on its tint #1C332D 5.9;
+   burnt #B23C10 on warm card-2 5.1, on warm canvas 5.2; ink-3 on warm card-2 4.9; the pick pill #0B5C55 on #D5EFE8 6.5 (dark #7FE0C9 on #1C332D 8.6); kind words #7A4E2E on #F3E7DA 5.8, #3E5A78 on #E3EAF2 5.9.
+   Orange stays the loudest: the kind tints are at chroma under 30 and the green is deep (L* 44), against the orange's L* 58 and chroma 75. */
+:root { --find: var(--sig); --find-ink: var(--sig-ink); --find-t: var(--sig-t); --sel: var(--sig);
+  --k-stay: var(--ink); --k-stay-t: var(--card-2); --k-stay-on: var(--card-solid); --k-fl: var(--ink); --k-fl-t: var(--card-2); --k-fl-on: var(--card-solid);
+  --k-wx: var(--ink-3); --k-wx-t: var(--card-2); --k-gd: var(--ink); --k-gd-t: var(--card-2); }
+:root[data-colour="warm"], :root[data-colour="good"] {
+  --ground: #F6EFE3; --map-line: rgb(120 80 30 / .08); --map-road: rgb(120 80 30 / .11);
+  --card: #FFFDF8; --card-solid: #FFFDF8; --card-2: #F5EEE2; --card-3: #EBE2D3; --lead-bg: #FBF7F0; --cell: #F5EEE2; --cell-hover: #EDE3D3;
+  --word-bg: #F1E8DA; --word-bg-h: #E8DDCB; --zband-mix: 1;
+  --k-stay: #9A6440; --k-stay-t: #F3E7DA; --k-stay-on: #FFFFFF; --k-fl: #4D6F93; --k-fl-t: #E3EAF2; --k-fl-on: #FFFFFF;
+  --k-wx: #A08128; --k-wx-t: #F4ECD2; --k-gd: #5E7A55; --k-gd-t: #E6EDE0; }
+:root[data-colour="warm"][data-theme="dark"], :root[data-colour="good"][data-theme="dark"] {
+  --ground: #100E0B; --map-line: rgb(255 230 200 / .035); --map-road: rgb(255 230 200 / .05);
+  --card: #24211D; --card-solid: #24211D; --card-2: #2F2B26; --card-3: #3A352F; --lead-bg: #29261F; --cell: #2F2B26; --cell-hover: #38332C;
+  --word-bg: #34302A; --word-bg-h: #3D3832;
+  --k-stay: #C99A73; --k-stay-t: #3A2D22; --k-stay-on: #141416; --k-fl: #8FAED0; --k-fl-t: #22303F; --k-fl-on: #141416;
+  --k-wx: #D2B65E; --k-wx-t: #352E1A; --k-gd: #9DB892; --k-gd-t: #263022; }
+:root[data-colour="good"] { --find: #0F766E; --find-ink: #0F766E; --find-t: #E3F1EC; --sel: var(--ink); --pick-cap: #D5EFE8; --pick-cap-i: #0B5C55; }
+:root[data-colour="good"][data-theme="dark"] { --find: #45BFA4; --find-ink: #45BFA4; --find-t: #1C332D; --pick-cap: #1C332D; --pick-cap-i: #7FE0C9; }
+:root[data-colour="good"][data-theme="dark"] .sq.pick .cap { --pick-cap: #D5EFE8; --pick-cap-i: #0B5C55; }
+/* the kinds */
+.zone.stay .zband { background: var(--k-stay-t); }
+.zone.stay .zband .zi { background: var(--k-stay); color: var(--k-stay-on); }
+.zone.flt .zband { background: var(--k-fl-t); }
+.zone.flt .zband .zi { background: var(--k-fl); color: var(--k-fl-on); }
+.znav a.zs i { background: var(--k-stay); } .znav a.zf i { box-shadow: inset 0 0 0 2px var(--k-fl); }
+.zgap .zgi { background: var(--k-fl-t); color: var(--k-fl); }
+.sq .wxs svg, .days svg { color: var(--k-wx); }
+.sq.pick .wxs svg { color: inherit; }
+:root[data-look] .xtra.sky .xc[data-kind="wx"] .ic { background: var(--k-wx-t); color: var(--k-wx); }
+:root[data-look] .xtra.sky .xc[data-kind="guide"] .ic, :root[data-look] .xtra.sky .xc[data-kind="food"] .ic { background: var(--k-gd-t); color: var(--k-gd); }
+:root[data-look="night"] .xtra.sky .xc[data-kind] .ic { background: rgb(255 255 255 / .14); color: var(--sky-ink); }
+:root[data-look="night"] .xtra.sky .xc.sig .ic { background: var(--find-t); color: var(--find); }
+.kr.ok.gd .m { background: var(--find-t); color: var(--find); }
+:root:not([data-colour="good"]) .kr.ok.gd .m { background: var(--card-2); color: var(--ink); }
+.gd { color: inherit; }
+:root[data-colour="good"] .gd { color: var(--find-ink); font-weight: 620; }
+/* the place art (gitaway/placeart.py), only in warm and good; dark mode swaps it to night as assets/css/placeart.css does */
+.aw { display: none; } .am, .aw { width: 100%; height: 100%; }
+:root[data-colour="warm"] .aw, :root[data-colour="good"] .aw { display: block; }
+:root[data-colour="warm"] .am.has, :root[data-colour="good"] .am.has { display: none; }
+.pa-svg { display: block; width: 100%; height: 100%; filter: saturate(.82); }
+:root[data-theme="dark"] .pa-svg[data-sky="auto"] {
+  --pa-sky1: var(--pa-n-sky1) !important; --pa-sky2: var(--pa-n-sky2) !important; --pa-sun: var(--pa-n-sun) !important; --pa-far: var(--pa-n-far) !important;
+  --pa-mid: var(--pa-n-mid) !important; --pa-near: var(--pa-n-near) !important; --pa-water: var(--pa-n-water) !important; --pa-foam: var(--pa-n-foam) !important;
+  --pa-ground: var(--pa-n-ground) !important; --pa-ground2: var(--pa-n-ground2) !important; --pa-line: var(--pa-n-line) !important; --pa-acc: var(--pa-n-acc) !important;
+  --pa-leaf: var(--pa-n-leaf) !important; --pa-snow: var(--pa-n-snow) !important; --pa-cloud: var(--pa-n-cloud) !important; }
+.pk-link { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin: 2px 2px 0; padding: 0 10px; border-radius: 14px; background: var(--card-2); color: var(--ink); font: 620 14px/1 var(--f-ui); text-decoration: none; }
+.pk-link svg { width: 16px; height: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
@@ -1353,7 +1408,9 @@ function marks() {
   if (searching) out.pick = null;
   return out;
 }
-function artSvg(p) {
+const ART = {"sd": "<svg class=\"pa-svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 480 240\" preserveAspectRatio=\"xMidYMax slice\" role=\"img\" aria-label=\"San Diego: Ocean Beach pier and a lifeguard tower\" data-sky=\"auto\" data-place=\"sandiego\" style=\"--pa-sky1:#D9ECFA;--pa-sky2:#FCEBD6;--pa-sun:#FFB547;--pa-far:#A9C3D9;--pa-mid:#7FA6C4;--pa-near:#2F6B4F;--pa-water:#3F8FC2;--pa-foam:#BFE0F2;--pa-ground:#F0DDBA;--pa-ground2:#E2C594;--pa-line:#2B3A4A;--pa-acc:#E4572E;--pa-leaf:#2F7A55;--pa-snow:#FFFFFF;--pa-cloud:#FFFFFF;--pa-n-sky1:#0A1830;--pa-n-sky2:#28365A;--pa-n-sun:#F3EBD3;--pa-n-far:#1E2E48;--pa-n-mid:#24395A;--pa-n-near:#0F2A1E;--pa-n-water:#123A5A;--pa-n-foam:#2E6A93;--pa-n-ground:#3A3328;--pa-n-ground2:#2C261E;--pa-n-line:#070D16;--pa-n-acc:#B5452A;--pa-n-leaf:#14301F;--pa-n-snow:#E8EEF6;--pa-n-cloud:#3A4660\"><defs><linearGradient id=\"pa-sandiego-1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" style=\"stop-color:var(--pa-sky1)\"/><stop offset=\".72\" style=\"stop-color:var(--pa-sky2)\"/></linearGradient></defs><rect width=\"480\" height=\"240\" fill=\"url(#pa-sandiego-1)\"/><circle class=\"pa-sun\" style=\"fill:var(--pa-sun)\" cx=\"362\" cy=\"112\" r=\"26\"/><path style=\"fill:var(--pa-far)\" d=\"M0 140 C60 124 122 126 172 137 C204 130 232 133 262 142 L262 152 L0 152Z\"/><path style=\"fill:var(--pa-far)\" d=\"M296 146 L480 143 L480 152 L296 152Z\"/><rect style=\"fill:var(--pa-water)\" x=\"0\" y=\"150\" width=\"480\" height=\"44\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 18 160 h 54\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 110 168 h 34\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 196 163 h 48\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 300 170 h 40\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 398 165 h 58\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><rect style=\"fill:var(--pa-line)\" x=\"250\" y=\"135\" width=\"230\" height=\"5\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 258 140 V 170\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 274 140 V 169.7\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 290 140 V 169.4\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 306 140 V 169.1\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 322 140 V 168.8\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 338 140 V 168.5\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 354 140 V 168.2\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 370 140 V 167.9\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 386 140 V 167.6\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 402 140 V 167.3\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 418 140 V 167\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 434 140 V 166.7\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 450 140 V 166.4\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 466 140 V 166.1\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><rect style=\"fill:var(--pa-acc)\" x=\"266\" y=\"123\" width=\"20\" height=\"12\" rx=\"1\"/><path style=\"fill:var(--pa-line)\" d=\"M262 124 L276 116 L290 124Z\"/><path style=\"fill:var(--pa-ground)\" d=\"M0 192 C120 180 260 184 480 172 L480 240 L0 240Z\"/><path style=\"fill:var(--pa-ground2)\" d=\"M0 214 C140 204 300 210 480 200 L480 240 L0 240Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M112 210 L118 188 M142 210 L136 188 M118 196 H136\" stroke-width=\"2.6\" stroke-linecap=\"round\"/><rect style=\"fill:var(--pa-acc)\" x=\"108\" y=\"168\" width=\"36\" height=\"20\" rx=\"2\"/><path style=\"fill:var(--pa-line)\" d=\"M103 169 L126 157 L149 169Z\"/><rect style=\"fill:var(--pa-snow)\" x=\"116\" y=\"173\" width=\"20\" height=\"7\" rx=\"1\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 44 214 C 46 170.8 61.12 146.8 65.12 118\" stroke-width=\"4.36\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 65.12 118 Q 47.17 114.16 32.48 131.14 Q 50.43 120.12 65.12 118Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 65.12 118 Q 47.17 103.39 32.48 120.37 Q 50.43 114.25 65.12 118Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 65.12 118 Q 83.07 104.29 97.76 121.26 Q 79.81 114.74 65.12 118Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 65.12 118 Q 83.07 115.06 97.76 132.04 Q 79.81 120.61 65.12 118Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 65.12 118 Q 62.43 93.52 60.22 110.49 Q 62.92 108.86 65.12 118Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 452 206 C 450 174.5 440.6 157 436.6 136\" stroke-width=\"3.18\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 436.6 136 Q 423.51 133.2 412.8 145.58 Q 425.89 137.55 436.6 136Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 436.6 136 Q 423.51 125.35 412.8 137.73 Q 425.89 133.26 436.6 136Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 436.6 136 Q 449.69 126 460.4 138.38 Q 447.31 133.62 436.6 136Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 436.6 136 Q 449.69 133.86 460.4 146.23 Q 447.31 137.9 436.6 136Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 436.6 136 Q 434.64 118.15 433.03 130.53 Q 434.99 129.34 436.6 136Z\"/><rect style=\"fill:var(--pa-acc)\" x=\"196\" y=\"196\" width=\"5\" height=\"22\" rx=\"2.5\" transform=\"rotate(-12 198 207)\"/></svg>", "la": "<svg class=\"pa-svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 480 240\" preserveAspectRatio=\"xMidYMax slice\" role=\"img\" aria-label=\"Los Angeles: The observatory on the ridge, palms below\" data-sky=\"auto\" data-place=\"losangeles\" style=\"--pa-sky1:#E2EEF8;--pa-sky2:#FBE3CF;--pa-sun:#FF9F45;--pa-far:#C5CDD8;--pa-mid:#C9A57E;--pa-near:#3E6B4A;--pa-water:#5B9BC6;--pa-foam:#D5E8F4;--pa-ground:#E9D3B0;--pa-ground2:#D6B98C;--pa-line:#33363F;--pa-acc:#F2EEE6;--pa-leaf:#3B7550;--pa-snow:#FFFFFF;--pa-cloud:#FFFFFF;--pa-n-sky1:#0C1428;--pa-n-sky2:#3A2C4E;--pa-n-sun:#F3EBD3;--pa-n-far:#252C40;--pa-n-mid:#3A2E35;--pa-n-near:#13261A;--pa-n-water:#1A3550;--pa-n-foam:#2D5577;--pa-n-ground:#2C2620;--pa-n-ground2:#221D18;--pa-n-line:#05080F;--pa-n-acc:#D8D2C4;--pa-n-leaf:#183022;--pa-n-snow:#E8EEF6;--pa-n-cloud:#3A4660\"><defs><linearGradient id=\"pa-losangeles-2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" style=\"stop-color:var(--pa-sky1)\"/><stop offset=\".72\" style=\"stop-color:var(--pa-sky2)\"/></linearGradient></defs><rect width=\"480\" height=\"240\" fill=\"url(#pa-losangeles-2)\"/><circle class=\"pa-sun\" style=\"fill:var(--pa-sun)\" cx=\"108\" cy=\"98\" r=\"24\"/><rect style=\"fill:var(--pa-far)\" x=\"26\" y=\"116\" width=\"10\" height=\"36\"/><rect style=\"fill:var(--pa-far)\" x=\"38\" y=\"94\" width=\"14\" height=\"58\"/><rect style=\"fill:var(--pa-far)\" x=\"54\" y=\"108\" width=\"9\" height=\"44\"/><rect style=\"fill:var(--pa-far)\" x=\"65\" y=\"80\" width=\"16\" height=\"72\"/><rect style=\"fill:var(--pa-far)\" x=\"83\" y=\"102\" width=\"11\" height=\"50\"/><rect style=\"fill:var(--pa-far)\" x=\"96\" y=\"90\" width=\"13\" height=\"62\"/><rect style=\"fill:var(--pa-far)\" x=\"111\" y=\"122\" width=\"8\" height=\"30\"/><path style=\"fill:var(--pa-mid)\" d=\"M0 162 C80 142 140 130 200 118 C250 100 300 96 340 104 C392 112 432 124 480 132 L480 186 L0 186Z\"/><rect style=\"fill:var(--pa-acc)\" x=\"268\" y=\"90\" width=\"64\" height=\"10\" rx=\"1\"/><path style=\"fill:var(--pa-line)\" d=\"M287 90 a13 13 0 0 1 26 0Z\"/><path style=\"fill:var(--pa-line)\" d=\"M268 90 a6 6 0 0 1 12 0Z\"/><path style=\"fill:var(--pa-line)\" d=\"M320 90 a6 6 0 0 1 12 0Z\"/><rect style=\"fill:var(--pa-line)\" x=\"298\" y=\"72\" width=\"4\" height=\"6\"/><path style=\"fill:var(--pa-near)\" d=\"M0 192 C120 178 300 186 480 178 L480 240 L0 240Z\"/><rect style=\"fill:var(--pa-ground2)\" x=\"0\" y=\"214\" width=\"480\" height=\"26\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 52 214 C 52.4 154.6 57.01 121.6 57.81 82\" stroke-width=\"6\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 57.81 82 Q 33.12 76.73 12.93 100.06 Q 37.61 84.92 57.81 82Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 57.81 82 Q 33.12 61.92 12.93 85.25 Q 37.61 76.84 57.81 82Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 57.81 82 Q 82.49 63.15 102.69 86.49 Q 78 77.51 57.81 82Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 57.81 82 Q 82.49 77.96 102.69 101.3 Q 78 85.59 57.81 82Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 57.81 82 Q 54.11 48.34 51.08 71.68 Q 54.78 69.43 57.81 82Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 84 214 C 83.8 163.6 81.94 135.6 81.54 102\" stroke-width=\"5.09\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 81.54 102 Q 60.59 97.53 43.46 117.33 Q 64.4 104.48 81.54 102Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 81.54 102 Q 60.59 84.96 43.46 104.76 Q 64.4 97.62 81.54 102Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 81.54 102 Q 102.48 86.01 119.62 105.81 Q 98.67 98.19 81.54 102Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 81.54 102 Q 102.48 98.57 119.62 118.37 Q 98.67 105.05 81.54 102Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 81.54 102 Q 78.39 73.44 75.82 93.24 Q 78.97 91.34 81.54 102Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 392 214 C 392.3 158.2 395.49 127.2 396.09 90\" stroke-width=\"5.64\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 396.09 90 Q 372.9 85.05 353.93 106.97 Q 377.12 92.74 396.09 90Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 396.09 90 Q 372.9 71.13 353.93 93.06 Q 377.12 85.15 396.09 90Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 396.09 90 Q 419.28 72.29 438.25 94.22 Q 415.06 85.78 396.09 90Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 396.09 90 Q 419.28 86.21 438.25 108.13 Q 415.06 93.37 396.09 90Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 396.09 90 Q 392.61 58.38 389.77 80.3 Q 393.25 78.2 396.09 90Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 430 214 C 429.9 151 428.66 116 428.46 74\" stroke-width=\"6.36\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428.46 74 Q 402.28 68.41 380.86 93.16 Q 407.04 77.09 428.46 74Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428.46 74 Q 402.28 52.7 380.86 77.45 Q 407.04 68.53 428.46 74Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428.46 74 Q 454.64 54.01 476.06 78.76 Q 449.88 69.24 428.46 74Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428.46 74 Q 454.64 69.72 476.06 94.47 Q 449.88 77.81 428.46 74Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428.46 74 Q 424.53 38.3 421.32 63.05 Q 425.25 60.67 428.46 74Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 464 214 C 464.2 167.2 465.89 141.2 466.29 110\" stroke-width=\"4.73\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 466.29 110 Q 446.84 105.85 430.93 124.23 Q 450.38 112.3 466.29 110Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 466.29 110 Q 446.84 94.18 430.93 112.56 Q 450.38 105.93 466.29 110Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 466.29 110 Q 485.74 95.15 501.65 113.54 Q 482.2 106.46 466.29 110Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 466.29 110 Q 485.74 106.82 501.65 125.2 Q 482.2 112.83 466.29 110Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 466.29 110 Q 463.37 83.48 460.98 101.87 Q 463.9 100.1 466.29 110Z\"/></svg>", "an": "<svg class=\"pa-svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 480 240\" preserveAspectRatio=\"xMidYMax slice\" role=\"img\" aria-label=\"Orange County: The harbour’s Ferris wheel and sails\" data-sky=\"auto\" data-place=\"orangecounty\" style=\"--pa-sky1:#D8EAF8;--pa-sky2:#FCE9D9;--pa-sun:#FFB84F;--pa-far:#B3C3CF;--pa-mid:#9AB2C2;--pa-near:#3E6B4A;--pa-water:#3A8BC4;--pa-foam:#C8E3F4;--pa-ground:#F2E0BF;--pa-ground2:#E3C899;--pa-line:#2E3A48;--pa-acc:#F25C54;--pa-leaf:#2F7A55;--pa-snow:#FFFFFF;--pa-cloud:#FFFFFF;--pa-n-sky1:#0A1530;--pa-n-sky2:#2A3256;--pa-n-sun:#F3EBD3;--pa-n-far:#1D2A40;--pa-n-mid:#22324A;--pa-n-near:#11231A;--pa-n-water:#0F3352;--pa-n-foam:#2B5D84;--pa-n-ground:#3A3328;--pa-n-ground2:#2C261E;--pa-n-line:#05080F;--pa-n-acc:#FF6B63;--pa-n-leaf:#14301F;--pa-n-snow:#E8EEF6;--pa-n-cloud:#3A4660\"><defs><linearGradient id=\"pa-orangecounty-3\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" style=\"stop-color:var(--pa-sky1)\"/><stop offset=\".72\" style=\"stop-color:var(--pa-sky2)\"/></linearGradient></defs><rect width=\"480\" height=\"240\" fill=\"url(#pa-orangecounty-3)\"/><circle class=\"pa-sun\" style=\"fill:var(--pa-sun)\" cx=\"100\" cy=\"84\" r=\"22\"/><path style=\"fill:var(--pa-far)\" d=\"M0 134 C100 118 200 124 300 116 C380 112 430 122 480 120 L480 152 L0 152Z\"/><rect style=\"fill:var(--pa-water)\" x=\"0\" y=\"150\" width=\"480\" height=\"62\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 18 186 h 54\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 110 194 h 34\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 196 189 h 48\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 300 196 h 40\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 398 191 h 58\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle style=\"stroke:var(--pa-line);fill:none\" cx=\"346\" cy=\"118\" r=\"38\" stroke-width=\"2.6\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l 38 0\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l 26.87 26.87\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l 0 38\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l -26.87 26.87\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l -38 0\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l -26.87 -26.87\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l 0 -38\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 346 118 l 26.87 -26.87\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><rect style=\"fill:var(--pa-acc)\" x=\"379.24\" y=\"124.55\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"363\" y=\"148.67\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"334.45\" y=\"154.24\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"310.33\" y=\"138\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"304.76\" y=\"109.45\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"321\" y=\"85.33\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"349.55\" y=\"79.76\" width=\"8\" height=\"8\" rx=\"2\"/><rect style=\"fill:var(--pa-acc)\" x=\"373.67\" y=\"96\" width=\"8\" height=\"8\" rx=\"2\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M346 118 L326 166 M346 118 L366 166\" stroke-width=\"3\" stroke-linecap=\"round\"/><rect style=\"fill:var(--pa-line)\" x=\"290\" y=\"164\" width=\"120\" height=\"6\"/><path style=\"fill:var(--pa-snow)\" d=\"M 96 182 L 142 182 L 134 191 L 102 191Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 118 182 V 132\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-snow)\" d=\"M 120 134 L 120 178 L 148 178Z\"/><path style=\"fill:var(--pa-acc)\" d=\"M 116 142 L 116 178 L 100 178Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 178.4 190 L 215.2 190 L 208.8 197.2 L 183.2 197.2Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 196 190 V 150\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-snow)\" d=\"M 198 151.6 L 198 186 L 220 186Z\"/><path style=\"fill:var(--pa-acc)\" d=\"M 194 158 L 194 186 L 181.6 186Z\"/><path style=\"fill:var(--pa-ground)\" d=\"M0 212 C140 206 320 210 480 202 L480 240 L0 240Z\"/><path style=\"stroke:var(--pa-line);fill:none\" d=\"M 450 226 C 449.6 182.8 446.58 158.8 445.78 130\" stroke-width=\"4.36\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 445.78 130 Q 427.82 126.16 413.14 143.14 Q 431.09 132.12 445.78 130Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 445.78 130 Q 427.82 115.39 413.14 132.37 Q 431.09 126.25 445.78 130Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 445.78 130 Q 463.73 116.29 478.42 133.26 Q 460.46 126.74 445.78 130Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 445.78 130 Q 463.73 127.06 478.42 144.04 Q 460.46 132.61 445.78 130Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 445.78 130 Q 443.08 105.52 440.88 122.49 Q 443.57 120.86 445.78 130Z\"/></svg>", "lt": "<svg class=\"pa-svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 480 240\" preserveAspectRatio=\"xMidYMax slice\" role=\"img\" aria-label=\"Lake Tahoe: Pines, snowy peaks and the lake\" data-sky=\"auto\" data-place=\"laketahoe\" style=\"--pa-sky1:#D6E9F7;--pa-sky2:#EEF5FA;--pa-sun:#FFC861;--pa-far:#93AFC9;--pa-mid:#6E8FB0;--pa-near:#2E5A44;--pa-water:#3D7FB0;--pa-foam:#CFE5F4;--pa-ground:#F5F8FB;--pa-ground2:#DCE6EF;--pa-line:#34404E;--pa-acc:#FFFFFF;--pa-leaf:#2C5B43;--pa-snow:#FFFFFF;--pa-cloud:#FFFFFF;--pa-n-sky1:#081428;--pa-n-sky2:#1C2B48;--pa-n-sun:#F3EBD3;--pa-n-far:#1B2A44;--pa-n-mid:#203250;--pa-n-near:#0F2219;--pa-n-water:#0D2B47;--pa-n-foam:#2A5A80;--pa-n-ground:#8C9AAD;--pa-n-ground2:#6F7E92;--pa-n-line:#05080F;--pa-n-acc:#E6EDF5;--pa-n-leaf:#0F2519;--pa-n-snow:#DDE6F0;--pa-n-cloud:#3A4660\"><defs><linearGradient id=\"pa-laketahoe-4\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" style=\"stop-color:var(--pa-sky1)\"/><stop offset=\".72\" style=\"stop-color:var(--pa-sky2)\"/></linearGradient></defs><rect width=\"480\" height=\"240\" fill=\"url(#pa-laketahoe-4)\"/><circle class=\"pa-sun\" style=\"fill:var(--pa-sun)\" cx=\"150\" cy=\"80\" r=\"20\"/><path style=\"fill:var(--pa-far)\" d=\"M0 142 L50 98 L80 118 L122 76 L170 124 L212 92 L258 130 L302 84 L352 120 L402 94 L442 118 L480 104 L480 152 L0 152Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 50 98 L 37 112 L 45 109 L 51 114 L 57 109 L 63 111Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 122 76 L 109 90 L 117 87 L 123 92 L 129 87 L 135 89Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 212 92 L 199 106 L 207 103 L 213 108 L 219 103 L 225 105Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 302 84 L 289 98 L 297 95 L 303 100 L 309 95 L 315 97Z\"/><path style=\"fill:var(--pa-snow)\" d=\"M 402 94 L 389 108 L 397 105 L 403 110 L 409 105 L 415 107Z\"/><path style=\"fill:var(--pa-mid)\" d=\"M0 152 L70 128 L120 146 L190 122 L250 150Z\"/><rect style=\"fill:var(--pa-water)\" x=\"0\" y=\"150\" width=\"480\" height=\"40\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 18 162 h 54\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 110 170 h 34\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 196 165 h 48\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 300 172 h 40\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"stroke:var(--pa-foam);fill:none\" d=\"M 398 167 h 58\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path style=\"fill:var(--pa-ground)\" d=\"M0 190 C120 178 300 186 480 176 L480 240 L0 240Z\"/><path style=\"fill:var(--pa-ground2)\" d=\"M0 218 C160 208 320 214 480 206 L480 240 L0 240Z\"/><rect style=\"fill:var(--pa-line)\" x=\"28.5\" y=\"199.28\" width=\"3\" height=\"14.72\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 30 122 L 51.25 175.36 L 8.75 175.36Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 30 144.08 L 59.75 188.24 L 0.25 188.24Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 30 166.16 L 68.25 201.12 L -8.25 201.12Z\"/><rect style=\"fill:var(--pa-line)\" x=\"62.5\" y=\"194.8\" width=\"3\" height=\"11.2\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 64 136 L 80.17 176.6 L 47.83 176.6Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 64 152.8 L 86.64 186.4 L 41.36 186.4Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 64 169.6 L 93.11 196.2 L 34.89 196.2Z\"/><rect style=\"fill:var(--pa-line)\" x=\"94.5\" y=\"207.36\" width=\"3\" height=\"8.64\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 96 162 L 108.47 193.32 L 83.53 193.32Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 96 174.96 L 113.46 200.88 L 78.54 200.88Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 96 187.92 L 118.45 208.44 L 73.55 208.44Z\"/><rect style=\"fill:var(--pa-line)\" x=\"390.5\" y=\"197.52\" width=\"3\" height=\"12.48\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 392 132 L 410.02 177.24 L 373.98 177.24Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 392 150.72 L 417.23 188.16 L 366.77 188.16Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 392 169.44 L 424.43 199.08 L 359.57 199.08Z\"/><rect style=\"fill:var(--pa-line)\" x=\"426.5\" y=\"199.36\" width=\"3\" height=\"16.64\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428 112 L 452.02 172.32 L 403.98 172.32Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428 136.96 L 461.63 186.88 L 394.37 186.88Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 428 161.92 L 471.24 201.44 L 384.76 201.44Z\"/><rect style=\"fill:var(--pa-line)\" x=\"460.5\" y=\"195.44\" width=\"3\" height=\"10.56\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 462 140 L 477.25 178.28 L 446.75 178.28Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 462 155.84 L 483.34 187.52 L 440.66 187.52Z\"/><path style=\"fill:var(--pa-leaf)\" d=\"M 462 171.68 L 489.44 196.76 L 434.56 196.76Z\"/></svg>"};      // gitaway/placeart.py's drawings (San Diego, Los Angeles, Orange County for Anaheim, Lake Tahoe); Carlsbad and Temecula have none, so they keep the plain tint
+function artSvg(p) { return `<span class="am${ART[p.id] ? ' has' : ''}">${artMono(p)}</span>${ART[p.id] ? `<span class="aw">${ART[p.id]}</span>` : ''}`; }
+function artMono(p) {
   const h = p.hue;
   const y = 24 + (h % 7), z = 34 + (h % 5);      // warm greys only: the lane's own skyline, no colour (orange is kept for signals)
   return `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><rect width="48" height="48" style="fill:var(--card-2)"/><circle cx="34" cy="15" r="6" style="fill:var(--card-solid);stroke:var(--line-2)"/>
@@ -1442,7 +1499,7 @@ function xtraHtml(where, head, sub, chips, isOpen) {
   const fresh = !seen.has(where); seen.add(where);
   return `<div class="xtra ${where === 'sky' ? 'sky' : 'card'} ${fresh ? 'fresh' : ''}" role="group" aria-label="${esc(head)}"><span class="sheen" aria-hidden="true"></span>
     <div class="xhead"><b>${esc(head)}</b><small>${esc(sub)}</small></div>
-    <div class="xchips">${chips.map((c, i) => `<button class="xc${c.sig ? ' sig' : ''}" data-x="${where}:${c.id}" aria-expanded="${isOpen(c.id)}" style="--k:${c.k};--i:${i}"><span class="ic">${I(c.ic)}</span><span class="tx"><span>${esc(c.title)}</span><small>${esc(c.teaser)}</small></span><span class="ct">${esc(c.count)}</span><span class="more">${I('plus')}</span></button>`).join('')}</div></div>`;
+    <div class="xchips">${chips.map((c, i) => `<button class="xc${c.sig ? ' sig' : ''}" data-kind="${c.id}" data-x="${where}:${c.id}" aria-expanded="${isOpen(c.id)}" style="--k:${c.k};--i:${i}"><span class="ic">${I(c.ic)}</span><span class="tx"><span>${esc(c.title)}</span><small>${esc(c.teaser)}</small></span><span class="ct">${esc(c.count)}</span><span class="more">${I('plus')}</span></button>`).join('')}</div></div>`;
 }
 const RAIL = () => [
   { id: 'wx', ic: 'sun', k: 'var(--ink)', title: `San Diego ${wxOf(PLACES[0], MID).t}°`, teaser: `${wxWord(wxOf(PLACES[0], MID).k)}, typical for Dec`, count: '5 days' },
@@ -1781,7 +1838,7 @@ function renderFine(t) {
   const HU = [];
   const row = (st, label, sub = '', val = '', extra = '', chip = '') => {
     const id = st === 'hu' ? `hu-${HU.push(chip || label)}` : '';
-    return `<div class="kr ${st}"${id ? ` id="${id}"` : ''}><span class="m">${I(st === 'hu' ? 'flag' : st === 'ok' ? 'check' : st === 'nl' ? 'help' : 'minus')}</span><div><b>${label}${st === 'hu' ? '<span class="hut">Heads up</span>' : ''}</b>${sub ? `<small>${sub}</small>` : ''}${extra}</div><span class="v">${val}</span></div>`;
+    return `<div class="kr ${st}"${id ? ` id="${id}"` : ''}><span class="m">${I(st === 'hu' ? 'flag' : st.startsWith('ok') ? 'check' : st === 'nl' ? 'help' : 'minus')}</span><div><b>${label}${st === 'hu' ? '<span class="hut">Heads up</span>' : ''}</b>${sub ? `<small>${sub}</small>` : ''}${extra}</div><span class="v">${val}</span></div>`;
   };
   const card = (cls, ic, title, rows, smp = '') => { const n = (rows.match(/class="kr hu"/g) || []).length; return `<div class="kcard ${cls}"><header><span class="ki">${I(ic)}</span><b>${title}</b>${smp}${n ? `<span class="hu-n">${n} heads up</span>` : ''}</header>${rows}</div>`; };
   const ill = '<span class="smp">Illustrative</span>';
@@ -1796,7 +1853,7 @@ function renderFine(t) {
     <div class="realcost"><small>What the stay really costs</small><div class="eq"><span>${money(t.total)}</span><span class="pl">your total</span><span class="pl">+</span><span class="hot">${money(park)}</span><span class="pl">parking at the hotel</span></div><b class="num">about ${money(t.total + park)}</b><p>${BF ? 'Breakfast is in.' : `Add breakfast and it is about ${money(t.total + park + bfN)}.`} No car? Then ${money(t.total)} is the price.</p></div></div></div>`;
   const cin = H.checkin.checkin_start.replace(/^0/, '').replace(':00', '');
   const pol = card('', 'shield', 'Policies that bite',
-    row('ok', 'Free cancellation until Dec 16', 'Then the first night is charged') +
+    row('ok gd', 'Free cancellation until Dec 16', 'Then the first night is charged') +
     (early > 90 ? row('hu', `Lands ${hm(early)} before check-in`, `Your flight lands ${out.arr}; check-in is from ${cin}. ${has('Luggage storage') ? 'They keep bags for free.' : ''}`, '', '', `Lands ${hm(early)} before check-in`) : row('ok', `Check-in from ${cin}`, `Your flight lands ${out.arr}`)) +
     row('', `Check-out by ${H.checkin.checkout.replace(/^0/, '')}`, 'Later check-out on request') +
     row('hu', 'A $100 a night hold on your card', 'Returned after check-out, can take a week', '', '', '$100 a night hold on your card') +
@@ -1930,9 +1987,9 @@ function drawCk() {
     <div class="ck-body"><p class="ck-step">Step 4 of 4</p><h3 class="ck-q">Check it, then book</h3>
       ${rv('Trip', esc(p.name), `${fmtD(d0)} to ${fmtD(d1)} · ${S.nights} nights`)}
       ${rv('Flights', `${S.from} ⇄ LAX · ${f.al}`, `${f.dep} out · nonstop. You book this on the airline’s site, after this.`)}
-      ${rv('Stay', 'Hilton Los Angeles Airport', `${esc(rm.name)} · Refundable until Dec 16${BF ? ' · breakfast in' : ''}`)}
+      ${rv('Stay', 'Hilton Los Angeles Airport', `${esc(rm.name)} · <span class="gd">Refundable until Dec 16</span>${BF ? ' · breakfast in' : ''}`)}
       ${rv('Guest', 'Sam Rivera + 3', '', 1)}${rv('Contact', 'sam@example.com', '+1 415 555 0134', 1)}${rv('Requests', 'Crib, high floor', 'Arriving in the afternoon', 1)}
-      <div class="ck-pol"><div class="ck-pt">${I('shield')}Cancelling and refunds</div><p><b>Free cancellation until Dec 16, 11:59 PM.</b> Then the first night is charged.</p><p class="ck-hu">${I('flag')}<span>Parking is not in this price: about ${money(PARK * S.nights)}, paid at the hotel.</span></p><p class="ck-fine">Sold by Nuitée through LiteAPI, the merchant of record. <a href="#" onclick="return false">How GitAway keeps you safe</a></p></div>
+      <div class="ck-pol"><div class="ck-pt">${I('shield')}Cancelling and refunds</div><p><b class="gd">Free cancellation until Dec 16, 11:59 PM.</b> Then the first night is charged.</p><p class="ck-hu">${I('flag')}<span>Parking is not in this price: about ${money(PARK * S.nights)}, paid at the hotel.</span></p><p class="ck-fine">Sold by Nuitée through LiteAPI, the merchant of record. <a href="#" onclick="return false">How GitAway keeps you safe</a></p></div>
       <div class="ck-sum"><div><span>Flight · ${people()} seats, ${f.al}</span><b class="num">${money(t.fl)}</b></div><div><span>Hilton LAX · ${S.nights} nights</span><b class="num">${money(stay)}</b></div><div class="t"><span>Total for the trip</span><b class="num">${money(t.total)}</b></div></div>
       <p class="ck-fine">This booking covers the stay: ${money(stay)}. The flight is booked on its airline’s site.</p>
       <label class="ck-agree" id="ck-agree"><input type="checkbox" data-agree ${AGREE ? 'checked' : ''}><span class="cb" aria-hidden="true">${I('check')}</span><span>I have read the fare and hotel rules, including whether each stay is refundable.</span></label>
@@ -1975,24 +2032,30 @@ let tt; function toast(t) { const el = $('#toast'); el.textContent = t; el.class
 
 
 /* ---------- the design picker: two looks, two modes ---------- */
+const COLOURS = [['mono', 'Mono'], ['warm', 'Warm'], ['good', 'Warm + good']];
 const LOOKS = [['canvas', 'A · Canvas', '#F4F2EE', '#FFFFFF'], ['night', 'B · Night sky', '#1B2A41', '#7A4C30']];
 function renderPicker() {
   const l = root.dataset.look, t = root.dataset.theme;
   $('#pk-body').innerHTML = `<div class="pk-row"><small>Look</small><div class="seg">${LOOKS.map(([id, lb, a, z]) => `<button data-plook="${id}" aria-pressed="${l === id}"><i style="background:linear-gradient(160deg, ${a} 50%, ${z} 50%)"></i>${lb}</button>`).join('')}</div></div>
     <div class="pk-row"><small>Mode</small><div class="seg"><button data-pth="light" aria-pressed="${t === 'light'}">${I('sun')}Light</button><button data-pth="dark" aria-pressed="${t === 'dark'}">${I('moon')}Dark</button></div></div>
-    <p class="pk-key"><span><i class="k-ink"></i>Black: the one action</span><span><i class="k-sig"></i>Orange: heads up</span></p>`;
+    <div class="pk-row"><small>Colour</small><div class="seg">${COLOURS.map(([id, lb]) => `<button data-pcol="${id}" aria-pressed="${root.dataset.colour === id}">${lb}</button>`).join('')}</div></div>
+    <p class="pk-key"><span><i class="k-ink"></i>Black: the one action</span><span><i class="k-sig"></i>Orange: heads up</span>${root.dataset.colour === 'good' ? '<span><i class="k-good"></i>Green: good news</span>' : ''}</p>
+    <a class="pk-link" href="cover.html${location.search.replace(/[?&](state|open|hu|ck|drawer|ask)=[^&]*/g, '').replace(/^&/, '?')}">See the cover${I('arrow')}</a>`;
   $$('#pk-body svg').forEach(s => { s.style.width = '15px'; s.style.height = '15px'; });
 }
+const setColour = v => { root.dataset.colour = COLOURS.some(c => c[0] === v) ? v : 'mono'; store.set('bo-colour', root.dataset.colour); renderPicker(); };
 const setLook = v => { root.dataset.look = v === 'night' ? 'night' : 'canvas'; store.set('bo-look', root.dataset.look); renderPicker(); };
 const setTheme = t => { root.dataset.theme = t; $('#theme').innerHTML = I(t === 'dark' ? 'sun' : 'moon'); $('#theme').setAttribute('aria-label', t === 'dark' ? 'Switch to light' : 'Switch to dark'); store.set('bo-theme', t); renderPicker(); };
 $('#picker').addEventListener('click', e => {
   const tg = e.target.closest('[data-pk-toggle]'); if (tg) { const min = $('#picker').classList.toggle('min'); $$('#picker [data-pk-toggle]').forEach(b => b.setAttribute('aria-expanded', !min)); return; }
   const l = e.target.closest('[data-plook]'); if (l) { setLook(l.dataset.plook); return; }
+  const co = e.target.closest('[data-pcol]'); if (co) { setColour(co.dataset.pcol); return; }
   const t = e.target.closest('[data-pth]'); if (t) setTheme(t.dataset.pth);
 });
 $('#theme').addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
 
 /* boot */
+root.dataset.colour = Q.get('colour') || store.get('bo-colour') || 'mono';
 setLook(Q.get('look') || store.get('bo-look') || 'canvas');
 setTheme(Q.get('theme') || store.get('bo-theme') || 'light');
 if (PHONE()) { $('#picker').classList.add('min'); $$('#picker [data-pk-toggle]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
