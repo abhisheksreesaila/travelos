@@ -168,7 +168,7 @@ def test_the_stylesheet_pins_with_sticky_turns_nothing_with_the_scroll_and_has_n
 def test_every_beats_card_has_its_size_in_both_layouts():
     css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
     sizes = {int(k): (int(w), int(h)) for k, w, h in re.findall(r'\.side\[data-k="(\d)"\]\) \{ --w: (\d+); --h: (\d+); \}', css)[:7]}
-    assert sizes == {1: (640, 400), 2: (380, 410), 3: (660, 430), 4: (540, 350), 5: (400, 540), 6: (400, 500), 7: (520, 340)}
+    assert sizes == {1: (640, 400), 2: (380, 425), 3: (660, 430), 4: (540, 350), 5: (400, 545), 6: (400, 500), 7: (520, 340)}
     assert re.search(r'\.stage\[data-beat="3"\] \.pc, \.side\[data-k="3"\]\) \{ --w: 660; --h: 430; \}', css)      # one rule sets both: the film's card and the still's
 
 

@@ -3,10 +3,11 @@
    The Stage: an Apple-grey ground (#F5F5F7, black in the dark), a white postcard (#1C1C1E in the dark) whose picture is the place's own vivid colour with white line art, big heavy Inter,
    other families' postcards as saturated colour cards, a ring of words in quiet grey, a black Start a trip (white in the dark), and orange only as a small signal (the postage stamp, the
    postmark, the Go stamps, the beat the pager is on). No cream, no pastel sky, no clouds. Every colour is a cover-scoped variable below (.cv3), so the cover does not move when the shared v2 tokens do.
-   Contrast (measured, WCAG): ink #1D1D1F on #F5F5F7 15.5, #6E6E73 on #F5F5F7 4.7 and on white 5.1, orange words #B84A00 on white 5.2; dark: #A1A1A6 on #000 8.0, on #1C1C1E 6.9, #FF9A4D on #1C1C1E 8.1;
+   Contrast (measured, WCAG; the postcard faces' second ink is #5F5F64, 5.0 and up on their tinted tiles, the way D-957 moved the site's): ink #1D1D1F on #F5F5F7 15.5, #6E6E73 on #F5F5F7 4.7 and on white 5.1, orange words #B84A00 on white 5.2; dark: #A1A1A6 on #000 8.0, on #1C1C1E 6.9, #FF9A4D on #1C1C1E 8.1;
    white on the place colours: blue 4.7, violet 5.0, green 4.8.
    D-962 the ground is the grey, the postcard white (#1C1C1E in the dark); D-963 the picture is the place's own colour, its line art white, and the gallery, the icon tiles and the avatars wear
    the same colours; D-964 no sun, moon, stars or clouds: the sky is the stage, and Go's snow is flakes drifting over it; D-965 orange is a signal only (stamp, postmark, Go stamps, the pager's beat).
+   The ring of words (Wish, Compare, Book ...) is decoration: it is aria-hidden, the captions are the text, and the word the story is on (the current beat) is the one shown strongly; the rest are quiet.
    Two layouts from one markup:
      the still (the default): every beat is its own card with its words under it, nothing travels; it is what reduced motion, ?still, a page without its script
        and a screen under 35rem tall get;
@@ -24,7 +25,7 @@ html.cv-root { background: #F5F5F7; }
   --f-display: "Inter", system-ui, sans-serif;
   --sig: #F25500; --sig-ink: #B84A00; --good: #0F766E;
   --pl-sd: #0071E3; --pl-la: #7D4CF0; --pl-lt: #17834A; --pl-pink: #D6336C; --pl-teal: #0E9AA7; --pl-sun: #E5A400;      /* the places' own colours (the prototype's set) */
-  --pc-paper: #FFFFFF; --pc-2: #F5F5F7; --pc-ink: #1D1D1F; --pc-ink-2: #6E6E73; --pc-line: rgb(0 0 0 / .08); --pc-line-2: rgb(0 0 0 / .14);
+  --pc-paper: #FFFFFF; --pc-2: #F5F5F7; --pc-ink: #1D1D1F; --pc-ink-2: #5F5F64; --pc-line: rgb(0 0 0 / .08); --pc-line-2: rgb(0 0 0 / .14);
   --pc-pen: var(--pc-ink); --pc-brand: #1D1D1F; --pc-on-brand: #FFFFFF; --pc-on: #FFFFFF;
   --ring-dim: rgb(0 0 0 / .1); --flake: rgb(0 0 0 / .18);
   color: var(--ink); --u: min(0.0625rem, calc((100vw - 2rem) / 680)); }
@@ -97,21 +98,23 @@ html.cv-root { background: #F5F5F7; }
 /* the unit of the drawings, and each card's size in it (the film's stage reads the same table by the beat) */
 :is(.stage .pc, .side) { --w: 520; --h: 340; }
 :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 640; --h: 400; }
-:is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 380; --h: 410; }
+:is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 380; --h: 425; }
 :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 660; --h: 430; }
 :is(.stage[data-beat="4"] .pc, .side[data-k="4"]) { --w: 540; --h: 350; }
-:is(.stage[data-beat="5"] .pc, .side[data-k="5"]) { --w: 400; --h: 540; }
+:is(.stage[data-beat="5"] .pc, .side[data-k="5"]) { --w: 400; --h: 545; }
 :is(.stage[data-beat="6"] .pc, .side[data-k="6"]) { --w: 400; --h: 500; }
 :is(.stage[data-beat="7"] .pc, .side[data-k="7"]) { --w: 520; --h: 340; }
 @media (max-width: 47.5rem) {
   :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 380; }
   :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 520; --h: 440; }
   :is(.stage[data-beat="4"] .pc, .side[data-k="4"]) { --w: 520; --h: 340; }
+  :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 520; --h: 620; }
+  :is(.stage[data-beat="5"] .pc, .side[data-k="5"]) { --w: 520; --h: 700; }
   :is(.stage[data-beat="0"] .pc, .side[data-k="0"], .stage[data-beat="7"] .pc, .side[data-k="7"]) { --w: 520; --h: 400; }
 }
 /* a still holds each moment's last frame at once */
 html:not(.cv-film) .cv3 :is(*, *::before, *::after) { animation-duration: var(--cvt-1) !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: var(--cvt-1) !important; transition-delay: 0s !important; }
-html:not(.cv-film) .cv3 :is(.cloud, .zz, .stars circle, .caret, .flakes) { animation: none !important; }
+html:not(.cv-film) .cv3 :is(.caret, .flakes) { animation: none !important; }
 html:not(.cv-film) .cv3 .cur { display: none; }
 
 /* ============ the film: one card on a pinned stage ============ */
@@ -267,6 +270,8 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .sqr .artbox { height: 31%; border-radius: 0; flex: none; }
 .sqr .artbox .ttl { top: auto; bottom: calc(12 * var(--u)); }
 .sqr .artbox .ttl b { font-size: max(1rem, calc(26 * var(--u))); }
+.sqr .artbox::after { content: ""; position: absolute; left: 0; bottom: 0; width: 85%; height: 75%; background: linear-gradient(to top right, var(--pc, var(--pl-sd)) 40%, transparent 85%); }      /* the picture's white line art never runs through the title (D-970) */
+.sqr .artbox .ttl { z-index: 1; }
 .sqr .body { flex: 1; padding: calc(12 * var(--u)) calc(18 * var(--u)) calc(16 * var(--u)); display: flex; flex-direction: column; }
 .sqr .row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: calc(10 * var(--u)); padding: calc(7 * var(--u)) 0; border-bottom: 1px solid var(--pc-line); animation: rise var(--cvt-500) var(--v2-ease) both; animation-delay: calc(var(--cvt-400) + var(--i) * var(--cvt-140)); }
 .sqr .row .ic { display: grid; place-items: center; width: calc(28 * var(--u)); height: calc(28 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--ic); color: var(--pc-on); }
