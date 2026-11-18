@@ -319,7 +319,7 @@ def test_one_square_is_lit_at_a_time(matrix):
     page.wait_for_function("k => document.querySelector(`.mx-sq[data-sq='${k}']`).classList.contains('is-open')", arg=key)
     page.wait_for_timeout(400)      # the background's own transition
     assert page.evaluate(lit) == [key]
-    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(36, 33, 90)" or page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(228, 227, 251)"
+    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") in ("rgb(240, 240, 243)", "rgb(44, 44, 46)")      # the find steps back to the ringed tint (--flight-t, light and dark)
 
 def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_the_bar(matrix):
     page = matrix(DESKTOP)
@@ -445,7 +445,7 @@ def test_the_weather_notes_are_lines_of_their_own_inside_about_these_prices(matr
 
 # ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
 
-TABLET = {"width": 1100, "height": 800}      # a laptop's narrow end, and a tablet on its side (F-236 review)
+TABLET = {"width": 1100, "height": 1000}      # a laptop's narrow end, and a tablet on its side (F-236 review); F-296: 1000 tall, since the dark band puts the grid 190px lower and the page reads only 240px ahead of the screen
 NIGHTS_URL = URL.replace("r=2026-12-16", "r=2026-12-18")
 WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
 

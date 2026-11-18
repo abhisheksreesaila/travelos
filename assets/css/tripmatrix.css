@@ -96,7 +96,7 @@
 .mx-sq.is-on { box-shadow: inset 0 0 0 0.15625rem color-mix(in srgb, var(--flight) 60%, transparent); }
 .mx-sq.is-over { background: repeating-linear-gradient(135deg, transparent 0 0.4375rem, var(--hatch) 0.4375rem 0.875rem), color-mix(in srgb, var(--card-2) 60%, transparent); color: var(--ink-3); }
 .mx-sq.is-over .mx-v { font-weight: 560; color: var(--ink-3); }
-.mx-sq.is-over .mx-sqw { color: var(--ink-3); }
+.mx-sq.is-over .mx-sqw { color: var(--ink-2); }
 /* the lit square: the find, or the one opened; open another and the find steps back to a ringed tint, so only one square is lit */
 .mx-sq:is(.is-find, .is-open) { background: var(--pick); color: var(--pick-on); box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--pick) 14%, transparent), var(--sh2); }
 .mx-sq:is(.is-find, .is-open) :is(.mx-v, .mx-sqw) { color: var(--pick-on); }

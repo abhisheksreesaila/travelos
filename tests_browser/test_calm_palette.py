@@ -1,6 +1,6 @@
 """F-261 in a real browser: the calm palette and the quiet reading sky (D-700, D-701).
 
-* A reading page (a creator's book, the details editor, the import) shows no sun, moon, clouds, shore or mood object, only the soft gradient; booking (/plan/ask) and planning (/trip/plan)
+* A reading page (a creator's book, the details editor, the import) shows no sun, moon, clouds, shore or mood object, only the flat stage; booking (/plan/ask) and planning (/trip/plan)
   keep theirs.
 * Every primary action (Book my trip, Today's Directions, the pass's Plan this trip) is one solid ink (white in dark), never a gradient, and reads 4.5:1; the planning hero is a card with ink on it; the pass is a
   solid near-black. Dark is set through localStorage ga-mode.
@@ -78,7 +78,7 @@ def test_reading_pages_have_a_quiet_sky_and_every_word_reads_on_it(browser, base
         assert page.evaluate("document.documentElement.dataset.mode") == scheme
         assert page.get_attribute(".v2-bg", "data-sky") == "quiet", path
         assert page.locator(OBJECTS).count() == 0, path
-        assert page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundImage").count("gradient") >= 2      # the soft gradient is there
+        assert page.evaluate("getComputedStyle(document.querySelector('.v2-bg')).backgroundColor") == ("rgb(0, 0, 0)" if scheme == "dark" else "rgb(245, 245, 247)")      # the flat stage (F-296)
         shot(page, name, viewport)
         assert painted_words_read(page) == [], path
     c.close()

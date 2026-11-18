@@ -93,7 +93,7 @@ def test_the_chips_are_filled_a_title_a_teaser_a_count_and_48px(matrix, viewport
     page.wait_for_selector("#mx-rail .wchip[data-wg]")
     expect(page.locator("#mx-rail .rl-lab")).to_have_text("More to know before you pick")
     tray = page.locator("#mx-rail .rl-tray")
-    assert tray.evaluate("t => getComputedStyle(t).backdropFilter") != "none" and "rgba(" in tray.evaluate("t => getComputedStyle(t).backgroundColor")      # a frost over the ground
+    assert tray.evaluate("t => getComputedStyle(t).backgroundColor") == ("rgb(29, 29, 31)" if scheme == "light" else "rgb(44, 44, 46)")      # the dark band, solid (F-296, D-958)
     chips = page.locator("#mx-rail .wchip[data-wg]")
     assert chips.count() >= 5
     for i in range(chips.count()):

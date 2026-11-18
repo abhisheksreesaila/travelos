@@ -62,7 +62,7 @@ def test_the_laptop_has_the_line_and_the_postcard_beside_the_card_and_fits(open_
     assert all(b[1] >= 0 and b[2] >= 0 and b[4] <= DESKTOP["height"] for b in boxes), boxes      # everything on screen at 1440x900, no scrolling
     assert page.locator("#si-email").evaluate("e => document.activeElement === e")   # focus starts in the dialog
     assert round(page.evaluate("parseFloat(getComputedStyle(document.querySelector('#si-desc')).fontSize)")) == 17
-    assert page.evaluate("getComputedStyle(document.querySelector('#si-title')).fontFamily").startswith("Newsreader")      # the cover's voice, Newsreader, over Inter's words
+    assert page.evaluate("getComputedStyle(document.querySelector('#si-title')).fontFamily").startswith("Inter")      # F-296: heavy Inter headlines
     assert page.evaluate("getComputedStyle(document.querySelector('#si-desc')).fontFamily").startswith("Inter")
 
 
@@ -141,5 +141,5 @@ def test_the_postcard_is_paper_in_both_modes_and_its_icons_read_on_it(browser, b
         }""")
     finally:
         ctx.close()
-    assert got["paper"] == ([251, 246, 234] if scheme == "light" else [237, 228, 209]), got      # paper in the light, a dimmed paper in the dark: never the card's dark
+    assert got["paper"] == ([245, 245, 247] if scheme == "light" else [229, 229, 234]), got      # the book paper is neutral grey (no cream, F-296): lighter in the light, dimmed in the dark: never the card's dark
     assert len(got["icons"]) == 2 and all(contrast(i, bg) >= 3 for i, bg in got["icons"]), got

@@ -1,11 +1,11 @@
 /* GitAway design language v2 (F-250, D-610), in the Stage look (F-296, D-956..D-961; docs/design/palette-bo, look C): an Apple-grey stage, colour only from content.
-   Light: a flat #F5F5F7 stage, white cards, ink #1D1D1F, secondary #6E6E73, the one action ink. Dark: a flat #000 stage, #1C1C1E and #2C2C2E cards, white ink, the action white with black words.
+   Light: a flat #F5F5F7 stage, white cards, ink #1D1D1F, secondary #5F5F64, the one action ink. Dark: a flat #000 stage, #1C1C1E and #2C2C2E cards, white ink, the action white with black words.
    Colour comes from each place's own vivid colour (gitaway/placecolor.py), the photos, the weather's real colours and two signals: orange is Heads up, green is good news.
    The Harbour ground (F-281: a gradient, a sun or moon, two ridges) and the moods are retired; its tokens are gone. Inter, heavy and tight, for the headlines (--f-display) and for everything you read
    and every price (tabular figures); Newsreader stays only for the guide book's pages (cv2.css), a physical thing. Near-opaque cards; frosted glass only as `.v2-glass`. A page opts in with ONE class: `v2`
    on its wrapper (layout.page(v2=True)). These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
    The old token names (--ink, --card, --k-flight ...) are pointed at v2's values on a v2 page, so the parts not redrawn yet take the new look. Measured contrast (words, on the surface they sit on):
-   ink on stage 15.5, #6E6E73 on stage 4.7, on card 5.1; #B84A00 on card 5.2; #0F766E on stage 5.0; dark #A1A1A6 on #1C1C1E 6.6, on #2C2C2E 5.4; #45BFA4 on #2C2C2E 6.1. */
+   ink on stage 15.5, #5F5F64 on stage 5.8, on card 6.3; #B84A00 on card 5.2; #0F766E on stage 5.0; dark #A1A1A6 on #1C1C1E 6.6, on #2C2C2E 5.4; #45BFA4 on #2C2C2E 6.1. */
 @font-face { font-family: "Inter"; src: url("/assets/fonts/inter-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Newsreader"; src: url("/assets/fonts/newsreader-variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
@@ -19,9 +19,9 @@
 
   /* the Stage (F-296, D-956): a flat grey stage and white cards; --stage is the page ground, --ground-ink the words that sit straight on it (a card keeps --ink) */
   --stage: #F5F5F7;
-  --ground-ink: #1D1D1F; --ground-ink-2: #6E6E73;
+  --ground-ink: #1D1D1F; --ground-ink-2: #5F5F64;
   --sky-1: #F5F5F7; --sky-2: #F5F5F7; --sky-3: #F5F5F7;      /* the cover's and sign-in's old sky stops, flat now */
-  --ink: #1D1D1F; --ink-2: #48484C; --ink-3: #6E6E73; --on-ink: #FFFFFF;
+  --ink: #1D1D1F; --ink-2: #48484C; --ink-3: #5F5F64; --on-ink: #FFFFFF;
   --card-t: #FFFFFF; --card-solid: #FFFFFF; --card-2: #F5F5F7; --card-3: #E8E8ED; --lead-bg: #FAFAFC;
   --line: rgb(0 0 0 / .08); --line-2: rgb(0 0 0 / .16);
   --glass: #FFFFFF; --glass-line: rgb(0 0 0 / .08);
@@ -135,7 +135,7 @@
   /* the old names, pointed at v2 */
   --paper: var(--card-2); --paper-2: var(--card-2); --ground: var(--stage);
   --card: var(--card-solid);
-  --k-flight: #0071E3; --k-flight-t: var(--flight-t); --k-flight-i: var(--flight-i);
+  --k-flight: #0071E3; --k-flight-t: #E5F0FC; --k-flight-i: #00439A;
   --k-stay: #1D1D1F; --k-stay-t: var(--stay-t); --k-stay-i: var(--stay-i);
   --k-food: var(--food); --k-food-t: var(--food-t); --k-food-i: var(--food-i);
   --k-see: var(--see); --k-see-t: var(--see-t); --k-see-i: var(--see-i);
@@ -177,7 +177,7 @@
   --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A4250;
   --bk-paper: #E5E5EA; --bk-paper-2: #D8D8DD; --bk-card: #F2F2F7;
   /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); the bright kind colours above are for text and rings on the dark stage */
-  --k-flight: #0071E3; --k-stay: #636366; --k-food: #D41F62; --k-see: #0F766E; --k-tix: #B23C10; --k-wx: #636366;
+  --k-flight: #0071E3; --k-flight-t: #12243D; --k-flight-i: #9CCBFF; --k-stay: #636366; --k-food: #D41F62; --k-see: #0F766E; --k-tix: #B23C10; --k-wx: #636366;
   color-scheme: dark;
 }
 @media (max-width: 719px) { :root:has(.v2) { --lead: 6.25rem; --cw: 5rem; --ch: 4.125rem; } }
