@@ -41,8 +41,9 @@ class Fly:
 
     DEFAULT = {"verify": "verify", "prebook": "prebook_sdk", "book": "book", "booking": "booking_get", "quote": "cancel_quote", "cancel": "cancel"}
 
-    def __init__(self, other=None, **answers):
-        self.asked, self.answers, self.other = [], {**self.DEFAULT, **answers}, other
+    def __init__(self, other=None, swap=None, **answers):
+        """`swap`: {text: text} replacements in every answer (the recordings are of Dec 18 to 22; a test whose square is another week moves them)."""
+        self.asked, self.answers, self.other, self.swap = [], {**self.DEFAULT, **answers}, other, swap or {}
 
     def which(self, url, body):
         if url == VERIFY:
@@ -72,6 +73,8 @@ class Fly:
             status, payload = want[0], json.dumps(want[1]).encode()
         else:
             status, payload = raw(want)
+        for old, new in self.swap.items():
+            payload = payload.replace(old.encode(), new.encode())
         return status, "application/json", payload
 
     def calls(self, url) -> list:
@@ -95,3 +98,19 @@ def status(name):
 
 
 GUEST_NAMES = (("Maya", "Okafor"), ("Daniel", "Okafor"), ("Leo", "Okafor"))      # realistic made-up names: LiteAPI refuses placeholders such as "Test" (error 43002)
+
+
+def strip_flight_offers(monkeypatch):
+    """The squares' flights carry no LiteAPI offer id, so the checkout books them as the labelled sample and asks LiteAPI nothing about them: for the tests that are about the stay (F-276 moved
+    the flight into the checkout; its own tests are tests/test_flightbook.py and the flight cases of tests/test_matrixbook_flight.py)."""
+    from dataclasses import replace
+
+    from gitaway import gridsource
+    inner = gridsource.SQUARE
+
+    def square(*a, **k):
+        sq = inner(*a, **k)
+        if sq is None or not sq.ok or sq.flight is None:
+            return sq
+        return replace(sq, flight=replace(sq.flight, offer_id=""), flights=tuple(replace(f, offer_id="") for f in sq.flights))
+    monkeypatch.setattr(gridsource, "SQUARE", square)

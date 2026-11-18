@@ -115,6 +115,7 @@ class Prep:
     sample: bool = False
     token: str = ""
     voucher: str = ""            # the code the rooms were prebooked with ("" for none): what the checkout shows as applied
+    flight: object = None        # F-276: the square's flight verified with LiteAPI (a `flightbook.FPrep`, sample or real), None when the square has none
 
     @property
     def ok(self) -> bool:
@@ -127,7 +128,8 @@ class Prep:
     @property
     def changed(self) -> bool:
         """The room's price (or terms) moved from what the square showed, so the person is told before booking."""
-        return any(r.prebook.changed or abs(r.prebook.charge_cents + r.prebook.discount_cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS for r in self.rows)
+        return bool(self.flight and self.flight.changed) or any(r.prebook.changed or abs(r.prebook.charge_cents + r.prebook.discount_cents + r.prebook.due_at_stay_cents - r.part.cents) > TOLERANCE_CENTS
+                                                               for r in self.rows)
 
     @property
     def words(self) -> str:
@@ -301,6 +303,14 @@ def held(family: str, token: str, square: tuple) -> Prep | None:
     with _LOCK:
         found = _HELD.get(token or "")
     return found[1] if found and found[0] == family and found[3] == square and time.monotonic() - found[2] <= HOLD else None
+
+
+def held_by_token(family: str, token: str) -> Prep | None:
+    """The room kept under `token` for `family`, whatever square asked for it: the stay's own payment form after the flight's (F-276), when the browser comes back from LiteAPI's processor
+    with nothing but the token (a random one this family holds)."""
+    with _LOCK:
+        found = _HELD.get(token or "")
+    return found[1] if found and found[0] == family and time.monotonic() - found[2] <= HOLD else None
 
 
 def allow(person: str) -> bool:

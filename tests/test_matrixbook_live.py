@@ -72,6 +72,8 @@ def real(client, monkeypatch):
     monkeypatch.setattr(auth, "production", lambda: False)
     fake = Live()
     monkeypatch.setattr(liteapi, "TRANSPORT", fake)
+    from tests.flight_support import strip_flight_offers
+    strip_flight_offers(monkeypatch)      # these tests are about the stay: its flight is the labelled sample (the flight's own tests: tests/test_matrixbook_flight.py)
     sign_in(client)
     panel = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["drawer"]
     fake.shown = int(re.search(r'data-c="(\d+)"', re.search(r'<button[^>]*data-room="0"[^>]*>', panel).group(0)).group(1)) / 100
@@ -334,6 +336,8 @@ def test_the_sandbox_with_the_form_switched_on_runs_the_same_path_with_the_sandb
     monkeypatch.setenv("GITAWAY_SANDBOX_FORM", "1")
     fake = Live()
     monkeypatch.setattr(liteapi, "TRANSPORT", fake)
+    from tests.flight_support import strip_flight_offers
+    strip_flight_offers(monkeypatch)
     sign_in(client)
     panel = client.get("/plan/matrix/tile?" + MATRIX.split("?")[1] + "&lane=sandiego&w=2026-12-12").json()["drawer"]
     fake.shown = int(re.search(r'data-c="(\d+)"', re.search(r'<button[^>]*data-room="0"[^>]*>', panel).group(0)).group(1)) / 100

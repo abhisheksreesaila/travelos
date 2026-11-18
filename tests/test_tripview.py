@@ -92,7 +92,7 @@ def test_a_held_room_is_used_only_while_the_square_still_names_the_same_rooms():
     from types import SimpleNamespace as N
     from gitaway.pages.matrixbook import _same_offers
     a, b, sample = N(offer_id="of-a", name="A", cents=1), N(offer_id="of-b", name="B", cents=1), N(offer_id="", name="Inn", cents=900)
-    held = lambda *parts: N(rows=[N(part=p) for p in parts])
+    held = lambda *parts: N(rows=[N(part=p) for p in parts], flight=None)
     assert _same_offers(N(stays=[a]), held(a)) and _same_offers(N(stays=[sample]), held(N(offer_id="", name="Inn", cents=900)))
     assert not _same_offers(N(stays=[b]), held(a)) and not _same_offers(N(stays=[N(offer_id="", name="Inn", cents=950)]), held(sample))
 

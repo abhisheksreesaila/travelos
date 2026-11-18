@@ -1,7 +1,6 @@
 """F-276: LiteAPI's flight booking calls, as the sandbox really answered them (tests/fixtures/liteapi_flight, 2026-11-18): verify, prebook for the payment form, book with the transaction
 id, lookup, cancel quote, cancel. The same gate, budgets and one-at-a-time rule as the stay's booking calls, and with a live key only the calls the ticket allows."""
 
-import json
 from datetime import datetime
 
 import pytest
