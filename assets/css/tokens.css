@@ -95,8 +95,8 @@
   /* Up next, the one inverse card: ink in light */
   --up-bg: #0B0B0D; --up-fg: #FFFFFF; --up-fg2: #C9C9D1; --up-line: #3A3A41; --up-tile: #26262B; --up-btn: #FFFFFF; --up-btn-fg: #0B0B0D;
   --beacon-bg: #0B0B0D; --beacon-fg: #FFFFFF; --beacon-acc: #FFD43B;
-  /* the mark: an ink tile, the fork's three nodes in kind colours */
-  --mark-bg: #0B0B0D; --mark-line: #FFFFFF; --mark-a: #8C8CFF; --mark-b: #D38CFF; --mark-c: #FF9A5C;
+  /* the mark (F-296 follow-ups, D-966): a near-black tile (white in dark), the fork in the opposite ink, the destination node the one orange dot */
+  --mark-bg: #1D1D1F; --mark-line: #FFFFFF; --mark-a: #FFFFFF; --mark-b: #FFFFFF; --mark-c: #F25500;
   --theme-color: #F2F2F5;
 }
 
@@ -132,7 +132,7 @@
     --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
     --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
     --beacon-bg: #1C1C1F; --beacon-fg: #F5F5F7; --beacon-acc: #FFD43B;
-    --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+    --mark-bg: #FFFFFF; --mark-line: #1D1D1F; --mark-a: #1D1D1F; --mark-b: #1D1D1F; --mark-c: #F25500;
     --theme-color: #000000;
   }
 }
@@ -166,7 +166,7 @@
     --k-see-t: #0E2E2B; --k-see-i: #BCEBE5; --k-ride-t: #352B0B; --k-ride-i: #FFE89A;
     --up-bg: #F5F5F7; --up-fg: #0B0B0D; --up-fg2: #45454D; --up-line: #CFCFD6; --up-tile: #E2E2E8; --up-btn: #0B0B0D; --up-btn-fg: #FFFFFF;
     --beacon-bg: #1C1C1F; --beacon-fg: #F5F5F7; --beacon-acc: #FFD43B;
-    --mark-bg: #F5F5F7; --mark-line: #0B0B0D; --mark-a: #4338CA; --mark-b: #8B2FC9; --mark-c: #C2410C;
+    --mark-bg: #FFFFFF; --mark-line: #1D1D1F; --mark-a: #1D1D1F; --mark-b: #1D1D1F; --mark-c: #F25500;
     --theme-color: #000000;
 }
 

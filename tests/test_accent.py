@@ -63,13 +63,13 @@ def test_secondary_and_caption_text_read_on_every_surface():
                 assert contrast(mode[text], mode[surface]) >= 4.5, (text, surface)
 
 
-def test_the_mark_is_an_ink_tile_with_the_three_nodes_in_kind_colours():
-    for mode in (LIGHT, DARK):
-        assert mode["--mark-bg"] == mode["--ink"]                       # an ink tile in light, a white one in dark
-        assert contrast(mode["--mark-bg"], mode["--mark-line"]) >= 4.5   # the fork's line reads on it
-        nodes = [mode[f"--mark-{n}"] for n in "abc"]
-        assert len(set(nodes)) == 3 and all(hsv(n)[1] > 0.3 for n in nodes)   # three colours, all colourful
-        assert all(contrast(n, mode["--mark-bg"]) >= 3 for n in nodes)        # each node shows on the tile
+def test_the_mark_is_a_near_black_tile_with_a_white_fork_and_one_orange_dot():
+    """F-296 follow-ups (D-966): the Stage's mark. A near-black tile (a white one in dark), the fork in the opposite ink, and the destination node the one orange dot (#F25500)."""
+    want = {"light": (LIGHT, "#1D1D1F", "#FFFFFF"), "dark": (DARK, "#FFFFFF", "#1D1D1F")}
+    for name, (mode, tile, fork) in want.items():
+        assert (mode["--mark-bg"], mode["--mark-line"], mode["--mark-a"], mode["--mark-b"], mode["--mark-c"]) == (tile, fork, fork, fork, "#F25500"), name
+        assert contrast(mode["--mark-bg"], mode["--mark-line"]) >= 4.5        # the fork's line reads on the tile
+        assert contrast(mode["--mark-c"], mode["--mark-bg"]) >= 3             # the dot shows on the tile
 
 
 def test_the_accent_is_never_a_data_colour():

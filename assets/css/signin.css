@@ -74,7 +74,6 @@
   background: linear-gradient(180deg, var(--sky-1), var(--sky-2) 52%, var(--sky-3)); color: var(--ink); animation: si-in var(--v2-quick) var(--v2-ease); }
 .si-welcome[hidden] { display: none !important; }
 .sw-brand { display: flex; align-items: center; gap: 0.625rem; font: 560 1.5625rem/1 var(--f-display); letter-spacing: -0.03em; }
-.sw-brand svg { width: 2.125rem; height: 2.125rem; }
 .sw-glyph { display: grid; place-items: center; width: 7rem; height: 7rem; border-radius: 2rem; background: var(--card-solid); box-shadow: var(--sh2); color: var(--ink); }
 .sw-title { margin: 0; font: var(--d-wt) 2rem/1.1 var(--f-display); letter-spacing: var(--d-track); }
 .sw-line { margin: 0; max-width: 22rem; font-weight: 600; }

@@ -6,13 +6,14 @@ import pytest
 from tests_browser.helpers import DESKTOP, PHONE
 
 TRIP = "d=2027-03-05&r=2027-03-09&a=2"
-MEASURE = """() => [...document.querySelectorAll('.ga-brand-mark, .si-logo')].filter(e => e.getClientRects().length).map(e => {
-  const t = getComputedStyle(e), n = e.parentElement.querySelector('.ga-brand-name, .si-brand'), w = getComputedStyle(n), svg = getComputedStyle(e.querySelector('svg'));
+MEASURE = """() => [...document.querySelectorAll('.ga-brand-mark')].filter(e => e.getClientRects().length).map(e => {
+  const t = getComputedStyle(e), n = e.parentElement.querySelector('.ga-brand-name, .si-brand, .v2-brand-name'), w = getComputedStyle(n), svg = getComputedStyle(e.querySelector('svg'));
   return {tile: [t.backgroundColor, t.width, t.height, t.borderRadius], fork: [svg.width, svg.height], strokes: ['.mk-l', '.mk-a', '.mk-b', '.mk-c'].map(s => getComputedStyle(e.querySelector(s)).stroke),
           word: [w.fontFamily, w.fontWeight, w.fontSize, w.letterSpacing, w.textTransform, w.color], text: n.textContent};
 })"""
-LOOK = {"light": {"tile": "rgb(11, 11, 13)", "strokes": ["rgb(255, 255, 255)", "rgb(140, 140, 255)", "rgb(211, 140, 255)", "rgb(255, 154, 92)"], "word": "rgb(11, 11, 13)"},
-        "dark": {"tile": "rgb(245, 245, 247)", "strokes": ["rgb(11, 11, 13)", "rgb(67, 56, 202)", "rgb(139, 47, 201)", "rgb(194, 65, 12)"], "word": "rgb(245, 245, 247)"}}
+ORANGE = "rgb(242, 85, 0)"      # the one dot (F-296 follow-ups, D-966)
+LOOK = {"light": {"tile": "rgb(29, 29, 31)", "strokes": ["rgb(255, 255, 255)"] * 3 + [ORANGE], "word": "rgb(29, 29, 31)"},
+        "dark": {"tile": "rgb(255, 255, 255)", "strokes": ["rgb(29, 29, 31)"] * 3 + [ORANGE], "word": "rgb(245, 245, 247)"}}
 COVER = {"light": "rgb(29, 29, 31)", "dark": "rgb(245, 245, 247)"}      # the cover's wordmark ink (the Stage look, F-296)
 
 
@@ -56,7 +57,8 @@ def test_the_logo_is_one_mark_and_one_wordmark_on_every_page(browser, base_url, 
     assert len(seen) >= 8, f"the logo shows on most pages: {[(p, len(m)) for p, m in found]}"
     first, want = next(m for p, marks in found if p != "/" for m in marks[:1]), LOOK[mode]      # M5 triage: the cover's postcard (F-266) is the one page whose wordmark takes its own size and ink; its tile, fork and text are held to the same rule below
     assert first["tile"][0] == want["tile"] and first["strokes"] == want["strokes"], first      # the ink (or white) tile, the fork's line and its three kind-coloured nodes
-    assert first["word"][0].startswith("Geist") and first["word"][1] == "750" and first["word"][4] == "none" and first["word"][5] == want["word"], first["word"]
+    size = "25px" if viewport is DESKTOP else "22px"      # every page but the cover wears the v2 bar: Inter 560, a phone's a little smaller (F-272; this said Geist 750, the old header's)
+    assert first["word"][0].startswith("Inter") and first["word"][1] == "560" and first["word"][2] == size and first["word"][4] == "none" and first["word"][5] == want["word"], first["word"]
     for path, marks in found:
         for m in marks:
             if path == "/":      # the cover: the same colours, font and weight, and its own size and ink (F-266, measured on the running cover at both widths)
