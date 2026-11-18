@@ -185,6 +185,10 @@ def test_the_button_spins_the_sheet_grows_out_of_it_four_questions_book_and_the_
     expect(sheet).to_contain_text("Hotel confirmation")
     expect(sheet.locator(".mxb-pass")).to_contain_text("Quiet room")
     assert sheet.locator(".mxb-cf").count() == 64 and page.evaluate("() => getComputedStyle(document.querySelector('.mxb-confetti')).display") != "none"      # the confetti, thrown once
+    look = page.evaluate("""() => ({pass: getComputedStyle(document.querySelector('.mxb-pass')).backgroundColor, stamp: getComputedStyle(document.querySelector('.mxb-stamp')).color,
+        confetti: [...new Set([...document.querySelectorAll('.mxb-cf')].map(e => getComputedStyle(e).backgroundColor))].sort()})""")
+    assert look["pass"] == "rgb(29, 29, 31)" and look["stamp"] == "rgb(69, 191, 164)", look      # F-296 follow-ups (D-967): the Stage's near-black pass and its green stamp, no indigo, no yellow
+    assert look["confetti"] == sorted(["rgb(0, 113, 227)", "rgb(245, 163, 0)", "rgb(212, 31, 98)", "rgb(23, 131, 74)", "rgb(0, 166, 166)", "rgb(29, 29, 31)"]), look      # blue, amber, pink, green, teal and the ink pick
     assert page.evaluate("() => GA.motion.log.filter(m => m.kind === 'settle').length") >= 1                # the pass settled on the spring
     page.wait_for_timeout(1200)
     shot(page, f"{viewport['width']}-booked")

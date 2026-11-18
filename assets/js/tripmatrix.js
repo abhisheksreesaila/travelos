@@ -347,7 +347,7 @@
   // ---- opening a square: the prototype's drawer grows down out of the square's column (assets/js/v2drawer.js) ----
   function placeholder(k) {      // an estimate is never the opened square's price: while sliding it says so, and Save and Book wait for the real answer
     var words = sliding ? 'Press Update for the exact price of ' + nightsWords(N) + '.' : 'Searching this square. It fills in as soon as its answer lands.';
-    return '<div class="dr is-quiet is-ph" data-open="' + k + '"><div class="dr-head"><div class="dr-ti"><h2 class="dr-h">' + laneOf(k).n + '</h2><p>' + windowOf(k).when + '</p></div>' +
+    return '<div class="dr is-quiet is-ph" data-open="' + k + '"><div class="dr-head has-pc" style="' + laneOf(k).pc + '"><div class="dr-ti"><h2 class="dr-h">' + laneOf(k).n + '</h2><p>' + windowOf(k).when + '</p></div>' +
       '<button type="button" class="dr-x" data-act="close" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="dr-quiet"><p class="dr-note" role="status">' + words + '</p></div></div>';
   }

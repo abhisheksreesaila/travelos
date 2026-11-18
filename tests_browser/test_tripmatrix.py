@@ -166,6 +166,17 @@ def test_a_waiting_square_is_a_skeleton_never_a_number_and_the_fact_or_the_wait_
     expect(page.locator("#mx-count")).to_contain_text("of 25 trips")
 
 
+def test_the_opened_squares_waiting_header_wears_the_places_colour_from_the_first_paint(matrix, slow_server):
+    """F-296 follow-ups (D-969): the placeholder header of a square still searching was plain until the answer brought the place's colour; the server sends the colour with the page."""
+    slow_server(r"/plan/matrix/tile", 4)
+    page = matrix(DESKTOP, wait=False)
+    page.locator(".mx-lane").last.locator(".mx-sq").last.dispatch_event("click")      # a square the first paint did not already answer (the floating note may sit over it)
+    head = page.locator("#mx-drawer .dr.is-ph .dr-head")
+    expect(head).to_be_visible()
+    look = head.evaluate("e => [getComputedStyle(e).backgroundColor, getComputedStyle(e.querySelector('.dr-h')).color, e.classList.contains('has-pc')]")
+    assert look == ["rgb(212, 31, 98)", "rgb(255, 255, 255)", True], look      # the lane's first place (Orange County) in its pink with white words, before any answer
+
+
 def test_reduced_motion_keeps_the_skeleton_still(matrix, slow_server):
     slow_server(r"/plan/matrix/tile", 3)
     page = matrix(DESKTOP, wait=False)
@@ -445,7 +456,7 @@ def test_the_weather_notes_are_lines_of_their_own_inside_about_these_prices(matr
 
 # ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
 
-TABLET = {"width": 1100, "height": 1000}      # a laptop's narrow end, and a tablet on its side (F-236 review); F-296: 1000 tall, since the dark band puts the grid 190px lower and the page reads only 240px ahead of the screen
+TABLET = {"width": 1100, "height": 800}      # a laptop's narrow end, and a tablet on its side (F-236 review; F-296 follow-ups: 800 tall again, the band compacts at short heights)
 NIGHTS_URL = URL.replace("r=2026-12-16", "r=2026-12-18")
 WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
 
@@ -686,6 +697,8 @@ def test_a_key_pressed_three_times_asks_nothing_and_update_asks_once_for_where_i
 def test_at_1100_the_band_stays_in_its_row_and_the_trip_bars_chips_stay_inside(matrix):
     """F-236 review: the band's words sit inside the band and the opened trip's tiles, timeline blocks and cost card inside it at the laptop's narrow end."""
     page = matrix(TABLET)
+    tray = page.evaluate("() => [document.querySelector('.rl-tray').getBoundingClientRect().height, getComputedStyle(document.querySelector('.rl-h')).display, getComputedStyle(document.querySelector('.rl-nudge')).display]")
+    assert tray[0] <= 130 and tray[1:] == ["none", "none"], tray      # F-296 follow-ups (D-968): at 800 tall the dark band is a heading and one row of tiles, so the whole grid loads within the first screen's read-ahead
     page.click("#mx-find")
     fit = page.evaluate("""() => [...document.querySelectorAll('.mx-band')].map(b => { const r = b.getBoundingClientRect(), lane = b.closest('.mx-lane').getBoundingClientRect();
         return [getComputedStyle(b, '::after').content === 'none' && r.top >= lane.top - 8 && r.bottom <= lane.bottom + 8, r.width]; })""")      # F-275: the band writes nothing and stays in its own row

@@ -54,7 +54,7 @@
   /* the calm palette (F-261, D-700), as the Stage: ink carries the UI, one place to change it. A primary action is solid ink, a header is a card, the pass black. */
   --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .5); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(0 0 0 / .55);
   --head-bg: var(--card-solid); --head-fg: var(--ink); --head-fg2: var(--ink-2); --head-chip: var(--card-2);
-  --pass-bg: #1D1D1F;
+  --pass-bg: #1D1D1F; --pass-good: #45BFA4;
   --cloud: color-mix(in srgb, #fff 85%, transparent);
   --v2-map-land: #E8EFE3; --v2-map-water: #A9D3F0; --v2-map-road: #FFFFFF;      /* the rail's schematic map */
   --v2-thump: cubic-bezier(.2, 1.4, .4, 1);      /* the stamp landing on the pass */
@@ -172,7 +172,7 @@
   --sh1: 0 0 0 1px rgb(255 255 255 / .04); --sh2: 0 0 0 1px rgb(255 255 255 / .05); --sh3: 0 0 0 1px rgb(255 255 255 / .06);
   --glass-sh: 0 0 0 1px rgb(255 255 255 / .05);
   --cta-bg: #F5F5F7; --cta-fg: #1D1D1F; --cta-sh: 0 0 0 1px rgb(255 255 255 / .06); --cta-sh-up: 0 0 0 1px rgb(255 255 255 / .12);
-  --pass-bg: #2C2C2E;
+  --pass-bg: #2C2C2E; --pass-good: #45BFA4;
   --cloud: rgb(255 255 255 / .06);
   --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A4250;
   --bk-paper: #E5E5EA; --bk-paper-2: #D8D8DD; --bk-card: #F2F2F7;
