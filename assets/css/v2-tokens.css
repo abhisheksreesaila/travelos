@@ -1,55 +1,64 @@
-/* GitAway design language v2 (F-250, D-610): the booking prototype's look, docs/design/booking-v2/index.html, which the founder approved ("it just felt like water").
-   The Harbour ground (F-281: a deep gradient, a sun or moon, two ridges) behind everything; restrained frosted glass only over that sky (the widgets; the cards are near-opaque white); ink and one indigo
-   accent; the kinds' colours; Newsreader for the display and Inter for everything you read and every price (tabular figures). It supersedes Direction A's grey canvas
-   and Geist, and omxqua's "no glass or blur", for the pages that opt in. A page opts in with ONE class: `v2` on its wrapper (layout.page(v2=True)).
-   These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
-   The old token names (--ink, --card, --k-flight ...) are pointed at v2's values on a v2 page, so the parts not redrawn yet (the opened square, the booking sheet) take the new look. */
+/* GitAway design language v2 (F-250, D-610), in the Stage look (F-296, D-956..D-961; docs/design/palette-bo, look C): an Apple-grey stage, colour only from content.
+   Light: a flat #F5F5F7 stage, white cards, ink #1D1D1F, secondary #5F5F64, the one action ink. Dark: a flat #000 stage, #1C1C1E and #2C2C2E cards, white ink, the action white with black words.
+   Colour comes from each place's own vivid colour (gitaway/placecolor.py), the photos, the weather's real colours and two signals: orange is Heads up, green is good news.
+   The Harbour ground (F-281: a gradient, a sun or moon, two ridges) and the moods are retired; its tokens are gone. Inter, heavy and tight, for the headlines (--f-display) and for everything you read
+   and every price (tabular figures); Newsreader stays only for the guide book's pages (cv2.css), a physical thing. Near-opaque cards; frosted glass only as `.v2-glass`. A page opts in with ONE class: `v2`
+   on its wrapper (layout.page(v2=True)). These are the v2 tokens, in one place for light and dark (the motion lint reads this file as it reads tokens.css). Dark is `html[data-mode="dark"]` (assets/js/mode.js).
+   The old token names (--ink, --card, --k-flight ...) are pointed at v2's values on a v2 page, so the parts not redrawn yet take the new look. Measured contrast (words, on the surface they sit on):
+   ink on stage 15.5, #5F5F64 on stage 5.8, on card 6.3; #B84A00 on card 5.2; #0F766E on stage 5.0; dark #A1A1A6 on #1C1C1E 6.6, on #2C2C2E 5.4; #45BFA4 on #2C2C2E 6.1. */
 @font-face { font-family: "Inter"; src: url("/assets/fonts/inter-variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Newsreader"; src: url("/assets/fonts/newsreader-variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
 :root:has(.v2) {
   font-size: 100%;      /* a rem is 16px on a v2 page (Direction A's 12px root made the old pages thin and small: the founder's complaint) */
   --text-min: 1rem; --label-min: 0.8125rem; --target: 3rem;
-  --f-display: "Newsreader", Georgia, serif;
+  --f-display: "Inter", system-ui, sans-serif;      /* heavy and tight (F-296, D-956) */
   --f-ui: "Inter", system-ui, sans-serif;
-  --d-wt: 560; --d-track: -0.022em; --d-lh: 1.08;
+  --d-wt: 700; --d-track: -0.03em; --d-lh: 1.08;
   --num-feat: "tnum" 1, "cv11" 1, "ss01" 1;
 
-  /* the Harbour ground (F-281, D-890; docs/design/matrix-v5, "harbour"): a deep navy sky, a warm glow low on the horizon, two ridges. Deep in light mode too, so the glass has something to frost;
-     --ground-ink is the text that sits straight on it (a card, a glass widget and every field keep --ink). The reading pages keep the quiet sky above. */
-  --hb-a: #1B2A41; --hb-b: #3A4558; --hb-c: #7A4C30; --hb-glow: #F2B47A; --hb-ridge: #141C2A; --hb-ridge-2: #241F24;
-  --ground-ink: #F4F7FB; --ground-ink-2: rgb(244 247 251 / .88);
-  --frost: rgb(16 12 24 / .6); --sky-pill: rgb(255 255 255 / .9); --sky-pill-fg: #0F1124;      /* a dark tray over the ground (the extra-info chips) and the count pill on it */
-  --sky-1: #C6E2F8; --sky-2: #E3E5FA; --sky-3: #FDE5CF;
-  --ink: #0F1124; --ink-2: #41455E; --ink-3: #555A73; --on-ink: #FFFFFF;
-  --card-t: rgb(255 255 255 / .95); --card-solid: #FFFFFF; --card-2: #F2F3FA; --lead-bg: #F8F8FD;
-  --line: rgb(15 17 36 / .10); --line-2: rgb(15 17 36 / .18);
-  --glass: rgb(255 255 255 / .80); --glass-line: rgb(255 255 255 / .75);      /* over the Harbour ground: paper-white enough that ink reads 4.5:1 on its darkest stop (F-281, D-891) */
-  --word: #372DB0;      /* the sentence's tappable words: the indigo a little deeper, so each stays 4.5:1 on the sky */
-  --flight: #4338CA; --flight-t: #E4E3FB; --flight-i: #2A2185;
-  --stay: #8B2FC9; --stay-t: #F1E3FA; --stay-i: #5A1785;
-  --food: #C92A5E; --food-t: #FBE1EA; --food-i: #7E1538;
-  --see: #0F766E; --see-t: #D9F2EF; --see-i: #0B4D48;
-  --tix: #C2410C; --tix-t: #FCE6DA; --tix-i: #7A2906;
-  --wx: #0369A1; --wx-t: #DBEFFA; --wx-i: #034769;
-  --ride: #FFD43B; --ride-t: #FFF4C2; --ride-i: #5C4300; --ride-on: #17140A;
-  --sun: #FFB547; --sun-ink: #D97706; --on: #FFFFFF; --pill-on: #0F1124; --pill-fg: #FFFFFF;
-  --cell: rgb(228 227 251 / .70); --cell-hover: rgb(214 212 250 / .95); --pick: #4338CA; --pick-band: #8B2FC9; --band-label: #8B2FC9;
-  --hatch: rgb(15 17 36 / .06); --scrim: rgb(10 10 30 / .28);
-  --sh1: 0 1px 0.125rem rgb(20 20 60 / .06), 0 0.125rem 0.5rem rgb(20 20 60 / .06);
-  --sh2: 0 0.125rem 0.375rem rgb(20 20 60 / .08), 0 0.875rem 2rem -0.625rem rgb(40 30 110 / .22);
-  --sh3: 0 0.25rem 0.875rem rgb(20 20 60 / .07), 0 2.125rem 4.375rem -1.5rem rgb(40 30 110 / .32);
-  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(40 30 110 / .25);
-  /* the calm palette (F-261, D-700): ink and indigo carry the UI, one place to change it. A primary action is solid indigo, a header is a card, the pass a deep indigo.
-     The pink-to-violet gradient is the Instagram share card's alone (gitaway/sharecard.py); tests/test_calm_palette.py forbids it in these stylesheets. */
-  --cta-bg: #4338CA; --cta-fg: #FFFFFF; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(67 56 202 / .7); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(67 56 202 / .75);
+  /* the Stage (F-296, D-956): a flat grey stage and white cards; --stage is the page ground, --ground-ink the words that sit straight on it (a card keeps --ink) */
+  --stage: #F5F5F7;
+  --ground-ink: #1D1D1F; --ground-ink-2: #5F5F64;
+  --sky-1: #F5F5F7; --sky-2: #F5F5F7; --sky-3: #F5F5F7;      /* the cover's and sign-in's old sky stops, flat now */
+  --ink: #1D1D1F; --ink-2: #48484C; --ink-3: #5F5F64; --on-ink: #FFFFFF;
+  --card-t: #FFFFFF; --card-solid: #FFFFFF; --card-2: #F5F5F7; --card-3: #E8E8ED; --lead-bg: #FAFAFC;
+  --line: rgb(0 0 0 / .08); --line-2: rgb(0 0 0 / .16);
+  --glass: #FFFFFF; --glass-line: rgb(0 0 0 / .08);
+  --word: #1D1D1F;
+  /* the signals (D-957): orange is Heads up (words #B84A00), green is good news (cheapest, saves, refundable, booked) */
+  --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --sig-on: #FFFFFF;
+  --warn-tint: var(--sig-t); --warn-ink: var(--sig-ink); --warn-line: var(--sig);      /* Heads up (hotelfine.css) wears the signal */
+  --good: #0F766E; --good-t: #E3F3EE; --good-i: #0B5C55;
+  /* the dark band (More to know before you pick, D-958) */
+  --band-bg: #1D1D1F; --band-ink: #FFFFFF; --band-ink-2: #A1A1A6; --band-chip: #2C2C2E; --band-chip-h: #3A3A3C; --band-chip-ink: #FFFFFF; --band-ct: rgb(255 255 255 / .14);
+  --band-open: #FFFFFF; --band-open-ink: #1D1D1F; --band-open-ink-2: #6E6E73; --band-open-ct: #F0F0F3;      /* an opened chip is white in both modes */
+  /* the band's icon tiles (D-958): vivid fills and the glyph colour that passes on each (white 4.5 and up, ink on the light ones) */
+  --tl-wx: #F5A300; --tl-wx-on: #1D1D1F; --tl-see: #00A6A6; --tl-see-on: #1D1D1F; --tl-flight: #0071E3; --tl-flight-on: #FFFFFF; --tl-food: #D41F62; --tl-food-on: #FFFFFF;
+  --tl-stay: #17834A; --tl-stay-on: #FFFFFF; --tl-grey: #636366; --tl-grey-on: #FFFFFF;
+  --flight: #1D1D1F; --flight-t: #F0F0F3; --flight-i: #1D1D1F;
+  --stay: #1D1D1F; --stay-t: #F0F0F3; --stay-i: #1D1D1F;
+  --food: #D41F62; --food-t: #FCE4EC; --food-i: #8C1040;
+  --see: #0F766E; --see-t: #E3F3EE; --see-i: #0B5C55;
+  --tix: #B23C10; --tix-t: #FCE6DA; --tix-i: #7A2906;
+  --wx: #0A84FF; --wx-t: #F0F0F3; --wx-i: #1D1D1F;
+  --wx-sun: #F5B400; --wx-rain: #0A84FF; --wx-cloud: #8E8E93;      /* the weather in its real colours */
+  --ride: #FFD43B; --ride-t: #F0F0F3; --ride-i: #48484C; --ride-on: #17140A;
+  --sun: #FFB547; --sun-ink: #F5B400; --on: #FFFFFF; --pill-on: #1D1D1F; --pill-fg: #FFFFFF;
+  --cell: #F5F5F7; --cell-hover: #EDEDF0; --pick: #1D1D1F; --pick-on: #FFFFFF; --pick-cap: #D5EFE8; --pick-cap-i: #0B5C55; --pick-band: #1D1D1F; --band-label: #1D1D1F;
+  --hatch: rgb(0 0 0 / .06); --scrim: rgb(0 0 0 / .28);
+  --sh1: 0 1px 0.125rem rgb(0 0 0 / .05);
+  --sh2: 0 1px 0.125rem rgb(0 0 0 / .04), 0 0.5rem 1.5rem -0.625rem rgb(0 0 0 / .12);
+  --sh3: 0 1px 0.125rem rgb(0 0 0 / .04), 0 1rem 2.5rem -1.125rem rgb(0 0 0 / .16);
+  --glass-sh: 0 0.5rem 1.5rem -0.625rem rgb(0 0 0 / .12);
+  /* the calm palette (F-261, D-700), as the Stage: ink carries the UI, one place to change it. A primary action is solid ink, a header is a card, the pass black. */
+  --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .5); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(0 0 0 / .55);
   --head-bg: var(--card-solid); --head-fg: var(--ink); --head-fg2: var(--ink-2); --head-chip: var(--card-2);
-  --pass-bg: #1E1B4B;
-  --quiet-edge: #D8DEF3; --quiet-mid: #ECEEFB; --quiet-glow: #F8F9FE;      /* the reading sky: a soft glow where the column is, a little deeper at the sides (D-701) */
+  --pass-bg: #1D1D1F;
   --cloud: color-mix(in srgb, #fff 85%, transparent);
   --v2-map-land: #E8EFE3; --v2-map-water: #A9D3F0; --v2-map-road: #FFFFFF;      /* the rail's schematic map */
   --v2-thump: cubic-bezier(.2, 1.4, .4, 1);      /* the stamp landing on the pass */
-  --v2-stamp-bg: rgb(43 20 90 / .55);
+  --v2-stamp-bg: rgb(0 0 0 / .55);
 
   /* the motion: springs as linear() curves (the prototype's), durations in one place; assets/js/v2.js reads them with getComputedStyle, so no script writes a time */
   --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
@@ -90,8 +99,8 @@
   --v2-stamp-delay: 300ms; /* the saved stamp thumping onto the pass */
 
   /* creators v2 (F-253): the book is a physical thing, so its paper and its kind colours stay in both modes (dimmed in dark); the --cv-d* are the prototype's own timings, one token each */
-  --bk-paper: #FBF6EA; --bk-paper-2: #F2EAD8; --bk-card: #FFFDF8; --bk-ink: #2A2420; --bk-ink-2: #574C42; --bk-line: rgb(42 36 32 / .14); --bk-plate: #FFFFFF; --bk-foil: #F6E7C1;
-  --bk-see: #0F766E; --bk-food: #C92A5E; --bk-tix: #C2410C; --bk-ride: #E7B416; --bk-show: #8B2FC9; --bk-walk: #4338CA;
+  --bk-paper: #F5F5F7; --bk-paper-2: #E8E8ED; --bk-card: #FFFFFF; --bk-ink: #1D1D1F; --bk-ink-2: #48484C; --bk-line: rgb(0 0 0 / .14); --bk-plate: #FFFFFF; --bk-foil: #E8E8ED;
+  --bk-see: #0F766E; --bk-food: #D41F62; --bk-tix: #B23C10; --bk-ride: #E7B416; --bk-show: #00779A; --bk-walk: #0071E3;
   --bk-turn: cubic-bezier(.45, .05, .2, 1);
   --cv-d0: 0ms;
   --cv-d150: 150ms;
@@ -124,48 +133,51 @@
   --v2-sheet-w: min(23.75rem, calc(100vw - 1.5rem));
 
   /* the old names, pointed at v2 */
-  --paper: var(--card-2); --paper-2: var(--card-2); --ground: var(--sky-3);
+  --paper: var(--card-2); --paper-2: var(--card-2); --ground: var(--stage);
   --card: var(--card-solid);
-  --k-flight: var(--flight); --k-flight-t: var(--flight-t); --k-flight-i: var(--flight-i);
-  --k-stay: var(--stay); --k-stay-t: var(--stay-t); --k-stay-i: var(--stay-i);
+  --k-flight: #0071E3; --k-flight-t: #E5F0FC; --k-flight-i: #00439A;
+  --k-stay: #1D1D1F; --k-stay-t: var(--stay-t); --k-stay-i: var(--stay-i);
   --k-food: var(--food); --k-food-t: var(--food-t); --k-food-i: var(--food-i);
   --k-see: var(--see); --k-see-t: var(--see-t); --k-see-i: var(--see-i);
   --k-tix: var(--tix); --k-tix-t: var(--tix-t); --k-tix-i: var(--tix-i);
-  --k-wx: var(--wx); --k-wx-t: var(--wx-t); --k-wx-i: var(--wx-i);
+  --k-wx: #6E6E73; --k-wx-t: var(--wx-t); --k-wx-i: var(--wx-i);
   --k-ride: var(--ride); --k-ride-t: var(--ride-t); --k-ride-on: var(--ride-on);
   --k-on: var(--on);
   --font-display: var(--f-display); --font-body: var(--f-ui);
   color-scheme: light;
 }
 :root[data-mode="dark"]:has(.v2) {
-  --frost: rgb(8 10 14 / .62);
-  --hb-a: #070B12; --hb-b: #111621; --hb-c: #3A2416; --hb-glow: #A8673A; --hb-ridge: #04060A; --hb-ridge-2: #0D0A0B;      /* a deeper night, so the slate cards stand off it */
-  --sky-1: #0D1420; --sky-2: #1A2130; --sky-3: #2A2320;      /* founder 2026-11-17: dark was too purplish to read; surfaces are neutral slate now, the indigo is only the bold action */
-  --ink: #F5F7FA; --ink-2: #D0D6DF; --ink-3: #B3BBC7; --on-ink: #0E1218;
-  --card-t: rgb(43 52 66 / .96); --card-solid: #2B3442; --card-2: #374152; --lead-bg: #303948;      /* a step lighter than the deep sky, so a card reads as a card (founder: "cannot have 2 darks, cannot be light") */
+  --stage: #000000;
+  --ground-ink: #F5F5F7; --ground-ink-2: #A1A1A6;
+  --sky-1: #000000; --sky-2: #000000; --sky-3: #000000;
+  --ink: #F5F5F7; --ink-2: #C7C7CC; --ink-3: #A1A1A6; --on-ink: #1D1D1F;
+  --card-t: #1C1C1E; --card-solid: #1C1C1E; --card-2: #2C2C2E; --card-3: #3A3A3C; --lead-bg: #232325;
   --line: rgb(255 255 255 / .10); --line-2: rgb(255 255 255 / .18);
-  --glass: rgb(46 55 70 / .9);      /* dark glass a step more solid: the dark sand showed through at .60 (rail words 3.8:1) */ --glass-line: rgb(255 255 255 / .10);
-  --word: #93B4FF;
-  --flight: #8A9BFF; --flight-t: #2E3A5E; --flight-i: #D2CFFF;
-  --stay: #C9A2F5; --stay-t: #363246; --stay-i: #EBD4FD;
+  --glass: #1C1C1E; --glass-line: rgb(255 255 255 / .10);
+  --word: #F5F5F7;
+  --sig: #FF7A1A; --sig-ink: #FF9A4D; --sig-t: #3A2210; --sig-on: #1D1D1F;
+  --good: #45BFA4; --good-t: #1C332D; --good-i: #45BFA4;
+  --band-bg: #2C2C2E; --band-chip: #3A3A3C; --band-chip-h: #48484A; --band-ink-2: #AEAEB2;
+  --flight: #F5F5F7; --flight-t: #2C2C2E; --flight-i: #F5F5F7;
+  --stay: #F5F5F7; --stay-t: #2C2C2E; --stay-i: #F5F5F7;
   --food: #FF6B9A; --food-t: #401528; --food-i: #FFD0DF;
-  --see: #2DD4BF; --see-t: #0E302D; --see-i: #BCF0E8;
+  --see: #45BFA4; --see-t: #1C332D; --see-i: #45BFA4;
   --tix: #FB923C; --tix-t: #3D1E0E; --tix-i: #FFD6BC;
-  --wx: #38BDF8; --wx-t: #0C2A3E; --wx-i: #C6EAFC;
-  --ride-t: #3A300C; --ride-i: #FFE89A;
-  --sun-ink: #FBBF24; --pill-on: #F4F5FB; --pill-fg: #0F1124;
-  --cell: rgb(66 79 99 / .8); --cell-hover: rgb(84 100 124 / .9); --pick: #4F46E5; --pick-band: #6E8BF5; --band-label: #8EA6FF;
-  --hatch: rgb(255 255 255 / .06); --scrim: rgb(6 8 12 / .55);
-  --sh1: 0 1px 0.125rem rgb(0 0 0 / .3); --sh2: 0 0.75rem 1.875rem -0.625rem rgb(0 0 0 / .6); --sh3: 0 1.875rem 4.375rem -1.5rem rgb(0 0 0 / .75);
-  --glass-sh: 0 0.625rem 1.875rem -0.875rem rgb(0 0 0 / .6);
-  --cta-bg: #4F46E5; --cta-sh: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .7); --cta-sh-up: 0 1rem 2rem -0.75rem rgb(0 0 0 / .75);
-  --pass-bg: #2A3756;
-  --quiet-edge: #0D121A; --quiet-mid: #151B25; --quiet-glow: #1E2632;
+  --wx: #409CFF; --wx-t: #2C2C2E; --wx-i: #F5F5F7;
+  --wx-sun: #FFC530; --wx-rain: #409CFF; --wx-cloud: #98989D;
+  --ride-t: #2C2C2E; --ride-i: #C7C7CC;
+  --sun-ink: #FFC530; --pill-on: #F5F5F7; --pill-fg: #1D1D1F;
+  --cell: #2C2C2E; --cell-hover: #3A3A3C; --pick: #F5F5F7; --pick-on: #1D1D1F; --pick-cap: #45BFA4; --pick-cap-i: #04201B; --pick-band: #F5F5F7; --band-label: #F5F5F7;
+  --hatch: rgb(255 255 255 / .06); --scrim: rgb(0 0 0 / .55);
+  --sh1: 0 0 0 1px rgb(255 255 255 / .04); --sh2: 0 0 0 1px rgb(255 255 255 / .05); --sh3: 0 0 0 1px rgb(255 255 255 / .06);
+  --glass-sh: 0 0 0 1px rgb(255 255 255 / .05);
+  --cta-bg: #F5F5F7; --cta-fg: #1D1D1F; --cta-sh: 0 0 0 1px rgb(255 255 255 / .06); --cta-sh-up: 0 0 0 1px rgb(255 255 255 / .12);
+  --pass-bg: #2C2C2E;
   --cloud: rgb(255 255 255 / .06);
   --v2-map-land: #1E2A2B; --v2-map-water: #17304A; --v2-map-road: #3A4250;
-  --bk-paper: #EDE4D1; --bk-paper-2: #E2D7C1; --bk-card: #F5EFE2;
-  /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); v2's own bright kind colours above are for text and rings on the dark sky */
-  --k-flight: #4338CA; --k-stay: #8B2FC9; --k-food: #C92A5E; --k-see: #0F766E; --k-tix: #C2410C; --k-wx: #0369A1;
+  --bk-paper: #E5E5EA; --bk-paper-2: #D8D8DD; --bk-card: #F2F2F7;
+  /* the kinds' solid fills (a tile, a chip) stay the same in dark so white text on them keeps its 5:1 (F-200); the bright kind colours above are for text and rings on the dark stage */
+  --k-flight: #0071E3; --k-flight-t: #12243D; --k-flight-i: #9CCBFF; --k-stay: #636366; --k-food: #D41F62; --k-see: #0F766E; --k-tix: #B23C10; --k-wx: #636366;
   color-scheme: dark;
 }
 @media (max-width: 719px) { :root:has(.v2) { --lead: 6.25rem; --cw: 5rem; --ch: 4.125rem; } }

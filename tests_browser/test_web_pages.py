@@ -79,7 +79,7 @@ def test_each_page_has_the_v2_bar_white_cards_and_the_v2_type_at_1440_by_900(ari
     card = {"/family": ".fam-sec", "/trip/details": ".ti-sec"}[path]
     style = page.locator(card).first.evaluate("e => { const s = getComputedStyle(e); return [s.backgroundColor, parseFloat(s.borderTopLeftRadius), s.borderTopWidth] }")
     assert style[0] == "rgb(255, 255, 255)" and style[1] >= 24, style      # F-272: a near-opaque white card, radius 26 (v2's card)
-    assert "Newsreader" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-272: Newsreader for a heading
+    assert "Inter" in page.locator("h1").first.evaluate("e => getComputedStyle(e).fontFamily")      # F-272: heavy Inter for a heading (F-296)
 
 
 @pytest.mark.parametrize("path", ["/family", "/trip/details"])

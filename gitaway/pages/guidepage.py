@@ -16,7 +16,7 @@ from fasthtml.common import A, H1, Meta, P
 from fasthtml.core import FtResponse
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
-from gitaway import access, community, creatordraft as cd, forks as forks_model, guide as gd, guideplan, moods, seo, session as ses, sharecard, showcase, tripcal, tripshare
+from gitaway import access, community, creatordraft as cd, forks as forks_model, guide as gd, guideplan, seo, session as ses, sharecard, showcase, tripcal, tripshare
 from gitaway.layout import notice, page
 from gitaway.pages import guideview
 
@@ -43,7 +43,7 @@ def reader_page(session, slug, found):
     state = {"saved": slug in ses.saved(session), "signed": bool(ses.current_traveler(session)), "add": add_state(session), "signin": ses.signin_href(f"/trips/{slug}"), "start": showcase.planning_path(),
              "report": found.real and community.is_real(slug), "plannable": bool(found.plan_to)}
     head = (*guideview.HEAD, Meta(name="robots", content="noindex, nofollow")) if waiting else guideview.HEAD
-    body = page(g.title, *guideview.guide_markup(g, mode="reader", state=state), current="/guides", head=head, v2="cv g is-results", quiet=True, mood=moods.of_text(found.place),
+    body = page(g.title, *guideview.guide_markup(g, mode="reader", state=state), current="/guides", head=head, v2="cv g is-results", quiet=True,
                 description=found.lede or f"{g.title}: a guide by {g.by}, laid out stop by stop to plan from.", image=found.polaroids[0].src if found.polaroids else "", og_type="article",
                 noindex=not waiting and found.real and seo.imported(slug))      # a copy of a creator's post is not for search (F-196); a trip waiting for the captain is "noindex, nofollow" (F-194)
     return FtResponse(body, headers={"X-Robots-Tag": "noindex, nofollow"}) if waiting else body

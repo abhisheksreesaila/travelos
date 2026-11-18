@@ -6,9 +6,12 @@
 .dr-alone { max-width: 62rem; margin: 0 auto; }
 .dr { position: relative; border-radius: var(--r-xl); background: var(--card-solid); box-shadow: var(--sh3); overflow: clip; color: var(--ink); }      /* clip, not hidden: hidden made the drawer a scroll box and quietly undid the sticky Book bar (overnight walk 2026-11-17) */
 .dr-head { display: flex; align-items: center; gap: 1.125rem; padding: 1.25rem 1.375rem 1.125rem; border-bottom: 1px solid var(--line); }
-.dr-hart { position: relative; width: 6.5rem; height: 4.5rem; flex: none; border-radius: 1rem; overflow: hidden; display: flex; background: var(--card-2); }
-.dr-hart .mx-art-i { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; }
-.dr-hart .mx-art-i > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* the opened square's band (F-296, D-959): the place's own colour, its name big on it in the words that pass on that colour, its skyline behind (gitaway/placecolor.py gives --pc and --pc-on) */
+.dr-head.has-pc { position: relative; isolation: isolate; align-items: flex-end; min-height: 9.5rem; padding: 1.5rem 1.625rem 1.375rem; overflow: hidden; background: var(--pc); color: var(--pc-on); border-bottom: 0; }
+.dr-hart { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.dr-hart > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dr-head.has-pc :is(.dr-h, .dr-ti > p, .dr-n, .dr-tl) { color: inherit; }
+.dr-head.has-pc .dr-h { font-size: clamp(2.25rem, 4vw, 3.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
 .dr-ti { flex: 1; min-width: 0; }
 .dr-h { margin: 0; font: var(--d-wt) 1.875rem/1.08 var(--f-display); letter-spacing: var(--d-track); }
 .dr-ti > p { margin: 0.375rem 0 0; color: var(--ink-2); font-size: 1.0625rem; }
@@ -17,7 +20,7 @@
 .dr-tot { text-align: right; }
 .dr-n { display: block; font: 780 2.875rem/1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: -0.035em; }
 .dr-tl { display: block; margin-top: 0.375rem; color: var(--ink-2); font-size: 1rem; }
-.dr-x { display: grid; place-items: center; width: 3rem; height: 3rem; flex: none; border: 0; border-radius: 50%; background: var(--card-2); color: var(--ink); cursor: pointer; }
+.dr-x { display: grid; place-items: center; width: 3rem; height: 3rem; flex: none; border: 0; border-radius: 50%; background: var(--card-solid); color: var(--ink); cursor: pointer; }
 .dr-x svg { width: 1.125rem; height: 1.125rem; }
 .dr-quiet { padding: 1rem 1.375rem 1.25rem; }
 .dr-note { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.4; }
@@ -38,7 +41,7 @@
 .dr-pn.is-mini .dr-mini p { grid-column: 1; }
 .dr-seg { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.25rem; margin-bottom: 0.75rem; border-radius: 62.4375rem; background: color-mix(in srgb, var(--card-solid) 75%, transparent); }
 .dr-seg button { min-height: 2.5rem; padding: 0 0.875rem; border: 0; border-radius: 62.4375rem; background: none; cursor: pointer; font: 600 1rem/1 var(--f-ui); color: var(--ink-2); }
-.dr-seg button[aria-pressed="true"] { background: var(--k-stay); color: var(--on); }
+.dr-seg button[aria-pressed="true"] { background: var(--pill-on); color: var(--pill-fg); }
 
 .dr-stay-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem; }
 .dr-stay-grid[hidden] { display: none; }
@@ -134,7 +137,8 @@
   .dr { border-radius: 1.625rem; }
   .dr-foot { position: static; }      /* a phone's foot holds the note, Save and Book (about 14rem): it stays in its place, not stuck over a quarter of the screen; the page's own bottom room (v2.css) lets it scroll clear of the floating bar */
   .dr-head { flex-wrap: wrap; gap: 0.75rem; padding: 1rem; position: relative; }
-  .dr-hart { width: 4.5rem; height: 3.5rem; }
+  .dr-head.has-pc { min-height: 7.5rem; padding: 1rem; }
+  .dr-head.has-pc .dr-h { font-size: 2rem; }
   .dr-ti { flex: 0 1 calc(100% - 9rem); }
   .dr-h { font-size: 1.4375rem; }
   .dr-ti > p { font-size: 1rem; }
@@ -196,7 +200,7 @@
 .dr-times span { display: inline-flex; align-items: center; gap: 0.375rem; }
 .dr-rating { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 1.25rem; background: color-mix(in srgb, var(--card-solid) 82%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
 .dr-rate { display: flex; align-items: center; gap: 0.75rem; }
-.dr-score { display: grid; place-items: center; min-width: 3.5rem; height: 3.5rem; padding: 0 0.5rem; border-radius: 1rem; background: var(--k-flight); color: var(--on); font: 760 1.625rem/1 var(--f-ui); letter-spacing: -0.02em; }
+.dr-score { display: grid; place-items: center; min-width: 3.5rem; height: 3.5rem; padding: 0 0.5rem; border-radius: 1rem; background: var(--cta-bg); color: var(--cta-fg); font: 760 1.625rem/1 var(--f-ui); letter-spacing: -0.02em; }
 .dr-rt { display: grid; gap: 0.125rem; min-width: 0; }
 .dr-word { font: 700 1.25rem/1.1 var(--f-ui); }
 .dr-rt small { color: var(--ink-2); font-size: 1rem; line-height: 1.3; }

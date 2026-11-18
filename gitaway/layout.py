@@ -169,16 +169,16 @@ def _footer_line() -> str:
     return f"Plan a trip together: flights, stays and days on one calendar. Stays are booked here through Nuitée (LiteAPI) and flights on the airline's or agent's site; {taken}"
 
 
-def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = True, mood: str = "", quiet: bool = False):
+def page(title: str, *content, current: str = "", theme: str = "sunset", head=(), description: str = "", image: str = "", og_type: str = "website", noindex: bool = False, footer: bool = True, v2: bool | str = True, quiet: bool = False):
     """A full GitAway page. `current` marks the active nav link; `theme` is sunset or pacific.
 
     `description` (with `image` and `og_type`) adds the description and Open Graph tags a search result or a shared link shows; `noindex` keeps the page out of search (see `seo_meta`). `footer=False` leaves the site footer out (the trip matrix, F-238: its Privacy and Terms sit in its own ⓘ).
-    `v2=True` (F-250, D-610; a string adds its classes, "is-results" for the results look) opts the page into design language v2 with one class: the sky, the v2 top bar, Newsreader and Inter (gitaway/v2.py); there is no site header, top bar or footer. `mood` is the sky's (gitaway/moods.py; none is beach). `quiet=True` (F-261) is a reading page's sky: no objects, a soft gradient framing the content. A quiet page also ends with `pg_foot()` (Privacy and Terms, F-272) unless `footer=False` (the page has its own, as the matrix's "About these prices") or it is a creator page (`cv`, whose foot is studio.foot)."""
+    `v2=True` (F-250, D-610; a string adds its classes, "is-results" for the results look) opts the page into design language v2 with one class: the stage, the v2 top bar and Inter (gitaway/v2.py); there is no site header, top bar or footer. `quiet=True` (F-261) marks a reading page. A quiet page also ends with `pg_foot()` (Privacy and Terms, F-272) unless `footer=False` (the page has its own, as the matrix's "About these prices") or it is a creator page (`cv`, whose foot is studio.foot)."""
     from gitaway import v2 as v2_
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-        Div(v2_.bg(mood, quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"),
+        Div(v2_.bg(quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"),
             *((pg_foot(),) if quiet and footer and "cv" not in str(v2).split() else ()), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
     )
 

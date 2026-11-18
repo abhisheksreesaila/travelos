@@ -18,7 +18,7 @@ MEASURE = """(sel) => { const el = document.querySelector(sel); const cs = getCo
   const texts = [...el.querySelectorAll('b, .tm')].map(t => rgb(getComputedStyle(t).color));
   return { bg: cs.backgroundColor, edge: cs.borderLeftColor, edgeW: parseFloat(cs.borderLeftWidth), min: Math.min(...texts.map(ratio)), n: texts.length }; }"""
 
-TOKEN = {"flight": "flight", "stay": "stay", "car": "ride", "ride": "ride"}      # a locked block's kind -> its v2 token (v2plan.css `.k-*`)
+TOKEN = {"flight": "k-flight", "stay": "stay", "car": "ride", "ride": "ride"}      # a locked block's kind -> its v2 token (v2plan.css `.k-*`)
 
 
 def tint(page, name):

@@ -16,7 +16,12 @@ from gitaway import airportdrive, catalog, showcase, tripmatrix as tm, v2rail, w
 from gitaway.icons import icon
 from gitaway.pages import skystrip, weather_ui
 
-K = {"wx": "var(--wx)", "see": "var(--see)", "ride": "var(--ride-on)", "tix": "var(--tix)", "flight": "var(--flight)", "food": "var(--food)", "stay": "var(--stay)"}
+K = {"wx": "wx", "see": "see", "ride": "grey", "tix": "grey", "flight": "flight", "food": "food", "stay": "stay"}      # the kind of a widget -> its icon tile (--tl-*, v2-tokens.css, D-958)
+
+
+def tile(k: str) -> str:
+    """The style that gives an icon tile its vivid fill and the glyph colour that passes on it."""
+    return f"--k:var(--tl-{K[k]});--kon:var(--tl-{K[k]}-on)"
 SCHEMATIC = "Schematic, not to scale"
 NO_TRAFFIC = "Typical drive by road. No live traffic."
 
@@ -24,14 +29,14 @@ NO_TRAFFIC = "Typical drive by road. No live traffic."
 def chip_of(title: str, ic, k: str, name: str, label: str = "", teaser: str = "", count: str = ""):
     """A chip that fetches its card when tapped (assets/js/v2rail.js), the Fill treatment (F-281, D-892): a coloured icon, a title, a teaser line and a count. Only what is cheap to know goes on it:
     the teaser says what is inside and the count is a number the server already has (never one that waits on a service)."""
-    return Button(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(Span(label or title), Small(teaser) if teaser else "", cls="tx"), Span(count, cls="ct num") if count else "",
+    return Button(Span(icon(ic, 17, 2.2), cls="ic", style=tile(k)), Span(Span(label or title), Small(teaser) if teaser else "", cls="tx"), Span(count, cls="ct num") if count else "",
                   type="button", cls="wchip", aria_expanded="false", aria_controls=f"wg-{name}", data_wg=name)
 
 
 def wg(title: str, ic, k: str, *body, sample=False, name="", chip="", teaser="", count=""):
     """One widget, folded (F-275, D-862): a chip and the frosted card it opens, with its kind's coloured icon, a title and, when any of it is made-up, a Sample pill. The card is only
     drawn when asked for (F-277, D-870). Returns (chip, card)."""
-    card = Section(Header(Span(icon(ic, 17, 2.2), cls="ic", style=f"--k:{K[k]}"), Span(title, cls="wg-h"), Span("Sample", cls="smp") if sample else "", Button(icon("x", 18, 2.4), type="button", cls="wg-x", data_wg_close=name, aria_label=f"Close {title}")),
+    card = Section(Header(Span(icon(ic, 17, 2.2), cls="ic", style=tile(k)), Span(title, cls="wg-h"), Span("Sample", cls="smp") if sample else "", Button(icon("x", 18, 2.4), type="button", cls="wg-x", data_wg_close=name, aria_label=f"Close {title}")),
                    *body, cls="wg v2-glass", id=f"wg-{name}")
     return chip_of(title, ic, k, name, chip, teaser, count), card
 

@@ -86,8 +86,8 @@
 .mxb-cb { display: grid; place-items: center; width: 1.625rem; height: 1.625rem; flex: none; border-radius: 0.5rem; box-shadow: inset 0 0 0 0.125rem var(--line-2); transition: transform var(--v2-quick) var(--spring), background-color var(--v2-quick); }
 .mxb-cb svg { width: 1rem; height: 1rem; color: var(--on); opacity: 0; transition: opacity var(--v2-quick); }
 .mxb-agree:active .mxb-cb { transform: scale(.85); }
-.mxb-tick:checked + .mxb-cb { background: var(--k-flight); box-shadow: none; }      /* the solid fill: the white check keeps its contrast in dark (F-289 review) */
-.mxb-tick:checked + .mxb-cb svg { opacity: 1; }
+.mxb-tick:checked + .mxb-cb { background: var(--cta-bg); box-shadow: none; }      /* the action fill: ink, white in dark, and the check is its own word colour */
+.mxb-tick:checked + .mxb-cb svg { opacity: 1; color: var(--cta-fg); }
 .mxb-tick:focus-visible + .mxb-cb { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .mxb-agree.has-err { color: var(--food-i); }
 .mxb-fine { margin: 0; color: var(--ink-2); font-size: 1rem; }
@@ -157,7 +157,7 @@
 .mxb-id { font: 780 1.625rem/1.1 var(--f-ui); font-feature-settings: var(--num-feat); letter-spacing: .04em; overflow-wrap: anywhere; }
 .mxb-plan { display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 4rem; padding: 0 1.5rem; border-radius: 62.4375rem; background: var(--cta-bg); color: var(--cta-fg);
   font: 700 1.3125rem/1 var(--f-ui); text-decoration: none; box-shadow: var(--cta-sh); position: sticky; bottom: 0.25rem; z-index: 4; }
-.mxb-plan:hover { color: var(--on); }
+.mxb-plan:hover { color: var(--cta-fg); }
 .mxb-plan:focus-visible, .mxb-go:focus-visible { outline: 0.1875rem solid var(--ink); outline-offset: 0.1875rem; }
 .mxb-flight { justify-self: center; min-height: var(--target); }
 .mxb-back { justify-self: start; min-height: var(--target); }

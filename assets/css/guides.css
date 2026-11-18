@@ -14,7 +14,7 @@
 .g .gh { max-width: 90rem; margin: 0 auto; padding: 0.75rem 1.75rem 1.5rem; }
 .g .gh-hero { display: grid; gap: 1.125rem; max-width: 56rem; padding: 1.5rem 0 0.5rem; }
 .g .gh-hero h1 { margin: 0; font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 1.02; text-wrap: balance; }
-.g .gh-hero h1 em { font-style: italic; font-weight: 480; color: var(--ink-2); }
+.g .gh-hero h1 em { font-style: normal; font-weight: 700; color: var(--ink-2); }
 .g .gh-hero p { margin: 0; color: var(--ink-2); font-size: 1.1875rem; max-width: 40rem; line-height: 1.5; }
 .g #gh-form { position: relative; max-width: 41.25rem; min-width: 0; }
 .g .gh-hero > * { min-width: 0; }
@@ -290,7 +290,7 @@
 .g .toast { display: flex; align-items: center; gap: 0.75rem; border-radius: 1.5rem; }
 .g .toast.on { pointer-events: auto; }
 .g .toast .tonal { height: 3rem; background: var(--card-solid); color: var(--ink); flex: none; }
-:root[data-mode="dark"] .g .toast .tonal { background: #0F1124; color: #F4F5FB; }
+.g .toast .tonal { background: var(--card-2); }
 @media (max-width: 719px) { .g .toast { bottom: 5.5rem; } }
 
 /* the share panel after Publish: a dialog in the middle of the page on a laptop (the Instagram card beside the link and the badge), cv2's sheet from the foot on a phone */

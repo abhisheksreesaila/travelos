@@ -302,7 +302,7 @@ def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_sta
     assert page.eval_on_selector(".mx-lane.is-lit .mx-band", "e => e.dataset.l") == "4 nights · $2,090"      # the band says its nights and total, never "Found"
     colours = page.evaluate("""() => { const c = e => getComputedStyle(e).backgroundColor, f = document.querySelector('.mx-lane .mx-sq.is-find');
         return [c(f)]; }""")
-    assert colours[0] == "rgb(67, 56, 202)", colours      # the find is the one lit square (the flight indigo)
+    assert colours[0] == "rgb(29, 29, 31)", colours      # the find is the one lit square (the black pick, F-296)
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
 
 
@@ -310,7 +310,7 @@ def test_the_laptop_grid_has_big_totals_one_ringed_band_a_lane_and_the_asked_sta
 def test_one_square_is_lit_at_a_time(matrix):
     """F-245 (D-591), review: on load the find is the only solid indigo square; open another and that one is lit while the find steps back to the tint and ring."""
     page = matrix(DESKTOP)
-    lit = "() => [...document.querySelectorAll('.mx-lane .mx-sq')].filter(e => getComputedStyle(e).backgroundColor === 'rgb(67, 56, 202)').map(e => e.dataset.sq)"
+    lit = "() => [...document.querySelectorAll('.mx-lane .mx-sq')].filter(e => getComputedStyle(e).backgroundColor === 'rgb(29, 29, 31)').map(e => e.dataset.sq)"
     find = page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => e.dataset.sq")
     assert page.evaluate(lit) == [find]
     other = page.locator(".mx-lane[data-lane='sandiego'] .mx-sq:not(.is-find)").first
@@ -319,7 +319,7 @@ def test_one_square_is_lit_at_a_time(matrix):
     page.wait_for_function("k => document.querySelector(`.mx-sq[data-sq='${k}']`).classList.contains('is-open')", arg=key)
     page.wait_for_timeout(400)      # the background's own transition
     assert page.evaluate(lit) == [key]
-    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(36, 33, 90)" or page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") == "rgb(228, 227, 251)"
+    assert page.eval_on_selector(".mx-lane .mx-sq.is-find", "e => getComputedStyle(e).backgroundColor") in ("rgb(240, 240, 243)", "rgb(44, 44, 46)")      # the find steps back to the ringed tint (--flight-t, light and dark)
 
 def test_a_start_price_tap_moves_the_band_its_label_and_the_ink_pill_and_opens_the_bar(matrix):
     page = matrix(DESKTOP)
@@ -445,7 +445,7 @@ def test_the_weather_notes_are_lines_of_their_own_inside_about_these_prices(matr
 
 # ---- F-237: change the nights right on the matrix ------------------------------------------------------------------------
 
-TABLET = {"width": 1100, "height": 800}      # a laptop's narrow end, and a tablet on its side (F-236 review)
+TABLET = {"width": 1100, "height": 1000}      # a laptop's narrow end, and a tablet on its side (F-236 review); F-296: 1000 tall, since the dark band puts the grid 190px lower and the page reads only 240px ahead of the screen
 NIGHTS_URL = URL.replace("r=2026-12-16", "r=2026-12-18")
 WAIT_IDLE = "() => document.getElementById('mx').dataset.busy === '0'"
 

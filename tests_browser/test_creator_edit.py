@@ -67,7 +67,7 @@ def test_the_guides_edit_details_opens_the_v2_editor_and_what_is_changed_is_save
     expect(page.locator("main .ed")).to_be_visible()
     expect(page.locator("h1")).to_have_text("The details of your guide")
     assert page.locator("link[href*='scrapbook.css']").count() == 0 and page.locator("link[href*='cvedit.css']").count() == 1      # the old form's look is not on this page
-    assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Newsreader")
+    assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Inter")      # F-296: heavy Inter headlines
     assert overflow(page) <= 1
     assert not too_small(page, ".ed .go, .ed .tonal, .ed .ed-op, .ed .ed-chip, .ed .ed-in, .ed .ed-cover, .ed summary"), "every control is 48px or more"
     shot(page, f"editor-{viewport['width']}-light")

@@ -64,7 +64,7 @@ def test_the_landing_is_one_calm_line_and_a_soft_box_that_fit_with_48px_targets(
     page = ask(viewport, scheme)
     assert page.url.endswith("/plan/ask")
     expect(page.locator("h1")).to_have_text("Where would you like to go?")
-    assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Newsreader")
+    assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Inter")      # F-296: heavy Inter headlines
     assert page.evaluate("parseFloat(getComputedStyle(document.querySelector('h1')).fontWeight)") <= 500      # a calm line, not a bold sentence
     assert page.evaluate("document.querySelectorAll('.v2-w, .v2-sent').length") == 0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")      # no sideways scroll

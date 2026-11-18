@@ -1,6 +1,6 @@
-"""The v2 page chrome (F-250, D-610): the sky behind the page (the Harbour ground: a gradient, a sun or moon, two ridges, the mood's object at the foot; F-281), the top bar (the mark, the sample label, the light/dark round button, the account)
+"""The v2 page chrome (F-250, D-610): the flat stage behind the page (F-296: the Harbour ground and the moods are retired), the top bar (the mark, the sample label, the light/dark round button, the account)
 and the stylesheets and script a v2 page loads. `layout.page(v2=True)` uses it; a page opts in by that one flag, which puts the class `v2` on its wrapper.
-Reference: docs/design/booking-v2/index.html (type pairing C, Newsreader with Inter); the tokens are assets/css/v2-tokens.css."""
+Reference: docs/design/palette-bo/index.html (look C, Stage; Inter); the tokens are assets/css/v2-tokens.css."""
 
 import logging
 
@@ -11,44 +11,18 @@ from gitaway.icons import icon
 
 log = logging.getLogger(__name__)
 
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2page.css"), Link(rel="stylesheet", href="/assets/css/v2-moods.css"),
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/v2.css"), Link(rel="stylesheet", href="/assets/css/v2page.css"),
         Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
-        Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
         Script(src="/assets/js/v2.js", defer=True), Script(src="/assets/js/v2top.js", defer=True))
 
 MARK = ('<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#4338CA"/><circle cx="26" cy="15" r="6" fill="#FFD43B"/>'
         '<path d="M5 27c5-4 9-4 14 0s9 4 16 0v8a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="#fff"/><path d="M5 31c5-3 9-3 14 0s9 3 16 0" fill="none" stroke="#C92A5E" stroke-width="2.5"/></svg>')
 
 
-def _palm(x, y, s=1.0, c="#1F8A5B", t="#7A4E26") -> str:
-    return (f'<g transform="translate({x} {y}) scale({s})"><path d="M0 0 Q2 -14 6 -28" fill="none" stroke="{t}" stroke-width="2.4" stroke-linecap="round"/><g fill="{c}">'
-            '<path d="M6 -28q-10-3-15 4 8-3 15-4z"/><path d="M6 -28q10-4 15 3-8-3-15-3z"/><path d="M6 -28q-5-9-13-8 8 2 13 8z"/><path d="M6 -28q4-10 12-9-8 2-12 9z"/></g></g>')
-
-
-def _shore() -> str:
-    """The landing's foot: hills, a sea, a pier, a sailboat, a beach and palms (the cover's scene, redrawn as the prototype draws it)."""
-    piles = "".join(f'<rect x="{130 + i * 24}" y="134" width="4" height="40" fill="#2B3A4A"/>' for i in range(16))
-    palms = "".join(_palm(x, y, s) for x, y, s in ((1180, 214, 2.1), (1240, 220, 1.6), (1320, 212, 2.4), (70, 222, 1.8)))
-    return ('<path d="M0 120 Q160 70 330 110 T700 96 T1060 108 T1440 92 V260 H0Z" fill="#C9B9D9" opacity=".55"/>'
-            '<path d="M0 150 Q240 132 480 146 T960 140 T1440 148 V260 H0Z" fill="#A7D3EE"/><path d="M0 176 Q240 160 480 172 T960 166 T1440 174 V260 H0Z" fill="#78B8E3"/>'
-            f'<rect x="120" y="128" width="380" height="6" fill="#2B3A4A"/>{piles}<rect x="456" y="104" width="40" height="24" rx="2" fill="#E4572E"/><path d="M450 104h52l-26-14z" fill="#2B3A4A"/>'
-            '<path d="M0 214 Q300 190 640 206 T1440 200 V260 H0Z" fill="#F4D9A0"/>' + palms +
-            '<g transform="translate(860 150)"><path d="M0 0 h60 l-8 10 h-44z" fill="#C2410C"/><path d="M28 0 V-46 L56 -4z" fill="#FFD43B"/><path d="M26 -2 V-38 L6 -4z" fill="#fff"/></g>')
-
-
-RIDGES = ('<svg class="ridges" viewBox="0 0 1440 300" preserveAspectRatio="none"><path class="r1" d="M0 190 L140 120 L230 160 L360 70 L470 150 L560 110 L700 180 L820 90 L930 150 L1050 60 L1180 140 L1290 100 L1440 160 V300 H0Z"/>'
-          '<path class="r2" d="M0 240 L120 200 L260 230 L400 170 L540 230 L690 190 L820 240 L980 180 L1120 230 L1260 190 L1440 230 V300 H0Z"/></svg>')      # the Harbour ground's two ridges (F-281, D-890)
-
-
-def bg(mood: str = "", quiet: bool = False) -> Div:
-    """The sky (F-281, D-890: the Harbour ground; v2.css `.v2-bg:not(.is-quiet)`): a gradient, a sun that becomes a moon in the dark, two ridges and the mood's one object at the foot (beach: the shore; F-260, gitaway/moods.py). A `?mood=` preview wins on the showcase."""
-    if quiet:      # a reading page (F-261, D-701): no sun, moon, clouds, shore or mood object, only a soft gradient framing the content column (v2.css `.v2-bg.is-quiet`)
-        return Div(cls="v2-bg is-quiet", aria_hidden="true", data_sky="quiet")
-    from gitaway import moodart, moods
-    mood = moods.preview(session_.request_path()) or (mood if mood in moods.MOODS else moods.DEFAULT)
-    foot = moodart.FEET.get(mood) or _shore()
-    return Div(Div(cls="sunball"), NotStr(RIDGES), NotStr(moodart.MOON), NotStr(moodart.STARS),
-               NotStr(f'<svg class="shore" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">{foot}</svg>'), cls="v2-bg", aria_hidden="true", data_mood=mood)
+def bg(quiet: bool = False) -> Div:
+    """The stage (F-296, D-956; v2.css `.v2-bg`): a flat #F5F5F7 (light) or #000 (dark) behind everything, nothing drawn on it (the Harbour ground, its sun, moon, ridges, shore and the moods are retired).
+    A reading page marks it `is-quiet` (F-261, D-701), which also gives the page its foot."""
+    return Div(cls="v2-bg is-quiet" if quiet else "v2-bg", aria_hidden="true", **({"data_sky": "quiet"} if quiet else {}))
 
 
 def section_of(current: str) -> str:

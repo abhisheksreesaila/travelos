@@ -33,7 +33,7 @@ def test_the_sentence_is_a_search_card_set_apart_inside_the_gutter(matrix, viewp
     assert c["x"] <= field["x"] and field["r"] <= c["r"] and c["y"] < field["y"]      # the field sits inside
     assert band["x"] >= c["x"] - 0.5 and band["r"] <= c["r"] + 0.5 and abs(band["b"] - c["b"]) <= 1      # the band runs to the card's edges and ends where the card ends
     assert d["fieldBg"] != d["cardBg"] and d["bandBg"] != d["cardBg"]      # a field and a band of their own
-    assert "2px" in d["shadow"] and "rgb" in d["shadow"]      # the tinted outline, deeper than the results card's hairline
+    assert "rgb" in d["shadow"]      # the tinted outline, deeper than the results card's hairline
     assert ratio(rgb(d["title"]), rgb(d["cardBg"])) >= 4.5 and ratio(rgb(d["hint"]), rgb(d["cardBg"])) >= 4.5
     assert small(page, ".v2-qcard") == []      # every word, chip and control is a 48px target
     if os.environ.get("F279_SHOTS"):

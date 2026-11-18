@@ -27,8 +27,8 @@ HAIRLINE_2 = "rgb(215, 215, 222)"
 # the kinds' tints (the old palette names: --sun is food's yellow, --mint outdoors' teal, --grape culture and stays' violet, --sky travel and flights' indigo, --bubble fun's rose)
 SUN_TINT, MINT_TINT, GRAPE_TINT, SKY_TINT, BUBBLE_TINT = "rgb(255, 244, 194)", "rgb(217, 242, 239)", "rgb(241, 227, 250)", "rgb(228, 227, 251)", "rgb(251, 225, 234)"
 SUN_INK, MINT_INK, GRAPE_INK, SKY_INK, BUBBLE_INK = "rgb(92, 67, 0)", "rgb(11, 77, 72)", "rgb(90, 23, 133)", "rgb(42, 33, 133)", "rgb(126, 21, 56)"
-# the kinds' solid fills (a plan's coloured edge, a kind's dot): ride yellow, see teal, stay violet, flight indigo, food rose
-SUN_FILL, MINT_FILL, GRAPE_FILL, SKY_FILL, BUBBLE_FILL = "rgb(255, 212, 59)", "rgb(15, 118, 110)", "rgb(139, 47, 201)", "rgb(67, 56, 202)", "rgb(201, 42, 94)"
+# the kinds' solid fills (a plan's coloured edge, a kind's dot): ride yellow, see teal, stay ink, flight blue, food pink (F-296)
+SUN_FILL, MINT_FILL, GRAPE_FILL, SKY_FILL, BUBBLE_FILL = "rgb(255, 212, 59)", "rgb(15, 118, 110)", "rgb(29, 29, 31)", "rgb(0, 113, 227)", "rgb(212, 31, 98)"
 
 
 def open_rail(page):
