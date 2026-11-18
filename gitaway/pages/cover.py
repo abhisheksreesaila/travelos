@@ -1,4 +1,4 @@
-"""The cover (F-266, cover v3 "one postcard": docs/briefs/cover-v3.md, the approved prototype docs/design/cover-v3/postcard.html): what a signed-out visitor sees at /.
+"""The cover (F-266, cover v3 "one postcard": docs/briefs/cover-v3.md, the approved prototype docs/design/cover-v3/postcard.html, drawn in the Stage look by F-296, docs/design/palette-bo/cover.html): what a signed-out visitor sees at /.
 
 One postcard travels the whole story. It starts as a wish (the search), becomes the matrix (compare), the opened square (book), the calendar (plan together), the trip
 itself (go), the guide (share), the Instagram post, and someone else's wish (pass it on), then round again. Eight beats on one sticky stage:
@@ -7,7 +7,7 @@ itself (go), the guide (share), the Instagram post, and someone else's wish (pas
     the words        a bold caption per beat, rolling with the story (the real text of the story: every caption is in the page)
     the ring         eight bold words (Wish, Compare, Book ...) round the card, turning one word per beat
     the gallery      other families' postcards drifting nearer, one step per beat
-    the sky          the site's v2 sky; on Go it turns to snow; light and dark follow the site's mode (assets/js/mode.js)
+    the stage        an Apple-grey ground (F-296, the Stage look); on Go a fine snow drifts across it; light and dark follow the site's mode (assets/js/mode.js)
     the close        "Go somewhere, together.", Start a trip and Browse guides
 
 The first face is a real form (D-761: visitors search without an account): the visitor types a wish and "Show me every way" posts `q` to POST /plan/ask, which opens their own
@@ -60,30 +60,23 @@ BEATS = (
 # other families' postcards in the gallery: (what it says, its gradient)
 PLACES = ("Lisbon in 48 hours", "Tahoe ski week", "Kyoto in autumn", "Maui with toddlers", "New York at New Year", "Banff by train", "Mexico City, to eat", "Iceland ring road",
           "Amalfi, slowly", "Zion and Bryce", "Paris for four", "Big Sur drive", "Austin long weekend", "Vancouver Island", "Charleston food trip", "Oaxaca for Day of the Dead")
-HUES = ("linear-gradient(180deg,#BFE0F6 0 55%,#78B8E3 55% 75%,#F4D9A0 75%)", "linear-gradient(180deg,#D3E6F8 0 45%,#8FA8C8 45% 70%,#F7FAFE 70%)",
-        "linear-gradient(180deg,#F8DCCB 0 55%,#7BA568 55% 80%,#5F8F54 80%)", "linear-gradient(180deg,#E0D8F7 0 60%,#3E2C72 60%)",
-        "linear-gradient(180deg,#D5DEEA 0 40%,#6D7899 40% 85%,#56607F 85%)", "linear-gradient(180deg,#FDE3CC 0 50%,#E9B98A 50% 72%,#78B8E3 72%)")
-STARS = ((70, 40, 2.4), (160, 110, 1.8), (260, 30, 2.2), (330, 150, 1.6), (430, 70, 2.6), (520, 20, 1.8), (610, 120, 2.2), (700, 50, 1.6), (790, 140, 2.4), (880, 24, 1.8),
-         (960, 96, 2.2), (1040, 170, 1.6), (1130, 40, 2.4), (1240, 120, 1.8), (1330, 60, 2.2), (1400, 150, 1.6))
-CLOUD = '<path d="M20 44a16 16 0 0 1 2-32 22 22 0 0 1 40-4 18 18 0 0 1 32 10 13 13 0 0 1 6 26z"/>'
+HUES = tuple(f"var(--pl-{n})" for n in ("sd", "la", "lt", "pink", "teal", "sun"))      # saturated colour cards: the places' own colours (cover.css)
 
 # the drawings the faces share (ART: San Diego's coast and Big Bear's snow; WISH: a harbour at morning), drawn once in a hidden sprite and used by <use>
 SPRITE = (
     '<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>'
-    '<linearGradient id="cv-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE0F6"/><stop offset=".6" stop-color="#E7E6FA"/><stop offset="1" stop-color="#FDE3CC"/></linearGradient>'
-    '<linearGradient id="cv-skw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9E4F8"/><stop offset="1" stop-color="#FDE3CC"/></linearGradient>'
-    '<g id="cv-art"><rect width="400" height="260" fill="url(#cv-sky)"/><circle cx="118" cy="110" r="28" fill="#FFB547"/><circle cx="118" cy="110" r="42" fill="#FFB547" opacity=".18"/>'
-    '<path d="M210 176 L292 70 L374 176Z" fill="#8FA8C8"/><path d="M292 70 L374 176 L328 176 L300 112Z" fill="#7893B8"/><path d="M292 70 L274 94 L284 90 L292 102 L302 88 L312 96Z" fill="#fff"/>'
-    '<path d="M300 176 L352 112 L410 176Z" fill="#A9BCD6"/><path d="M352 112 L338 130 L346 127 L352 136 L360 126 L368 132Z" fill="#fff"/>'
-    '<path d="M0 168 Q60 158 120 166 T240 166 L240 260 H0Z" fill="#A7D3EE"/><path d="M0 184 Q60 174 130 182 T250 182 L250 260 H0Z" fill="#78B8E3"/>'
-    '<path d="M0 214 Q80 200 160 210 T260 206 L262 260 H0Z" fill="#F4D9A0"/><path d="M226 200 Q300 182 400 192 V260 H232Z" fill="#F7FAFE"/><path d="M240 222 Q320 208 400 216 V260 H244Z" fill="#E3ECF7"/>'
-    '<g transform="translate(196 214) scale(1.6)"><path d="M0 0 Q2 -14 6 -28" fill="none" stroke="#7A4E26" stroke-width="2.4" stroke-linecap="round"/><g fill="#1F8A5B">'
-    '<path d="M6 -28q-10-3-15 4 8-3 15-4z"/><path d="M6 -28q10-4 15 3-8-3-15-3z"/><path d="M6 -28q-5-9-13-8 8 2 13 8z"/><path d="M6 -28q4-10 12-9-8 2-12 9z"/></g></g>'
-    '<g fill="#2F6B4F"><path d="M300 222 l10 -26 l10 26z"/><path d="M322 226 l8 -20 l8 20z"/><path d="M356 220 l11 -30 l11 30z"/></g></g>'
-    '<g id="cv-wish"><rect width="400" height="260" fill="url(#cv-skw)"/><circle cx="290" cy="96" r="30" fill="#FFB547"/><circle cx="290" cy="96" r="46" fill="#FFB547" opacity=".16"/>'
-    '<path d="M60 70a14 14 0 0 1 2-28 20 20 0 0 1 36-4 16 16 0 0 1 28 9 11 11 0 0 1 5 23z" fill="#fff" opacity=".9"/>'
-    '<path d="M0 190 Q100 172 200 186 T400 182 V260 H0Z" fill="#9CCBEA"/><path d="M0 214 Q120 198 240 210 T400 206 V260 H0Z" fill="#78B8E3"/><path d="M0 238 Q140 226 280 236 T400 232 V260 H0Z" fill="#F4D9A0"/>'
-    '<path d="M150 178 l40 0 l-6 9 h-28z" fill="#2B3A4A"/><path d="M170 178 V140 l18 34z" fill="#fff"/><path d="M168 178 V146 l-14 30z" fill="#FBF7EF"/></g>'
+    '<g id="cv-art" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="118" cy="110" r="28"/><circle cx="118" cy="110" r="42" stroke-opacity=".4"/>'
+    '<path d="M210 176 L292 70 L374 176Z"/><path d="M292 70 L274 94 L284 90 L292 102 L302 88 L312 96Z"/><path d="M300 176 L352 112 L410 176" stroke-opacity=".7"/>'
+    '<path d="M0 168 Q60 158 120 166 T240 166 L250 260 H0Z" fill="#000" fill-opacity=".1" stroke="none"/>'
+    '<path d="M0 214 Q80 200 160 210 T260 206 L262 260 H0Z" fill="#000" fill-opacity=".18" stroke="none"/><path d="M226 200 Q300 182 400 192 V260 H232Z" fill="#fff" fill-opacity=".28" stroke="none"/>'
+    '<g transform="translate(330 214) scale(1.6)"><path d="M0 0 Q2 -14 6 -28"/><path d="M6 -28q-10-3-15 4M6 -28q10-4 15 3M6 -28q-5-9-13-8M6 -28q4-10 12-9"/></g>'
+    '</g>'
+    '<g id="cv-wish" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="290" cy="96" r="30"/><circle cx="290" cy="96" r="46" stroke-opacity=".4"/>'
+    '<path d="M0 190 Q100 172 200 186 T400 182 V260 H0Z" fill="#000" fill-opacity=".18" stroke="none"/>'
+    '<path d="M0 190 Q100 172 200 186 T400 182"/><path d="M0 214 Q120 198 240 210 T400 206" stroke-opacity=".7"/><path d="M0 238 Q140 226 280 236 T400 232" stroke-opacity=".5"/>'
+    '<path d="M150 178 l40 0 l-6 9 h-28z"/><path d="M170 178 V140 l18 34z"/><path d="M168 178 V146 l-14 30z" stroke-opacity=".7"/></g>'
     '</defs></svg>')
 
 
@@ -95,15 +88,15 @@ STAMP = ('<svg class="pm" viewBox="0 0 80 80" aria-hidden="true" focusable="fals
          '<circle cx="40" cy="40" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/>'
          '<text x="40" y="37" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="9" fill="currentColor">SAMPLE</text>'
          '<text x="40" y="49" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="8" fill="currentColor">DEC 2026</text></svg>')
-# small drawings the faces use (fixed colours: they sit on paper in both modes)
+# small drawings the faces use (fixed colours that read on the white card and on the dark one)
 I = {
     "arrow": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     "sun": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFB547"/></svg>',
     "snow": '<svg viewBox="0 0 24 24" fill="none" stroke="#5B7DB8" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M5 8l14 8M5 16l14-8"/></svg>',
     "mix": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="10" r="4.5" fill="#FFB547"/><path d="M8 19a3.5 3.5 0 0 1 .4-7 4.8 4.8 0 0 1 9.2 1.3A2.9 2.9 0 0 1 17 19z" fill="#9AA6C4"/></svg>',
     "cloud": '<svg viewBox="0 0 24 24" fill="#9AA6C4" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17.5 18z"/></svg>',
-    "plane": '<svg viewBox="0 0 24 24" fill="#0369A1" aria-hidden="true"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z"/></svg>',
-    "bed": '<svg viewBox="0 0 24 24" fill="none" stroke="#8B2FC9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6" fill="#8B2FC9"/></svg>',
+    "plane": '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z"/></svg>',
+    "bed": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6" fill="currentColor"/></svg>',
     "lock": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     "check": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     "heart": '<svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
@@ -167,46 +160,46 @@ def face_matrix():
 
 
 def face_square():
-    colours = ("#4338CA", "#FFB547", "#0F766E", "#C92A5E", "#0369A1", "#8B2FC9", "#FFB547", "#4338CA", "#0F766E", "#C92A5E")
+    colours = ("var(--pl-sd)", "var(--pl-sun)", "var(--pl-lt)", "var(--pl-pink)", "var(--pl-la)", "var(--pl-teal)", "var(--pl-sun)", "var(--pl-sd)", "var(--pl-lt)", "var(--pl-pink)")
     conf = "".join(f'<i style="--c:{c};--x:{round(math.cos(i / len(colours) * math.tau) * 110)}px;--y:{round(math.sin(i / len(colours) * math.tau) * 70 - 40)}px"></i>'
                    for i, c in enumerate(colours))
     return (f'<div class="f sqr"><div class="artbox">{art()}<div class="ttl"><small>Sun Dec 13 · 5 nights · 4 of us</small><b>Coast + snow</b></div></div><div class="body">'
-            f'<div class="row" style="--i:0"><span class="ic" style="background:#DBEFFA">{I["plane"]}</span><span><b>Flights to San Diego</b><small>4 seats, there and back</small></span><span class="p">$612</span></div>'
-            f'<div class="row" style="--i:1"><span class="ic" style="background:#F1E3FA">{I["bed"]}</span><span><b>Hotel by the cove</b><small>2 nights · coast</small></span><span class="p">$544</span></div>'
-            f'<div class="row" style="--i:2"><span class="ic" style="background:#F1E3FA">{I["bed"]}</span><span><b>Lodge in the pines</b><small>3 nights · snow</small></span><span class="p">$784</span></div>'
+            f'<div class="row" style="--i:0"><span class="ic" style="--ic:var(--pl-sd)">{I["plane"]}</span><span><b>Flights to San Diego</b><small>4 seats, there and back</small></span><span class="p">$612</span></div>'
+            f'<div class="row" style="--i:1"><span class="ic" style="--ic:var(--pl-la)">{I["bed"]}</span><span><b>Hotel by the cove</b><small>2 nights · coast</small></span><span class="p">$544</span></div>'
+            f'<div class="row" style="--i:2"><span class="ic" style="--ic:var(--pl-lt)">{I["bed"]}</span><span><b>Lodge in the pines</b><small>3 nights · snow</small></span><span class="p">$784</span></div>'
             '<div class="tot"><span>Whole trip, for 4</span><b>$1,940</b></div>'
             f'<div class="book"><span class="b1">Book this trip</span><span class="b2">{I["check"]}Booked</span><span class="confetti">{conf}</span></div><div class="fine">Sample prices</div></div></div>')
 
 
-def _blk(cls, c, n, t, hh, bg, bd, body, i=None, far=False):
-    return (f'<div class="blk {cls}{" far" if far else ""}" style="--c:{c};--n:{n};--t:{t}%;--hh:{hh}%;--bg:{bg};--bd:{bd}{f";--i:{i}" if i is not None else ""}">{body}</div>')
+def _blk(cls, c, n, t, hh, bd, body, i=None, far=False):
+    return (f'<div class="blk {cls}{" far" if far else ""}" style="--c:{c};--n:{n};--t:{t}%;--hh:{hh}%;--bd:{bd}{f";--i:{i}" if i is not None else ""}">{body}</div>')
 
 
 def face_calendar():
     by = lambda who: f"<small>{who}</small>"      # noqa: E731
     days = ("Sun <b>13</b>", "Mon <b>14</b>", "Tue <b>15</b>", "Wed <b>16</b>", "Thu <b>17</b>")
-    people = (("M", "#FBE1EA", "#7E1538"), ("S", "#DBEFFA", "#034769"), ("A", "#D9F2EF", "#0B4D48"), ("P", "#E4E3FB", "#2A2185"))
-    who = "".join(f'<i class="av" style="--i:{i};background:{bg};color:{fg}">{ch}</i>' for i, (ch, bg, fg) in enumerate(people))
+    people = (("M", "var(--pl-pink)"), ("S", "var(--pl-sd)"), ("A", "var(--pl-lt)"), ("P", "var(--pl-la)"))
+    who = "".join(f'<i class="av" style="--i:{i};--a:{a}">{ch}</i>' for i, (ch, a) in enumerate(people))
     cur = lambda bd, d, fx, fy, tx, ty, name: (f'<div class="cur" style="--bd:{bd};--d:{d};--fx:{fx};--fy:{fy};--tx:{tx};--ty:{ty}">{I["cur"]}<span>{name}</span></div>')      # noqa: E731
     return ('<div class="f cal"><header><b>Coast to snow · Dec 13–18</b>' f'<span class="who">{who}</span><span class="creator">+ Maya\'s guide</span></header>'
             '<div class="days">' + "".join(f'<span{" class=far" if i > 2 else ""}>{d}</span>' for i, d in enumerate(days)) + '</div><div class="grid">'
-            + _blk("lock", 0, 1, 3, 17, "#DBEFFA", "#0369A1", f'Land SAN 10:40<small>{I["lock"]}Booked</small>')
-            + _blk("lock", 0, 2, 84, 12, "#F1E3FA", "#8B2FC9", "Hotel by the cove")
-            + _blk("lock", 2, 3, 84, 12, "#F1E3FA", "#8B2FC9", "Lodge in the pines")
-            + _blk("plan guide", 1, 1, 4, 27, "", "#4338CA", "<em>Maya's guide</em>La Jolla Cove at 9, before the crowds", 0)
-            + _blk("plan", 0, 1, 52, 26, "#FBE1EA", "#C92A5E", "Tacos at the market" + by("Sam"), 1)
-            + _blk("plan", 1, 1, 38, 28, "#D9F2EF", "#0F766E", "Zoo after lunch" + by("Mum"), 2)
-            + _blk("plan", 2, 1, 6, 24, "#F2F3FA", "#555A73", "Drive up to Big Bear" + by("Dad"), 3)
-            + _blk("plan", 2, 1, 38, 26, "#D9F2EF", "#0F766E", "Sled hill!" + by("Ava, 9"), 4)
-            + _blk("plan", 3, 1, 12, 26, "#D9F2EF", "#0F766E", "Lake walk" + by("Mum"), 5, True)
-            + _blk("plan", 4, 1, 30, 22, "#F2F3FA", "#555A73", "Drive home" + by("Dad"), 6, True)
-            + cur("#C92A5E", "600ms", "220%", "30%", "115%", "330%", "Mum") + cur("#0369A1", "900ms", "-10%", "20%", "30%", "450%", "Sam") + "</div></div>")
+            + _blk("lock", 0, 1, 3, 17, "var(--pl-sd)", f'Land SAN 10:40<small>{I["lock"]}Booked</small>')
+            + _blk("lock", 0, 2, 84, 12, "var(--pl-la)", "Hotel by the cove")
+            + _blk("lock", 2, 3, 84, 12, "var(--pl-lt)", "Lodge in the pines")
+            + _blk("plan guide", 1, 1, 4, 27, "var(--pc-ink-2)", "<em>Maya's guide</em>La Jolla Cove at 9, before the crowds", 0)
+            + _blk("plan", 0, 1, 52, 26, "var(--pl-pink)", "Tacos at the market" + by("Sam"), 1)
+            + _blk("plan", 1, 1, 38, 28, "var(--pl-lt)", "Zoo after lunch" + by("Mum"), 2)
+            + _blk("plan", 2, 1, 6, 24, "var(--pc-ink-2)", "Drive up to Big Bear" + by("Dad"), 3)
+            + _blk("plan", 2, 1, 38, 26, "var(--pl-lt)", "Sled hill!" + by("Ava, 9"), 4)
+            + _blk("plan", 3, 1, 12, 26, "var(--pl-lt)", "Lake walk" + by("Mum"), 5, True)
+            + _blk("plan", 4, 1, 30, 22, "var(--pc-ink-2)", "Drive home" + by("Dad"), 6, True)
+            + cur("var(--pl-pink)", "600ms", "220%", "30%", "115%", "330%", "Mum") + cur("var(--pl-sd)", "900ms", "-10%", "20%", "30%", "450%", "Sam") + "</div></div>")
 
 
 def face_go():
     chips = (("sun", "71°", "Coast"), ("sun", "70°", "Zoo"), ("cloud", "52°", "Drive"), ("snow", "28°", "Snow"), ("snow", "31°", "Home"))
     spans = "".join(f'<span style="--i:{i}">{I[k]}{t}<em>&nbsp;{w}</em></span>' for i, (k, t, w) in enumerate(chips))
-    return (f'<div class="f go"><div class="artbox">{art()}<div class="veil"></div><div class="flakes"></div><div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div>'
+    return (f'<div class="f go"><div class="artbox">{art()}<div class="flakes"></div><div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div>'
             '<span class="smp">Sample weather</span><div class="stamp s1">Day 1 · Coast · 71°</div><div class="stamp s2">Day 4 · Snow · 28°</div>'
             f'<div class="chips">{spans}</div></div></div>')
 
@@ -273,7 +266,7 @@ def _pager():
                cls="pager", aria_label="The story")
 
 
-TWINS = (("t1", "linear-gradient(180deg,#F8DCCB 0 55%,#7BA568 55% 80%,#5F8F54 80%)", "The Okafors · Chicago"), ("t2", "linear-gradient(180deg,#E0D8F7 0 58%,#8FA8C8 58% 78%,#F7FAFE 78%)", "Lena &amp; Jo · Denver"))
+TWINS = (("t1", "var(--pl-pink)", "The Okafors · Chicago"), ("t2", "var(--pl-teal)", "Lena &amp; Jo · Denver"))
 
 
 def _story():
@@ -285,15 +278,8 @@ def _story():
 
 
 def _sky():
-    clouds = "".join(f'<svg class="cloud" style="{st}" viewBox="0 0 120 50" aria-hidden="true">{CLOUD}</svg>'
-                     for st in ("left:4%;top:9%;width:10.625rem", "left:40%;top:6%;width:7.5rem;animation-duration:80s", "left:22%;top:78%;width:12.5rem;animation-duration:95s"))
-    stars = "".join(f'<circle cx="{x}" cy="{y}" r="{r}" style="--i:{i}"/>' for i, (x, y, r) in enumerate(STARS))
-    moon = ('<svg class="moon" viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="cv-mc"><rect width="100" height="100" fill="#fff"/><circle cx="73" cy="36" r="34" fill="#000"/></mask></defs>'
-            '<circle cx="50" cy="50" r="42" fill="#F3EBD3" mask="url(#cv-mc)"/><path d="M19 57 q5 5 10 0" fill="none" stroke="#6B5B3A" stroke-width="2.4" stroke-linecap="round"/>'
-            '<path d="M21 69 q3.5 3 7 0" fill="none" stroke="#6B5B3A" stroke-width="2.2" stroke-linecap="round"/><circle cx="15" cy="64" r="3.4" fill="#F4A9A0" opacity=".7"/>'
-            '<g class="zz" fill="#F3EBD3" font-family="Newsreader, Georgia, serif" font-weight="600"><text x="80" y="28" font-size="13">z</text><text x="89" y="15" font-size="10">z</text></g></svg>')
-    return Div(Div(cls="sun"), NotStr(moon), NotStr(f'<svg class="stars" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMin slice" aria-hidden="true">{stars}</svg>'), NotStr(clouds),
-               cls="cv-sky", data_mood="shore", aria_hidden="true")
+    """The stage: the grey ground behind everything; on Go a fine snow drifts across it (cover.css, assets/js/cover.js sets data-mood)."""
+    return Div(cls="cv-sky", data_mood="shore", aria_hidden="true")
 
 
 def _close():

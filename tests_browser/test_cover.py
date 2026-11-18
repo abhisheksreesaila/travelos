@@ -145,15 +145,16 @@ def test_nothing_scrolls_sideways_in_either_layout(cover, size, mode):
 def test_dark_follows_the_sites_own_choice_and_light_is_the_default(cover):
     light = cover(DESKTOP)
     assert light.evaluate("document.documentElement.dataset.mode") == "light"
-    assert float(light.evaluate("getComputedStyle(document.querySelector('.cv-sky .sun')).opacity")) == 1
-    assert float(light.evaluate("getComputedStyle(document.querySelector('.cv-sky .moon')).opacity")) == 0
+    assert light.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(245, 245, 247)"      # the Stage: an Apple-grey ground (F-296)
+    assert light.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(29, 29, 31)"
+    assert light.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor") == "rgb(255, 255, 255)"      # the postcard is white
+    assert light.evaluate("document.querySelector('.cv-sky .sun, .cv-sky .moon, .cv-sky .cloud, .cv-sky .stars')") is None      # no sun, moon, clouds or stars
     dark = cover(DESKTOP, "dark")
     assert dark.evaluate("document.documentElement.dataset.mode") == "dark"
-    dark.wait_for_timeout(1300)
-    assert float(dark.evaluate("getComputedStyle(document.querySelector('.cv-sky .moon')).opacity")) == 1 and float(dark.evaluate("getComputedStyle(document.querySelector('.cv-sky .sun')).opacity")) == 0
-    assert dark.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(245, 245, 247)"      # the v2 ink of the dark mode
+    assert dark.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(0, 0, 0)"
+    assert dark.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(245, 245, 247)"      # the Stage's ink in the dark
     paper = dark.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor")
-    assert paper == "rgb(237, 230, 215)"      # the postcard is paper in both modes (dimmed in the dark)
+    assert paper == "rgb(28, 28, 30)"      # the postcard is #1C1C1E in the dark
     dark.click(".cv-mode")      # the bar's button is the site's switch: it turns the page and the choice is kept
     assert dark.evaluate("document.documentElement.dataset.mode") == "light"
     assert dark.evaluate("localStorage.getItem('ga-mode')") is None
