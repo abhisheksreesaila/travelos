@@ -14,6 +14,7 @@ page finishing together, or a second press of Cancel can send only one. A send t
 Every word from LiteAPI or the guest is escaped in the HTML and stripped of line breaks in the subject (header injection); the address is checked against the booking form's own pattern.
 """
 
+import json
 import logging
 import re
 import smtplib
@@ -222,7 +223,7 @@ def claim(db, column: str, booking_id: str) -> bool:
     """Win the right to send: set the booking's marker if it is empty. A sample booking never wins."""
     assert column in ("booked_email_at", "cancel_email_at")
     with familydb.transaction(db):
-        return familydb.run(db, f"UPDATE matrix_bookings SET {column} = :now WHERE booking_id = :b AND {column} = '' AND sample = 0", b=booking_id, now=familydb.now()) == 1
+        return familydb.run(db, f"UPDATE matrix_bookings SET {column} = :now WHERE booking_id = :b AND COALESCE({column}, '') = '' AND sample = 0", b=booking_id, now=familydb.now()) == 1
 
 
 def _sandbox() -> bool:
@@ -256,5 +257,118 @@ def cancelled(db, booking_id: str, to: str, refund_cents: int, fee_cents: int) -
         mail = cancelled_mail({"hotel": row["hotel"], "checkin": row["checkin"], "checkout": row["checkout"], "booking_id": booking_id, "refund_cents": refund_cents, "fee_cents": fee_cents,
                                "sandbox": _sandbox()})
         _spawn(_send, to, mail, booking_id)
+    except Exception:  # noqa: BLE001
+        log.warning("booking email failed: %s", booking_id)
+
+
+# ---- flights (F-276) ------------------------------------------------------------------------------------------------------------------------
+
+def _flight_rows(d: dict) -> list:
+    """The facts of a flight booking, shared by its emails. `d`: segs (liteapi.Seg), airline, party, ref, pnr, locators, status (words), charge_cents, facts, sample."""
+    from gitaway import flightbook as fb
+    outs = [s for s in d["segs"] if s.direction != "INBOUND"]
+    backs = [s for s in d["segs"] if s.direction == "INBOUND"]
+    facts = d.get("facts") or {}
+    pnrs = ", ".join(f"{a} {p}".strip() for a, p in d.get("locators") or ()) or one_line(d.get("pnr"), 30)
+    rows = [("Airline", one_line(d["airline"])), *[("Outbound" if i == 0 else "Then", fb.seg_words(s)) for i, s in enumerate(outs)], *[("Return" if i == 0 else "Then", fb.seg_words(s)) for i, s in enumerate(backs)],
+            ("Travellers", one_line(d.get("party"), 80)), ("Fare", one_line(facts.get("fare"), 60)), ("LiteAPI booking reference", one_line(d.get("ref"), 40)), ("Airline booking reference", pnrs),
+            ("Status", d["status"]), ("Total charged", catalog.money(d["charge_cents"])) if d.get("charge_cents") else ("", "")]
+    return [(k, v) for k, v in rows if k and v]
+
+
+def flight_booked_mail(d: dict) -> Mail:
+    """The email when a flight is booked. The status is said honestly: a booking waiting for the airline is not a ticket (D-977)."""
+    from gitaway import flightbook as fb
+    first, route = one_line(d.get("first"), 40), one_line(d["route"], 40)
+    facts = d.get("facts") or {}
+    rows = _flight_rows(d)
+    lead = f"Your flight {route} is booked." if d.get("confirmed") else f"Your flight {route} is booked and waiting for the airline."
+    rules = f"{fb.refund_words(facts.get('refundable') is True)}. {fb.change_words(facts.get('changeable') is True)}."
+    tag = "Sandbox booking: nothing was charged." if d.get("sandbox") else ""
+    plan, today = _url(PLAN_PATH), _url(TODAY_PATH)
+    hello = f"Hi {first}," if first else "Hi,"
+    note = ("We will email you again once, when the airline issues the tickets." if not d.get("confirmed") else "The airline has issued the tickets.") + " Bring a photo ID that matches each traveller’s name."
+    who = _who(d)
+    text = "\n".join([hello, "", lead, *([tag] if tag else []), "", *[f"{k}: {v}" for k, v in rows], "", f"Fare rules: {rules}", "", note, "", f"Plan this trip: {plan}", f"Open Today: {today}", "", who, ""])
+    html = _shell(f"Booked: flight {route}", hello, lead, tag, rows, [("Fare rules", rules)], note, [("Plan this trip", plan, True), ("Open Today", today, False)], who, status="Booked")
+    return Mail(f"Booked: flight {route}, {_day(d['segs'][0].depart.date().isoformat())}", text, html)
+
+
+def flight_tickets_mail(d: dict) -> Mail:
+    """The one short email when the airline has confirmed: the tickets are issued."""
+    first, route = one_line(d.get("first"), 40), one_line(d["route"], 40)
+    rows = _flight_rows(d)
+    lead = f"Your tickets for {route} are issued."
+    tag = "Sandbox booking: nothing was charged." if d.get("sandbox") else ""
+    plan, today = _url(PLAN_PATH), _url(TODAY_PATH)
+    hello = f"Hi {first}," if first else "Hi,"
+    note = "The airline has confirmed. Keep the airline booking reference for check-in."
+    who = _who(d)
+    text = "\n".join([hello, "", lead, *([tag] if tag else []), "", *[f"{k}: {v}" for k, v in rows], "", note, "", f"Open Today: {today}", f"Plan this trip: {plan}", "", who, ""])
+    html = _shell(f"Tickets issued: {route}", hello, lead, tag, rows, [], note, [("Open Today", today, True), ("Plan this trip", plan, False)], who, status="Tickets issued")
+    return Mail(f"Tickets issued: flight {route}, {_day(d['segs'][0].depart.date().isoformat())}", text, html)
+
+
+def flight_cancelled_mail(d: dict) -> Mail:
+    route = one_line(d["route"], 40)
+    said = _came_back(d["refund_cents"], d["fee_cents"])
+    rows = [("Flight", route), ("LiteAPI booking reference", one_line(d.get("ref"), 40)), ("Refund", catalog.money(d["refund_cents"])), ("Cancelling cost", catalog.money(d["fee_cents"]))]
+    tag = "Sandbox booking: nothing was charged." if d.get("sandbox") else ""
+    plan = _url(PLAN_PATH)
+    lead = f"Your flight {route} is cancelled."
+    note = "Refunds go back to the card you paid with. Your bank can take a few days to show it."
+    who = _who(d)
+    text = "\n".join(["Hi,", "", lead, *([tag] if tag else []), "", said, "", *[f"{k}: {v}" for k, v in rows], "", note, "", f"Plan this trip: {plan}", "", who, ""])
+    html = _shell(f"Cancelled: flight {route}", "Hi,", lead, tag, rows, [("What LiteAPI reported", said)], note, [("Plan this trip", plan, True)], who)
+    return Mail(f"Cancelled: flight {route}", text, html)
+
+
+def flight_claim(db, column: str, booking_id: str) -> bool:
+    """Win the right to send a flight email: set the booking's marker if it is empty. A sample booking never wins."""
+    assert column in ("booked_email_at", "tickets_email_at", "cancel_email_at")
+    with familydb.transaction(db):
+        return familydb.run(db, f"UPDATE matrix_flights SET {column} = :now WHERE booking_id = :b AND COALESCE({column}, '') = '' AND sample = 0", b=booking_id, now=familydb.now()) == 1
+
+
+def _flight_facts(row: dict) -> dict:
+    from gitaway import flightbook as fb
+    segs = fb.segs_of(row)
+    return {"segs": segs, "route": fb.route_words(segs), "airline": row["airline"], "party": row["party"], "ref": row["ref"], "pnr": row["pnr"], "locators": fb.locators(row),
+            "status": fb.status_words(row), "confirmed": row["status"] == "CONFIRMED", "charge_cents": row["total_cents"], "facts": fb.facts_of_row(row), "sandbox": _sandbox()}
+
+
+def flight_booked(db, row: dict, lead: dict, pay: dict, family: str = "") -> None:
+    """Email the lead traveller (`lead`: first name and email, validated by `flightbook.clean_travellers`) that the flight is booked, before the passengers are blanked. Once; nothing without SMTP settings
+    or for a sample. The email says what LiteAPI says: waiting for the airline, or ticketed."""
+    try:
+        if smtp() is None or not address_ok(lead["email"]) or not flight_claim(db, "booked_email_at", row["booking_id"]):
+            return
+        _spawn(_send, lead["email"], flight_booked_mail({**_flight_facts(row), "first": lead["first"]}), row["booking_id"])
+    except Exception:  # noqa: BLE001 - never undo or hold up a booking over its email
+        log.warning("booking email failed: %s", row.get("booking_id"))
+
+
+def flight_tickets(db, row: dict, family: str = "") -> None:
+    """The flight turned CONFIRMED: one short "tickets issued" email to the lead traveller, whose address was kept for it, then dropped. Once, by the marker."""
+    try:
+        pay = familydb.row(db, "SELECT id, contact FROM matrix_flight_payments WHERE booking_id = :b", b=row["booking_id"])
+        who = json.loads(pay["contact"]) if pay and pay["contact"] else {}
+        if smtp() is None or not who.get("email") or not address_ok(who["email"]) or not flight_claim(db, "tickets_email_at", row["booking_id"]):
+            return
+        with familydb.transaction(db):
+            familydb.run(db, "UPDATE matrix_flight_payments SET contact = '' WHERE id = :i", i=pay["id"])
+        _spawn(_send, who["email"], flight_tickets_mail({**_flight_facts(row), "first": who.get("first", "")}), row["booking_id"])
+    except Exception:  # noqa: BLE001
+        log.warning("booking email failed: %s", row.get("booking_id"))
+
+
+def flight_cancelled(db, booking_id: str, to: str, refund_cents: int, fee_cents: int) -> None:
+    """Email `to` (the signed-in person who cancelled) what LiteAPI reported for the cancel of a flight. Once per booking."""
+    try:
+        row = familydb.row(db, "SELECT * FROM matrix_flights WHERE booking_id = :b AND sample = 0", b=booking_id)
+        if row is None or smtp() is None or not address_ok(to) or not flight_claim(db, "cancel_email_at", booking_id):
+            return
+        from gitaway import flightbook as fb
+        _spawn(_send, to, flight_cancelled_mail({"route": fb.route_words(fb.segs_of(row)), "ref": row["ref"], "refund_cents": refund_cents, "fee_cents": fee_cents, "sandbox": _sandbox()}), booking_id)
     except Exception:  # noqa: BLE001
         log.warning("booking email failed: %s", booking_id)

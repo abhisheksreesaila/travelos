@@ -264,7 +264,7 @@ def _liteapi_square(lane, w, adults, kid_ages, home, family, peek, rank=0, wait=
     fl, *st = answers
     if not fl.items or not all(a.items for a in st):
         return tm.Square(lane.key, w.key, tm.NONE, fetched=fetched)
-    flights = tuple(tm.FlightPart(x.airline, _leg_words(x.legs[0]), _leg_words(x.legs[-1]) if len(x.legs) > 1 else "", x.stops, x.cents, fl.complete) for x in fl.items[:tm.MAX_ALTS])
+    flights = tuple(tm.FlightPart(x.airline, _leg_words(x.legs[0]), _leg_words(x.legs[-1]) if len(x.legs) > 1 else "", x.stops, x.cents, fl.complete, x.offer_id) for x in fl.items[:tm.MAX_ALTS])
     flight = flights[0]
     alts = tuple(tuple(_stay_part(p, a, b, x) for x in _stay_choices(ans.items)) for (p, a, b), ans in zip(split, st))
     stays = tuple(x[0] for x in alts)
