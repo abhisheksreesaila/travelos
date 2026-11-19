@@ -169,6 +169,14 @@ def base_url():
 def browser():
     with sync_playwright() as p:
         b = p.chromium.launch()
+        new_context = b.new_context
+
+        def with_the_grid(*args, **kwargs):
+            """F-300: /trip/plan opens on the journey; the planning tests written for the grid keep the grid the way a person does, by the choice kept on the device (tests_browser/test_journey.py asks for the journey)."""
+            ctx = new_context(*args, **kwargs)
+            ctx.add_init_script("try { if (!localStorage.getItem('ga-plan-view')) localStorage.setItem('ga-plan-view', 'grid'); } catch (e) {}")
+            return ctx
+        b.new_context = with_the_grid
         yield b
         b.close()
 
