@@ -11,7 +11,7 @@ from tests_browser.look import audit
 SIZES = {"390": PHONE, "1440": DESKTOP}
 HEADLINES = ("Every trip starts as a wish.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Every traveller becomes a creator.")
 RING = ("Wish", "Square", "Together", "Creator")
-WIDE_CARD = {0: (520, 340), 1: (400, 480), 2: (660, 430), 3: (400, 545)}      # cover.css, in drawing units
+WIDE_CARD = {0: (520, 340), 1: (400, 440), 2: (660, 430), 3: (400, 545)}      # cover.css, in drawing units
 PHONE_CARD = {0: (520, 400), 1: (520, 640), 2: (520, 440), 3: (520, 700)}
 
 

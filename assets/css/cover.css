@@ -80,7 +80,7 @@ html.cv-root { background: #000000; }
 .cap .hint { display: none; }
 /* the unit of the drawings, and each card's size in it (the film's stage reads the same table by the beat) */
 :is(.stage .pc, .side) { --w: 520; --h: 340; }
-:is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 400; --h: 480; }
+:is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 400; --h: 440; }
 :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 660; --h: 430; }
 :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 400; --h: 545; }
 @media (max-width: 47.5rem) {

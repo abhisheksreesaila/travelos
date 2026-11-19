@@ -192,7 +192,7 @@ def test_the_stylesheet_pins_with_sticky_turns_nothing_with_the_scroll_and_has_n
 def test_every_beats_card_has_its_size_in_both_layouts():
     css = (ROOT / "assets/css/cover.css").read_text(encoding="utf-8")
     sizes = {int(k): (int(w), int(h)) for k, w, h in re.findall(r'\.side\[data-k="(\d)"\]\) \{ --w: (\d+); --h: (\d+); \}', css)[:3]}
-    assert sizes == {1: (400, 480), 2: (660, 430), 3: (400, 545)}
+    assert sizes == {1: (400, 440), 2: (660, 430), 3: (400, 545)}
     assert re.search(r'\.stage\[data-beat="2"\] \.pc, \.side\[data-k="2"\]\) \{ --w: 660; --h: 430; \}', css)      # one rule sets both: the film's card and the still's
     assert 'data-beat="4"' not in css and 'data-k="7"' not in css      # no size for a beat that is gone
 
