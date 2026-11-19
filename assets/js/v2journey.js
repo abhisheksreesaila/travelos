@@ -57,7 +57,7 @@
     REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
     pj.style.height = Math.max(window.innerHeight - (pj.getBoundingClientRect().top + window.pageYOffset), 34 * REM) + 'px';      // the rest of the screen under the top bar
     var dock = pxOf('--pj-dock'), H = pj.clientHeight;
-    LY = Math.round((H - dock) * .734);
+    LY = Math.round((H - dock) * (window.innerWidth < 720 ? .7 : .734));
     pj.style.setProperty('--ly', LY + 'px'); pj.style.setProperty('--sh', Math.round(LY / .734) + 'px');
     W = pxOf('--pj-w'); ROW = pxOf('--pj-row');
     barB = bar.getBoundingClientRect().bottom - pj.getBoundingClientRect().top;
@@ -166,7 +166,7 @@
         n.appendChild(el('small', wet ? 'wet' : '', (wx.typical ? 'Typical' : wx.word) + (wx.hi != null ? ' · ' + wx.hi + '°/' + wx.lo + '°' : '')));
         if (wx.typical) n.appendChild(el('small', null, 'Not a forecast yet'));      // a forecast and the sample are named once, in the notes at the foot
       }
-      if (d.sun) n.appendChild(el('small', null, 'Sun ' + tod(d.sun[0]) + ' to ' + tod(d.sun[1])));
+      if (d.sun) n.appendChild(el('small', null, 'Daylight ' + tod(d.sun[0]) + ' to ' + tod(d.sun[1])));
       track.appendChild(n);
     });
     if (D.stay) {
@@ -206,7 +206,7 @@
     var light = clamp((parseInt(c(1).slice(0, 2), 16) / 255 - .1) / .7, 0, 1), mix = function (hex, m) { return pcMix(hex, m * (.35 + .65 * light)); };      // the place's colour shows more by day than by night
     var st = pj.style;
     st.setProperty('--jv-sky-top', '#' + lerp(c(0), dark ? '1E2733' : 'A3AFBA', grey)); st.setProperty('--jv-sky-bot', '#' + lerp(c(1), dark ? '2C3746' : 'D3D9DF', grey)); st.setProperty('--jv-sun', '#' + c(6));
-    st.setProperty('--jv-r1', '#' + mix(lerp(c(2), dark ? '252F3D' : '7F8FA0', grey * .5), .26)); st.setProperty('--jv-r2', '#' + mix(c(3), .2)); st.setProperty('--jv-r3', '#' + mix(c(4), .14)); st.setProperty('--jv-ground', '#' + c(5));
+    st.setProperty('--jv-r1', '#' + mix(lerp(c(2), dark ? '252F3D' : '7F8FA0', grey * .5), .18)); st.setProperty('--jv-r2', '#' + mix(c(3), .13)); st.setProperty('--jv-r3', '#' + mix(c(4), .09)); st.setProperty('--jv-ground', '#' + c(5));
     pj.classList.toggle('night', dark);
     var span = dark ? ((hr + 24 - S) % 24) / (24 - S + R) : (hr - R) / (S - R), phone = vw < 640;
     orb.style.left = vw * .1 + span * vw * .8 + 'px'; orb.style.top = LY * (phone ? .64 : .53) - Math.sin(Math.PI * clamp(span, 0, 1)) * LY * (phone ? .23 : .36) + 'px'; orb.style.opacity = 1 - grey * .75;

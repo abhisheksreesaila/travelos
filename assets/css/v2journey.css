@@ -68,7 +68,7 @@
 .pj-day { pointer-events: none; position: absolute; top: calc(var(--ly) + 5.2rem); padding-left: 0.75rem; border-left: 0.1875rem solid var(--jv-line); font: 800 max(var(--label-min), 1rem)/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--jv-fg); }
 .pj-day small { display: block; margin-top: 0.4rem; font: 600 1rem/1.3 var(--f-ui); letter-spacing: 0; text-transform: none; color: var(--jv-fg-2); }
 .pj-day small.wet { color: #FFB27A; }
-.pj-stay { position: absolute; z-index: 1; top: calc(var(--ly) - 3.1rem); height: 2.5rem; display: flex; gap: 0.5rem; align-items: center; padding: 0 0.9rem; border-radius: 62.4375rem; background: var(--jv-mist); box-shadow: inset 0 0 0 0.125rem var(--jv-line);
+.pj-stay { position: absolute; z-index: 1; top: calc(var(--ly) - 3.6rem); height: 3rem; display: flex; gap: 0.5rem; align-items: center; padding: 0 0.9rem; border-radius: 62.4375rem; background: var(--jv-mist); box-shadow: inset 0 0 0 0.125rem var(--jv-line);
   color: var(--jv-fg); font: 700 1rem/1 var(--f-ui); white-space: nowrap; overflow: hidden; text-decoration: none; }
 .pj-stay svg { flex: none; width: 1.1rem; height: 1.1rem; }
 .pj-arc { position: absolute; pointer-events: none; overflow: visible; }
@@ -83,13 +83,14 @@
 .pj-ev::after { content: ""; position: absolute; left: 1.1rem; top: 100%; width: 0.1875rem; height: var(--stem, 3rem); background: var(--jv-line); pointer-events: none; }
 .pj-ev::before { content: ""; position: absolute; left: 0.8rem; top: calc(100% + var(--stem, 3rem) - 0.1rem); width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--k); box-shadow: 0 0 0 0.25rem var(--card-solid); z-index: 1; }
 .pj-ev.k-travel, .pj-ev.k-car { --ko: var(--ride-on); }
+.pj-ev.k-stay { --ko: var(--card-solid); }
 .pj-ev .kd { display: flex; align-items: center; gap: 0.45rem; font: 800 max(var(--label-min), 0.8125rem)/1 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 .pj-ev .kd i { display: grid; place-items: center; flex: none; width: 1.5rem; height: 1.5rem; border-radius: 0.5rem; background: var(--k); color: var(--ko); font-style: normal; }
 .pj-ev .kd i svg { width: 1rem; height: 1rem; }
 .pj-ev .kd .lk { margin-left: auto; display: inline-flex; color: var(--ink-3); }
 .pj-ev .kd .lk svg { width: 1rem; height: 1rem; }
 .pj-ev b { display: block; margin-top: 0.45rem; font: 700 1.1rem/1.25 var(--f-ui); color: var(--ink); }
-.pj-ev .tm { display: block; margin-top: 0.2rem; font: 600 1rem/1.3 var(--f-ui); color: var(--ink-2); }
+.pj-ev .tm { overflow-wrap: anywhere; display: block; margin-top: 0.2rem; font: 600 1rem/1.3 var(--f-ui); color: var(--ink-2); }
 .pj-ev .nudge { display: inline-flex; margin-top: 0.5rem; padding: 0.4rem 0.6rem; border-radius: 62.4375rem; background: var(--sig-t); color: var(--sig-ink); font: 650 1rem/1.2 var(--f-ui); }
 .pj-ev.drag { cursor: grabbing; z-index: 10; box-shadow: var(--sh3), 0 1.4rem 2.6rem -0.8rem rgb(0 0 0 / .4); scale: 1.04; rotate: -1deg; }
 @media (prefers-reduced-motion: no-preference) { .pj-ev.drag { transition: box-shadow var(--v2-quick), scale var(--v2-pop) var(--spring); } }
@@ -151,9 +152,14 @@
 @media (max-width: 720px) {
   .pj { --pj-w: 12.5rem; --pj-row: 9.5rem; --pj-dock: 6rem; height: calc(100svh - 4.5rem); min-height: 34rem; }
   .pj-bar { top: 0.75rem; left: 0.75rem; right: 0.75rem; gap: 0.5rem; }
+  .pj-where { padding: 0.6rem 1rem; }
   .pj-where b { font-size: 1.375rem; }
-  .pj-ctl { gap: 0.4rem; }
+  .pj-where span { display: none; }
+  .pj-ctl { gap: 0.4rem; flex-wrap: nowrap; }
   .pj-seg button { padding: 0 0.8rem; }
-  .pj-pill { padding: 0 0.9rem; }
+  .pj-pill { justify-content: center; width: 3rem; padding: 0; }
+  .pj-pill .pj-lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .pj-more .v2-more-btn { justify-content: center; width: 3rem; padding: 0; gap: 0; font-size: 0; }      /* the word stays for a screen reader; the three dots are the button */
+  .pj-day { top: calc(var(--ly) + 4.4rem); }
   .pj-peek { width: 20rem; }
 }

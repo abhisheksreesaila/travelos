@@ -340,7 +340,7 @@ def _journey(v, road) -> Section:
     zoom = Div(*[Button(w, type="button", data_z=str(i), aria_pressed=str(i == 1).lower()) for i, w in enumerate(("Trip", "Day", "Hours"))], Span(cls="th", aria_hidden="true"), cls="pj-seg", role="group", aria_label="Zoom")
     bar = Div(Div(B(v.title), Span(f"{v.dates} · {v.nights} night{'s' if v.nights != 1 else ''}"), cls="pj-where"),
               Div(zoom, Button("Now", type="button", cls="pj-pill", id="pj-now", hidden=road["now"] is None),
-                  Button(icon("panes", 18, 2.4), "Grid", type="button", cls="pj-pill", data_mode_set="grid"), Span(id="pj-more-slot", cls="pj-more"), cls="pj-ctl"), cls="pj-bar")
+                  Button(icon("panes", 18, 2.4), Span("Grid", cls="pj-lbl"), type="button", cls="pj-pill", data_mode_set="grid"), Span(id="pj-more-slot", cls="pj-more"), cls="pj-ctl"), cls="pj-bar")
     return Section(Div(cls="pj-sky"), Div(cls="pj-stars"), Div(Div(), cls="pj-clouds"), Div(cls="pj-orb"),
                    *[Div(NotStr(RIDGES.format(d=d)), cls=f"pj-ridge r{i + 1}") for i, d in enumerate(RIDGE_PATHS)],
                    NotStr('<canvas class="pj-fall" aria-hidden="true"></canvas>'),

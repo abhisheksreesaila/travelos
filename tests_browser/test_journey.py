@@ -10,6 +10,7 @@ from playwright.sync_api import expect
 
 from tests.test_calendar import PICK
 from tests_browser.helpers import DESKTOP, PHONE, open_more
+from tests_browser.look import audit
 
 SHOTS = Path(__file__).resolve().parent.parent / "docs" / "report"
 DAYS = ["Fri 16", "Sat 17", "Sun 18", "Mon 19", "Tue 20"]
@@ -94,7 +95,7 @@ def test_the_road_draws_the_booking_a_stay_band_flight_arcs_and_the_days(trip):
     assert page.locator(".pj-stay").inner_text().startswith("The Tidewater · 4 nights · booked")
     assert page.locator(".pj-arc").count() == 2 and page.locator(".pj-day").count() == 5
     assert page.locator(".pj-ev.locked").count() >= 2
-    assert "Clear skies · 75°/63°" in page.locator(".pj-day").first.inner_text() and "Sun " in page.locator(".pj-day").first.inner_text()
+    assert "Clear skies · 75°/63°" in page.locator(".pj-day").first.inner_text() and "Daylight 6:58 AM to 6:19 PM" in page.locator(".pj-day").first.inner_text()
     assert page.locator(".pj-notes").inner_text().strip() == "Sample weather"
     assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 1
     shot(page, "1440-road")
@@ -203,10 +204,13 @@ def test_the_cards_follow_the_mode_and_the_page_never_scrolls_sideways(trip, vie
     bg = page.evaluate("() => getComputedStyle(document.querySelector('.pj-ev')).backgroundColor.match(/\\d+/g).slice(0, 3).map(Number)")
     assert (sum(bg) / 3 > 200) == (scheme == "light"), bg
     assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 1
+    shot(page, f"{viewport['width']}{'-dark' if scheme == 'dark' else ''}-road")
+    m = audit(page)
+    assert m["wide"] <= 1 and m["low"] == [] and m["glass"] == [] and m["small"] == [] and m["tiny"] == [], m      # 4.5:1 text, 48px targets, nothing under the type floor
     open_more(page, "#pl-together").click()                                                    # the trip's More menu is in the journey's bar
     expect(page.locator("#pl-side")).to_be_visible()
     page.wait_for_timeout(400)
-    shot(page, f"{viewport['width']}{'-dark' if scheme == 'dark' else ''}-road")
+    shot(page, f"{viewport['width']}{'-dark' if scheme == 'dark' else ''}-together")
     assert page.errors == []
 
 
