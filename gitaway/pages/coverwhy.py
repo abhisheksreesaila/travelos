@@ -4,11 +4,11 @@ Six cards after the eight-beat story. Each has two faces: a grey "Elsewhere" (th
 on Elsewhere and flips to GitAway by itself about a second after it is well in view (assets/js/cover_why.js: one IntersectionObserver, no switch; "Watch again" replays); the GitAway face keeps
 the old way as one struck line, so both sides read without a tap. Without the script, with reduced motion, ?still or on a short screen only the GitAway faces are drawn (cover_why.css).
 
-Every claim is true today: flights say Soon while `liteapi.flights_live()` is false and the wallet pass says Soon; the prices, hotels and counts are samples and say so (NOTE, D-270, D-383).
+Every claim is true today: flights say Soon while `liteapi.flights_live()` is false and the wallet pass says Soon until `walletpass` has an Apple or Google credential; the prices, hotels and counts are samples and say so (NOTE, D-270, D-383).
 """
 from fasthtml.common import A, Button, Div, H2, NotStr, P, Section, Span
 
-from gitaway import liteapi
+from gitaway import liteapi, walletpass
 
 NOTE = "The prices, hotels, reviews and counts on these cards are samples, to show how it works."
 
@@ -37,6 +37,12 @@ def _dots():
 
 def _sample():
     return '<span class="wy-smp">Sample</span>'
+
+
+def _wallet_words():
+    """The pass is live once either wallet's credentials are set (walletpass), Soon until then."""
+    live = walletpass.apple_configured() or walletpass.google_configured()
+    return "On your phone's wallet, too." if live else f"Wallet pass {_soon()}"
 
 
 def _soon():
@@ -85,7 +91,7 @@ def cards():
         ("today", "var(--pl-sun)", "On the day", "Searching the inbox at the gate",
          '<div class="wy-vis wy-inbox"><div><span>"confirmation"</span><span>37 results</span></div><div><span>Your booking (1 of 3)</span><span>Nov 2</span></div><div><span>Re: Fwd: itinerary</span><span>Oct 28</span></div></div>',
          "Today", "What's next, in one place.",
-         f"<p>When to leave, your bookings and a ride to the door. Wallet pass {_soon()}</p>"
+         f"<p>When to leave, your bookings and a ride to the door. {_wallet_words()}</p>"
          '<div class="wy-vis"><div class="wy-today" aria-hidden="true"><span class="wy-lead">Leave by <span>7:40</span></span><div><span>Flight · SFO 9:05</span><span>Your booking</span></div><div><span>Check-in 4 pm</span><span>Get a ride →</span></div></div>' + _sample() + '</div>'),
     )
 

@@ -240,6 +240,16 @@ def test_flights_say_soon_until_they_are_live_and_the_wallet_pass_says_soon(clie
     assert "Stays and flights" in why and "flights Soon" not in why and "Wallet pass Soon" in why
 
 
+def test_the_wallet_pass_says_soon_until_a_wallet_is_set_up(client, monkeypatch):
+    from gitaway import walletpass
+    monkeypatch.setattr(walletpass, "apple_configured", lambda: False)
+    monkeypatch.setattr(walletpass, "google_configured", lambda: False)
+    assert "Wallet pass Soon" in _text(_why(client.get("/").text))
+    monkeypatch.setattr(walletpass, "google_configured", lambda: True)
+    why = _text(_why(client.get("/").text))
+    assert "Wallet pass Soon" not in why and "On your phone's wallet, too." in why
+
+
 def test_the_prices_in_the_cards_say_they_are_samples(client):
     why = _text(_why(client.get("/").text))
     assert why.count("Sample") >= 3 and cover_why_note() in why
