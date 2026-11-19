@@ -28,7 +28,7 @@ def test_landing_header_is_the_sites_way_in(client):
     """D-458 (founder, 2026-11-13; F-262): the home page introduces, and its header is the way in: Guides, Plan a trip, Sign in."""
     header = _tag(client.get("/").text, "header", "cv-top")       # the signed-out landing is the cover (F-206)
     assert _hrefs(header) == ["/", "/guides", "/plan/ask", "/signin"]      # D-761: Plan a trip opens the ask without an account; Sign in is its own button
-    assert header.index("Guides") < header.index("Find a trip")      # F-289
+    assert header.index("Postcards") < header.index("Find a trip")      # F-289
 
 
 def test_other_pages_wear_the_v2_bar_with_the_same_way_in(client):

@@ -92,7 +92,7 @@ def test_guides_says_so_before_anyone_has_shared(env, request, client):
     request.getfixturevalue(env)
     r = client.get("/guides")
     assert r.status_code == 200
-    assert "No guides yet" in r.text and 'href="/guides/make"' in r.text
+    assert "No postcards yet" in r.text and 'href="/guides/make"' in r.text
     assert_real(r.text, "/guides")
 
 

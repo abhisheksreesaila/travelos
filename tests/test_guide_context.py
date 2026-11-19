@@ -125,7 +125,7 @@ def test_a_free_stretch_is_dropped_in_one_stop_after_another_tagged_with_the_gui
     assert j["toast"] == f"{len(keys)} stops added to {free.short}, {cal.fmt_time(starts[0][0])} to {cal.fmt_time(starts[-1][1])}"
     assert {a.day for a in cal.activities(person("ari")) if a.title != "Slow day"} == {free.day} and sorted(a.title for a in cal.activities(person("ari"))) == sorted(["Slow day", *[a["title"] for a in j["added"]]])
     page = client.get("/trip/plan/cal").text
-    assert page.count("From Maya&#x27;s guide") + page.count("From Maya's guide") >= len(keys)      # the calendar says whose they are
+    assert page.count("From Maya&#x27;s postcard") + page.count("From Maya's postcard") >= len(keys)      # the calendar says whose they are
     for a in reversed(j["added"]):
         assert client.post("/trip/plan/write", data={"op": "undo", "undo": json.dumps(a["undo"])}).status_code == 200
     assert [a.title for a in cal.activities(person("ari"))] == ["Slow day"]
@@ -136,10 +136,10 @@ def test_only_a_plan_a_guide_added_wears_the_guides_tag_never_a_note_someone_typ
     free, n, keys = afternoon(client, monkeypatch)
     j = client.post("/guides/add", data={"slug": TACOS, "k": keys, "to": str(free.day), "after": str(free.start)}).json()
     slow = next(a for a in cal.activities(person("ari")) if a.title == "Slow day")
-    cal.add_note(person("ari"), "From Maya's guide", act=slow.id)      # a person typed exactly the words the tag has
+    cal.add_note(person("ari"), "From Maya's postcard", act=slow.id)      # a person typed exactly the words the tag has
     page = unescape(client.get("/trip/plan/cal").text)
     assert page.count('class="gtag"') == len(j["added"]) == len(keys)      # the tags are the plans the guide dropped in, not the typed note's plan
-    assert any(n.text == "From Maya's guide" and n.act == slow.id for n in cal.notes(person("ari")))      # the typed note itself is still a note
+    assert any(n.text == "From Maya's postcard" and n.act == slow.id for n in cal.notes(person("ari")))      # the typed note itself is still a note
 
 
 def test_a_free_stretch_skips_what_is_already_in_the_plan_and_says_how_many(client, monkeypatch):
@@ -189,7 +189,7 @@ def test_the_planning_sheet_names_the_free_time_the_day_that_fits_and_opens_stop
     assert f"Add this {free.part} to {free.short}" in html
     assert html.count('class="g-inplace"') == 16 and html.count(" inert") == 16      # every stop's details sit inside its card, folded and inert
     assert html.count('data-add="d') == 16 * 2 and "<aside" not in html and 'id="g-panel"' not in html       # a "+" and an "Add to my plan" for every stop, and no second panel to open
-    assert "Sample guide" in html and 'href="/trips/sun-tacos-and-tide-pools"' in html and ">Plan this trip<" not in html
+    assert "Sample postcard" in html and 'href="/trips/sun-tacos-and-tide-pools"' in html and ">Plan this trip<" not in html
 
 
 def test_the_booking_sheet_names_your_search_and_plans_nothing(client):
@@ -203,7 +203,7 @@ def test_the_booking_sheet_names_your_search_and_plans_nothing(client):
 def test_the_sheet_refuses_what_it_does_not_know_and_a_viewer_is_told_why_there_are_no_adds(crew):
     client, _, viewer = crew
     assert sheet(client, slug=TACOS, ctx="nowhere").status_code == 400
-    assert sheet(client, slug="no-such-guide", ctx="plan").json() == {"error": "That guide is not here any more."}
+    assert sheet(client, slug="no-such-guide", ctx="plan").json() == {"error": "That postcard is not here any more."}
     assert sheet(client, slug="la-for-two-slow-mornings", ctx="plan").status_code == 404      # a family's trip is not a guide
     html = sheet(viewer, slug=TACOS, ctx="plan").json()["html"]
     assert "Only editors of the family can change its plan." in html and "data-add" not in html and "is free." not in html
@@ -214,13 +214,13 @@ def test_the_sheet_refuses_what_it_does_not_know_and_a_viewer_is_told_why_there_
 def test_booking_rail_lists_the_places_guides_labelled_sample_and_each_opens_its_sheet(client):
     sign_in(client)
     chips = client.get("/plan/matrix/rail?" + MATRIX_LA + "&lane=losangeles&w=2026-12-12").json()["html"]
-    assert "<span>1 guide for Los Angeles</span>" in chips and "Sun, tacos" not in chips      # the chip's words only (F-277: the card comes when it is tapped)
+    assert "<span>1 postcard for Los Angeles</span>" in chips and "Sun, tacos" not in chips      # the chip's words only (F-277: the card comes when it is tapped)
     html = client.get("/plan/matrix/rail?" + MATRIX_LA + "&lane=losangeles&w=2026-12-12&wg=guides").json()["card"]
-    assert "Guides for Los Angeles" in html and "Sun, tacos &amp; tide pools" in html and ">Sample<" in html and "5 days" in html
+    assert "Postcards for Los Angeles" in html and "Sun, tacos &amp; tide pools" in html and ">Sample<" in html and "5 days" in html
     href = unescape(re.search(r'data-sheet="([^"]+)"', html).group(1))
     q = parse_qs(urlsplit(href).query)
     assert urlsplit(href).path == "/guides/sheet" and (q["slug"], q["ctx"], q["lane"], q["w"], q["to"], q["d"]) == (["sun-tacos-and-tide-pools"], ["book"], ["losangeles"], ["2026-12-12"], ["Los Angeles"], ["2026-12-12"])
-    assert re.search(r'<a [^>]*href="/guides\?q=Los%20Angeles"[^>]*>All Los Angeles guides</a>', html)
+    assert re.search(r'<a [^>]*href="/guides\?q=Los%20Angeles"[^>]*>All Los Angeles postcards</a>', html)
     oc = client.get("/plan/matrix/rail?" + MATRIX.split("?")[1] + "&lane=orangecounty&w=2026-12-12").json()["html"]
     assert 'data-wg="guides"' not in oc      # no guide of Orange County: no chip, not an empty one
 
@@ -228,6 +228,6 @@ def test_booking_rail_lists_the_places_guides_labelled_sample_and_each_opens_its
 def test_planning_rail_lists_the_trips_guides_and_off_the_showcase_with_none_published_nothing(client, monkeypatch):
     book(client)
     page = client.get("/trip/plan").text
-    assert "Guides for Los Angeles" in page and 'data-sheet="/guides/sheet?slug=sun-tacos-and-tide-pools&amp;ctx=plan"' in page and "It opens over your plan" in page
+    assert "Postcards for Los Angeles" in page and 'data-sheet="/guides/sheet?slug=sun-tacos-and-tide-pools&amp;ctx=plan"' in page and "It opens over your plan" in page
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
-    assert "Guides for" not in client.get("/trip/plan").text
+    assert "Postcards for" not in client.get("/trip/plan").text

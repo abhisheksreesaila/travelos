@@ -58,8 +58,8 @@ def items(signed_in: bool, has_trip: bool) -> list:
     Sign in is the account button beside the pill (F-262: Family left the bar; the family lives in Planning's Together drawer and the avatar menu)."""
     if not signed_in:
         from gitaway.layout import plan_href      # here: layout imports this module
-        return [("start", "Find a trip", plan_href()), ("guides", "Guides", "/guides")]      # F-289: "plan" means only the booked trip's days now
-    return [("book", "Book", showcase.planning_path())] + ([("plan", "My trip", "/trip/plan")] if has_trip else []) + [("guides", "Guides", "/guides")]
+        return [("start", "Find a trip", plan_href()), ("guides", "Postcards", "/guides")]      # F-289: "plan" means only the booked trip's days now
+    return [("book", "Book", showcase.planning_path())] + ([("plan", "My trip", "/trip/plan")] if has_trip else []) + [("guides", "Postcards", "/guides")]
 
 
 def menu_items(captain: bool, new: int = 0, has_trip: bool = False) -> list:

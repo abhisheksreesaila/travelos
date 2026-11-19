@@ -65,7 +65,7 @@ def test_the_guides_edit_details_opens_the_v2_editor_and_what_is_changed_is_save
     page.click("#detailsBtn")
     page.wait_for_url(f"**/creators/import/{did}")
     expect(page.locator("main .ed")).to_be_visible()
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     assert page.locator("link[href*='scrapbook.css']").count() == 0 and page.locator("link[href*='cvedit.css']").count() == 1      # the old form's look is not on this page
     assert page.evaluate("getComputedStyle(document.querySelector('h1')).fontFamily").startswith("Inter")      # F-296: heavy Inter headlines
     assert overflow(page) <= 1
@@ -131,5 +131,5 @@ def test_a_refused_publish_links_to_the_details(lisbon, browser, base_url):
     expect(page.locator("#pubError")).to_contain_text("Nothing yet.")
     page.click("#pubError a")
     page.wait_for_url(f"**/creators/import/{did}")
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     ctx.close()

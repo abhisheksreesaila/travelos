@@ -262,7 +262,7 @@ def done_page(session, slug):
             H1("It's live!"),
             P(f"Your trip is in the community hub. Every fork links back to {d.fx.creator} on {d.platform}."),
             Div(A(icon("share", 20), "See your trip page", href=f"/trips/{slug}", cls="btn btn-primary"),
-                A("See it in Guides", href="/guides", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
+                A("See it in Postcards", href="/guides", cls="btn"), A("Import another", href="/creators", cls="btn"), cls="cr-actions"),
             cls="cr-done-copy"),
         Div(hub_card(c) if c else "", cls="cr-done-card"), cls="cr cr-done ga-wrap", role="status")
     return page("It's live", body, current="/creators", head=(*HUB_HEAD, *HEAD), v2="cv is-results")

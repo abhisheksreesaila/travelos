@@ -178,7 +178,7 @@ def page(title: str, *content, current: str = "", theme: str = "sunset", head=()
     return (
         Title(f"GitAway · {title}" if title else "GitAway"),
         *styles(*v2_.HEAD, *head, *seo_meta(title, description, image, og_type, noindex), theme=theme),
-        Div(v2_.bg(quiet), v2_.top(current, *(("Sample guides",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"),
+        Div(v2_.bg(quiet), v2_.top(current, *(("Sample postcards",) if "cv" in str(v2).split() else ())), join_note(), Main(*content, id="main"),
             *((pg_foot(),) if quiet and footer and "cv" not in str(v2).split() else ()), data_theme=theme, cls="ga-page v2" + (f" {v2}" if isinstance(v2, str) else "")),
     )
 
@@ -203,4 +203,4 @@ def notice(title: str, *body, status: int = 200, current: str = "", head=(), **k
 
 
 # The cover's way in (founder, 2026-11-13, D-458; F-262): Plan a trip is drawn as `plan_href()`. Guides is always there: off the showcase, before anyone has shared a guide, its page says so.
-NAV = [("Guides", "/guides"), ("Find a trip", "/plan/matrix")]      # F-289: the search is "Find a trip"; "My trip" is the booked trip's days
+NAV = [("Postcards", "/guides"), ("Find a trip", "/plan/matrix")]      # F-289: the search is "Find a trip"; "My trip" is the booked trip's days

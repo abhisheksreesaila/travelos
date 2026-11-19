@@ -48,7 +48,7 @@ def test_landing_has_no_community_or_creators_and_no_sideways_scroll(visit, view
     page.locator(".cv-close .cv-ctas a", has_text="Start a trip").click()
     page.wait_for_url("**/signin?next=/trips/import*")      # the import keeps a trip, so it asks who you are first
     page.goto(page.url.split("/signin")[0] + "/guides")
-    assert page.get_by_text("No guides yet").first.is_visible()
+    assert page.get_by_text("No postcards yet").first.is_visible()
 
 
 @SIZES

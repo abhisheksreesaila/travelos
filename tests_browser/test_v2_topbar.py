@@ -24,11 +24,11 @@ def shot(page, name):
 def test_the_pill_marks_plan_and_leads_to_book_and_guides(plan):  # noqa: F811
     page = plan(DESKTOP)
     pill = page.locator(".v2-sections")
-    expect(pill.locator("a")).to_have_text(["Book", "My trip", "Guides"])      # F-289: "My trip" is the booked trip's itinerary      # F-262: Family left the bar
+    expect(pill.locator("a")).to_have_text(["Book", "My trip", "Postcards"])      # F-289: "My trip" is the booked trip's itinerary      # F-262: Family left the bar
     expect(pill.locator("a[aria-current='page']")).to_have_text(["My trip"])
-    pill.get_by_text("Guides").click()
+    pill.get_by_text("Postcards").click()
     page.wait_for_url("**/guides")
-    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text(["Guides"])
+    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text(["Postcards"])
 
 
 def test_the_avatar_opens_the_menu_and_escape_closes_it_with_focus_back_on_the_avatar(plan):  # noqa: F811
@@ -105,16 +105,16 @@ def test_targets_are_48px_and_every_word_reads_over_the_glass_with_the_menu_open
     small = page.evaluate("[...document.querySelectorAll('#v2-menu [role=menuitem]')].map(e => e.getBoundingClientRect().height)")
     assert min(small) >= 47.5, small
     m = audit(page)
-    ours = lambda rows: [r for r in rows if any(w in r for w in ("My trip", "Book", "Guides", "Family", "Sign out"))]      # noqa: E731
+    ours = lambda rows: [r for r in rows if any(w in r for w in ("My trip", "Book", "Postcards", "Family", "Sign out"))]      # noqa: E731
     assert ours(m["low"]) == [] and m["glass"] == [] and m["wide"] <= 1, m
-    assert [s for s in m["small"] if "My trip" in s or "Book" in s or "Guides" in s or "Family" in s or "Sign out" in s] == [], m["small"]
+    assert [s for s in m["small"] if "My trip" in s or "Book" in s or "Postcards" in s or "Family" in s or "Sign out" in s] == [], m["small"]
 
 
 def test_on_a_phone_the_pill_floats_at_the_bottom_above_the_safe_area_and_the_avatar_stays_top_right(plan):  # noqa: F811
     page = plan(PHONE)
     box = page.locator(".v2-sections").bounding_box()
     assert box["y"] + box["height"] > 844 - 24 and box["y"] + box["height"] <= 844 - 8
-    for label in ("Book", "My trip", "Guides"):      # nothing covers it, and a tap on each word lands on that link
+    for label in ("Book", "My trip", "Postcards"):      # nothing covers it, and a tap on each word lands on that link
         assert page.evaluate("t => { const a = [...document.querySelectorAll('.v2-sections a')].find(a => a.textContent === t), r = a.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === a; }", label), label
     assert page.locator(".dock").count() == 0      # F-293 (D-947): the planner's own Together and Save bar is gone (they are rows of its More menu), so nothing stacks above the pill
     me = page.locator(ME).bounding_box()

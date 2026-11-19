@@ -305,7 +305,7 @@ def register(app):
         plan = importer.plan_of(session)
         if plan is None:
             return _sorry("No imported trip is open", "Details with confirmation numbers are kept for trips you import. Open one from your calendar, or import a trip.",
-                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Find a trip", href=plan_href(), cls="btn btn-sm"), *([A("Browse guides", href="/guides", cls="btn btn-sm")] if showcase.on() else []), A("Back to the trip", href="/trip/plan", cls="btn btn-sm"), status=404)
+                          A("Import a trip", href=PATH, cls="btn btn-ink"), A("Find a trip", href=plan_href(), cls="btn btn-sm"), *([A("Browse postcards", href="/guides", cls="btn btn-sm")] if showcase.on() else []), A("Back to the trip", href="/trip/plan", cls="btn btn-sm"), status=404)
         return details_page(plan, ses.open_trip_id(), can_delete(session), can_import(session))
 
     @app.get("/trip/delete")

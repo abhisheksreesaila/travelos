@@ -66,7 +66,7 @@ def _card(client, name, lane="sandiego", url=None):
 def test_on_the_showcase_the_rail_is_chips_and_each_card_is_asked_for_when_tapped(sample, client):
     j = client.get(RAIL).json()
     html = unescape(j["html"])
-    assert j["lane"] == "sandiego" and "Around San Diego" in html and "More to know before you pick" in html and "New: tap for weather, drive times, guides…" in html
+    assert j["lane"] == "sandiego" and "Around San Diego" in html and "More to know before you pick" in html and "New: tap for weather, drive times, postcards…" in html
     assert 'class="wg ' not in html and 'class="d5' not in html and "in a straight line" not in html      # chips only: no card is built until a chip is tapped
     assert html.count('class="wchip"') == 8      # weather, where, uber, traffic, food, trend, about, guides
     names = re.findall(r'data-wg="([^"]*)"', html)
@@ -95,7 +95,7 @@ def test_a_chip_is_the_fill_treatment_an_icon_a_title_a_teaser_and_a_count_only_
     where = _chip(html, "where")
     assert "<small>Typical drives by road</small>" in where and 'class="ct' not in where      # the minutes wait for the tap: no number to show
     guides = _chip(html, "guides")
-    assert "<span>1 guide for San Diego</span>" in guides and 'class="ct' not in guides      # one guide is the title's own count
+    assert "<span>1 postcard for San Diego</span>" in guides and 'class="ct' not in guides      # one guide is the title's own count
     about = _chip(html, "about")
     assert "<span>About San Diego</span>" in about and "<small>Facts, each with its source</small>" in about and '<span class="ct num">4</span>' in about
     assert "<span>Uber $21\u201326 \u00b7 sample</span>" in _chip(html, "uber") and "sample" in _chip(html, "traffic")

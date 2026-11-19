@@ -42,7 +42,7 @@ def family(browser, base_url):
         if still:
             ctx.add_init_script("delete window.IntersectionObserver")      # the day strip presses the day being read as the page scrolls; the audit scrolls the whole page and reads each text where it showed, so it is run with the first day pressed throughout
         contexts.append(ctx)
-        ctx.request.post(f"{base_url}/signin", form={"email": f"guide{time.time_ns()}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
+        ctx.request.post(f"{base_url}/signin", form={"email": f"postcard{time.time_ns()}@example.com", "next": "/", "intent": "save"}, max_redirects=0)
         if booked:
             ctx.request.post(f"{base_url}/_test/pay", form=PICK, max_redirects=0)
         page = ctx.new_page()
@@ -61,8 +61,8 @@ def test_the_hub_filters_and_a_guide_opens_a_stop_and_adds_it_to_the_plan(family
     page.goto(f"{base_url}/guides")
     expect(page.locator(".gcard")).to_have_count(4)      # the four samples, labelled
     shot(page, f"hub-{viewport['width']}")
-    expect(page.locator(".v2-sections a")).to_have_text(["Book", "My trip", "Guides"])
-    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text("Guides")
+    expect(page.locator(".v2-sections a")).to_have_text(["Book", "My trip", "Postcards"])
+    expect(page.locator(".v2-sections a[aria-current='page']")).to_have_text("Postcards")
     # a filter is a plain link: "3 to 4 days" leaves the three guides of three and four days
     page.get_by_role("link", name="3 to 4 days").click()
     expect(page.locator(".gcard")).to_have_count(3)
@@ -134,7 +134,7 @@ def test_without_a_trip_there_is_no_plus_and_the_page_says_why(family, base_url,
     page.goto(f"{base_url}/trips/{SAMPLE}")
     expect(page.locator(".g-plus")).to_have_count(0)
     expect(page.locator("#g-note")).to_have_text("You need a trip first: add stops to its calendar from here.")
-    expect(page.locator(".v2-sections a")).to_have_text(["Book", "Guides"])      # Plan appears only with a trip
+    expect(page.locator(".v2-sections a")).to_have_text(["Book", "Postcards"])      # Plan appears only with a trip
     assert page.locator("#g-plan").get_attribute("href").startswith("/plan/ask?to=Los%20Angeles&d=")      # the guide's place and length go into the booking sentence
     assert page.errors == []
 

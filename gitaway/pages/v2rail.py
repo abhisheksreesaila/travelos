@@ -162,15 +162,15 @@ def guides_widget(s, lane, w, guides, name):
         return ""
     place = lane.places[0].name
     base = mx.href(s, "/guides/sheet", lane=lane.key, w=w.key, ctx="book").split("?", 1)[1]
-    return wg(f"Guides for {place}", "list", "see", P("What other families did there. It opens over your trips, so you keep your place.", cls="fine"),
+    return wg(f"Postcards for {place}", "list", "see", P("What other families did there. It opens over your trips, so you keep your place.", cls="fine"),
               gs.widget_rows(cards, lambda c: f"/guides/sheet?slug={c.slug}&{base}"), gs.widget_foot(place, total, len(cards)), sample=all(not c.real for c in cards), name=name,
-              chip=f"{total} guide{'' if total == 1 else 's'} for {place}", teaser="What other families did there", count=str(total) if total > 1 else "")
+              chip=f"{total} postcard{'' if total == 1 else 's'} for {place}", teaser="What other families did there", count=str(total) if total > 1 else "")
 
 
-NAMES = {"guides": "Guides", "weather": "Weather", "where": "Where you will be", "uber": "Uber to the hotel", "traffic": "Traffic when you land", "cheaper": "A cheaper airport",
+NAMES = {"guides": "Postcards", "weather": "Weather", "where": "Where you will be", "uber": "Uber to the hotel", "traffic": "Traffic when you land", "cheaper": "A cheaper airport",
          "food": "Food that fits you", "trend": "Happening that week", "about": "About this place"}      # in the order the chips come, and the title of a card with nothing to say
 EXTRA = "More to know before you pick"
-NUDGE = "New: tap for weather, drive times, guides…"
+NUDGE = "New: tap for weather, drive times, postcards…"
 
 
 def _widget(name, s, lane, w, *, sq, lanes, known, picked, look_up, guides, lazy):

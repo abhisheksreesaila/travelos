@@ -127,13 +127,13 @@
       await wait('--cv-d250'); if (!ok()) return;
     }
     compactDay(d.days.length - 1);
-    step(2); story('Laying out your guide: ' + d.days.length + (d.days.length === 1 ? ' day, ' : ' days, ') + (d.tips.length === 1 ? 'one tip' : d.tips.length + ' tips')); prog(94);
+    step(2); story('Laying out your postcard: ' + d.days.length + (d.days.length === 1 ? ' day, ' : ' days, ') + (d.tips.length === 1 ? 'one tip' : d.tips.length + ' tips')); prog(94);
     await wait('--cv-d800'); if (!ok()) return;
     step(3); prog(100); story('Done. Every word is from your post.', true);
     $('readyLine').textContent = d.days.length + (d.days.length === 1 ? ' day · ' : ' days · ') + total + (total === 1 ? ' stop · ' : ' stops · ') + d.tips.length + (d.tips.length === 1 ? ' tip' : ' tips') + ', from your post' +
-      (unsure ? '. ' + unsure + (unsure === 1 ? ' stop needs a name: fix it in the guide.' : ' stops need a name: fix them in the guide.') : '');
+      (unsure ? '. ' + unsure + (unsure === 1 ? ' stop needs a name: fix it in the postcard.' : ' stops need a name: fix them in the postcard.') : '');
     $('openBook').href = d.guide; $('readyEdit').href = d.editor;
-    $('ready').hidden = false; $('cm-live').textContent = 'Your guide is ready: ' + $('readyLine').textContent;
+    $('ready').hidden = false; $('cm-live').textContent = 'Your postcard is ready: ' + $('readyLine').textContent;
     if (PHONE.matches) $('ready').scrollIntoView({ block: 'nearest', behavior: RM.matches ? 'auto' : 'smooth' });
   }
 

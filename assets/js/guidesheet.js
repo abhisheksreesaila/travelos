@@ -47,20 +47,20 @@
     if (cur || from.getAttribute('aria-busy') === 'true') return;
     // The row can be reached under another dialog by keyboard (a modal sheet or popover only has a scrim) and beside the planning drawer on a laptop: never a sheet on a sheet.
     var other = $$('[role=dialog]').some(function (d) { if (d.classList.contains('gsheet')) return false; var st = getComputedStyle(d); return !d.hidden && st.display !== 'none' && st.visibility !== 'hidden'; });
-    if (other) return toast('Close this first, then open the guide.', { error: true });
+    if (other) return toast('Close this first, then open the postcard.', { error: true });
     from.setAttribute('aria-busy', 'true');
     fetch(from.dataset.sheet, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That guide did not open.'); return j; }); })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That postcard did not open.'); return j; }); })
       .then(function (j) { return styles(j.css).then(function () { return j; }); })
       .then(function (j) { from.removeAttribute('aria-busy'); show(j, from); })
-      .catch(function (e) { from.removeAttribute('aria-busy'); toast(e.message || 'That guide did not open. Try again.', { error: true }); });
+      .catch(function (e) { from.removeAttribute('aria-busy'); toast(e.message || 'That postcard did not open. Try again.', { error: true }); });
   }
 
   function show(j, from) {
     var scrim = el('div', 'gs-scrim'), sheet = el('aside', 'gsheet cv g');
     var modal = PHONE.matches, calm = CALM.matches || !motion();
     sheet.setAttribute('role', 'dialog');
-    sheet.setAttribute('aria-label', 'Guide: ' + j.title);
+    sheet.setAttribute('aria-label', 'Postcard: ' + j.title);
     sheet.setAttribute('aria-modal', modal ? 'true' : 'false');
     sheet.innerHTML = j.html;
     scrim.classList.toggle('dim', modal);

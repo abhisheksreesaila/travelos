@@ -17,20 +17,20 @@ from gitaway.pages import bookview, studio
 
 IMPORT = "/creators/import"
 FREE = "Free. Terms shown on day one."
-HEAD_LINE = "Your post becomes a guide people can plan and book from."
-SUB = "Your words and your links stay yours."
+HEAD_LINE = "Your post deserves more than a scroll."
+SUB = "It becomes a trip people plan, book and take, in one place. Your words and your links stay yours."
 LEDE = f"{HEAD_LINE} {SUB} Paste it once: a blog link, a YouTube video or an Instagram caption."
 
 PROMISES = (
-    ("ext", "fc-p1", "Another place your post travels", "Your guide has a page and a link of its own, a card for Instagram and a badge for your blog. It opens with your name and a link back to your post."),
-    ("spark", "fc-p2", "Readers can plan the trip", "\"Plan this trip\" starts a search at the guide's place, and \"Add to my plan\" drops your stops into their calendar."),
+    ("ext", "fc-p1", "Another place your post travels", "Your postcard has a page and a link of its own, a card for Instagram and a badge for your blog. It opens with your name and a link back to your post."),
+    ("spark", "fc-p2", "Readers can plan the trip", "\"Plan this trip\" starts a search at the postcard's place, and \"Add to my plan\" drops your stops into their calendar."),
     ("link", "fc-p3", "The links stay yours", f"Each stop shows your own link, labelled as yours; GitAway adds nothing to its price. {howpaid.LINKS_YOURS}"),
-    ("users", "fc-p4", "You can see who reads it", "Your stats page counts readers, plans started and clicks from your guides, with no cookies and no tracking of who they are."),
+    ("users", "fc-p4", "You can see who reads it", "Your stats page counts readers, plans started and clicks from your postcards, with no cookies and no tracking of who they are."),
 )
 TERMS = (
     ("What we show", "Your name, the days, stops and tips you approve, up to two photos you pick (copied without where they were taken) and a link to your post. Never anything else."),
     ("Take it down any time", "Unpublish in one tap and the page and its photos go. Anyone can report a trip, and the person who runs GitAway can take a page down."),
-    ("How GitAway is paid", howpaid.PAID + " Nothing on a guide carries a tracking code of ours."),
+    ("How GitAway is paid", howpaid.PAID + " Nothing on a postcard carries a tracking code of ours."),
 )
 FAQ = (
     ("Does it work with Instagram?", "Instagram does not let anyone read a post, so paste the caption. We keep your link as the source and the draft comes from your words."),
@@ -87,14 +87,14 @@ def _paste(signed_in):
         bookview.ico("link"),
         Label("A link to your blog post, YouTube video or Instagram post, or the text itself", fr="fc-text", cls="v2-sr"),
         Textarea(id="fc-text", name="text", rows="1", maxlength="100000", placeholder="Paste the text of your post" if cd.mode() == "manual" else "Paste your blog, YouTube or Instagram link", autocomplete="off", spellcheck="false"),
-        Button("Start my guide" if cd.mode() == "manual" else "Make my guide", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
+        Button("Start my postcard" if cd.mode() == "manual" else "Make my postcard", bookview.ico("arrow"), type="submit", name="do", value="draft", id="fc-draft", cls="go"),
         action=IMPORT, method="post", id="fc-paste", cls="paste", data_signed_in="1" if signed_in else "0")
 
 
 def hero(signed_in):
     return Section(
-        Div(Div(Span(I(), "Make a guide", cls="kicker"), H1("Your post becomes ", Em("a guide"), " people can plan and book from.", cls="disp land-h"),
-                P(SUB, " Your days, stops and sentences, laid out stop by stop, with your name on it and your links inside.", cls="land-sub"),
+        Div(Div(Span(I(), "Send a postcard", cls="kicker"), H1("Your post deserves ", Em("more than a scroll."), cls="disp land-h"),
+                P(SUB, " Your days, stops and sentences go out as a postcard, with your name on it and your links inside.", cls="land-sub"),
                 _paste(signed_in), off_note(), studio.example_chips(link=cd.mode() != "manual"),
                 studio.points(Span(Span(icon("check", 17, 2.4), cls="ic", style="--k:var(--bk-tix)"), FREE, " You tick \"This is my post\" before anything goes public.", cls="point v2-glass", id="fc-free")), cls="land-copy"), studio.art(), cls="land"))
 
@@ -118,4 +118,4 @@ def page_body(signed_in):
 def register(app):
     @app.get("/guides/make")
     def make_a_guide(session):
-        return page("Make a guide", page_body(bool(ses.current_traveler(session))), current="/guides", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/guides.css")), description=LEDE, v2="cv")
+        return page("Send a postcard", page_body(bool(ses.current_traveler(session))), current="/guides", head=(*studio.HEAD, Link(rel="stylesheet", href="/assets/css/guides.css")), description=LEDE, v2="cv")

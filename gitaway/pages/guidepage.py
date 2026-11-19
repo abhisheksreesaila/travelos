@@ -44,7 +44,7 @@ def reader_page(session, slug, found):
              "report": found.real and community.is_real(slug), "plannable": bool(found.plan_to)}
     head = (*guideview.HEAD, Meta(name="robots", content="noindex, nofollow")) if waiting else guideview.HEAD
     body = page(g.title, *guideview.guide_markup(g, mode="reader", state=state), current="/guides", head=head, v2="cv g is-results", quiet=True,
-                description=found.lede or f"{g.title}: a guide by {g.by}, laid out stop by stop to plan from.", image=found.polaroids[0].src if found.polaroids else "", og_type="article",
+                description=found.lede or f"{g.title}: a postcard by {g.by}, laid out stop by stop to plan from.", image=found.polaroids[0].src if found.polaroids else "", og_type="article",
                 noindex=not waiting and found.real and seo.imported(slug))      # a copy of a creator's post is not for search (F-196); a trip waiting for the captain is "noindex, nofollow" (F-194)
     return FtResponse(body, headers={"X-Robots-Tag": "noindex, nofollow"}) if waiting else body
 
@@ -54,11 +54,11 @@ def owner_page(session, d, error=""):
     row = community.get(d["slug"]) if d["live"] else None
     g = gd.from_trip(trip, stamped=stamp_of(row["updated_at"]) if row else "", private=[(p["kind"], p["title"]) for p in d.get("private", [])])
     state = {"live": d["live"], "where": f"gitaway.me/trips/{d['slug']}", "post": cd.domain_of(d), "editor": f"/creators/import/{d['id']}"}
-    return page(g.title, *guideview.guide_markup(g, mode="owner", state=state), current="/guides", head=guideview.HEAD, v2="cv g is-results", quiet=True, noindex=True, description="Your guide, before anyone else sees it.")
+    return page(g.title, *guideview.guide_markup(g, mode="owner", state=state), current="/guides", head=guideview.HEAD, v2="cv g is-results", quiet=True, noindex=True, description="Your postcard, before anyone else sees it.")
 
 
 def _gone():
-    return notice("Not found", H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Make a guide", href="/guides/make", cls="btn btn-primary"), status=404)
+    return notice("Not found", H1("Nothing here"), P("That draft is not yours, or it is gone."), A("Send a postcard", href="/guides/make", cls="btn btn-primary"), status=404)
 
 
 def register(app):
@@ -94,7 +94,7 @@ def register(app):
         form = await request.form()
         found = forks_model.resolve(str(form.get("slug") or "")[:80])
         if not gd.is_guide(found):
-            return JSONResponse({"error": "That guide is not here any more."}, status_code=404)
+            return JSONResponse({"error": "That postcard is not here any more."}, status_code=404)
         g = gd.from_trip(found)
         keys = [k for k in form.getlist("k") if isinstance(k, str)][:guideplan.MAX_AT_ONCE]
         to, after = str(form.get("to") or ""), str(form.get("after") or "")
