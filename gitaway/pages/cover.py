@@ -31,6 +31,7 @@ from fasthtml.common import A, Article, Button, Div, Em, Footer, Form, H1, H2, H
 from gitaway import session
 from gitaway.icons import icon
 from gitaway.layout import NAV, brand, plan_href, preview, seo_meta, styles
+from gitaway.pages import coverwhy
 
 ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
 TITLE = "Every trip starts as a wish"
@@ -310,11 +311,11 @@ def _boot():
 
 def page(footer_links):
     """The whole cover document. `footer_links` are the landing's (home.footer_links)."""
-    head = styles(Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/cover.css"),
+    head = styles(Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/cover.css"), Link(rel="stylesheet", href="/assets/css/cover_why.css"),
                   Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
                   Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
                   *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE),
-                  Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True))
+                  Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True), Script(src="/assets/js/cover_why.js", defer=True))
     return (
         Title(f"GitAway · {TITLE}"),
         *head,
@@ -325,7 +326,7 @@ def page(footer_links):
             Header(brand(), Div(preview(), cls="cv-tag"),
                    Nav(*[A(label, href=plan_href() if href == NAV[-1][1] else href) for label, href in NAV], cls="cv-nav", aria_label="Main"),
                    _mode(), A("Sign in", href=session.signin_href(), cls="btn soft sm"), cls="cv-top"),
-            Main(_story(), _close(), id="main"),
+            Main(_story(), coverwhy.section(), _close(), id="main"),
             _footer(footer_links),
             cls="v2 cv3"),
     )
