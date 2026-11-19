@@ -77,7 +77,7 @@ def test_the_row_is_titled_frosted_one_scroller_and_48px(matrix, viewport, schem
 def test_a_gentle_nudge_comes_once_and_goes_when_a_chip_is_used(matrix):  # noqa: F811
     page = matrix(DESKTOP, motion=True)
     chips(page)
-    expect(page.locator("#mx-rail .rl-nudge")).to_have_text("New: tap for weather, drive times, guides…")
+    expect(page.locator("#mx-rail .rl-nudge")).to_have_text("New: tap for weather, drive times, postcards…")
     assert "v2-nudge" in page.evaluate("getComputedStyle(document.querySelector('#mx-rail .wchip')).animationName")
     page.locator("#mx-rail .wchip[data-wg='weather']").click()
     expect(page.locator("#mx-rail.is-nudge")).to_have_count(0)

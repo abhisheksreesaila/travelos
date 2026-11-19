@@ -41,7 +41,7 @@ def widget_rows(cards, href_of) -> Ul:
 
 
 def widget_foot(place: str, total: int, shown: int):
-    more = f"All {place} guides" if total <= shown else f"All {total} {place} guides"
+    more = f"All {place} postcards" if total <= shown else f"All {total} {place} postcards"
     return A(more, href=f"/guides?q={quote(place)}", cls="gd-all")
 
 
@@ -50,7 +50,7 @@ def widget_foot(place: str, total: int, shown: int):
 def _bar(left: str, text: str, back: str):
     return Div(Button(icon("chev-left", 20, 2.4), type="button", cls="v2-round gs-back", data_close="1", aria_label=back),
                P(B(left), f" · {text}" if text else "", cls="gs-ctx"),
-               Button(icon("x", 20, 2.4), type="button", cls="v2-round", data_close="1", aria_label="Close the guide"), cls="gs-bar")
+               Button(icon("x", 20, 2.4), type="button", cls="v2-round", data_close="1", aria_label="Close the postcard"), cls="gs-bar")
 
 
 def _peek(g: gd.Guide, line: str):
@@ -62,7 +62,7 @@ def free_card(g: gd.Guide, free, fit):
     if free is None:
         return ""
     if fit is None:
-        return Div(icon("calendar", 22, 2), Div(B(free.said), Span("No day of this guide fits it whole. Add any stop with +.")), cls="gs-free")
+        return Div(icon("calendar", 22, 2), Div(B(free.said), Span("No day of this postcard fits it whole. Add any stop with +.")), cls="gs-free")
     n, keys = fit
     short = free.short
     return Div(icon("calendar", 22, 2), Div(B(free.said), Span(f"Day {n} fits it.")),
@@ -72,7 +72,7 @@ def free_card(g: gd.Guide, free, fit):
 
 def _body(g: gd.Guide, ctx: str, add: str, free_html):
     actions = Div(A(icon("target", 20, 2.2), "Plan this trip", href=gd.plan_href(g.place, g.nights), cls="go") if ctx == "book" else "",
-                  A(icon("ext", 20, 2.2), "Open the full guide", href=f"/trips/{g.slug}", cls="tonal"), cls="gs-act")
+                  A(icon("ext", 20, 2.2), "Open the full postcard", href=f"/trips/{g.slug}", cls="tonal"), cls="gs-act")
     head = Div(guideview.art(g, True), Div(guideview.kicker(g), Div(g.title, cls="gs-h", role="heading", aria_level="1"), guideview.byline(g), cls="g-hmain"), cls="gs-head")
     tiles = Div(*[guideview.tile(t) for t in g.tiles], cls="g-tiles")
     days = [guideview.day_section(g, d, False, add, inplace=True) for d in g.days]
@@ -107,9 +107,9 @@ def sheet(session, q) -> tuple:
     ctx, slug = q.get("ctx", ""), q.get("slug", "")[:80]
     found = forks_model.resolve(slug)
     if ctx not in CTX:
-        return 400, {"error": "That is not a place a guide opens."}
+        return 400, {"error": "That is not a place a postcard opens."}
     if not gd.is_guide(found):
-        return 404, {"error": "That guide is not here any more."}
+        return 404, {"error": "That postcard is not here any more."}
     g = gd.from_trip(found)
     free = fit = None
     add = "no"
@@ -125,7 +125,7 @@ def sheet(session, q) -> tuple:
     else:
         left, text = _book_bar(session, q)
     back = "Back to your plan" if ctx == "plan" else "Back to your trips"
-    peek = "Back to the guide, where you left it"
+    peek = "Back to the postcard, where you left it"
     html = Div(_bar(left, text, back), Div(*_body(g, ctx, add, free_card(g, free, fit)), cls="gs-body", id="gs-body"), _peek(g, peek), cls="gs-in", data_slug=slug, data_ctx=ctx, data_can=add)
     return 200, {"html": to_xml(html), "title": g.title, "css": list(CSS), "sample": g.sample}
 

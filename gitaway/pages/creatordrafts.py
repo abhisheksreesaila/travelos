@@ -101,7 +101,7 @@ def _row(r):
     elif r["status"] == "failed":
         acts = Form(Input(type="hidden", name="do", value="delete"), Button(icon("x", 18, 2.4), "Remove", type="submit", cls="btn", aria_label=f"Remove {r['title']} from the list"), action=f"{PATH}/{r['id']}", method="post", cls="cdr-rm")
     else:
-        acts = Div(A("Open", href=f"{IMPORT}/{r['id']}/guide", cls="btn btn-sm", aria_label=f"Open the guide of {r['title']}"),
+        acts = Div(A("Open", href=f"{IMPORT}/{r['id']}/guide", cls="btn btn-sm", aria_label=f"Open the postcard of {r['title']}"),
                    A("Details", href=f"{IMPORT}/{r['id']}", cls="btn btn-sm", aria_label=f"Edit the details of {r['title']}"),
                    A("View page", href=f"/trips/{r['slug']}", cls="btn btn-sm") if r["status"] == "published" else "",
                    Details(Summary(icon("x", 18, 2.4), Span("Delete"), cls="pb-unpub", aria_label=f"Delete {r['title']}"),

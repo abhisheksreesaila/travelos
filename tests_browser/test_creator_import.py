@@ -77,7 +77,7 @@ def test_paste_a_link_review_the_draft_publish_and_a_stranger_reads_it(setup, cr
     assert overflow(page) <= 1
     shot(page, f"magic-{viewport['width']}")
     page.click("#readyEdit")
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     assert overflow(page) <= 1
     if viewport is PHONE:
         assert not too_small(page, "main button:not(.sr-only):not(.v2-sr), main .btn, main input:not([type=hidden]):not(.sr-only):not(.v2-sr), main select, main textarea, main summary")
@@ -139,7 +139,7 @@ def test_the_magic_import_shows_everything_at_once_with_reduced_motion(setup, br
     expect(page.locator("#ready")).to_be_visible()      # reduced motion: the days and stops are all there at once, nothing waits on an animation
     assert page.locator("#days .dayb").count() == 2
     page.click("#readyEdit")
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     ctx.close()
 
 
@@ -153,7 +153,7 @@ def test_not_switched_on_yet_is_friendly_and_the_text_editor_still_works(browser
     expect(page.locator("#ci-off")).to_have_text("Drafting from a link is not switched on yet. You can still paste your text and write the trip yourself.")
     page.fill("#ci-text", "Day 1 Santa Monica Pier. Day 2 Venice Canals.")
     page.click("#ci-manual")
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     expect(page.locator("#ci-pasted")).to_contain_text("Day 1 Santa Monica Pier")
     page.fill("#ci-title", "My two days")
     page.fill("input[name=d0s0_name]", "Santa Monica Pier")

@@ -80,21 +80,22 @@ def test_the_hub_lists_the_samples_labelled_and_filters_only_by_what_a_guide_kno
     assert titles(client.get("/guides?len=week").text) == ["Sun, tacos &amp; tide pools"]
     assert titles(client.get("/guides?who=pet&len=short").text) == ["Dog-friendly Big Sur drive"]
     assert titles(client.get("/guides?q=big+sur").text) == ["Dog-friendly Big Sur drive"]
-    assert "No guides match that" in client.get("/guides?q=atlantis").text
-    assert "Be the first to share one" in html and "These are sample guides" in html      # until a real guide is published
+    assert "No postcards match that" in client.get("/guides?q=atlantis").text
+    assert "Be the first to share one" in html and "These are sample postcards" in html      # until a real guide is published
 
 
 def test_the_hub_has_the_search_with_autocomplete_and_make_a_guide_with_two_ways(client):
     html = client.get("/guides").text
     assert 'role="search"' in html and 'data-suggest="/plan/ask/suggest"' in html and 'id="gh-q"' in html
     assert re.search(r'<a [^>]*id="mk-paste"[^>]*href="/guides/make"|<a [^>]*href="/guides/make"[^>]*id="mk-paste"', html)
-    assert 'id="mk-trip"' in html and "Make a guide" in html
+    assert 'id="mk-trip"' in html and "Send a postcard" in html
+    assert "Your post deserves more than a scroll." in html      # creators are welcomed here too (F-298)
 
 
 def test_off_the_showcase_the_hub_says_so_before_anyone_has_published(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     r = client.get("/guides")
-    assert r.status_code == 200 and "No guides yet" in r.text and ">Sample<" not in r.text
+    assert r.status_code == 200 and "No postcards yet" in r.text and ">Sample<" not in r.text
 
 
 def test_the_old_community_and_creator_addresses_go_to_the_hub(client):
@@ -109,8 +110,8 @@ def test_a_published_creator_guide_is_on_the_hub_with_its_creator_and_whose_draf
     assert publish(client, d)["ok"]
     html = client.get("/guides").text
     assert "48 hours in Lisbon" in html and f'href="/trips/{d["slug"]}"' in html and ">Sample<" not in html
-    assert "Your guides" in html and f'href="/creators/import/{d["id"]}/guide"' in html and ">Published<" in html
-    assert "Your guides" not in stranger(client).get("/guides").text
+    assert "Your postcards" in html and f'href="/creators/import/{d["id"]}/guide"' in html and ">Published<" in html
+    assert "Your postcards" not in stranger(client).get("/guides").text
 
 
 # ---- the guide page -------------------------------------------------------------------------------------------------------------------

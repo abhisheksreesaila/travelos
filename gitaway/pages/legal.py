@@ -121,7 +121,7 @@ def privacy():
         ("Selling and ads",P("We do not sell your information. We do not show ads and we do not use anything you add for ads or to build a profile of you.")),
         ("Cookies",
          P("One cookie, which keeps you signed in, for up to 30 days. GitAway sets no analytics, advertising or affiliate cookie."),
-         P(Strong("No affiliate links. "), howpaid.PAID, " A link a creator put on their own stop in a guide is theirs: it opens the site they chose, which may set its own cookies under its own policy.")),
+         P(Strong("No affiliate links. "), howpaid.PAID, " A link a creator put on their own stop in a postcard is theirs: it opens the site they chose, which may set its own cookies under its own policy.")),
         ("Getting your data deleted",
          P("Ask and we will delete your account and, if you ask, your family's trips and photos. Messages and photos you added to a family that keeps going stay with that family unless you ask us to remove them. Your Plan it for me orders go too." + (" Stripe keeps its own record of a payment." if pfm.paid() else "") + " We do this by hand and will tell you when it is done."), contact()),
     ])

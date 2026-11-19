@@ -13,7 +13,7 @@ from gitaway.pages import cover
 
 def footer_links():
     """The links that left the landing's header. Sign in only while signed out."""
-    links = [("Guides", "/guides")]
+    links = [("Postcards", "/guides")]
     return links if ses.request_traveler() else [*links, ("Sign in", ses.signin_href())]
 
 

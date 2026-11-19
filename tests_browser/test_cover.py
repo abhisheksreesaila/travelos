@@ -10,7 +10,7 @@ from tests_browser.look import audit
 
 SIZES = {"390": PHONE, "1440": DESKTOP}
 HEADLINES = ("Every trip starts as a wish.", "Every way to go, on one card.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Then you just go.",
-             "Bring it home as a guide.", "Give it to the world.", "And someone else's trip begins.")
+             "Every traveller becomes a creator.", "Give it to the world.", "And someone else's trip begins.")
 RING = ("Wish", "Compare", "Book", "Plan", "Go", "Share", "Post", "Pass it on")
 WIDE_CARD = {0: (520, 340), 1: (640, 400), 2: (380, 425), 3: (660, 430), 4: (540, 350), 5: (400, 545), 6: (400, 500), 7: (520, 340)}      # cover.css, in drawing units
 PHONE_CARD = {**WIDE_CARD, 0: (520, 400), 1: (520, 380), 2: (520, 620), 3: (520, 440), 4: (520, 340), 5: (520, 700), 7: (520, 400)}      # F-296 follow-ups (D-970): the square and the guide are taller, so their parts stay inside
@@ -196,8 +196,8 @@ def test_the_pager_and_the_doors_of_the_shown_words(cover):
     assert page.evaluate("document.querySelector('.pager [aria-current]').dataset.k") == "5"
     assert page.evaluate("[...document.querySelectorAll('.cap:not(.now) a')].every(a => getComputedStyle(a).visibility === 'hidden')")      # the captions not shown step out of the tab order
     _show(page, 7)
-    assert page.evaluate("[...document.querySelectorAll('.cap.now a')].map(a => a.innerText.trim())") == ["Start a trip", "Browse guides"]
-    page.click(".cap.now a:has-text('Browse guides')")
+    assert page.evaluate("[...document.querySelectorAll('.cap.now a')].map(a => a.innerText.trim())") == ["Start a trip", "Browse postcards"]
+    page.click(".cap.now a:has-text('Browse postcards')")
     page.wait_for_url("**/guides")
 
 

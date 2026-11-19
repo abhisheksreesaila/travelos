@@ -31,7 +31,7 @@ def test_the_editor_is_a_page_in_the_guides_language_not_the_old_form(made):
     html = editor(client, d)
     assert 'class="ga-page v2 cv' in html and "/assets/css/cvedit.css" in html and "/assets/css/cv2.css" in html
     assert "scrapbook.css" not in html and "creatorimport.css" not in html          # the old form's stylesheets are gone from this page
-    assert f'href="/creators/import/{d["id"]}/guide"' in html and "Back to the guide" in words(html)
+    assert f'href="/creators/import/{d["id"]}/guide"' in html and "Back to the postcard" in words(html)
     fields = dict(form_of(html, f"/creators/import/{d['id']}", "ci-edit"))
     assert fields["title"] == creatordraft.get(tid(), d["id"])["title"] == "48 hours in Lisbon"
     assert fields["d0s0_name"] == "Belem Tower" and fields["d0s3_name"] == "Pastéis de Belém"      # each stop, in the post's order

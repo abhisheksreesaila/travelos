@@ -282,7 +282,7 @@ def _guides_widget(guides, v, i):
     cards, total = guides
     if not cards:
         return ""
-    return _wg(f"Guides for {v.place}", "list", "see", P("What other families did there. It opens over your plan, so you keep your place.", cls="fine"),
+    return _wg(f"Postcards for {v.place}", "list", "see", P("What other families did there. It opens over your plan, so you keep your place.", cls="fine"),
                gs.widget_rows(cards, lambda c: gs.sheet_href(c.slug, "plan")), gs.widget_foot(v.place, total, len(cards)), sample=all(not c.real for c in cards), i=i)
 
 

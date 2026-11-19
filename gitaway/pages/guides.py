@@ -22,6 +22,7 @@ from gitaway.hub import HubError
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import bookview, studio
+from gitaway.pages.forcreators import HEAD_LINE
 
 PATH = "/guides"
 HEAD = (Link(rel="stylesheet", href="/assets/css/cv2.css"), Link(rel="stylesheet", href="/assets/css/placeart.css"), Link(rel="stylesheet", href="/assets/css/guides.css"),
@@ -76,7 +77,7 @@ def make_panel(session) -> Div:
                       icon("chev-right", 20, 2.2), href=showcase.planning_path() if me else ses.signin_href(PATH), cls="mk", id="mk-trip")
     paste = A(Span(icon("link", 22, 2), cls="mk-ic"), Span(Span("Paste your blog post", cls="mk-t"), Span("We lay it out; your words and your own links stay yours.", cls="mk-s")),
               icon("chev-right", 20, 2.2), href=PATH + "/make", cls="mk", id="mk-paste")
-    return Div(Span("Your turn", cls="g-eyebrow"), H2("Make a guide"), P("Put your trip in order for others, with your own links. Two ways in:"), from_trip, paste, cls="make v2-glass", id="make")
+    return Div(Span("Your turn", cls="g-eyebrow"), H2("Send a postcard"), P(HEAD_LINE, " Your trip becomes a postcard people plan, book and take, with your own links. Two ways in:"), from_trip, paste, cls="make v2-glass", id="make")
 
 
 def yours(session):
@@ -85,7 +86,7 @@ def yours(session):
     rows = [r for r in dj.listing(me.id) if r["kind"] == "draft"] if me else []
     if not rows:
         return ""
-    return Div(Span("Your guides", cls="g-eyebrow"), Ul(*[Li(A(Span(r["title"], cls="mk-t"), Span("Published" if r["status"] == "published" else "Draft", cls="st"), href=f"/creators/import/{r['id']}/guide")) for r in rows[:6]],
+    return Div(Span("Your postcards", cls="g-eyebrow"), Ul(*[Li(A(Span(r["title"], cls="mk-t"), Span("Published" if r["status"] == "published" else "Draft", cls="st"), href=f"/creators/import/{r['id']}/guide")) for r in rows[:6]],
                                                        cls="mine-l"), A("All my drafts", href="/creators/drafts", cls="g-all"), cls="mine v2-glass", id="mine")
 
 
@@ -100,17 +101,17 @@ def hub_page(session, who="", length="", q="", error="", status=200):
     filters = Div(Div(Span("Who", cls="flab"), *[chip(label, href("" if who == k else k, length, q), who == k) for k, label in WHO], cls="fgroup", role="group", aria_label="Who it suits"),
                   Div(Span("Length", cls="flab"), *[chip(label, href(who, "" if length == k else k, q), length == k) for k, label, _, _ in LENGTHS], cls="fgroup", role="group", aria_label="How long"), cls="gh-filters")
     first = ("" if filtered or hub.has_shared() or not showcase.on() else
-             Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"), P("These are sample guides. Make yours and it shows up here for every traveler, ready to plan from."), A("Make a guide", href=PATH + "/make", cls="go")),
+             Div(icon("fork", 28, 2.2), Div(H2("Be the first to share one"), P("These are sample postcards. Make yours and it shows up here for every traveler, ready to plan from."), A("Send a postcard", href=PATH + "/make", cls="go")),
                  cls="gh-first v2-glass", role="status"))
     body = (Div(*[card(c, i) for i, c in enumerate(shown)], cls="gh-grid") if shown else
-            Div(H2("No guides match that" if filtered else "No guides yet"), P("Try fewer filters, or another place." if filtered else "Creators turn a post or a trip into a guide; the first ones show up here."),
-                A("Show every guide", href=PATH, cls="go") if filtered else A("Make a guide", href=PATH + "/make", cls="go"), cls="gh-empty v2-glass", role="status"))
-    hero = Div(Span("Guides · from other travellers", cls="g-kick"), H1("See what people did, ", Em("then make it yours."), cls="disp"),
+            Div(H2("No postcards match that" if filtered else "No postcards yet"), P("Try fewer filters, or another place." if filtered else "Creators turn a post or a trip into a postcard; the first ones show up here."),
+                A("Show every postcard", href=PATH, cls="go") if filtered else A("Send a postcard", href=PATH + "/make", cls="go"), cls="gh-empty v2-glass", role="status"))
+    hero = Div(Span("Postcards · from people who went", cls="g-kick"), H1("See what people did, ", Em("then make it yours."), cls="disp"),
                P("Real trips laid out to scan in seconds: the days, the stops, the times, what it cost, and the tips."), search, filters, cls="gh-hero")
-    head = Div(H2("Popular guides"), Span(f"{len(shown)} guide{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="n", role="status"), cls="gh-head")
-    return FtResponse(page("Guides", Div(hero, Div(Div(head, P(error, role="alert", cls="v2-error", id="mk-error") if error else "", body, first, cls="gh-main"), Div(make_panel(session), yours(session), cls="gh-side"), cls="gh-body"),
-                                         Span("Sample guides: made up so you can see how they read", cls="smp g-smp") if showcase.on() else "", cls="gh"),
-                       studio.foot(), current=PATH, head=HEAD, v2="cv g is-results", description="Guides from other travellers: real trips laid out stop by stop to plan from."), status_code=status)
+    head = Div(H2("Popular postcards"), Span(f"{len(shown)} postcard{'s' if len(shown) != 1 else ''}" + (" match" if filtered else ""), cls="n", role="status"), cls="gh-head")
+    return FtResponse(page("Postcards", Div(hero, Div(Div(head, P(error, role="alert", cls="v2-error", id="mk-error") if error else "", body, first, cls="gh-main"), Div(make_panel(session), yours(session), cls="gh-side"), cls="gh-body"),
+                                         Span("Sample postcards: made up so you can see how they read", cls="smp g-smp") if showcase.on() else "", cls="gh"),
+                       studio.foot(), current=PATH, head=HEAD, v2="cv g is-results", description="Postcards from other travellers: real trips laid out stop by stop to plan from."), status_code=status)
 
 
 def register(app):

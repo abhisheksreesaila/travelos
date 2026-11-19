@@ -180,7 +180,7 @@ def test_the_published_guide_is_for_anyone_with_the_creators_name_held_back_unti
 def test_a_published_guide_is_on_the_hub_and_an_unpublished_one_is_not(made):
     client, d = made
     hub = stranger(client).get("/guides").text
-    assert d["slug"] not in hub and "No guides yet" in words(hub)
+    assert d["slug"] not in hub and "No postcards yet" in words(hub)
     post(client, d, do="publish", own="1")
     hub = stranger(client).get("/guides").text
     assert f'href="/trips/{d["slug"]}"' in hub and "48 hours in Lisbon" in words(hub) and ">Sample<" not in hub      # off the showcase: only real guides
@@ -212,8 +212,8 @@ def test_a_guide_that_waits_for_the_captain_is_unlisted_and_not_for_search(made,
 def test_on_the_showcase_a_sample_opens_as_a_labelled_sample_guide_and_off_it_there_are_none(client, monkeypatch):
     monkeypatch.setenv("GITAWAY_SHOWCASE", "1")
     text = words(client.get("/trips/dog-friendly-big-sur-drive").text)
-    assert "Sample guide" in text and "A sample guide: the people and prices in it are made up so you can see how it reads." in text and "Illustration" in text
+    assert "Sample postcard" in text and "A sample postcard: the people and prices in it are made up so you can see how it reads." in text and "Illustration" in text
     hub = words(client.get("/guides").text)
-    assert "Sample guides: made up so you can see how they read" in hub and hub.count("Sample ") >= 2
+    assert "Sample postcards: made up so you can see how they read" in hub and hub.count("Sample ") >= 2
     monkeypatch.setenv("GITAWAY_SHOWCASE", "0")
     assert client.get("/trips/dog-friendly-big-sur-drive").status_code == 404

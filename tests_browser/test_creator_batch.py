@@ -115,7 +115,7 @@ def test_find_my_posts_tick_some_and_watch_them_become_drafts(setup, creator, ba
     shot(page, f"ready-{w}")
 
     page.locator(".cdr-acts .btn", has_text="Details").first.click()
-    expect(page.locator("h1")).to_have_text("The details of your guide")
+    expect(page.locator("h1")).to_have_text("The details of your postcard")
     page.go_back()
     expect(page.locator(".cdr-item")).to_have_count(2)
     page.locator(".cdr-del summary").first.click()

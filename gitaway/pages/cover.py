@@ -8,7 +8,7 @@ itself (go), the guide (share), the Instagram post, and someone else's wish (pas
     the ring         eight bold words (Wish, Compare, Book ...) round the card, turning one word per beat
     the gallery      other families' postcards drifting nearer, one step per beat
     the stage        an Apple-grey ground (F-296, the Stage look); on Go a fine snow drifts across it; light and dark follow the site's mode (assets/js/mode.js)
-    the close        "Go somewhere, together.", Start a trip and Browse guides
+    the close        "Go somewhere, together.", Start a trip and Browse postcards
 
 The first face is a real form (D-761: visitors search without an account): the visitor types a wish and "Show me every way" posts `q` to POST /plan/ask, which opens their own
 matrix. The sample sentence is the placeholder. Nothing here is autofocused.
@@ -34,7 +34,7 @@ from gitaway.layout import NAV, brand, plan_href, preview, seo_meta, styles
 
 ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
 TITLE = "Every trip starts as a wish"
-LEDE = "Say it the way you'd tell a friend. GitAway turns one sentence into every way to go, then plans it with your people and passes it on as a guide."
+LEDE = "Say it the way you'd tell a friend. GitAway turns one sentence into every way to go, then plans it with your people and passes it on as a postcard."
 OG_IMAGE = "/assets/cover/og.jpg"
 ASK = "/plan/ask"
 LABEL = "Where would you like to go? Say it the way you'd tell a friend."
@@ -49,12 +49,12 @@ BEATS = (
      "Places down, days across. Each square is the whole trip for four: flights, stays, one total. The best one lights up."),
     ("Book", "Book", "Tap a square.", "That's the trip.", "The flight, both stays and the sky, in one view. Book it in one go."),
     ("Plan", "Plan", "Everyone", "gets a pen.",
-     "Your people add the zoo, the tacos, the sled hill to one calendar. A creator's guide adds the tip that saves a morning."),
+     "Your people add the zoo, the tacos, the sled hill to one calendar. A creator's postcard adds the tip that saves a morning."),
     ("Go", "Go", "Then you", "just go.", "Beach on day one, snow by day four. The plan, the weather and the bookings ride along."),
-    ("Share", "Share", "Bring it home", "as a guide.", "Your days, your tips, in your own words. Nothing invented; prices and bookings stay private."),
+    ("Share", "Share", "Every traveller", "becomes a creator.", "Your trip comes home as a postcard: your days, your tips, your words. Nothing invented; prices and bookings stay private."),
     ("Post", "Post", "Give it", "to the world.", "One card for Instagram, one link back to the whole trip."),
     ("Pass it on", "Pass it on", "And someone else's", "trip begins.",
-     "The Riveras in Austin made it theirs in one tap. Give back, get back, and round it goes."),
+     "The Riveras in Austin made it theirs in one tap, and every postcard brings the next traveller."),
 )
 
 # other families' postcards in the gallery: (what it says, its gradient)
@@ -133,7 +133,7 @@ def face_wish_again():
     """Face 7: someone else's wish, begun from the Patels' guide (a drawing; the form is face 0's)."""
     words = _sentence(("Coast to snow,", "like the Patels,", "for 5 of us,", "in March."))
     return (f'<div class="f wish"><div class="artbox">{art("wish")}<div class="ttl"><small>Greetings from</small><b>somewhere?</b></div>'
-            f'<div class="from">{I["check"]}From the Patels\' guide</div><div class="sig">The Riveras · Austin</div></div>'
+            f'<div class="from">{I["check"]}From the Patels\' postcard</div><div class="sig">The Riveras · Austin</div></div>'
             f'<div class="write"><div class="stampbox"><i></i></div>{STAMP}<div class="dear">Dear GitAway,</div><p class="sent">{words}<span class="caret"></span></p>'
             f'<div class="go">Show me every way {I["arrow"]}</div></div></div>')
 
@@ -181,12 +181,12 @@ def face_calendar():
     people = (("M", "var(--pl-pink)"), ("S", "var(--pl-sd)"), ("A", "var(--pl-lt)"), ("P", "var(--pl-la)"))
     who = "".join(f'<i class="av" style="--i:{i};--a:{a}">{ch}</i>' for i, (ch, a) in enumerate(people))
     cur = lambda bd, d, fx, fy, tx, ty, name: (f'<div class="cur" style="--bd:{bd};--d:{d};--fx:{fx};--fy:{fy};--tx:{tx};--ty:{ty}">{I["cur"]}<span>{name}</span></div>')      # noqa: E731
-    return ('<div class="f cal"><header><b>Coast to snow · Dec 13–18</b>' f'<span class="who">{who}</span><span class="creator">+ Maya\'s guide</span></header>'
+    return ('<div class="f cal"><header><b>Coast to snow · Dec 13–18</b>' f'<span class="who">{who}</span><span class="creator">+ Maya\'s postcard</span></header>'
             '<div class="days">' + "".join(f'<span{" class=far" if i > 2 else ""}>{d}</span>' for i, d in enumerate(days)) + '</div><div class="grid">'
             + _blk("lock", 0, 1, 3, 17, "var(--pl-sd)", f'Land SAN 10:40<small>{I["lock"]}Booked</small>')
             + _blk("lock", 0, 2, 84, 12, "var(--pl-la)", "Hotel by the cove")
             + _blk("lock", 2, 3, 84, 12, "var(--pl-lt)", "Lodge in the pines")
-            + _blk("plan guide", 1, 1, 4, 27, "var(--pc-ink-2)", "<em>Maya's guide</em>La Jolla Cove at 9, before the crowds", 0)
+            + _blk("plan guide", 1, 1, 4, 27, "var(--pc-ink-2)", "<em>Maya's postcard</em>La Jolla Cove at 9, before the crowds", 0)
             + _blk("plan", 0, 1, 52, 26, "var(--pl-pink)", "Tacos at the market" + by("Sam"), 1)
             + _blk("plan", 1, 1, 38, 28, "var(--pl-lt)", "Zoo after lunch" + by("Mum"), 2)
             + _blk("plan", 2, 1, 6, 24, "var(--pc-ink-2)", "Drive up to Big Bear" + by("Dad"), 3)
@@ -205,7 +205,7 @@ def face_go():
 
 
 def face_guide():
-    lines = (("Day 1", "Tacos at the market, night one. Go hungry.", "", ""), ("Day 2", "The cove at 9, before the crowds. Sea lions, guaranteed.", "From Maya's guide", ""),
+    lines = (("Day 1", "Tacos at the market, night one. Go hungry.", "", ""), ("Day 2", "The cove at 9, before the crowds. Sea lions, guaranteed.", "From Maya's postcard", ""),
              ("Day 3", "Chains in the boot for the drive up, just in case.", "", "opt"), ("Day 4", "The sled hill behind the lodge. Ava's favourite day.", "", ""),
              ("Day 5", "Pancakes in the village before the drive home.", "", "opt"))
     ol = "".join(f'<li style="--i:{i}"{f" class={o}" if o else ""}><b>{d}</b><span><q>{t}</q>{f"<small>{s}</small>" if s else ""}</span></li>' for i, (d, t, s, o) in enumerate(lines))
@@ -256,7 +256,7 @@ def _caps():
         if k == 0:
             extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), Span(NotStr(DOWN), "Follow the postcard", cls="hint"), cls="acts cv-ctas"), P(DISCLOSURE, cls="note"))
         if k == 7:
-            extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), A("Browse guides", href="/guides", cls="btn soft"), cls="acts cv-ctas"),)
+            extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), A("Browse postcards", href="/guides", cls="btn soft"), cls="acts cv-ctas"),)
         caps.append(Article(lab, tag(head, " ", Em(soft)), P(text), *extra, cls="cap now" if k == 0 else "cap", data_k=str(k), style=f"--k:{k}"))
     return Div(*caps, cls="caps")
 
@@ -283,9 +283,9 @@ def _sky():
 
 
 def _close():
-    return Section(Div(P("Find · Book · My trip · Guides", cls="label"), H2("Go somewhere, ", Em("together.")),
-                       P("Choose the whole trip in one view, plan it with your people, and pass it on as a guide."),
-                       Div(A("Start a trip", icon("arrow-right", 18, 2.2), href=plan_href(), cls="btn"), A("Browse guides", href="/guides", cls="btn soft"), cls="acts cv-ctas"),
+    return Section(Div(P("Find · Book · My trip · Postcards", cls="label"), H2("Go somewhere, ", Em("together.")),
+                       P("Choose the whole trip in one view, plan it with your people, and pass it on as a postcard."),
+                       Div(A("Start a trip", icon("arrow-right", 18, 2.2), href=plan_href(), cls="btn"), A("Browse postcards", href="/guides", cls="btn soft"), cls="acts cv-ctas"),
                        P(DISCLOSURE, cls="small"), cls="endcard"), cls="cv-close end", id="your-turn")
 
 

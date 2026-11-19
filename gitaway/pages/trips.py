@@ -18,7 +18,7 @@ from gitaway.layout import notice
 
 def not_found():
     return notice("Trip not found", H1("This trip wandered off"), P("We couldn't find that itinerary. It may have been renamed, or the link is missing a piece."),
-                  A("Find another guide", href="/guides", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"), status=404)
+                  A("Find another postcard", href="/guides", cls="btn btn-primary") if showcase.on() else A("Back home", href="/", cls="btn btn-primary"), status=404)
 
 
 def register(app):

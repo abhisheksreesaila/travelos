@@ -50,7 +50,7 @@ def test_the_privacy_page_names_the_one_cookie_no_affiliate_links_and_anthropic(
     text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", client.get("/privacy").text)).replace("&#x27;", "'")
     for phrase in ("One cookie, which keeps you signed in, for up to 30 days", "GitAway sets no analytics, advertising or affiliate cookie",
                    "No affiliate links. GitAway has no affiliate links. Whatever you book here is booked and paid through Nuitée (LiteAPI), the merchant.",
-                   "A link a creator put on their own stop in a guide is theirs",
+                   "A link a creator put on their own stop in a postcard is theirs",
                    "Anthropic (Claude Haiku)", "Turn your post into a trip", "the text of the post, pasted or read from the link", "and nothing else",
                    "How readers of a creator's trip are counted", "Your address and the name of your browser are never stored"):
         assert phrase in text, phrase

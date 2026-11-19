@@ -59,7 +59,7 @@ def test_a_guide_opens_over_the_matrix_and_closing_it_returns_exactly_where_you_
     open_rail(page)
     row = page.locator("#mx-rail .gd-row")
     expect(row).to_have_count(1)
-    expect(page.locator("#mx-rail .wg").first.locator(".wg-h")).to_have_text("Guides for Los Angeles")
+    expect(page.locator("#mx-rail .wg").first.locator(".wg-h")).to_have_text("Postcards for Los Angeles")
     expect(page.locator("#mx-rail .wg").first.locator(".smp")).to_have_text("Sample")      # the showcase's guide says it is a sample
     page.evaluate("document.getElementById('mx-scroll').scrollLeft = 40; window.scrollTo(0, 60)")
     page.evaluate("document.querySelector('#mx-rail .gd-row').scrollIntoView({block: 'center'})")      # reaching the row may scroll the page and load more squares
@@ -145,7 +145,7 @@ def plans_on(page, day):
 def test_a_guide_over_the_calendar_names_the_free_time_and_drops_a_morning_in_with_undo(plan, base_url, viewport):  # noqa: F811
     page = plan(viewport)
     take_the_first_day(page, base_url)
-    expect(page.locator("#pl-rail .wg").first.locator(".wg-h")).to_have_text("Guides for Los Angeles")
+    expect(page.locator("#pl-rail .wg").first.locator(".wg-h")).to_have_text("Postcards for Los Angeles")
     page.locator("#pl-rail .gd-row").click()
     sheet = page.locator(".gsheet")
     expect(sheet).to_be_visible()
@@ -159,8 +159,8 @@ def test_a_guide_over_the_calendar_names_the_free_time_and_drops_a_morning_in_wi
     expect(page.locator(".col[data-day='1'] .ev[data-title]")).to_have_count(2)
     assert plans_on(page, 1) == [["Skylark Air 214 · SFO → LAX", 480, 600, True], ["Check in: The Tidewater, Santa Monica", 600, 720, True]]      # tagged with the guide's name
     if viewport["width"] >= 720:
-        expect(page.locator(".col[data-day='1'] .ev .gtag .gt").first).to_have_text("From Maya's guide")
-        expect(page.locator(".col[data-day='1'] .ev[data-title]").first).to_have_attribute("aria-label", "Skylark Air 214 · SFO → LAX, 8:00–10:00 AM, From Maya's guide. Tap to change or drag to move")
+        expect(page.locator(".col[data-day='1'] .ev .gtag .gt").first).to_have_text("From Maya's postcard")
+        expect(page.locator(".col[data-day='1'] .ev[data-title]").first).to_have_attribute("aria-label", "Skylark Air 214 · SFO → LAX, 8:00–10:00 AM, From Maya's postcard. Tap to change or drag to move")
     else:      # the sheet shrinks to a bar and the calendar is in view, so the drop can be watched
         expect(sheet).to_have_class(re.compile(r"peek"))
         assert sheet.bounding_box()["height"] < 100

@@ -109,7 +109,7 @@ def _actions(g: gd.Guide, mode: str, state: dict) -> Div:
     if mode == "owner":
         return Div(A(icon("pencil", 20, 2.2), "Edit details", href=state["editor"], cls="tonal", id="detailsBtn"), cls="g-act")
     heart = bookview.heart_button(state.get("saved", False), g.slug, state.get("signed", False))
-    share = Button(icon("share", 20, 2.2), type="button", cls="v2-round", id="g-share", aria_label="Copy this guide's link", title="Copy link")
+    share = Button(icon("share", 20, 2.2), type="button", cls="v2-round", id="g-share", aria_label="Copy this postcard's link", title="Copy link")
     if add == "yes":
         adder = Button(icon("plus", 20, 2.4), "Add to my plan", type="button", cls="tonal", id="g-add", data_add="day")
     elif add == "signin":
@@ -134,32 +134,32 @@ def owner_bar(g: gd.Guide, state: dict) -> Div:
 def share_template() -> Template:
     """The share panel's text, filled by the script from the publish answer: the guide's link, the Instagram card, the blog badge."""
     from gitaway import blogbutton
-    return Template(Div(Span(I(), "Published", cls="kicker"), H2("Your guide is out"), P("People can read it, save it, add its stops to their plan and plan the trip from it.", cls="sh-lede"),
+    return Template(Div(Span(I(), "Published", cls="kicker"), H2("Your postcard is out"), P("People can read it, save it, add its stops to their plan and plan the trip from it.", cls="sh-lede"),
                         Div(H3("Its link"), Div(Span(id="shLink", cls="linkout"), Button(bookview.ico("copy"), "Copy", type="button", cls="tonal", data_copy="link"), cls="linkrow"), cls="sh-sec"),
-                        Div(H3("For Instagram"), Img(src="", alt="The guide's card for Instagram: its title, its place and its length", id="shCard", cls="g-card-img", width="270", height="338"),
+                        Div(H3("For Instagram"), Img(src="", alt="The postcard's card for Instagram: its title, its place and its length", id="shCard", cls="g-card-img", width="270", height="338"),
                             Div(A(bookview.ico("share"), "Download the card", href="#", id="shDown", cls="tonal", download="guide-card.png"), Button(bookview.ico("share"), "Share", type="button", cls="tonal", id="shNative", hidden=True), cls="sh-foot g-left"),
                             cls="sh-sec sh-ig"),
                         Div(H3("A badge for your post"), Div(Img(src=blogbutton.LIGHT, alt=blogbutton.ALT, width="248", height="56"), cls="badge-pic"), Pre("", id="shCode", cls="code"),
                             Button(bookview.ico("copy"), "Copy the code", type="button", cls="tonal", data_copy="code"), cls="sh-sec"),
-                        Div(A(bookview.ico("shelf"), "See it in Guides", href="/guides", cls="go"), cls="sh-foot"), P("", id="shFine", cls="sh-fine")), id="t-share")
+                        Div(A(bookview.ico("shelf"), "See it in Postcards", href="/guides", cls="go"), cls="sh-foot"), P("", id="shFine", cls="sh-fine")), id="t-share")
 
 
 def trust(g: gd.Guide, st: dict) -> Div:
     """What is true about the money and the words, in plain sentences (F-184, F-185, F-196, F-297): who earns from this page (howpaid.earning_line, the one place those words live), that a stop's link is the
     creator's own and that GitAway adds nothing to its price, and Report this trip for a guide that is live."""
     if g.sample:
-        return Div(P("A sample guide: the people and prices in it are made up so you can see how it reads.", cls="g-disclose"), cls="g-trust")
+        return Div(P("A sample postcard: the people and prices in it are made up so you can see how it reads.", cls="g-disclose"), cls="g-trust")
     own = f"{g.author}'s" if g.author else g.poss
     has_links = any(s.link for d in g.days for s in d.stops)
     return Div(P(f"The words, the times and the links are {g.poss} own. GitAway adds nothing to the price of their links.", cls="g-disclose"),
                P(howpaid.earning_line(bool(st.get("plannable", True))), id="who-earns", cls="g-disclose"),
                P(f"Links on a stop are {own} own. They may earn them a commission.", id="own-links", cls="g-disclose") if has_links else "",
-               A(icon("flag", 18, 2.2), "Report this guide", href=f"/report?trip={g.slug}", cls="tonal", id="report-this") if st.get("report") else "", cls="g-trust")
+               A(icon("flag", 18, 2.2), "Report this postcard", href=f"/report?trip={g.slug}", cls="tonal", id="report-this") if st.get("report") else "", cls="g-trust")
 
 
 def kicker(g: gd.Guide) -> Div:
-    sample = Span("Sample guide", Span(": made up so you can see the guides", cls="long2"), cls="smp") if g.sample else ""
-    return Div(Span(f"{g.place} · Guide", cls="g-kick"), sample, cls="g-kr")
+    sample = Span("Sample postcard", Span(": made up so you can see the postcards", cls="long2"), cls="smp") if g.sample else ""
+    return Div(Span(f"{g.place} · Postcard", cls="g-kick"), sample, cls="g-kr")
 
 
 def byline(g: gd.Guide) -> Div:
@@ -173,7 +173,7 @@ def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     owner = mode == "owner"
     add = st.get("add", "no") if not owner else "no"
     head = Div(art(g), Div(kicker(g), H1(Span(g.title, cls="ed", data_k="title") if owner else g.title), byline(g), cls="g-hmain"), _actions(g, mode, {**st, "add": add}), cls="g-head")
-    back = A(icon("chev-left", 18, 2.4), "Guides", href="/guides", cls="g-back")
+    back = A(icon("chev-left", 18, 2.4), "Postcards", href="/guides", cls="g-back")
     privates = (Div(icon("lock", 18, 2.2), Div(Small("Kept private, never published"), Span(" · ".join(f"{p[1]}" for p in g.private[:6]))), cls="g-private", role="note") if owner and g.private else "")
     days = [day_section(g, d, owner, add) for d in g.days]
     disclose = trust(g, st)
@@ -181,4 +181,4 @@ def guide_markup(g: gd.Guide, *, mode: str, state: dict | None = None):
     return [Section(main, panel(), cls="gpage", id="gpage", data_slug=g.slug, data_mode=mode, data_can=add, data_place=g.place, data_plan=gd.plan_href(g.place, g.nights), data_title=g.title,
                     data_days=str(len(g.days)), data_stops=str(g.stops), data_by=g.by, data_host=g.host, data_live="1" if st.get("live") else "0", data_first=g.first, data_post=st.get("post", ""), data_sample="1" if g.sample else "0", data_signed="1" if st.get("signed") else "0"),
             share_template() if owner else "", Div(id="scrim", cls="scrim"), Div(id="sheet", cls="sheet", role="dialog", aria_modal="true", hidden=True), Div(id="toast", cls="toast", role="status", aria_live="polite"),
-            Aside(id="sharep", cls="sharep v2-glass", hidden=True, aria_label="Share your guide")]
+            Aside(id="sharep", cls="sharep v2-glass", hidden=True, aria_label="Share your postcard")]

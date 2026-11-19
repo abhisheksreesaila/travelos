@@ -179,7 +179,7 @@
       own({ do: 'word', key: ed.dataset.k, value: v }).then(function (j) {
         if (!j.ok) { ed.textContent = before; toast(j.error); return; }
         $$('[data-k="' + ed.dataset.k + '"]').forEach(function (n) { n.textContent = j.value; });
-        ed.classList.remove('saved'); void ed.offsetWidth; ed.classList.add('saved'); toast('Fixed in the guide. Your post stays as it is.');
+        ed.classList.remove('saved'); void ed.offsetWidth; ed.classList.add('saved'); toast('Fixed in the postcard. Your post stays as it is.');
       });
     }, { once: true });
   }
@@ -193,10 +193,10 @@
   }
   function closeSheet() { $('#sheet').hidden = true; $('#scrim').classList.remove('on'); }
   function publishSheet() {
-    openSheet('<button class="v2-round x" type="button" aria-label="Close">' + ICON.x + '</button><h2>Publish your guide</h2>' +
+    openSheet('<button class="v2-round x" type="button" aria-label="Close">' + ICON.x + '</button><h2>Publish your postcard</h2>' +
       '<div class="sh-book"><div><b>' + esc(D.title) + '</b><span>' + D.days + ' days · ' + D.stops + ' stops · by ' + esc(D.by) + '</span></div></div>' +
       '<p>People can read it, save it, add its stops to their plan and plan the trip from it. Your flights and stays are never published.</p>' +
-      '<button class="check" type="button" role="checkbox" aria-checked="false" id="mine" data-first><span class="bx">' + ICON.check + '</span><span><b>This is my post</b><span>I wrote it' + (D.host ? ' at ' + esc(D.host) : '') + ' and I am happy for GitAway to show it as a guide.</span></span></button>' +
+      '<button class="check" type="button" role="checkbox" aria-checked="false" id="mine" data-first><span class="bx">' + ICON.check + '</span><span><b>This is my post</b><span>I wrote it' + (D.host ? ' at ' + esc(D.host) : '') + ' and I am happy for GitAway to show it as a postcard.</span></span></button>' +
       '<p class="v2-error" id="pubError" role="alert" hidden></p><div class="sh-foot"><button class="tonal" type="button" id="pubCancel">Not yet</button><button class="go" type="button" id="pubGo" disabled>Publish</button></div>');
     $('#mine').addEventListener('click', function (e) { var c = e.currentTarget, on = c.getAttribute('aria-checked') !== 'true'; c.setAttribute('aria-checked', on); $('#pubGo').disabled = !on; });
     $('#pubCancel').addEventListener('click', closeSheet);
@@ -243,7 +243,7 @@
         }).catch(function () {});
       });
     }
-    $('#shFine', p).textContent = j.listed ? 'It is in Guides.' : 'It joins Guides once the captain has checked the post is yours' + (j.host ? ': we look for your email at ' + j.host : '') + '. Until then only people with its link can open it.';
+    $('#shFine', p).textContent = j.listed ? 'It is in Postcards.' : 'It joins Postcards once the captain has checked the post is yours' + (j.host ? ': we look for your email at ' + j.host : '') + '. Until then only people with its link can open it.';
     $$('[data-copy]', p).forEach(function (b) {
       b.addEventListener('click', function () { try { navigator.clipboard.writeText(b.dataset.copy === 'code' ? j.code : j.link); } catch (err) { /* the toast still says it */ } b.innerHTML = ICON.check + 'Copied'; toast('Copied'); });
     });

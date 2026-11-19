@@ -66,7 +66,7 @@ def tap(page, viewport, locator):
 def test_the_for_creators_page_sells_in_ten_seconds_and_fits_the_screen(visitor, base_url, viewport):
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/guides/make")
-    expect(page.locator("h1")).to_contain_text("Your post becomes a guide people can plan and book from.")
+    expect(page.locator("h1")).to_contain_text("Your post deserves more than a scroll.")
     box = page.locator("#fc-text").bounding_box()
     assert box["y"] + box["height"] <= viewport["height"], "the paste box is on the first screen"
     assert overflow(page) <= 1
@@ -122,7 +122,7 @@ def test_a_stranger_reports_a_trip_from_its_page(visitor, base_url, viewport):
     row, _, _ = live_trip(photo=True)
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/trips/{row['slug']}")
-    expect(page.locator("#who-earns")).to_have_text("Nobody earns from this page: GitAway has no affiliate links. A hotel or flight booked from it is paid through Nuitée (LiteAPI).")
+    expect(page.locator("#who-earns")).to_have_text("Nobody earns from this page: GitAway has no affiliate links. Anything booked from it is paid through Nuitée (LiteAPI).")
     shot(page, f"trip-{viewport['width']}")
     tap(page, viewport, page.locator("#report-this"))
     page.wait_for_url("**/report?trip=**")

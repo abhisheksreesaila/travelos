@@ -14,7 +14,7 @@ def titles(html):
 
 def test_the_hub_lists_the_samples_and_creator_trips(client):
     html = client.get("/guides").text
-    assert "<title>GitAway · Guides</title>" in html
+    assert "<title>GitAway · Postcards</title>" in html
     assert [t.replace("&amp;", "&") for t in titles(html)] == [t.title for t in itineraries.ITINERARIES.values()]
     assert 'href="/trips/sun-tacos-and-tide-pools"' in html     # a card opens the guide
     assert "A video" in html and "312 forks" not in html and "312 planned" not in html          # the sample's made-up fork count is not shown
@@ -39,7 +39,7 @@ def test_filters_narrow_the_list_without_javascript(client, query, expected):
 
 def test_an_empty_filter_says_so_and_offers_a_way_back(client):
     html = client.get("/guides?who=couple&q=tokyo").text
-    assert titles(html) == [] and "No guides match that" in html and re.search(r'<a [^>]*href="/guides"[^>]*class="go"|<a [^>]*class="go"[^>]*href="/guides"', html)
+    assert titles(html) == [] and "No postcards match that" in html and re.search(r'<a [^>]*href="/guides"[^>]*class="go"|<a [^>]*class="go"[^>]*href="/guides"', html)
 
 
 def test_filter_chips_are_links_that_toggle_and_keep_the_others(client):
@@ -130,7 +130,7 @@ def test_the_hub_is_named_guides_and_never_discover(client):
             html = client.get(path).text
             assert "Discover" not in html and "discover" not in html.lower().replace("discoverable", ""), path
             if 'id="si-dialog"' not in html and "ga-page v2" not in html:      # D-610: a v2 page (the ask, the matrix) has no site nav; F-200: sign-in is a full-screen page (the brand and Cancel only), so it has no nav
-                assert re.search(r'<nav[^>]*>.*?href="/guides"[^>]*>Guides<', html, re.S), path
+                assert re.search(r'<nav[^>]*>.*?href="/guides"[^>]*>Postcards<', html, re.S), path
     html = client.get("/guides").text
     assert re.search(r"<h1[^>]*>\s*See what people did, <em>then make it yours.</em>\s*</h1>", html)
 

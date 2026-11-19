@@ -347,7 +347,7 @@ def sample(owner, m: Material, name="", job="") -> dict:
 
 # ---- the editor's form --------------------------------------------------------------------------------------------------------
 
-NO_PLANS = "Add a few things to your calendar first, then make a guide of the trip."
+NO_PLANS = "Add a few things to your calendar first, then make a postcard of the trip."
 PRIVATE_KINDS = ("flight", "stay", "car", "tix", "travel")      # a booked block is never published: its title can name a hotel, a flight or a ticket holder
 
 

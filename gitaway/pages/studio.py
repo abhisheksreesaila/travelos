@@ -11,7 +11,7 @@ from gitaway.pages import bookview
 
 HEAD = (Link(rel="stylesheet", href="/assets/css/cv2.css"), Link(rel="stylesheet", href="/assets/css/placeart.css"), Script(src="/assets/js/creatorimport.js", defer=True))
 EXAMPLE = ("https://theplanetd.com/48-hours-in-lisbon-itinerary/", "The Planet D · 48 Hours in Lisbon", "P")      # the real post the recorded test fixture is (tests/fixtures/creator_import)
-STEPS = ("Reading your post", "Finding days and stops", "Laying out your guide")
+STEPS = ("Reading your post", "Finding days and stops", "Laying out your postcard")
 
 
 def example_chips(link=True) -> Div:
@@ -42,12 +42,12 @@ def stage() -> Section:
                    Div(H2(Span(cls="sk"), id="postT", cls="post-t disp"), P(Span(cls="sk", style="width:40%"), id="postBy", cls="post-by"), cls="post-text"), cls="post-main"),
                Div("In the post's own words", cls="river-h"), Div(id="river", cls="river"), cls="post", id="postCard")
     itin = Section(Div(H3("Your trip, as the post tells it"), Span("0 stops", id="itinCount"), cls="itin-h"), Div(id="days"),
-                   Div(Div(Span("Your guide is ready", cls="b"), Span("", id="readyLine"), A("Edit the details first", href="#", cls="ready-edit", id="readyEdit"), cls="t"),
-                       A("Open your guide", bookview.ico("arrow"), href="#", cls="go", id="openBook"), cls="ready", id="ready", hidden=True),
+                   Div(Div(Span("Your postcard is ready", cls="b"), Span("", id="readyLine"), A("Edit the details first", href="#", cls="ready-edit", id="readyEdit"), cls="t"),
+                       A("Open your postcard", bookview.ico("arrow"), href="#", cls="go", id="openBook"), cls="ready", id="ready", hidden=True),
                    cls="itin v2-glass", id="itin", aria_live="polite")
     return Section(Div(head, Div(post, itin, cls="imp-grid"), P("", id="impNote", cls="imp-note", hidden=True), P("", role="status", cls="v2-sr", id="cm-live"), cls="imp"), id="imp", hidden=True, aria_label="Reading your post")
 
 
 def foot() -> Footer:
     """The creator pages' foot: the legal pages, and what the sample books are."""
-    return Footer(A("Privacy", href="/privacy"), A("Terms", href="/terms"), Span("Sample guides are made up so you can see how they read; real ones carry a creator's name and a link to their post.") if showcase.on() else "", cls="cb-foot")
+    return Footer(A("Privacy", href="/privacy"), A("Terms", href="/terms"), Span("Sample postcards are made up so you can see how they read; real ones carry a creator's name and a link to their post.") if showcase.on() else "", cls="cb-foot")

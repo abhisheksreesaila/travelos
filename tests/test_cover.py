@@ -13,7 +13,7 @@ from tests.test_signin import sign_in
 
 ROOT = Path(__file__).resolve().parent.parent
 HEADLINES = ("Every trip starts as a wish.", "Every way to go, on one card.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Then you just go.",
-             "Bring it home as a guide.", "Give it to the world.", "And someone else's trip begins.")
+             "Every traveller becomes a creator.", "Give it to the world.", "And someone else's trip begins.")
 RING = ("Wish", "Compare", "Book", "Plan", "Go", "Share", "Post", "Pass it on")
 SAMPLE_WISH = "Somewhere warm, then snow, for 4 of us, mid-December."
 
@@ -56,7 +56,7 @@ def test_the_captions_are_the_stories_text_and_the_drawings_are_decoration(clien
     body = _text(" ".join(b for _, b in _caps(html)))
     for said in ("Say it the way you'd tell a friend. GitAway turns one sentence into every way to go.", "Places down, days across.", "The flight, both stays and the sky, in one view.",
                  "Your people add the zoo, the tacos, the sled hill to one calendar.", "Beach on day one, snow by day four.", "Nothing invented; prices and bookings stay private.",
-                 "One card for Instagram, one link back to the whole trip.", "The Riveras in Austin made it theirs in one tap."):
+                 "One card for Instagram, one link back to the whole trip.", "The Riveras in Austin made it theirs in one tap, and every postcard brings the next traveller.", "Your trip comes home as a postcard: your days, your tips, your words."):
         assert said in body
     faces = _opens(html, "side")
     assert [re.search(r'data-k="(\d)"', t).group(1) for t in faces if "aria-hidden" not in t] == ["0"]      # only the first face holds something to use: the wish form

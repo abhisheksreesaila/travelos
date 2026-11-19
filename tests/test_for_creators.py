@@ -32,7 +32,7 @@ def stranger(client):
 def test_the_page_is_open_to_everyone_before_anyone_has_published(client, mode):
     assert not community.has_real()
     r = client.get("/guides/make")
-    assert r.status_code == 200 and "Your post becomes a guide people can plan and book from. Your words and your links stay yours." in words(r.text)
+    assert r.status_code == 200 and "Your post deserves more than a scroll. It becomes a trip people plan, book and take, in one place. Your words and your links stay yours." in words(r.text)
     sign_in(client)
     assert client.get("/guides/make").status_code == 200
 
@@ -75,7 +75,7 @@ def test_the_paste_box_posts_to_the_import(client, mode):
     html = client.get("/guides/make").text
     form = re.search(r'<form[^>]*id="fc-paste"[^>]*>', html).group(0)
     assert 'action="/creators/import"' in form and 'method="post"' in form
-    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>(?:Make my guide|Start my guide)(?:<svg.*?</svg>)?<', html)
+    assert re.search(r'<textarea[^>]*name="text"', html) and re.search(r'<button[^>]*name="do"[^>]*value="draft"[^>]*>(?:Make my postcard|Start my postcard)(?:<svg.*?</svg>)?<', html)
     assert re.search(r'<button[^>]*value="manual"[^>]*>Or write it yourself<', html)
 
 
@@ -86,7 +86,7 @@ def test_the_three_promises_free_and_the_terms_are_there_in_plain_words(client, 
     assert "Free. Terms shown on day one." in text
     for term in ("What we show", "Take it down any time", "How GitAway is paid"):
         assert term in text
-    assert "GitAway has no affiliate links." in text and "Nothing on a guide carries a tracking code of ours." in text
+    assert "GitAway has no affiliate links." in text and "Nothing on a postcard carries a tracking code of ours." in text
     assert "marker" not in text and "Klook" not in text and "Travelpayouts" not in text
 
 

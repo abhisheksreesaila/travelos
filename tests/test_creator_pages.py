@@ -42,7 +42,7 @@ def test_every_text_pair_on_the_paper_is_4_5_to_1_or_better(which):
 
 
 def test_the_cover_nav_is_guides_and_plan_a_trip():
-    assert layout.NAV == [("Guides", "/guides"), ("Find a trip", "/plan/matrix")]      # F-289      # D-462: drawn as plan_href(); F-262: Guides replaced For creators and Community trips
+    assert layout.NAV == [("Postcards", "/guides"), ("Find a trip", "/plan/matrix")]      # F-289      # D-462: drawn as plan_href(); F-262: Guides replaced For creators and Community trips
 
 
 @pytest.mark.parametrize("sheet", ["cv2.css", "guides.css"])
