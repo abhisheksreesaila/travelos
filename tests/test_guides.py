@@ -89,6 +89,7 @@ def test_the_hub_has_the_search_with_autocomplete_and_make_a_guide_with_two_ways
     assert 'role="search"' in html and 'data-suggest="/plan/ask/suggest"' in html and 'id="gh-q"' in html
     assert re.search(r'<a [^>]*id="mk-paste"[^>]*href="/guides/make"|<a [^>]*href="/guides/make"[^>]*id="mk-paste"', html)
     assert 'id="mk-trip"' in html and "Send a postcard" in html
+    assert "Your post deserves more than a scroll." in html      # creators are welcomed here too (F-298)
 
 
 def test_off_the_showcase_the_hub_says_so_before_anyone_has_published(client, monkeypatch):
