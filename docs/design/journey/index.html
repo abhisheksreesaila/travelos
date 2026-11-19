@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Journey view</title>
+<!--
+  Prototype (founder 2026-11-18, from a reference image: "represents journey (like travel) with finer time control and add events …
+  looks more travel and less meeting"). My trip as a road you scroll along instead of a week grid.
+  - The scene is the place's own colours (Tahoe: lake blue, pines), no purple; the sky follows the hour at the centre of the view:
+    night, dawn, day, dusk; the sun or moon rides an arc. The front ground is dark in every hour so the line's words always read.
+  - Flights are arcs, the stay is a band under the line from check-in to check-out, booked things carry a lock and cannot be dragged.
+  - Zoom Trip · Day · Hours (or ctrl/pinch + wheel), drag a plan to retime it (snaps to 15 min), hover the line to add at that time.
+  - Sample data: a made-up Tahoe trip; the weather words are a sample too.
+  Round 2 (founder: "I love it … do it"):
+  - Weather: each tick carries the hour's sky and temperature, a snow window is a soft curtain over the road with its words,
+    and the scene itself greys under cloud and snows when the hour at the centre is snowy. Sun times are Tahoe's in December.
+  - Crowded times: when plans sit too close for the room there is (2 rows at 640 px tall, more on a taller screen), the extra
+    ones fold into one ghost card ("5 plans, close together") with hollow dots on the line where each one is; hover (tap on a
+    phone) opens the list, and "Spread them out" zooms to Hours there.
+  - The whole screen: full width and full height; the line sits at the same share of the height and the rows follow.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cloud: rgb(255 255 255 / .85);
+  --ink: #1D1D1F; --ink-2: #424245; --ink-3: #6E6E73; --card: rgb(255 255 255 / .96); --line-c: rgb(0 0 0 / .08);
+  --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --good: #0F766E; --good-t: #E3F3EE;
+  --sky-top: #8EC9F5; --sky-bot: #D9EEFB; --sun: #FFF6D8; --r1: #3E7FB5; --r2: #2E6A8C; --r3: #1E4A5E; --ground: #0F2A33;
+  --pc: #1F6FB2;
+  --spring: cubic-bezier(.34, 1.4, .64, 1);
+}
+.night { --cloud: rgb(70 84 104 / .7); --card: rgb(28 28 30 / .94); --ink: #F5F5F7; --ink-2: #D1D1D6; --ink-3: #A1A1A6; --line-c: rgb(255 255 255 / .10); --sig-ink: #FF8A4C; --sig-t: rgb(242 85 0 / .18); --good: #34C3A9; --good-t: rgb(52 195 169 / .16); }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 400 15px/1.4 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #0B1B22; color: var(--ink); }
+
+.jv { position: relative; height: 100vh; min-height: 560px; overflow: hidden; user-select: none; color: var(--ink); }
+.sky { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-bot)); transition: background .6s; }
+.orb { position: absolute; width: 84px; height: 84px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 60px 10px rgb(255 240 200 / .35); transform: translate(-50%, -50%); transition: background .6s, box-shadow .6s; }
+.night .orb { box-shadow: 0 0 40px 4px rgb(255 255 255 / .12); }
+.clouds { position: absolute; inset: 0 0 35% 0; opacity: 0; transition: opacity .8s; pointer-events: none; overflow: hidden; }
+.clouds div { position: absolute; inset: 0; width: 200%;
+  background: radial-gradient(18% 9% at 12% 30%, var(--cloud) 60%, transparent 62%), radial-gradient(12% 7% at 20% 26%, var(--cloud) 60%, transparent 62%),
+              radial-gradient(22% 10% at 47% 22%, var(--cloud) 60%, transparent 62%), radial-gradient(14% 8% at 56% 18%, var(--cloud) 60%, transparent 62%),
+              radial-gradient(20% 9% at 80% 34%, var(--cloud) 60%, transparent 62%), radial-gradient(11% 6% at 88% 30%, var(--cloud) 60%, transparent 62%); }
+#snow { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.stars { position: absolute; inset: 0 0 50% 0; opacity: 0; transition: opacity .8s; background-image: radial-gradient(1.5px 1.5px at 12% 20%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 30% 35%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 55% 15%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 72% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 88% 12%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 44% 42%, #fff 50%, transparent 51%); }
+.night .stars { opacity: .8; }
+.ridge { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; pointer-events: none; }
+.ridge svg { position: absolute; bottom: 0; height: 100%; width: 200%; }
+.ridge path { transition: fill .6s; }
+
+/* top bar */
+.bar { position: absolute; z-index: 5; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.where { background: var(--card); border-radius: 18px; padding: 12px 16px; box-shadow: 0 8px 24px rgb(0 0 0 / .14); }
+.where b { display: block; font: 800 22px/1.1 Inter, sans-serif; letter-spacing: -.02em; }
+.where span { color: var(--ink-3); font-size: 13px; }
+.ctl { display: flex; gap: 8px; align-items: center; }
+.seg { position: relative; display: inline-grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border-radius: 999px; padding: 4px; box-shadow: 0 8px 24px rgb(0 0 0 / .14); }
+.seg button { position: relative; z-index: 1; border: 0; background: none; font: 700 14px Inter, sans-serif; color: var(--ink-3); padding: 10px 16px; border-radius: 999px; cursor: pointer; min-height: 44px; transition: color .3s; }
+.seg button[aria-pressed="true"] { color: var(--card); }
+.seg .th { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 999px; background: var(--ink); transition: transform .5s var(--spring); }
+.pill { border: 0; background: var(--card); color: var(--ink); font: 700 14px Inter, sans-serif; padding: 10px 16px; border-radius: 999px; min-height: 44px; cursor: pointer; box-shadow: 0 8px 24px rgb(0 0 0 / .14); }
+
+/* the road */
+.road { position: absolute; z-index: 3; inset: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; cursor: grab; }
+.road::-webkit-scrollbar { display: none; }
+.track { position: relative; height: 100%; }
+.line { position: absolute; left: 0; right: 0; top: var(--ly); height: 2px; background: rgb(255 255 255 / .55); }
+.tick { position: absolute; top: calc(var(--ly) + 8px); transform: translateX(-50%); text-align: center; font: 600 12px/1 Inter, sans-serif; color: rgb(255 255 255 / .78); white-space: nowrap; }
+.tick::before { content: ""; position: absolute; left: 50%; top: -11px; width: 1px; height: 7px; background: rgb(255 255 255 / .5); }
+.tick em { display: flex; align-items: center; justify-content: center; gap: 3px; margin-top: 6px; font: 600 11px/1 Inter, sans-serif; font-style: normal; color: rgb(255 255 255 / .62); }
+.tick em svg { width: 13px; height: 13px; }
+.tick em.sn { color: #CFE8FF; }
+.curtain { position: absolute; top: 96px; height: calc(var(--ly) - 96px); pointer-events: none; border-inline: 1px dashed rgb(255 255 255 / .28);
+  background: repeating-linear-gradient(105deg, transparent 0 14px, rgb(255 255 255 / .07) 14px 15px), linear-gradient(rgb(255 255 255 / 0), rgb(220 236 255 / .16)); }
+.curtain span { position: absolute; top: 0; left: 10px; display: inline-flex; align-items: center; gap: 6px; font: 700 12px/1 Inter, sans-serif; background: rgb(255 255 255 / .92); color: #1D1D1F; padding: 7px 10px; border-radius: 999px; white-space: nowrap; box-shadow: 0 6px 16px rgb(0 0 0 / .14); }
+.curtain span svg { width: 13px; height: 13px; color: #0071E3; }
+.day { position: absolute; top: calc(var(--ly) + 58px); font: 800 13px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #fff; padding-left: 10px; border-left: 2px solid rgb(255 255 255 / .6); height: calc(100% - var(--ly) - 96px); }
+.day small { display: block; margin-top: 6px; font: 600 12px/1.3 Inter, sans-serif; letter-spacing: 0; text-transform: none; color: rgb(255 255 255 / .75); }
+.day small.rain { color: #FFB27A; }
+.stay { position: absolute; top: calc(var(--ly) - 38px); height: 30px; border-radius: 999px; background: rgb(255 255 255 / .16); border: 1.5px solid rgb(255 255 255 / .45); color: #fff; font: 700 13px/27px Inter, sans-serif; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 6px; align-items: center; }
+.arc { position: absolute; pointer-events: none; overflow: visible; }
+.arc path { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 5 6; opacity: .8; }
+.now { position: absolute; top: var(--nowtop, 90px); height: calc(var(--ly) - var(--nowtop, 90px) + 20px); width: 2px; background: #fff; box-shadow: 0 0 0 4px rgb(255 255 255 / .12); }
+.now span { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font: 800 11px/1 Inter, sans-serif; letter-spacing: .1em; color: #fff; background: var(--sig); padding: 5px 8px; border-radius: 999px; }
+
+.ev { position: absolute; width: 196px; background: var(--card); border-radius: 16px; padding: 10px 12px 11px; box-shadow: 0 10px 28px rgb(0 0 0 / .18); cursor: grab; touch-action: none;
+      transition: transform .45s var(--spring), box-shadow .2s, left .45s var(--spring); }
+.ev::after { content: ""; position: absolute; left: 16px; bottom: calc(-1 * var(--stem)); width: 2px; height: var(--stem); background: rgb(255 255 255 / .6); pointer-events: none; }
+.ev::before { content: ""; position: absolute; left: 12px; bottom: calc(-1 * var(--stem) - 5px); width: 10px; height: 10px; border-radius: 50%; background: var(--k); box-shadow: 0 0 0 3px rgb(255 255 255 / .9); }
+.ev .k { display: flex; align-items: center; gap: 6px; font: 800 11px/1 Inter, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.ev .k i { width: 18px; height: 18px; border-radius: 6px; background: var(--k); display: grid; place-items: center; color: #fff; font-style: normal; }
+.ev .k i svg { width: 11px; height: 11px; }
+.ev .k .lock { margin-left: auto; opacity: .7; }
+.ev b { display: block; font: 700 15px/1.25 Inter, sans-serif; margin-top: 6px; color: var(--ink); }
+.ev .t { font: 600 13px/1.3 Inter, sans-serif; color: var(--ink-2); margin-top: 2px; }
+.ev .nudge { margin-top: 7px; display: inline-flex; font: 650 12px/1 Inter, sans-serif; font-weight: 600; padding: 6px 8px; border-radius: 999px; background: var(--sig-t); color: var(--sig-ink); }
+.ev.drag { cursor: grabbing; transform: scale(1.04) rotate(-1deg); box-shadow: 0 22px 44px rgb(0 0 0 / .3); transition: box-shadow .2s, transform .3s var(--spring); z-index: 10; }
+.ev.locked { cursor: default; }
+.ev.shake { animation: shake .36s; }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.bubble { position: absolute; z-index: 11; top: -34px; left: 0; background: var(--ink); color: var(--card); font: 800 12px/1 Inter, sans-serif; padding: 7px 9px; border-radius: 999px; white-space: nowrap; }
+.ghost { position: absolute; top: calc(var(--ly) - 18px); width: 2px; height: 40px; background: #fff; opacity: 0; transform: translateX(-1px); transition: opacity .15s; pointer-events: none; }
+.ghost span { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 700 12px/1 Inter, sans-serif; background: #fff; color: #1D1D1F; padding: 7px 10px; border-radius: 999px; box-shadow: 0 6px 16px rgb(0 0 0 / .2); }
+.hit { position: absolute; left: 0; right: 0; top: calc(var(--ly) - 30px); height: 60px; cursor: copy; }
+.add { position: absolute; z-index: 12; width: 240px; background: var(--card); border-radius: 18px; padding: 12px; box-shadow: 0 18px 40px rgb(0 0 0 / .3); transform-origin: 20px 100%; animation: pop .45s var(--spring); }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } }
+.add label { font: 800 11px/1 Inter, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.add input { width: 100%; margin: 8px 0 10px; border: 1px solid var(--line-c); background: transparent; color: var(--ink); border-radius: 12px; padding: 11px 12px; font: 500 16px Inter, sans-serif; }
+.add .row { display: flex; gap: 8px; justify-content: flex-end; }
+.add button { border: 0; border-radius: 999px; font: 700 14px Inter, sans-serif; padding: 10px 14px; min-height: 44px; cursor: pointer; }
+.add .go { background: var(--ink); color: var(--card); }
+.add .no { background: transparent; color: var(--ink-3); }
+/* crowded times: the extra plans fold into one ghost card */
+.crowd { position: absolute; z-index: 6; width: 184px; }
+.crowd::after { content: ""; position: absolute; left: 16px; top: 100%; height: var(--stem); border-left: 2px dashed rgb(255 255 255 / .5); pointer-events: none; }
+.crowd > button { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink); border-radius: 16px; padding: 10px 12px 11px; min-height: 44px;
+  background: rgb(255 255 255 / .58); border: 1.5px dashed rgb(255 255 255 / .9); box-shadow: 6px -6px 0 -2px rgb(255 255 255 / .10), 12px -12px 0 -4px rgb(255 255 255 / .06); transition: background .2s; }
+.crowd > button:hover, .crowd.open > button { background: rgb(255 255 255 / .78); }
+.night .crowd > button { background: rgb(28 28 30 / .55); border-color: rgb(255 255 255 / .5); }
+.night .crowd > button:hover, .night .crowd.open > button { background: rgb(28 28 30 / .8); }
+.crowd .dots { display: flex; gap: 4px; }
+.crowd .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--k); box-shadow: 0 0 0 2px rgb(255 255 255 / .8); }
+.crowd b { display: block; font: 800 15px/1.2 Inter, sans-serif; margin-top: 7px; }
+.crowd .t { display: block; font: 600 12px/1.3 Inter, sans-serif; color: var(--ink-2); margin-top: 2px; }
+.gdot { position: absolute; z-index: 1; top: calc(var(--ly) - 5px); width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; border: 2px solid rgb(255 255 255 / .85); background: transparent; pointer-events: none; }
+.peek { position: absolute; z-index: 20; top: calc(100% + 10px); left: 0; width: 280px; background: var(--card); color: var(--ink); border-radius: 18px; padding: 8px; box-shadow: 0 22px 48px rgb(0 0 0 / .32);
+  transform-origin: 30px 0; animation: pop .45s var(--spring); }
+.peek[hidden] { display: none; }
+.peek ul { list-style: none; margin: 0; padding: 0; }
+.peek li { display: grid; grid-template-columns: 10px 64px 1fr auto; gap: 8px; align-items: center; padding: 9px 8px; border-radius: 12px; font: 600 14px/1.25 Inter, sans-serif; }
+.peek li + li { border-top: 1px solid var(--line-c); }
+.peek li i { width: 10px; height: 10px; border-radius: 50%; background: var(--k); }
+.peek li span { color: var(--ink-3); font-size: 13px; }
+.peek li svg { color: var(--ink-3); }
+.peek .spread { width: 100%; margin-top: 6px; border: 0; border-radius: 999px; background: var(--ink); color: var(--card); font: 700 14px Inter, sans-serif; padding: 11px; min-height: 44px; cursor: pointer; }
+.legend { position: absolute; z-index: 5; left: 16px; bottom: 14px; font: 600 12px/1.3 Inter, sans-serif; color: rgb(255 255 255 / .7); }
+@media (prefers-reduced-motion: reduce) { .ev, .seg .th, .sky, .orb, .ridge path, .clouds { transition: none !important; } .add, .peek { animation: none; } }
+@media (max-width: 640px) { .where b { font-size: 18px; } .seg button { padding: 10px 12px; } .ev { width: 172px; } }
+</style>
+</head>
+<body>
+<div class="jv" id="jv">
+  <div class="sky"></div>
+  <div class="stars"></div>
+  <div class="clouds" id="clouds"><div></div></div>
+  <div class="orb" id="orb"></div>
+  <div class="ridge" id="r1"><svg viewBox="0 0 2000 640" preserveAspectRatio="none"><path id="p1" d="M0 360 C 120 300 220 330 330 290 S 520 220 640 270 S 860 330 980 280 S 1180 200 1320 250 S 1540 320 1680 270 S 1880 230 2000 260 V640 H0Z"/></svg></div>
+  <div class="ridge" id="r2"><svg viewBox="0 0 2000 640" preserveAspectRatio="none"><path id="p2" d="M0 410 C 140 370 260 400 380 360 S 600 320 720 360 S 940 410 1080 370 S 1300 320 1440 360 S 1680 410 1820 370 S 1940 350 2000 360 V640 H0Z"/></svg></div>
+  <div class="ridge" id="r3"><svg viewBox="0 0 2000 640" preserveAspectRatio="none"><path id="p3" d="M0 440 C 160 420 300 445 460 425 S 760 405 920 430 S 1220 450 1380 425 S 1700 410 2000 430 V640 H0Z"/><path id="p4" d="M0 455 H2000 V640 H0Z"/></svg></div>
+
+  <canvas id="snow"></canvas>
+  <div class="road" id="road"><div class="track" id="track">
+    <div class="line"></div>
+    <div class="hit" id="hit"></div>
+    <div class="ghost" id="ghost"><span></span></div>
+  </div></div>
+
+  <div class="bar">
+    <div class="where"><b>Tahoe with the kids</b><span>Fri Dec 18 to Mon Dec 21 · 4 of us · sample trip and weather</span></div>
+    <div class="ctl">
+      <div class="seg" role="group" aria-label="Zoom"><span class="th" id="th"></span><button data-z="0" aria-pressed="false">Trip</button><button data-z="1" aria-pressed="true">Day</button><button data-z="2" aria-pressed="false">Hours</button></div>
+      <button class="pill" id="tonow">Now</button>
+    </div>
+  </div>
+  <div class="legend">Drag a plan to move it · hover the line to add · booked things are locked · plans too close together fold into one</div>
+</div>
+
+<script>
+const START = Date.UTC(2026, 11, 18, 6, 0);          // Fri Dec 18, 6:00 (trip-local time, kept in UTC for simplicity)
+const END = Date.UTC(2026, 11, 21, 22, 0);
+const H = 3600e3, NOW = Date.UTC(2026, 11, 19, 15, 20);
+const ZOOM = [22, 64, 150];                        // px per hour
+let z = 1, LY = 470, MAXL = 2;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const t = (d, h, m = 0) => Date.UTC(2026, 11, d, h, m);
+const ICON = {
+  plane: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>',
+  car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 17h14M6 17l1.5-6h9L18 17M7 20v-3M17 20v-3"/></svg>',
+  fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg>',
+  snow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 2v20M4 6l16 12M20 6 4 18"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  cup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 11h2a2 2 0 0 1 0 4h-2"/></svg>',
+  lock: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+const WXI = {
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></svg>',
+  snow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/></svg>',
+};
+const EV = [
+  { at: t(18, 9, 5), end: t(18, 10, 12), kind: 'Flight', ic: 'plane', k: '#0071E3', title: 'UA 512 · SFO → RNO', sub: 'Booked · seat on your pass', booked: true, flight: true },
+  { at: t(18, 10, 45), kind: 'Drive', ic: 'car', k: '#636366', title: 'Reno to the lake', sub: 'About 1 h 10 min' },
+  { at: t(18, 12, 30), kind: 'Lunch', ic: 'fork', k: '#FF9F0A', title: 'Tacos at Jalisco', sub: 'Kings Beach' },
+  { at: t(18, 16, 0), kind: 'Check-in', ic: 'pin', k: '#1D1D1F', title: 'Hotel Azure', sub: 'From 4 pm · code on your pass', booked: true },
+  { at: t(19, 9, 0), kind: 'Ski school', ic: 'snow', k: '#34C759', title: 'Lesson at Heavenly', sub: 'Kids 6–12 · meet at the gondola' },
+  // a packed afternoon: more than fits, so some fold into one ghost card
+  { at: t(19, 14, 0), kind: 'Play', ic: 'snow', k: '#34C759', title: 'The sled hill', sub: 'Behind the lodge' },
+  { at: t(19, 14, 30), kind: 'Treat', ic: 'cup', k: '#FF9F0A', title: 'Hot cocoa at the lodge', sub: 'Marshmallows, obviously' },
+  { at: t(19, 15, 0), kind: 'Play', ic: 'snow', k: '#34C759', title: 'Snowman contest', sub: 'Kids vs grown-ups' },
+  { at: t(19, 15, 15), kind: 'Errand', ic: 'pin', k: '#636366', title: 'Return the ski boots', sub: 'Rental shop by 4' },
+  { at: t(19, 15, 45), kind: 'Ride', ic: 'pin', k: '#5AC8FA', title: 'Gondola, one ride up', sub: 'Sunset from the top' },
+  { at: t(19, 16, 15), kind: 'Photo', ic: 'pin', k: '#FF2D55', title: 'Photo at the big sign', sub: 'All four of us' },
+  { at: t(19, 19, 0), kind: 'Dinner', ic: 'fork', k: '#FF9F0A', title: 'Riva Grill', sub: 'Table for 4 at 7' },
+  { at: t(20, 10, 0), kind: 'Hike', ic: 'pin', k: '#AF52DE', title: 'Emerald Bay overlook', sub: 'Short loop, good for kids', nudge: 'Snow after 2 pm: go early' },
+  { at: t(20, 16, 0), kind: 'Rest', ic: 'pin', k: '#5AC8FA', title: 'Hot tub, then pizza', sub: 'At the hotel' },
+  { at: t(21, 11, 0), kind: 'Check-out', ic: 'pin', k: '#1D1D1F', title: 'Hotel Azure', sub: 'By 11 am', booked: true },
+  { at: t(21, 13, 20), end: t(21, 14, 35), kind: 'Flight', ic: 'plane', k: '#0071E3', title: 'UA 1785 · RNO → SFO', sub: 'Booked', booked: true, flight: true },
+];
+const DAYS = [
+  { d: 18, label: 'Fri 18 · Arrive', wx: 'Clear · 41° / 22°' },
+  { d: 19, label: 'Sat 19 · Snow day', wx: 'Sunny · 38° / 19°' },
+  { d: 20, label: 'Sun 20 · The lake', wx: 'Light snow 2 pm to 8 pm', rain: true },
+  { d: 21, label: 'Mon 21 · Home', wx: 'Cloudy · 40° / 24°' },
+];
+// sample hourly weather: temperature, cloud (0–1), snow (0–1). The app reads weather.py; never invented there.
+const LOHI = { 18: [22, 41], 19: [19, 38], 20: [24, 34], 21: [24, 40] };
+const SUNUP = 6.7, SUNDOWN = 17.5;                  // Tahoe in December: sunrise about 7:10, sunset about 4:50
+function wx(ms) {
+  const d = new Date(ms), day = d.getUTCDate(), h = d.getUTCHours() + d.getUTCMinutes() / 60, [lo, hi] = LOHI[day] || [22, 38];
+  const f = h < 6 ? .15 * (1 - h / 6) : h <= 15 ? (h - 6) / 9 : 1 - (h - 15) / 12, warm = f * f * (3 - 2 * f);
+  const cloud = { 18: .05, 19: .1, 21: .72 }[day] ?? (h < 10 ? .2 : h < 14 ? .2 + (h - 10) * .18 : .95);
+  const snow = day === 20 && h >= 14 && h < 20 ? (h < 14.5 ? .5 : .85) : 0;
+  return { temp: Math.round(lo + (hi - lo) * Math.max(0, Math.min(1, warm))), cloud, snow, night: h < SUNUP || h > SUNDOWN };
+}
+const wxIcon = w => w.snow > .3 ? 'snow' : w.cloud > .6 ? 'cloud' : w.night ? 'moon' : 'sun';
+
+const jv = document.getElementById('jv'), road = document.getElementById('road'), track = document.getElementById('track');
+const px = ms => (ms - START) / H * ZOOM[z] + 40;
+const at = x => START + (x - 40) / ZOOM[z] * H;
+const fmt = ms => { const d = new Date(ms); let h = d.getUTCHours(), m = d.getUTCMinutes(); const ap = h < 12 ? 'am' : 'pm'; h = h % 12 || 12; return h + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + ap; };
+const dayName = ms => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(ms).getUTCDay()];
+const laneTop = lane => LY - 158 - lane * 118;
+const canHover = matchMedia('(hover: hover)').matches;
+
+function draw() {
+  // the line sits at the same share of the height; the rows above it are as many as fit under the top bar
+  LY = Math.round(jv.clientHeight * .734); jv.style.setProperty('--ly', LY + 'px');
+  const barB = document.querySelector('.bar').getBoundingClientRect().bottom - jv.getBoundingClientRect().top;
+  MAXL = Math.max(1, Math.min(3, Math.floor((LY - 158 - (barB + 14)) / 118) + 1)); jv.style.setProperty('--nowtop', (barB + 26) + 'px');
+  track.querySelectorAll('.tick, .day, .stay, .arc, .ev, .now, .crowd, .gdot, .curtain').forEach(n => n.remove());
+  track.style.width = px(END) + 80 + 'px';
+  const step = [6, 3, 1][z];
+  for (let ms = START; ms <= END; ms += step * H) {
+    const h = new Date(ms).getUTCHours(); if (h === 0) continue;
+    const w = wx(ms), el = document.createElement('div'); el.className = 'tick'; el.style.left = px(ms) + 'px';
+    el.innerHTML = `${fmt(ms).replace(':00', '')}<em class="${w.snow > .3 ? 'sn' : ''}">${WXI[wxIcon(w)]}${w.temp}°</em>`; track.append(el);
+  }
+  // snow windows: a soft curtain over the road, with its words
+  let from = null;
+  for (let ms = START; ms <= END + 1; ms += 15 * 60e3) {
+    const s = ms <= END && wx(ms).snow > .25;
+    if (s && from === null) from = ms;
+    if (!s && from !== null) {
+      const c = document.createElement('div'); c.className = 'curtain'; c.style.left = px(from) + 'px'; c.style.width = px(ms) - px(from) + 'px';
+      c.innerHTML = `<span>${WXI.snow}Light snow · ${fmt(from)} to ${fmt(ms)}</span>`; track.append(c); from = null;
+    }
+  }
+  DAYS.forEach(d => { const el = document.createElement('div'); el.className = 'day'; el.style.left = px(Math.max(START, t(d.d, 0))) + 'px'; el.innerHTML = d.label + `<small class="${d.rain ? 'rain' : ''}">${d.wx}</small>`; track.append(el); });
+  const stay = document.createElement('div'); stay.className = 'stay'; stay.style.left = px(t(18, 16)) + 'px'; stay.style.width = px(t(21, 11)) - px(t(18, 16)) + 'px';
+  stay.innerHTML = ICON.lock + ' Hotel Azure · 3 nights · booked'; track.append(stay);
+  const now = document.createElement('div'); now.className = 'now'; now.style.left = px(NOW) + 'px'; now.innerHTML = '<span>NOW</span>'; track.append(now);
+
+  // lanes: a card that would overlap goes up a row; when no row is free, the plans there fold into one ghost card
+  const W = innerWidth < 640 ? 172 : 196, GW = 184, GAP = 12, lanes = [], items = [];
+  let crowd = null;
+  EV.sort((a, b) => a.at - b.at).forEach(e => {
+    const x = px(e.at) - 14;
+    let lane = -1; for (let i = 0; i < MAXL; i++) if (lanes[i] === undefined || lanes[i] <= x - GAP) { lane = i; break; }
+    if (lane >= 0) { lanes[lane] = x + W; items.push({ e, x, lane }); return; }
+    if (crowd && x <= crowd.last + W) { crowd.list.push(e); crowd.last = x; return; }
+    // take the latest plan that is not booked into a new ghost card, in its row
+    let v = -1; for (let i = items.length - 1; i >= 0; i--) if (items[i].e && !items[i].e.booked && lanes[items[i].lane] === items[i].x + W) { v = i; break; }
+    if (v < 0) { crowd = { list: [e], x, lane: MAXL - 1, last: x }; items.push(crowd); return; }
+    const vic = items.splice(v, 1)[0];
+    crowd = { list: [vic.e, e], x: vic.x, lane: vic.lane, last: x }; items.push(crowd); lanes[vic.lane] = vic.x + GW;
+  });
+
+  items.forEach(it => {
+    if (it.list) return drawCrowd(it);
+    const e = it.e;
+    if (e.flight) {
+      const x1 = px(e.at), x2 = px(e.end), w = Math.max(x2 - x1, 30), hgt = Math.min(90, 30 + w / 3);
+      const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.classList.add('arc');
+      s.setAttribute('width', w); s.setAttribute('height', hgt); s.style.left = x1 + 'px'; s.style.top = LY - hgt + 'px';
+      s.innerHTML = `<path d="M0 ${hgt} Q ${w / 2} ${-hgt * .6} ${w} ${hgt}"/>`; track.append(s);
+    }
+    const el = document.createElement('div'); el.className = 'ev' + (e.booked ? ' locked' : ''); el.style.setProperty('--k', e.k);
+    const top = laneTop(it.lane); el.style.left = it.x + 'px'; el.style.top = top + 'px';
+    el.innerHTML = `<span class="k"><i>${ICON[e.ic]}</i>${e.kind}${e.booked ? `<span class="lock">${ICON.lock}</span>` : ''}</span><b>${e.title}</b><div class="t">${fmt(e.at)}${e.end ? ' – ' + fmt(e.end) : ''} · ${e.sub}</div>${e.nudge ? `<span class="nudge">${e.nudge}</span>` : ''}`;
+    el._e = e; track.append(el); el.style.setProperty('--stem', (LY - top - el.offsetHeight) + 'px'); drag(el);
+  });
+  scene();
+}
+
+/* a ghost card: "5 plans, close together"; hover (tap on a phone) shows them, Spread them out zooms in there */
+function drawCrowd(c) {
+  c.list.sort((a, b) => a.at - b.at);
+  const first = c.list[0].at, last = c.list[c.list.length - 1].at;
+  c.list.forEach(e => { const d = document.createElement('div'); d.className = 'gdot'; d.style.left = px(e.at) + 'px'; track.append(d); });
+  const el = document.createElement('div'); el.className = 'crowd'; el.style.left = c.x + 'px'; el.style.top = laneTop(c.lane) + 'px';
+  el.innerHTML = `<button type="button" aria-expanded="false"><span class="dots">${c.list.map(e => `<i style="--k:${e.k}"></i>`).join('')}</span>`
+    + `<b>${c.list.length} plans, close together</b><span class="t">${dayName(first)} ${fmt(first)} – ${fmt(last)} · ${canHover ? 'hover' : 'tap'} to see</span></button>`
+    + `<div class="peek" hidden><ul>${c.list.map(e => `<li style="--k:${e.k}"><i></i><span>${fmt(e.at)}</span>${e.title}${e.booked ? ICON.lock : '<em></em>'}</li>`).join('')}</ul>`
+    + (z < 2 ? '<button type="button" class="spread">Spread them out</button>' : '') + '</div>';
+  track.append(el);
+  el.style.setProperty('--stem', (LY - laneTop(c.lane) - el.firstChild.offsetHeight) + 'px');
+  const btn = el.firstChild, peek = el.querySelector('.peek'); let timer;
+  const show = on => { clearTimeout(timer); peek.hidden = !on; el.classList.toggle('open', on); btn.setAttribute('aria-expanded', String(on)); };
+  el.addEventListener('pointerdown', e => e.stopPropagation());
+  btn.addEventListener('click', () => show(peek.hidden));
+  if (canHover) { el.addEventListener('pointerenter', () => show(true)); el.addEventListener('pointerleave', () => { timer = setTimeout(() => show(false), 220); }); }
+  el.addEventListener('keydown', e => { if (e.key === 'Escape') { show(false); btn.focus(); } });
+  el.querySelector('.spread')?.addEventListener('click', () => { zoom(2); road.scrollLeft = px((first + last) / 2) - road.clientWidth / 2; scene(); });
+}
+
+/* the sky follows the hour at the centre of the view, and its weather */
+const lerp = (a, b, f) => { const pa = a.match(/\w\w/g).map(x => parseInt(x, 16)), pb = b.match(/\w\w/g).map(x => parseInt(x, 16)); return pa.map((v, i) => Math.round(v + (pb[i] - v) * f).toString(16).padStart(2, '0')).join(''); };
+// [hour, sky top, sky bottom, far ridge, mid ridge, near ridge, ground, orb]
+const KEYS = [
+  [0, '0B1A2E', '17304A', '1D3550', '152A40', '0F2133', '0A1824', 'F2F1EA'],
+  [6.2, '0B1A2E', '17304A', '1D3550', '152A40', '0F2133', '0A1824', 'F2F1EA'],
+  [7.2, 'F2A66B', 'FBD9A6', '6E7FA0', '4A6382', '2F4A60', '13303C', 'FFE7B8'],
+  [8.6, '8EC9F5', 'D9EEFB', '5E9BC8', '3B7AA3', '24566F', '123A44', 'FFF6D8'],
+  [15.6, '8EC9F5', 'D9EEFB', '5E9BC8', '3B7AA3', '24566F', '123A44', 'FFF6D8'],
+  [16.9, 'F07F4E', 'FBC08A', '5D6E92', '3E5677', '29405A', '12303B', 'FFD39A'],
+  [17.9, '12223A', '274466', '22395A', '182C45', '102237', '0A1824', 'F2F1EA'],
+  [24, '0B1A2E', '17304A', '1D3550', '152A40', '0F2133', '0A1824', 'F2F1EA'],
+];
+function scene() {
+  const centre = at(road.scrollLeft + road.clientWidth / 2), hour = (new Date(centre).getUTCHours() + new Date(centre).getUTCMinutes() / 60);
+  let i = 0; while (KEYS[i + 1][0] < hour) i++;
+  const a = KEYS[i], b = KEYS[i + 1], f = (hour - a[0]) / (b[0] - a[0] || 1), c = k => lerp(a[k], b[k], f);
+  const w = wx(centre), night = w.night, grey = Math.min(1, w.cloud * .7 + w.snow * .3);
+  // cloud and snow grey the sky toward an overcast of the same hour
+  const s = jv.style;
+  s.setProperty('--sky-top', '#' + lerp(c(1), night ? '1E2733' : 'A3AFBA', grey)); s.setProperty('--sky-bot', '#' + lerp(c(2), night ? '2C3746' : 'D3D9DF', grey));
+  s.setProperty('--sun', '#' + c(7));
+  document.getElementById('p1').style.fill = '#' + lerp(c(3), night ? '252F3D' : '7F8FA0', grey * .5); document.getElementById('p2').style.fill = '#' + c(4);
+  document.getElementById('p3').style.fill = '#' + c(5); document.getElementById('p4').style.fill = '#' + c(6);
+  jv.classList.toggle('night', night);
+  // the orb: the sun between sunrise and sunset, the moon otherwise, along an arc; it fades behind cloud
+  const span = night ? ((hour + 24 - SUNDOWN) % 24) / (24 - SUNDOWN + SUNUP) : (hour - SUNUP) / (SUNDOWN - SUNUP), vw = jv.clientWidth;
+  const orb = document.getElementById('orb'); orb.style.left = (vw * .1 + span * vw * .8) + 'px'; orb.style.top = (LY * (vw < 640 ? .64 : .53) - Math.sin(Math.PI * span) * LY * (vw < 640 ? .23 : .36)) + 'px';
+  orb.style.opacity = 1 - grey * .75;
+  document.getElementById('clouds').style.opacity = Math.min(1, w.cloud * 1.1);
+  setSnow(w.snow);
+  // parallax: the far hills drift slower than the road, the clouds slower still
+  const sx = road.scrollLeft; ['r1', 'r2', 'r3'].forEach((id, k) => document.querySelector('#' + id + ' svg').style.transform = `translateX(${-(sx * [.04, .1, .2][k]) % (jv.clientWidth)}px)`);
+  document.querySelector('#clouds div').style.transform = `translateX(${-(sx * .02) % jv.clientWidth}px)`;
+}
+road.addEventListener('scroll', () => requestAnimationFrame(scene), { passive: true });
+
+/* snow: a canvas of flakes, running only while the hour at the centre is snowy (still flakes with reduced motion) */
+const cv = document.getElementById('snow'), cx = cv.getContext('2d'); let flakes = [], snowK = 0, snowOn = false;
+function sizeSnow() {
+  const r = devicePixelRatio || 1, w = jv.clientWidth, h = jv.clientHeight; cv.width = w * r; cv.height = h * r; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cx.setTransform(r, 0, 0, r, 0, 0); flakes = Array.from({ length: 180 }, () => ({ x: Math.random() * w, y: Math.random() * h, r: .8 + Math.random() * 2.2, v: .5 + Math.random() * 1.2, p: Math.random() * 6 }));
+}
+function paintSnow(move) {
+  const w = jv.clientWidth, h = jv.clientHeight; cx.clearRect(0, 0, w, h); cx.fillStyle = `rgba(255,255,255,${.9 * snowK})`;
+  const n = Math.round(flakes.length * snowK);
+  for (let i = 0; i < n; i++) { const fl = flakes[i]; if (move) { fl.y += fl.v; fl.x += Math.sin(fl.y / 40 + fl.p) * .5; if (fl.y > h) { fl.y = -4; fl.x = Math.random() * w; } } cx.beginPath(); cx.arc(fl.x, fl.y, fl.r, 0, 7); cx.fill(); }
+}
+function loop() { if (snowK < .02) { snowOn = false; cx.clearRect(0, 0, cv.width, cv.height); return; } paintSnow(true); requestAnimationFrame(loop); }
+function setSnow(k) { snowK = k; if (reduced) return paintSnow(false); if (k >= .02 && !snowOn) { snowOn = true; requestAnimationFrame(loop); } }
+
+/* drag a plan to move it; booked things are locked */
+function drag(el) {
+  el.addEventListener('pointerdown', ev => {
+    if (ev.button) return; ev.stopPropagation();
+    if (el._e.booked) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); return; }
+    el.setPointerCapture(ev.pointerId); el.classList.add('drag');
+    const x0 = ev.clientX, left0 = parseFloat(el.style.left), bub = document.createElement('div'); bub.className = 'bubble'; el.append(bub);
+    const move = e => { const left = left0 + e.clientX - x0, ms = Math.round(at(left + 14) / (15 * 60e3)) * 15 * 60e3; el.style.left = (px(ms) - 14) + 'px'; el._e.at = ms; bub.textContent = dayName(ms) + ' ' + fmt(ms); };
+    move(ev);
+    const up = () => { el.classList.remove('drag'); bub.remove(); el.removeEventListener('pointermove', move); draw(); };
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up, { once: true }); el.addEventListener('pointercancel', up, { once: true });
+  });
+}
+
+/* hover the line to add at that time */
+const hit = document.getElementById('hit'), ghost = document.getElementById('ghost');
+hit.addEventListener('pointermove', e => { const x = e.clientX - track.getBoundingClientRect().left, ms = Math.round(at(x) / (15 * 60e3)) * 15 * 60e3; ghost.style.left = px(ms) + 'px'; ghost.style.opacity = 1; ghost.firstChild.textContent = '+ Add at ' + dayName(ms) + ' ' + fmt(ms); ghost._ms = ms; });
+hit.addEventListener('pointerleave', () => ghost.style.opacity = 0);
+hit.addEventListener('click', () => {
+  document.querySelector('.add')?.remove();
+  const ms = ghost._ms, box = document.createElement('div'); box.className = 'add'; box.style.left = (px(ms) - 20) + 'px'; box.style.top = (LY - 170) + 'px';
+  box.innerHTML = `<label>${dayName(ms)} ${fmt(ms)}</label><input placeholder="What's the plan?" aria-label="What's the plan?"><div class="row"><button class="no">Cancel</button><button class="go">Add</button></div>`;
+  track.append(box); const inp = box.querySelector('input'); inp.focus();
+  const add = () => { if (inp.value.trim()) { EV.push({ at: ms, kind: 'Plan', ic: 'pin', k: '#FF2D55', title: inp.value.trim(), sub: 'Added just now' }); } box.remove(); draw(); };
+  box.querySelector('.go').onclick = add; box.querySelector('.no').onclick = () => box.remove(); inp.onkeydown = e => { if (e.key === 'Enter') add(); if (e.key === 'Escape') box.remove(); };
+});
+
+/* zoom keeps the time at the centre where it was */
+function zoom(nz) {
+  const centre = at(road.scrollLeft + road.clientWidth / 2); z = nz; draw(); road.scrollLeft = px(centre) - road.clientWidth / 2;
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.z === z)));
+  document.getElementById('th').style.transform = `translateX(${z * 100}%)`; scene();
+}
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => zoom(+b.dataset.z));
+road.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); zoom(Math.max(0, Math.min(2, z + (e.deltaY < 0 ? 1 : -1)))); } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { road.scrollLeft += e.deltaY; } }, { passive: false });
+document.getElementById('tonow').onclick = () => road.scrollTo({ left: px(NOW) - road.clientWidth / 2, behavior: reduced ? 'auto' : 'smooth' });
+// grab-to-scroll the road with a mouse
+let pan = null; road.addEventListener('pointerdown', e => { if (e.target === road || e.target === track || e.target.classList.contains('line')) pan = { x: e.clientX, s: road.scrollLeft }; });
+addEventListener('pointermove', e => { if (pan) road.scrollLeft = pan.s - (e.clientX - pan.x); }); addEventListener('pointerup', () => pan = null);
+
+sizeSnow(); draw(); zoom(1); road.scrollLeft = px(NOW) - road.clientWidth / 2; scene();
+addEventListener('resize', () => { sizeSnow(); draw(); });
+</script>
+</body>
+</html>

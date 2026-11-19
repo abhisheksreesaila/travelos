@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why another travel site</title>
+<!--
+  Prototype B (F-299 draft): "Why another travel site?" as a flip, not a table. Six cells, each with two faces:
+  Elsewhere (the grey chaos people know) and GitAway (vivid, calm). Round 2 (founder: "people will not change the tab
+  from after and before, either side by side or automatic"): no switch. Each card shows Elsewhere for a beat once it is
+  well in view, then flips to GitAway on its own, and the GitAway face keeps the old way as a small struck line at its
+  top, so both sides stay readable without a tap. "Watch again" replays it.
+  The two things the cover's story never shows (the catch up front, reviews read for you) are the two big cells.
+  Stage look. Reduced motion: the flip is instant. Every claim is live today except the two marked Soon.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stage: #F5F5F7; --card: #FFFFFF; --ink: #1D1D1F; --ink-2: #424245; --ink-3: #6E6E73; --ink-4: #AEAEB2; --line: rgb(0 0 0 / .08);
+  --dull: #E8E8ED; --dull-2: #D2D2D7;
+  --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --good: #0F766E; --good-t: #E3F3EE;
+  --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --shadow: 0 1px 2px rgb(0 0 0 / .04), 0 10px 30px rgb(0 0 0 / .07);
+  --band: #1D1D1F; --band-ink: #F5F5F7; --band-ink-2: #A1A1A6;
+  --spring: cubic-bezier(.34, 1.4, .64, 1);
+}
+:root[data-theme="dark"] {
+  --stage: #000; --card: #1C1C1E; --ink: #F5F5F7; --ink-2: #D1D1D6; --ink-3: #A1A1A6; --ink-4: #636366; --line: rgb(255 255 255 / .10);
+  --dull: #2C2C2E; --dull-2: #3A3A3C;
+  --sig-ink: #FF8A4C; --sig-t: rgb(242 85 0 / .16); --good: #34C3A9; --good-t: rgb(52 195 169 / .14);
+  --cta-bg: #F5F5F7; --cta-fg: #000; --shadow: none; --band: #2C2C2E;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stage: #000; --card: #1C1C1E; --ink: #F5F5F7; --ink-2: #D1D1D6; --ink-3: #A1A1A6; --ink-4: #636366; --line: rgb(255 255 255 / .10);
+    --dull: #2C2C2E; --dull-2: #3A3A3C;
+    --sig-ink: #FF8A4C; --sig-t: rgb(242 85 0 / .16); --good: #34C3A9; --good-t: rgb(52 195 169 / .14);
+    --cta-bg: #F5F5F7; --cta-fg: #000; --shadow: none; --band: #2C2C2E;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--stage); color: var(--ink); font: 400 17px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.note { max-width: 74rem; margin: 0 auto; padding: 12px 16px; font-size: 14px; color: var(--ink-3); display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.note button { font: 600 14px Inter, sans-serif; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; min-height: 44px; }
+
+.why { max-width: 74rem; margin: 0 auto; padding: 56px 16px 96px; }
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+.kick { display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.kick i { width: 8px; height: 8px; border-radius: 50%; background: var(--sig); }
+h2 { font: 900 clamp(44px, 8vw, 96px)/.93 Inter, sans-serif; letter-spacing: -.05em; margin: 14px 0 0; }
+h2 .soft { color: var(--ink-3); transition: color .5s; }
+.lede { font-size: clamp(18px, 2vw, 22px); line-height: 1.4; color: var(--ink-2); max-width: 34rem; margin: 18px 0 0; font-weight: 500; letter-spacing: -.01em; }
+
+/* the old way, kept on the new face */
+.was { font: 600 13px/1.3 Inter, sans-serif; color: var(--ink-3); display: flex; gap: 6px; align-items: baseline; margin: -2px 0 2px; }
+.was s { text-decoration-color: var(--sig); text-decoration-thickness: 2px; }
+.again { font: 600 14px Inter, sans-serif; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; min-height: 44px; display: inline-flex; gap: 8px; align-items: center; }
+/* the switch (gone in round 2) */
+.flip { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; background: var(--dull); border-radius: 999px; padding: 5px; min-width: 300px; }
+.flip button { position: relative; z-index: 1; border: 0; background: none; font: 700 16px Inter, sans-serif; color: var(--ink-3); padding: 14px 22px; border-radius: 999px; cursor: pointer; min-height: 52px; transition: color .35s; }
+.flip .thumb { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); border-radius: 999px; background: var(--card); box-shadow: 0 2px 10px rgb(0 0 0 / .12); transition: transform .55s var(--spring), background .4s; }
+.why[data-side="g"] .flip .thumb { transform: translateX(100%); background: var(--cta-bg); }
+.why[data-side="e"] .flip button[data-to="e"] { color: var(--ink); }
+.why[data-side="g"] .flip button[data-to="g"] { color: var(--cta-fg); }
+.hint { display: block; text-align: center; font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+
+/* the bento */
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 40px; }
+.cell { position: relative; grid-column: span 3; min-height: 320px; perspective: 1400px; }
+.cell.wide { grid-column: span 3; min-height: 340px; }
+.face { position: absolute; inset: 0; border-radius: 26px; padding: 22px; display: flex; flex-direction: column; gap: 12px; overflow: hidden;
+        transition: transform .8s var(--spring), opacity .45s ease; transition-delay: var(--d, 0ms); backface-visibility: hidden; }
+.face.e { background: var(--dull); color: var(--ink-3); transform: rotateX(0); opacity: 1; }
+.face.g { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); transform: rotateX(-90deg) translateY(30px); opacity: 0; transform-origin: 50% 0; }
+.cell.on .face.e { transform: rotateX(90deg) translateY(-30px); opacity: 0; transform-origin: 50% 100%; }
+.cell.on .face.g { transform: rotateX(0) translateY(0); opacity: 1; }
+.lab { font: 700 12px/1 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.face.e .lab { color: var(--ink-4); }
+.face.g .lab { color: var(--ink-3); }
+.face.g .lab b { width: 26px; height: 26px; border-radius: 8px; background: var(--pc); display: grid; place-items: center; color: #fff; }
+.face.g .lab b svg { width: 15px; height: 15px; }
+.face h3 { font: 800 clamp(22px, 2.2vw, 28px)/1.08 Inter, sans-serif; letter-spacing: -.03em; margin: 0; }
+.face.e h3 { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--sig); text-decoration-thickness: 2.5px; }
+.face p { margin: 0; font-size: 15px; line-height: 1.45; }
+.face.g p { color: var(--ink-2); }
+.vis { margin-top: auto; }
+.soon { font: 700 10px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 4px 7px; margin-left: 4px; vertical-align: middle; }
+
+/* Elsewhere visuals: noisy, grey, a little crooked */
+.tabs { display: flex; gap: 4px; }
+.tabs span { flex: 1; background: var(--dull-2); border-radius: 8px 8px 0 0; padding: 7px 8px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-3); }
+.tabs span:nth-child(2) { transform: translateY(2px); } .tabs span:nth-child(4) { transform: translateY(1px); }
+.sheet { background: var(--stage); border-radius: 0 0 10px 10px; padding: 10px; font: 500 12px/1.6 ui-monospace, monospace; color: var(--ink-3); }
+.fine { font-size: 10.5px; line-height: 1.35; color: var(--ink-4); }
+.bars i { display: block; height: 7px; border-radius: 4px; background: var(--dull-2); margin: 6px 0; }
+.spin { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.spin i { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--dull-2); border-top-color: var(--ink-3); animation: r 1s linear infinite; }
+@keyframes r { to { transform: rotate(1turn); } }
+.bub { display: inline-block; background: var(--dull-2); border-radius: 16px; padding: 7px 11px; font-size: 13px; margin: 3px 0; color: var(--ink-2); }
+.bub.r { margin-left: 28px; }
+.inbox div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--dull-2); padding: 6px 0; font-size: 12px; }
+
+/* GitAway visuals */
+.mini { display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 5px; font: 600 11px/1 Inter, sans-serif; color: var(--ink-3); align-items: center; }
+.mini .sq { height: 34px; border-radius: 9px; background: var(--stage); display: grid; place-items: center; color: var(--ink-2); font-weight: 700; font-size: 12.5px; }
+.mini .sq.best { background: var(--cta-bg); color: var(--cta-fg); box-shadow: 0 0 0 4px rgb(15 118 110 / .25); }
+.price { display: flex; align-items: baseline; gap: 10px; }
+.price b { font: 900 34px/1 Inter, sans-serif; letter-spacing: -.03em; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { font: 650 13px/1 Inter, sans-serif; font-weight: 600; padding: 8px 11px; border-radius: 999px; background: var(--sig-t); color: var(--sig-ink); display: inline-flex; gap: 6px; align-items: center; }
+.chip.g { background: var(--good-t); color: var(--good); }
+.dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 3px; }
+.dots i { aspect-ratio: 1; border-radius: 50%; background: var(--good); }
+.dots i.m { background: #FF9F0A; } .dots i.p { background: var(--sig); border-radius: 2px; }
+.ask { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--stage); border-radius: 999px; padding: 9px 14px; font-size: 14px; color: var(--ink-2); }
+.ask em { font-style: normal; margin-left: auto; color: var(--ink-3); font-size: 13px; }
+.book { display: flex; justify-content: space-between; align-items: center; background: var(--cta-bg); color: var(--cta-fg); border-radius: 999px; padding: 14px 20px; font: 700 16px Inter, sans-serif; }
+.cal { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.cal div { background: var(--stage); border-radius: 8px; min-height: 66px; padding: 5px; display: flex; flex-direction: column; gap: 4px; font: 600 10px/1 Inter, sans-serif; color: var(--ink-3); }
+.cal i { display: block; border-radius: 5px; height: 14px; background: var(--c); }
+.faces { display: flex; margin-top: 8px; } .faces span { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); margin-left: -6px; background: var(--c); color: #fff; font: 700 11px/22px Inter, sans-serif; text-align: center; }
+.faces span:first-child { margin-left: 0; }
+.today { background: var(--stage); border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; }
+.today .row { display: flex; justify-content: space-between; font-size: 14px; }
+.today .lead { font: 800 20px/1.1 Inter, sans-serif; letter-spacing: -.02em; }
+.today .lead span { color: var(--good); }
+
+.band { margin-top: 14px; background: var(--band); color: var(--band-ink); border-radius: 28px; padding: 36px 32px; display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; }
+.cards { display: flex; } .cards span { width: 54px; height: 70px; border-radius: 10px; background: var(--c); transform: rotate(var(--r)); margin-left: -16px; box-shadow: 0 6px 16px rgb(0 0 0 / .3); border: 3px solid #fff; }
+.cards span:first-child { margin-left: 0; }
+.band h3 { font: 900 clamp(28px, 4vw, 48px)/1 Inter, sans-serif; letter-spacing: -.04em; margin: 0; }
+.band p { margin: 10px 0 0; color: var(--band-ink-2); font-size: 17px; }
+.btn { display: inline-flex; align-items: center; gap: 10px; font: 700 17px Inter, sans-serif; padding: 16px 26px; border-radius: 999px; background: var(--band-ink); color: var(--band); text-decoration: none; min-height: 52px; white-space: nowrap; }
+
+@media (max-width: 980px) { .bento { grid-template-columns: repeat(2, 1fr); } .cell, .cell.wide { grid-column: span 1; } .cell.wide { grid-column: span 2; } }
+@media (max-width: 640px) {
+  .why { padding: 36px 16px 64px; }
+  .flip { min-width: 0; width: 100%; }
+  .bento { grid-template-columns: 1fr; gap: 12px; margin-top: 28px; }
+  .cell { grid-column: auto; min-height: 330px; }
+  .cell.wide { grid-column: auto; min-height: 390px; }
+  .band { grid-template-columns: 1fr; padding: 28px 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .face, .flip .thumb { transition: none !important; } .spin i { animation: none; } }
+</style>
+</head>
+<body>
+<div class="note"><span>Prototype B · the flip</span><button type="button" id="mode">Dark mode</button></div>
+
+<section class="why" data-side="e" aria-labelledby="why-h">
+  <div class="top">
+    <div>
+      <span class="kick"><i></i>Fair question</span>
+      <h2 id="why-h">Why another<br><span class="soft">travel site?</span></h2>
+      <p class="lede">Because you know what the others feel like. Here's what changes.</p>
+    </div>
+    <button type="button" class="again" id="again"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Watch again</button>
+  </div>
+
+  <div class="bento">
+    <!-- 1 the catch (big) -->
+    <div class="cell wide" style="--i:0">
+      <div class="face e">
+        <span class="lab">The price</span>
+        <h3>$189 a night*</h3>
+        <p>Looks great. Then checkout.</p>
+        <div class="vis"><p class="fine">*Excludes resort fee, parking, local taxes and service charges. Non-refundable rates may apply. Check-in from 4 pm. See property terms for details, available after booking.</p></div>
+      </div>
+      <div class="face g" style="--pc:#F25500">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></b>The catch, up front</span>
+        <h3>We show what the others hide.</h3>
+        <p>Resort fees, parking, refund rules, the 3 pm check-in after your 9 am landing. Flagged before you pick.</p>
+        <div class="vis">
+          <div class="price"><b>$189</b><span style="color:var(--ink-3)">a night, and here's the rest</span></div>
+          <div class="chips" style="margin-top:10px"><span class="chip">$45 resort fee</span><span class="chip">Parking $38 a night</span><span class="chip">Lands 7 h before check-in</span><span class="chip g">Free cancel to Dec 10</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 reviews (big) -->
+    <div class="cell wide" style="--i:1">
+      <div class="face e">
+        <span class="lab">Reviews</span>
+        <h3>★ 8.7 · 4,182 reviews</h3>
+        <p>Sorted by "most relevant". Half from 2019.</p>
+        <div class="vis bars"><i style="width:92%"></i><i style="width:78%"></i><i style="width:86%"></i><i style="width:64%"></i><i style="width:81%"></i><i style="width:70%"></i></div>
+      </div>
+      <div class="face g" style="--pc:#AF52DE">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></b>Reviews, read for you</span>
+        <h3>The last 100, and what they really say.</h3>
+        <p>A trend you see at a glance, an AI summary of what guests love and warn about, and a box to ask them anything.</p>
+        <div class="vis">
+          <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i></i><i class="p"></i><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="p"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="ask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>parking<em>6 of 100 mention it</em></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 finding -->
+    <div class="cell" style="--i:2">
+      <div class="face e">
+        <span class="lab">Finding the trip</span>
+        <h3>Two tabs and a spreadsheet</h3>
+        <div class="vis"><div class="tabs"><span>Flights · SFO → RNO</span><span>Hotels · Tahoe</span><span>Sheet1</span><span>…</span></div>
+          <div class="sheet">B2 $612 flights<br>C2 $664 hotel<br>D2 =B2+C2 &nbsp;#REF!</div></div>
+      </div>
+      <div class="face g" style="--pc:#0071E3">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></b>One grid</span>
+        <h3>Flights and stay, one number.</h3>
+        <div class="vis"><div class="mini" aria-hidden="true">
+          <span></span><span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span>
+          <span>Tahoe&nbsp;</span><span class="sq">$1,412</span><span class="sq best">$1,276</span><span class="sq">$1,350</span><span class="sq">$1,498</span>
+          <span>Truckee&nbsp;</span><span class="sq">$1,388</span><span class="sq">$1,301</span><span class="sq">$1,342</span><span class="sq">$1,455</span></div></div>
+      </div>
+    </div>
+
+    <!-- 4 booking -->
+    <div class="cell" style="--i:3">
+      <div class="face e">
+        <span class="lab">Booking</span>
+        <h3>Off to a site you've never heard of</h3>
+        <div class="vis"><div class="spin"><i></i>Redirecting to partner… 3 of 5</div><p class="fine" style="margin-top:10px">Create an account to continue. Already have one? Reset password.</p></div>
+      </div>
+      <div class="face g" style="--pc:#1D1D1F">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></svg></b>Book here</span>
+        <h3>One place. One tap.</h3>
+        <p>Paid through Nuitée, the travel company behind it. Stays today, flights <span class="soon">Soon</span></p>
+        <div class="vis"><div class="book"><span>Book this trip</span><span>$1,276</span></div></div>
+      </div>
+    </div>
+
+    <!-- 5 planning -->
+    <div class="cell" style="--i:4">
+      <div class="face e">
+        <span class="lab">Planning</span>
+        <h3>The group chat</h3>
+        <div class="vis"><span class="bub">which hotel was it again?</span><br><span class="bub r">can someone resend the link</span><br><span class="bub">wait what day is the zoo</span></div>
+      </div>
+      <div class="face g" style="--pc:#34C759">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></b>Plan together</span>
+        <h3>One calendar, bookings already in.</h3>
+        <div class="vis"><div class="cal" aria-hidden="true">
+          <div>Fri<i style="--c:#0071E3"></i><i style="--c:#1D1D1F"></i></div><div>Sat<i style="--c:#34C759"></i></div><div>Sun<i style="--c:#FF9F0A"></i><i style="--c:#34C759"></i></div><div>Mon<i style="--c:#AF52DE"></i></div><div>Tue<i style="--c:#0071E3"></i></div></div>
+          <div class="faces"><span style="--c:#0071E3">A</span><span style="--c:#FF2D55">M</span><span style="--c:#34C759">L</span></div></div>
+      </div>
+    </div>
+
+    <!-- 6 the day -->
+    <div class="cell" style="--i:5">
+      <div class="face e">
+        <span class="lab">On the day</span>
+        <h3>Searching the inbox at the gate</h3>
+        <div class="vis inbox"><div><span>"confirmation"</span><span>37 results</span></div><div><span>Your booking (1 of 3)</span><span>Nov 2</span></div><div><span>Re: Fwd: itinerary</span><span>Oct 28</span></div></div>
+      </div>
+      <div class="face g" style="--pc:#FF9F0A">
+        <span class="lab"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/></svg></b>Today</span>
+        <h3>What's next, even offline.</h3>
+        <p>A morning note on your phone. Wallet pass <span class="soon">Soon</span></p>
+        <div class="vis"><div class="today"><span class="lead">Leave by <span>7:40</span></span><div class="row"><span>UA 512 · SFO 9:05</span><span>Gate on your pass</span></div><div class="row"><span>Check-in 4 pm</span><span>Get a ride →</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="cards" aria-hidden="true"><span style="--c:#0071E3;--r:-8deg"></span><span style="--c:#FF2D55;--r:4deg"></span><span style="--c:#34C759;--r:-2deg"></span></div>
+    <div>
+      <h3>Every traveller becomes a creator.</h3>
+      <p>Postcards from people who went: follow their path, or take your own. Then send yours.</p>
+    </div>
+    <a class="btn" href="#">Find a trip <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<script>
+const root = document.documentElement, mode = document.getElementById('mode');
+const setMode = d => { root.dataset.theme = d ? 'dark' : 'light'; mode.textContent = d ? 'Light mode' : 'Dark mode'; };
+setMode(location.search.includes('dark') || (!location.search.includes('light') && matchMedia('(prefers-color-scheme: dark)').matches));
+mode.onclick = () => setMode(root.dataset.theme !== 'dark');
+
+// the GitAway face keeps the old way as one struck line, so nobody has to flip back to compare
+document.querySelectorAll('.cell').forEach(c => {
+  const old = c.querySelector('.face.e h3').textContent, lab = c.querySelector('.face.g .lab');
+  lab.insertAdjacentHTML('afterend', `<span class="was">Elsewhere: <s>${old}</s></span>`);
+  c.querySelector('.face.e').setAttribute('aria-hidden', 'true');
+});
+// each card shows Elsewhere for a beat once it is well in view, then flips on its own; cards arriving together go one after another
+const quick = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let batch = [], timer;
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting || e.target.classList.contains('on')) return;
+  io.unobserve(e.target); batch.push(e.target); clearTimeout(timer);
+  timer = setTimeout(() => { batch.forEach((c, k) => { c.style.setProperty('--d', quick ? '0ms' : k * 110 + 'ms'); c.classList.add('on'); }); batch = []; }, quick ? 0 : 900);
+}), { threshold: .6 });
+const watch = () => document.querySelectorAll('.cell').forEach(c => io.observe(c));
+watch();
+document.getElementById('again').onclick = () => { document.querySelectorAll('.cell').forEach(c => { c.style.setProperty('--d', '0ms'); c.classList.remove('on'); }); setTimeout(watch, 500); };
+</script>
+</body>
+</html>

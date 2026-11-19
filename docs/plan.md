@@ -1864,3 +1864,19 @@ Founder, 2026-11-18: "every traveller becomes a creator, that feeds the guides, 
 - [x] creators are welcomed with "Your post deserves more than a scroll." on /guides/make (For creators) and the Postcards hub's make panel, followed by the plain promise: it becomes a trip people plan, book and take, in one place; your words and your links stay yours
 - [x] phone and laptop, light and dark, the Stage look; tests that pinned the old words updated to the new ones (never loosened)
 
+
+## F-299 Why another travel site? (the cover's flip) [todo]
+Founder, 2026-11-18: "highlight the unique features … a controversial line: why do we need another travel site? … don't make it a boring table, make it a very fancy thing"; round 2: "people will not change the tab from after and before, so either keep it side by side or do it automatically." Design: docs/design/cover-why/flip.html (round 2). Motion: the Flip compare pattern (omxqua `flip-compare`, spring hinge, transform and opacity only).
+- [ ] a section on the cover after the story: "Why another travel site?" with six cards (The catch up front and Reviews read for you wide; One grid, Book here, Plan together, Today), each opening on its grey "Elsewhere" face and flipping to GitAway on its own about a second after it is well in view (cards arriving together go one after another), no switch to press; "Watch again" replays
+- [ ] the GitAway face keeps the old way as one struck line ("Elsewhere: ~~Two tabs and a spreadsheet~~"), so both sides read without a tap; the grey face is aria-hidden; the band under it says "Every traveller becomes a creator." with Find a trip
+- [ ] every claim true today: flights and the wallet pass say Soon while they are off (flights follow `liteapi.flights_live()`); sample prices labelled as samples
+- [ ] reduced motion, `?still` and no script show the GitAway faces with their struck lines at once; Stage look, phone 390 and laptop 1440, light and dark; the cover's JavaScript budget (tests/test_cover_budget.py) still holds
+
+## F-300 My trip as a journey [todo]
+Brief: docs/briefs/journey.md (approved) · Design: docs/design/journey/index.html (round 2)
+- [ ] `/trip/plan` opens on the journey view, full width and height, with Journey · Grid (the grid as today); zoom Trip · Day · Hours keeps the centre time; Now during the trip
+- [ ] booked things from the booking: locked (shake, never drag), open the booking; flights as arcs; the stay as a band from check-in to check-out
+- [ ] add on the line and drag to retime (15 min snap) write through `planedit` with today's roles and survive a reload
+- [ ] the scene follows the hour at the centre: the place's colours (`placecolor`), sunrise and sunset computed for the place and date, cloud greys it, snow or rain falls only when weather.py says so; ticks carry the hour's sky and temperature, precipitation windows are a curtain with words, typical weather labelled, `weather.notes` shown, nothing invented
+- [ ] crowded times fold into one ghost card (at most 3 rows; booked things fold last), hover or tap opens the list, Spread them out zooms to Hours there
+- [ ] phone 390 and laptop 1440, light and dark; reduced motion stills the snow and springs; browser test covers add, drag, locked, fold and the grid toggle

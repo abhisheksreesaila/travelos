@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why another travel site</title>
+<!--
+  Prototype (F-299 draft): the section after the cover's scroll story that answers "Why another travel site?"
+  The Stage look (D-956..D-961): a flat grey stage, white cards, ink words, each card's icon tile in its own vivid colour,
+  orange only for a heads-up, green for good news, heavy Inter headlines. Every claim is one that is live today; the two
+  that are built but not switched on carry a "Soon" tag. Toggle ?dark or the button for dark mode.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stage: #F5F5F7; --card: #FFFFFF; --ink: #1D1D1F; --ink-2: #424245; --ink-3: #6E6E73; --line: rgb(0 0 0 / .08);
+  --sig: #F25500; --sig-ink: #B84A00; --sig-t: #FFF1E6; --good: #0F766E; --good-t: #E3F3EE;
+  --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px rgb(0 0 0 / .06);
+  --band: #1D1D1F; --band-ink: #F5F5F7; --band-ink-2: #A1A1A6;
+}
+:root[data-theme="dark"] {
+  --stage: #000000; --card: #1C1C1E; --ink: #F5F5F7; --ink-2: #D1D1D6; --ink-3: #A1A1A6; --line: rgb(255 255 255 / .10);
+  --sig-ink: #FF8A4C; --sig-t: rgb(242 85 0 / .16); --good: #34C3A9; --good-t: rgb(52 195 169 / .14);
+  --cta-bg: #F5F5F7; --cta-fg: #000000; --shadow: none; --band: #2C2C2E; --band-ink: #F5F5F7; --band-ink-2: #A1A1A6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stage: #000000; --card: #1C1C1E; --ink: #F5F5F7; --ink-2: #D1D1D6; --ink-3: #A1A1A6; --line: rgb(255 255 255 / .10);
+    --sig-ink: #FF8A4C; --sig-t: rgb(242 85 0 / .16); --good: #34C3A9; --good-t: rgb(52 195 169 / .14);
+    --cta-bg: #F5F5F7; --cta-fg: #000000; --shadow: none; --band: #2C2C2E; --band-ink: #F5F5F7; --band-ink-2: #A1A1A6;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--stage); color: var(--ink); font: 400 17px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.note { max-width: 72rem; margin: 0 auto; padding: 12px 16px; font-size: 14px; color: var(--ink-3); display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.note button { font: 600 14px Inter, sans-serif; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; min-height: 44px; }
+
+.why { max-width: 72rem; margin: 0 auto; padding: 64px 16px 96px; }
+.kick { display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.kick i { width: 8px; height: 8px; border-radius: 50%; background: var(--sig); display: inline-block; }
+h2 { font: 900 clamp(44px, 8vw, 92px)/.95 Inter, sans-serif; letter-spacing: -.045em; margin: 16px 0 0; }
+h2 .soft { color: var(--ink-3); }
+.lede { font-size: clamp(19px, 2.2vw, 24px); line-height: 1.4; color: var(--ink-2); max-width: 38rem; margin: 20px 0 0; font-weight: 500; letter-spacing: -.01em; }
+.lede b { color: var(--ink); font-weight: 700; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+.c { background: var(--card); border-radius: 24px; padding: 24px 24px 22px; box-shadow: var(--shadow); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; min-height: 260px; }
+.c.big { grid-column: span 2; }
+.tile { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: var(--pc); color: #fff; }
+.tile svg { width: 26px; height: 26px; }
+.c h3 { font: 800 24px/1.12 Inter, sans-serif; letter-spacing: -.025em; margin: 8px 0 0; }
+.c p { margin: 0; color: var(--ink-2); font-size: 16px; line-height: 1.5; }
+.else { margin-top: auto !important; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px !important; color: var(--ink-3) !important; }
+.else s { text-decoration-thickness: 1.5px; text-decoration-color: var(--sig); }
+.else em { font-style: normal; font-weight: 700; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; font-size: 12px; margin-right: 6px; }
+.soon { display: inline-block; vertical-align: middle; font: 700 11px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; margin-left: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip { font: 600 13px/1 Inter, sans-serif; padding: 8px 11px; border-radius: 999px; background: var(--sig-t); color: var(--sig-ink); }
+.chip.g { background: var(--good-t); color: var(--good); }
+.mini { display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 6px; margin-top: 6px; font: 600 12px/1 Inter, sans-serif; color: var(--ink-3); align-items: center; }
+.mini span.sq { height: 34px; border-radius: 9px; background: var(--stage); display: grid; place-items: center; color: var(--ink-2); font-weight: 700; font-size: 13px; }
+.mini span.sq.best { background: var(--ink); color: var(--card); }
+.mini span.l { padding-right: 6px; }
+
+.band { margin-top: 16px; background: var(--band); color: var(--band-ink); border-radius: 28px; padding: 40px 32px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: center; }
+.band h3 { font: 900 clamp(30px, 4.4vw, 52px)/1 Inter, sans-serif; letter-spacing: -.04em; margin: 0; }
+.band p { margin: 12px 0 0; color: var(--band-ink-2); font-size: 18px; }
+.band .go { justify-self: end; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+.btn { display: inline-flex; align-items: center; gap: 10px; font: 700 17px Inter, sans-serif; padding: 16px 26px; border-radius: 999px; background: var(--band-ink); color: var(--band); text-decoration: none; min-height: 52px; }
+.band small { color: var(--band-ink-2); font-size: 14px; }
+
+@media (max-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } .c.big { grid-column: span 2; } }
+@media (max-width: 640px) {
+  .why { padding: 40px 16px 64px; }
+  .grid { grid-template-columns: 1fr; gap: 12px; margin-top: 32px; }
+  .c.big { grid-column: auto; }
+  .c { min-height: 0; padding: 20px; }
+  .band { grid-template-columns: 1fr; padding: 28px 22px; }
+  .band .go { justify-self: start; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="note"><span>Prototype · the section after the cover's story</span><button type="button" id="mode">Dark mode</button></div>
+
+<section class="why" aria-labelledby="why-h">
+  <span class="kick"><i></i>Fair question</span>
+  <h2 id="why-h">Why another<br><span class="soft">travel site?</span></h2>
+  <p class="lede">Because the others hand you <b>ten tabs, two searches and the catch in the small print</b>, then leave you on your own the moment you book. GitAway does the work, before, during and after.</p>
+
+  <div class="grid">
+    <article class="c big" style="--pc:#0071E3">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+      <h3>Flights and stays on one grid. One number.</h3>
+      <p>Say the trip in a sentence. Nearby places down, days across: every square is the whole trip, flights and stay together, one total. The best one lights up.</p>
+      <div class="mini" aria-hidden="true">
+        <span class="l"></span><span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span>
+        <span class="l">Tahoe</span><span class="sq">$1,412</span><span class="sq best">$1,276</span><span class="sq">$1,350</span><span class="sq">$1,498</span>
+        <span class="l">Truckee</span><span class="sq">$1,388</span><span class="sq">$1,301</span><span class="sq">$1,342</span><span class="sq">$1,455</span>
+      </div>
+      <p class="else"><em>Elsewhere</em><s>A flight tab, a hotel tab, and a spreadsheet to add them up.</s></p>
+    </article>
+
+    <article class="c" style="--pc:#F25500">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17.5v.01"/></svg></span>
+      <h3>The catch, up front.</h3>
+      <p>Resort fees, parking, refund rules, the 3 pm check-in after a 9 am landing. Flagged before you pick.</p>
+      <div class="chips" aria-hidden="true"><span class="chip">$45 resort fee</span><span class="chip">Parking $38/night</span><span class="chip g">Free cancel to Dec 10</span></div>
+      <p class="else"><em>Elsewhere</em><s>Page four of the fine print, after you pay.</s></p>
+    </article>
+
+    <article class="c" style="--pc:#AF52DE">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
+      <h3>Reviews, read for you.</h3>
+      <p>The last 100 reviews as a trend, an AI summary of what guests love and warn about, and a box to ask them anything: "parking", "noise", "kids".</p>
+      <p class="else"><em>Elsewhere</em><s>4,000 reviews, half of them from 2019.</s></p>
+    </article>
+
+    <article class="c" style="--pc:#1D1D1F">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h3"/></svg></span>
+      <h3>Book it here. Just here.</h3>
+      <p>Paid through Nuitée, the travel company behind the booking. No hopping to sites you've never heard of, no new account at each. Stays today; flights <span class="soon">Soon</span></p>
+      <p class="else"><em>Elsewhere</em><s>Five redirects and a password for each.</s></p>
+    </article>
+
+    <article class="c" style="--pc:#34C759">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14h3M13 17h3"/></svg></span>
+      <h3>Plan it together.</h3>
+      <p>The same site that found the trip plans it: one calendar for everyone you invite, your bookings already in it, drag, add and chat.</p>
+      <p class="else"><em>Elsewhere</em><s>A group chat and a screenshot of a screenshot.</s></p>
+    </article>
+
+    <article class="c" style="--pc:#FF9F0A">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
+      <h3>The trip in your pocket.</h3>
+      <p>Today shows what's next and when to leave, works without signal, and a morning note lands on your phone. Wallet passes <span class="soon">Soon</span></p>
+      <p class="else"><em>Elsewhere</em><s>Digging through emails at the gate.</s></p>
+    </article>
+
+    <article class="c big" style="--pc:#FF2D55">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M13 9h5M13 12h5M13 15h3"/><rect x="6" y="9" width="4" height="5" rx="1"/></svg></span>
+      <h3>Trips from people like you.</h3>
+      <p>Postcards from travellers who went: their days, their tips, their links. Follow their path in one tap, or take your own. And when you're home, yours becomes one.</p>
+      <p class="else"><em>Elsewhere</em><s>A blog post you can read but can't book.</s></p>
+    </article>
+  </div>
+
+  <div class="band">
+    <div>
+      <h3>Every traveller becomes a creator.</h3>
+      <p>Every postcard brings the next traveller. That's the whole idea.</p>
+    </div>
+    <div class="go">
+      <a class="btn" href="#">Find a trip <span aria-hidden="true">→</span></a>
+      <small>Free to search. No account to look.</small>
+    </div>
+  </div>
+</section>
+
+<script>
+const root = document.documentElement, btn = document.getElementById('mode');
+const set = d => { root.dataset.theme = d ? 'dark' : 'light'; btn.textContent = d ? 'Light mode' : 'Dark mode'; };
+set(location.search.includes('dark') || (!location.search.includes('light') && matchMedia('(prefers-color-scheme: dark)').matches));
+btn.onclick = () => set(root.dataset.theme !== 'dark');
+</script>
+</body>
+</html>
