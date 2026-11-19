@@ -25,6 +25,7 @@ def trip(browser, base_url):
         phone = viewport["width"] < 720
         ctx = browser.new_context(viewport=viewport, reduced_motion="reduce", has_touch=phone, is_mobile=phone)
         ctx.set_default_timeout(5000)
+        ctx.add_init_script("if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('ga-plan-view', 'journey'); }")      # the default, once, whatever the suite's other tests keep
         if scheme == "dark":
             ctx.add_init_script("localStorage.setItem('ga-mode', 'dark')")
         contexts.append(ctx)
