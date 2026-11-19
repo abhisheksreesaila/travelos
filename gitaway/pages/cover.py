@@ -1,19 +1,20 @@
-"""The cover (F-266, cover v3 "one postcard": docs/briefs/cover-v3.md, the approved prototype docs/design/cover-v3/postcard.html, drawn in the Stage look by F-296, docs/design/palette-bo/cover.html): what a signed-out visitor sees at /.
+"""The cover (F-266, cover v3 "one postcard": docs/briefs/cover-v3.md, the approved prototype docs/design/cover-v3/postcard.html, drawn in the Stage look by F-296,
+docs/design/palette-bo/cover.html; cut to four beats and always dark by F-301): what a signed-out visitor sees at /.
 
-One postcard travels the whole story. It starts as a wish (the search), becomes the matrix (compare), the opened square (book), the calendar (plan together), the trip
-itself (go), the guide (share), the Instagram post, and someone else's wish (pass it on), then round again. Eight beats on one sticky stage:
+One postcard travels the whole story. It starts as a wish (the search), becomes the square (every way to go compared, then the whole trip booked in one place), the calendar
+(plan it with everyone) and the guide (every traveller becomes a creator). Four beats on one sticky stage:
 
-    the card         one card that reshapes between beats; its eight faces crossfade (no turning: the founder found a turning card dizzy)
+    the card         one card that reshapes between beats; its four faces crossfade (no turning: the founder found a turning card dizzy)
     the words        a bold caption per beat, rolling with the story (the real text of the story: every caption is in the page)
-    the ring         eight bold words (Wish, Compare, Book ...) round the card, turning one word per beat
-    the gallery      other families' postcards drifting nearer, one step per beat
-    the stage        an Apple-grey ground (F-296, the Stage look); on Go a fine snow drifts across it; light and dark follow the site's mode (assets/js/mode.js)
-    the close        "Go somewhere, together.", Start a trip and Browse postcards
+    the ring         four bold words (Wish, Square, Together, Creator) round the card, turning one word per beat
+    the gallery      other families' postcards drifting nearer, two steps per beat
+    the stage        a flat black ground (F-301: the cover is always dark, whatever ga-mode or the system says; the cover has no mode switch)
+    the close        the one call to action, at the very end: "Start a trip. Leave a trail."
 
 The first face is a real form (D-761: visitors search without an account): the visitor types a wish and "Show me every way" posts `q` to POST /plan/ask, which opens their own
 matrix. The sample sentence is the placeholder. Nothing here is autofocused.
 
-No jitter by construction (D-427, kept): the stage is CSS sticky and assets/js/cover.js only watches eight markers with an IntersectionObserver and sets attributes and one
+No jitter by construction (D-427, kept): the stage is CSS sticky and assets/js/cover.js only watches four markers with an IntersectionObserver and sets attributes and one
 custom property (the beat); the ring, the gallery and the card's sizes are CSS (calc, sin, cos, mod). No scroll handler, no requestAnimationFrame, no layout read, no
 transform from script (tests/test_cover.py reads the script). Under reduced motion, with ?still, without the script or on a screen under 560 px tall, every beat is a still
 card with its words under it.
@@ -26,7 +27,7 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
-from fasthtml.common import A, Article, Button, Div, Em, Footer, Form, H1, H2, Header, Li, Link, Main, Nav, NotStr, Ol, P, Script, Section, Span, Textarea, Title
+from fasthtml.common import A, Article, Button, Div, Em, Footer, H1, H2, Header, Link, Main, Nav, NotStr, P, Script, Section, Span, Title
 
 from gitaway import session
 from gitaway.icons import icon
@@ -42,21 +43,18 @@ LABEL = "Where would you like to go? Say it the way you'd tell a friend."
 SAMPLE_WISH = "Somewhere warm, then snow, for 4 of us, mid-December."
 DISCLOSURE = "Every family, place, price, temperature and count on this page is made up, to show how it works."
 
-# the eight beats: (the word on the ring, the caption's label, its headline, its soft words, what it says)
+# the four beats: (the word on the ring, the caption's label, its headline, its soft words, what it says)
 BEATS = (
     ("Wish", "GitAway · one trip, passed along", "Every trip starts as", "a wish.",
      "Say it the way you'd tell a friend. GitAway turns one sentence into every way to go."),
-    ("Compare", "Compare", "Every way to go,", "on one card.",
-     "Places down, days across. Each square is the whole trip for four: flights, stays, one total. The best one lights up."),
-    ("Book", "Book", "Tap a square.", "That's the trip.", "The flight, both stays and the sky, in one view. Book it in one go."),
-    ("Plan", "Plan", "Everyone", "gets a pen.",
-     "Your people add the zoo, the tacos, the sled hill to one calendar. A creator's postcard adds the tip that saves a morning."),
-    ("Go", "Go", "Then you", "just go.", "Beach on day one, snow by day four. The plan, the weather and the bookings ride along."),
-    ("Share", "Share", "Every traveller", "becomes a creator.", "Your trip comes home as a postcard: your days, your tips, your words. Nothing invented; prices and bookings stay private."),
-    ("Post", "Post", "Give it", "to the world.", "One card for Instagram, one link back to the whole trip."),
-    ("Pass it on", "Pass it on", "And someone else's", "trip begins.",
-     "The Riveras in Austin made it theirs in one tap, and every postcard brings the next traveller."),
+    ("Square", "The square", "Tap a square.", "That's the trip.",
+     "Every way to go is compared on one card, and the one you tap is the whole trip: flights, stays and the sky, one total. Book it right there."),
+    ("Together", "Together", "Everyone", "gets a pen.",
+     "Your people add the zoo, the tacos, the sled hill to one calendar, with what you booked already on it."),
+    ("Creator", "Creator", "Every traveller", "becomes a creator.",
+     "Your trip comes home as a postcard: your days, your tips, your words. Nothing invented; prices and bookings stay private."),
 )
+N = len(BEATS)
 
 # other families' postcards in the gallery: (what it says, its gradient)
 PLACES = ("Lisbon in 48 hours", "Tahoe ski week", "Kyoto in autumn", "Maui with toddlers", "New York at New Year", "Banff by train", "Mexico City, to eat", "Iceland ring road",
@@ -92,17 +90,11 @@ STAMP = ('<svg class="pm" viewBox="0 0 80 80" aria-hidden="true" focusable="fals
 # small drawings the faces use (fixed colours that read on the white card and on the dark one)
 I = {
     "arrow": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
-    "sun": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFB547"/></svg>',
-    "snow": '<svg viewBox="0 0 24 24" fill="none" stroke="#5B7DB8" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M5 8l14 8M5 16l14-8"/></svg>',
     "mix": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="10" r="4.5" fill="#FFB547"/><path d="M8 19a3.5 3.5 0 0 1 .4-7 4.8 4.8 0 0 1 9.2 1.3A2.9 2.9 0 0 1 17 19z" fill="#9AA6C4"/></svg>',
-    "cloud": '<svg viewBox="0 0 24 24" fill="#9AA6C4" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17.5 18z"/></svg>',
     "plane": '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z"/></svg>',
     "bed": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6" fill="currentColor"/></svg>',
     "lock": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     "check": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-    "heart": '<svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
-    "talk": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z"/></svg>',
-    "send": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 3 3 7z"/><path d="M10 13.5L21 3"/></svg>',
     "cur": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3l16 7-7 2-3 7z" fill="var(--bd)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>',
 }
 
@@ -130,41 +122,17 @@ def face_wish():
             f'<button class="go" type="submit">Show me every way {I["arrow"]}</button></form></div>')
 
 
-def face_wish_again():
-    """Face 7: someone else's wish, begun from the Patels' guide (a drawing; the form is face 0's)."""
-    words = _sentence(("Coast to snow,", "like the Patels,", "for 5 of us,", "in March."))
-    return (f'<div class="f wish"><div class="artbox">{art("wish")}<div class="ttl"><small>Greetings from</small><b>somewhere?</b></div>'
-            f'<div class="from">{I["check"]}From the Patels\' postcard</div><div class="sig">The Riveras · Austin</div></div>'
-            f'<div class="write"><div class="stampbox"><i></i></div>{STAMP}<div class="dear">Dear GitAway,</div><p class="sent">{words}<span class="caret"></span></p>'
-            f'<div class="go">Show me every way {I["arrow"]}</div></div></div>')
-
-
-DAYS = (("Fri", 11), ("Sat", 12), ("Sun", 13), ("Mon", 14), ("Tue", 15))
-ROWS = (("San Diego", "5 nights", (2410, 2290, 2180, 2240, 2350), "sun"), ("Big Bear", "5 nights", (2620, 2480, 2390, 2440, 2710), "snow"),
-        ("Coast + snow", "2 + 3 nights", (2260, 2110, 1940, 2050, 2380), "mix"))
-
-
-def face_matrix():
-    h = ['<div class="f mx"><header><b>Coast to snow, for 4</b><span>Each square: flights + stays, taxes in<br>Sample prices</span></header><div class="g"><span></span>']
-    for i, (d, n) in enumerate(DAYS):
-        h.append(f'<span class="h c{i + 1}">{d}<b>Dec {n}</b></span>')
-    k = 0
-    for ri, (name, nights, prices, kind) in enumerate(ROWS):
-        h.append(f'<span class="pl">{name}<small>{nights}</small></span>')
-        for i, p in enumerate(prices):
-            pick = ri == 2 and i == 2
-            cls = f'sq c{i + 1}{" pick" if pick else ""}{" over" if p > 2600 else ""}'
-            h.append(f'<span class="{cls}" style="--i:{k}">{I[kind]}${p:,}{"<small>Our pick</small><i class=tap></i>" if pick else ""}</span>')
-            k += 1
-    h.append("</div></div>")
-    return "".join(h)
-
-
 def face_square():
+    """Face 1, "the square": the whole trip compared and booked in one place. A row of start days (each square the whole trip), the one tapped, and the trip it opens: flights, both
+    stays, one total, and Book this trip, which becomes Booked. Sample prices, and it says so."""
     colours = ("var(--pl-sd)", "var(--pl-sun)", "var(--pl-lt)", "var(--pl-pink)", "var(--pl-la)", "var(--pl-teal)", "var(--pl-sun)", "var(--pl-sd)", "var(--pl-lt)", "var(--pl-pink)")
     conf = "".join(f'<i style="--c:{c};--x:{round(math.cos(i / len(colours) * math.tau) * 110)}px;--y:{round(math.sin(i / len(colours) * math.tau) * 70 - 40)}px"></i>'
                    for i, c in enumerate(colours))
-    return (f'<div class="f sqr"><div class="artbox">{art()}<div class="ttl"><small>Sun Dec 13 · 5 nights · 4 of us</small><b>Coast + snow</b></div></div><div class="body">'
+    days = (("Fri", 11), ("Sat", 12), ("Sun", 13), ("Mon", 14), ("Tue", 15))
+    prices = (2260, 2110, 1940, 2050, 2380)
+    heads = "".join(f'<span class="h">{d}<b>Dec {n}</b></span>' for d, n in days)
+    sqs = "".join(f'<span class="sq{" pick" if i == 2 else ""}" style="--i:{i}">{I["mix"]}${p:,}{"<small>Our pick</small><i class=tap></i>" if i == 2 else ""}</span>' for i, p in enumerate(prices))
+    return (f'<div class="f sqr"><div class="cmp"><header><b>Coast to snow, for 4</b><span>Each square is the whole trip</span></header><div class="strip">{heads}{sqs}</div></div><div class="body">'
             f'<div class="row" style="--i:0"><span class="ic" style="--ic:var(--pl-sd)">{I["plane"]}</span><span><b>Flights to San Diego</b><small>4 seats, there and back</small></span><span class="p">$612</span></div>'
             f'<div class="row" style="--i:1"><span class="ic" style="--ic:var(--pl-la)">{I["bed"]}</span><span><b>Hotel by the cove</b><small>2 nights · coast</small></span><span class="p">$544</span></div>'
             f'<div class="row" style="--i:2"><span class="ic" style="--ic:var(--pl-lt)">{I["bed"]}</span><span><b>Lodge in the pines</b><small>3 nights · snow</small></span><span class="p">$784</span></div>'
@@ -197,14 +165,6 @@ def face_calendar():
             + cur("var(--pl-pink)", "600ms", "220%", "30%", "115%", "330%", "Mum") + cur("var(--pl-sd)", "900ms", "-10%", "20%", "30%", "450%", "Sam") + "</div></div>")
 
 
-def face_go():
-    chips = (("sun", "71°", "Coast"), ("sun", "70°", "Zoo"), ("cloud", "52°", "Drive"), ("snow", "28°", "Snow"), ("snow", "31°", "Home"))
-    spans = "".join(f'<span style="--i:{i}">{I[k]}{t}<em>&nbsp;{w}</em></span>' for i, (k, t, w) in enumerate(chips))
-    return (f'<div class="f go"><div class="artbox">{art()}<div class="flakes"></div><div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div>'
-            '<span class="smp">Sample weather</span><div class="stamp s1">Day 1 · Coast · 71°</div><div class="stamp s2">Day 4 · Snow · 28°</div>'
-            f'<div class="chips">{spans}</div></div></div>')
-
-
 def face_guide():
     lines = (("Day 1", "Tacos at the market, night one. Go hungry.", "", ""), ("Day 2", "The cove at 9, before the crowds. Sea lions, guaranteed.", "From Maya's postcard", ""),
              ("Day 3", "Chains in the boot for the drive up, just in case.", "", "opt"), ("Day 4", "The sled hill behind the lodge. Ava's favourite day.", "", ""),
@@ -214,16 +174,7 @@ def face_guide():
             f'<div class="foot"><span>{I["lock"]}Prices and bookings stay private</span><span class="pub"><span class="b1">Publish</span><span class="b2">Published</span></span></div></div></div>')
 
 
-def face_post():
-    hearts = (("30%", "1.5s", "-20px"), ("48%", "1.8s", "14px"), ("64%", "2.1s", "-8px"), ("40%", "2.5s", "22px"))
-    fl = "".join(f'<i style="--x:{x};--d:{d};--dx:{dx}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></i>' for x, d, dx in hearts)
-    return (f'<div class="f post"><header><i>P</i><b>@thepatels</b><span>· on GitAway</span></header><div class="artbox">{art()}<div class="ttl"><small>Greetings from</small><b>San Diego</b><b>&amp; Big Bear</b></div></div>'
-            f'<h3>Coast to snow in five days</h3><div class="acts">{I["heart"]}{I["talk"]}{I["send"]}<span class="likes">2,418 likes · sample</span></div><div class="link">gitaway.me/trips/coast-to-snow</div>'
-            f'<div class="float">{fl}</div></div>')
-
-
-FACES = (face_wish, face_matrix, face_square, face_calendar, face_go, face_guide, face_post, face_wish_again)
-# each card's size in drawing units (1 unit = --u): wide and phone (cover.css holds the same table for the beat the stage is on)
+FACES = (face_wish, face_square, face_calendar, face_guide)
 
 
 def _side(k):
@@ -233,12 +184,12 @@ def _side(k):
 # ---------- the stage ----------
 
 def _ring():
-    """The ring of words: eight words on a circle, which turns one word per beat (cover.css rotates it by the beat); the beat's own word is inked."""
+    """The ring of words: four words on a circle, which turns one word per beat (cover.css rotates it by the beat); the beat's own word is inked."""
     rr = 440
     parts = ['<defs><path id="cv-rp" d="M500 60 A440 440 0 1 1 500 940 A440 440 0 1 1 500 60"/></defs>', f'<circle class="track" cx="500" cy="500" r="{rr + 46}"/>']
     for k, (word, *_rest) in enumerate(BEATS):
-        parts.append(f'<text class="w{" now" if k == 0 else ""}" dy="20"><textPath href="#cv-rp" startOffset="{k * 12.5 + 6.25}%" text-anchor="middle">{word}</textPath></text>')
-        a = k * math.pi / 4
+        parts.append(f'<text class="w{" now" if k == 0 else ""}" dy="20"><textPath href="#cv-rp" startOffset="{(k + .5) * 100 / N:g}%" text-anchor="middle">{word}</textPath></text>')
+        a = k * math.tau / N
         parts.append(f'<circle class="dot" r="7" cx="{500 + rr * math.sin(a):.1f}" cy="{500 - rr * math.cos(a):.1f}"/>')
     return Div(NotStr(f'<svg viewBox="0 0 1000 1000" focusable="false">{"".join(parts)}</svg>'), cls="ring", aria_hidden="true")
 
@@ -253,11 +204,7 @@ def _caps():
     for k, (_word, label, head, soft, text) in enumerate(BEATS):
         tag = H1 if k == 0 else H2
         lab = Div(label, cls="label") if k == 0 else Div(NotStr(f"<i>{k}</i>{label}"), cls="label")
-        extra = ()
-        if k == 0:
-            extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), Span(NotStr(DOWN), "Follow the postcard", cls="hint"), cls="acts cv-ctas"), P(DISCLOSURE, cls="note"))
-        if k == 7:
-            extra = (Div(A("Start a trip", href=plan_href(), cls="btn"), A("Browse postcards", href="/guides", cls="btn soft"), cls="acts cv-ctas"),)
+        extra = (Span(NotStr(DOWN), "Follow the postcard", cls="hint"), P(DISCLOSURE, cls="note")) if k == 0 else ()
         caps.append(Article(lab, tag(head, " ", Em(soft)), P(text), *extra, cls="cap now" if k == 0 else "cap", data_k=str(k), style=f"--k:{k}"))
     return Div(*caps, cls="caps")
 
@@ -267,26 +214,26 @@ def _pager():
                cls="pager", aria_label="The story")
 
 
-TWINS = (("t1", "var(--pl-pink)", "The Okafors · Chicago"), ("t2", "var(--pl-teal)", "Lena &amp; Jo · Denver"))
-
-
 def _story():
-    twins = "".join(f'<div class="twin {c}" style="--g:{g}" aria-hidden="true"><div><b>{who}</b></div></div>' for c, g, who in TWINS)
-    rig = Div(NotStr(twins), Div(Div(*[_side(k) for k in range(8)], cls="pc"), cls="bob"), Div(NotStr("Made theirs by 214 families<small>sample</small>"), cls="saved", aria_hidden="true"), cls="rig")
+    rig = Div(Div(Div(*[_side(k) for k in range(N)], cls="pc"), cls="bob"), cls="rig")
     stage = Div(_gallery(), _ring(), rig, _caps(), _pager(), cls="stage", data_beat="0", style="--k:0")
-    markers = Div(*[NotStr(f'<i style="--k:{k}"></i>') for k in range(8)], cls="beats", aria_hidden="true")
+    markers = Div(*[NotStr(f'<i style="--k:{k}"></i>') for k in range(N)], cls="beats", aria_hidden="true")
     return Section(stage, markers, id="story", aria_label="One trip, passed along")
 
 
 def _sky():
-    """The stage: the grey ground behind everything; on Go a fine snow drifts across it (cover.css, assets/js/cover.js sets data-mood)."""
-    return Div(cls="cv-sky", data_mood="shore", aria_hidden="true")
+    """The stage: the black ground behind everything."""
+    return Div(cls="cv-sky", aria_hidden="true")
+
+
+CLOSE_HEAD = ("Start a trip.", "Leave a trail.")
+CLOSE_LINE = "Make a wish, pick your square, plan it together, and send a postcard home."
 
 
 def _close():
-    return Section(Div(P("Find · Book · My trip · Postcards", cls="label"), H2("Go somewhere, ", Em("together.")),
-                       P("Choose the whole trip in one view, plan it with your people, and pass it on as a postcard."),
-                       Div(A("Start a trip", icon("arrow-right", 18, 2.2), href=plan_href(), cls="btn"), A("Browse postcards", href="/guides", cls="btn soft"), cls="acts cv-ctas"),
+    """The one call to action, at the very end (F-301)."""
+    return Section(Div(H2(CLOSE_HEAD[0], " ", Em(CLOSE_HEAD[1])), P(CLOSE_LINE),
+                       Div(A("Start a trip", icon("arrow-right", 18, 2.2), href=plan_href(), cls="btn"), cls="acts cv-ctas"),
                        P(DISCLOSURE, cls="small"), cls="endcard"), cls="cv-close end", id="your-turn")
 
 
@@ -300,22 +247,18 @@ def _footer(links):
     )
 
 
-def _mode():
-    return Button(icon("moon", 20, 2), icon("sun", 20, 2), type="button", cls="round cv-mode", data_mode_toggle="1", aria_pressed="false", aria_label="Dark mode", title="Dark mode")
-
-
 @lru_cache(maxsize=1)
 def _boot():
     return (ASSETS / "js" / "cover_boot.js").read_text(encoding="utf-8").strip()
 
 
 def page(footer_links):
-    """The whole cover document. `footer_links` are the landing's (home.footer_links)."""
+    """The whole cover document. `footer_links` are the landing's (home.footer_links). The cover is dark and has no mode switch: home.py draws <html data-mode="dark"> and mode.js leaves it."""
     head = styles(Link(rel="stylesheet", href="/assets/css/v2-tokens.css"), Link(rel="stylesheet", href="/assets/css/cover.css"), Link(rel="stylesheet", href="/assets/css/cover_why.css"),
                   Link(rel="preload", href="/assets/fonts/inter-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
                   Link(rel="preload", href="/assets/fonts/newsreader-variable.woff2", **{"as": "font"}, type="font/woff2", crossorigin=""),
                   *seo_meta(f"GitAway · {TITLE}", LEDE, OG_IMAGE),
-                  Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True), Script(src="/assets/js/cover_why.js", defer=True))
+                  Script(NotStr(_boot())), Script(src="/assets/js/cover.js", defer=True))
     return (
         Title(f"GitAway · {TITLE}"),
         *head,
@@ -325,7 +268,7 @@ def page(footer_links):
             A("Skip to the story", href="#main", cls="ga-skip"),
             Header(brand(), Div(preview(), cls="cv-tag"),
                    Nav(*[A(label, href=plan_href() if href == NAV[-1][1] else href) for label, href in NAV], cls="cv-nav", aria_label="Main"),
-                   _mode(), A("Sign in", href=session.signin_href(), cls="btn soft sm"), cls="cv-top"),
+                   A("Sign in", href=session.signin_href(), cls="btn soft sm"), cls="cv-top"),
             Main(_story(), coverwhy.section(), _close(), id="main"),
             _footer(footer_links),
             cls="v2 cv3"),

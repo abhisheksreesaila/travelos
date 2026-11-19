@@ -1,13 +1,13 @@
 /* The cover (F-266, cover v3 "one postcard": gitaway/pages/cover.py, assets/js/cover.js), in the Stage look (F-296, D-962..D-965; the approved prototype is docs/design/palette-bo/cover.html, look C).
-   One postcard travels eight beats on one sticky stage; html[data-mode] is the site's mode (mode.js).
-   The Stage: an Apple-grey ground (#F5F5F7, black in the dark), a white postcard (#1C1C1E in the dark) whose picture is the place's own vivid colour with white line art, big heavy Inter,
-   other families' postcards as saturated colour cards, a ring of words in quiet grey, a black Start a trip (white in the dark), and orange only as a small signal (the postage stamp, the
+   One postcard travels four beats on one sticky stage (F-301: Wish, the square, Together, Creator). The cover is always dark: home.py draws html[data-mode=dark], mode.js leaves a .cv-root page alone, and the bar has no switch.
+   The Stage: a black ground (#000), a dark postcard (#1C1C1E) whose picture is the place's own vivid colour with white line art, big heavy Inter,
+   other families' postcards as saturated colour cards, a ring of words in quiet grey, a light Start a trip, and orange only as a small signal (the postage stamp, the
    postmark, the Go stamps, the beat the pager is on). No cream, no pastel sky, no clouds. Every colour is a cover-scoped variable below (.cv3), so the cover does not move when the shared v2 tokens do.
    Contrast (measured, WCAG; the postcard faces' second ink is #5F5F64, 5.0 and up on their tinted tiles, the way D-957 moved the site's): ink #1D1D1F on #F5F5F7 15.5, #6E6E73 on #F5F5F7 4.7 and on white 5.1, orange words #B84A00 on white 5.2; dark: #A1A1A6 on #000 8.0, on #1C1C1E 6.9, #FF9A4D on #1C1C1E 8.1;
    white on the place colours: blue 4.7, violet 5.0, green 4.8.
    D-962 the ground is the grey, the postcard white (#1C1C1E in the dark); D-963 the picture is the place's own colour, its line art white, and the gallery, the icon tiles and the avatars wear
    the same colours; D-964 no sun, moon, stars or clouds: the sky is the stage, and Go's snow is flakes drifting over it; D-965 orange is a signal only (stamp, postmark, Go stamps, the pager's beat).
-   The ring of words (Wish, Compare, Book ...) is decoration: it is aria-hidden, the captions are the text, and the word the story is on (the current beat) is the one shown strongly; the rest are quiet.
+   The ring of words (Wish, Square, Together, Creator) is decoration: it is aria-hidden, the captions are the text, and the word the story is on (the current beat) is the one shown strongly; the rest are quiet.
    Two layouts from one markup:
      the still (the default): every beat is its own card with its words under it, nothing travels; it is what reduced motion, ?still, a page without its script
        and a screen under 35rem tall get;
@@ -15,28 +15,19 @@
        the words rolling, the ring of words turning, the other families' postcards drifting nearer, one step per beat.
    Every time is a token (--cvt-* and --v2-* in v2-tokens.css), every size is rem or the drawing unit --u (1/16 rem at full size). */
 
-html.cv-root { background: #F5F5F7; }
-:root[data-mode="dark"].cv-root { background: #000000; }
+html.cv-root { background: #000000; }
 .cv-root body { margin: 0; background: transparent; font: 450 1.0625rem/1.5 var(--f-ui); -webkit-font-smoothing: antialiased; overflow-x: clip; }
-.cv3 { --stage: #F5F5F7; --ink: #1D1D1F; --ink-2: #6E6E73; --ink-3: #6E6E73; --card-solid: #FFFFFF; --card-t: #FFFFFF; --card-2: #FFFFFF; --paper-2: #FFFFFF; --line: rgb(0 0 0 / .08); --line-2: rgb(0 0 0 / .16);
-  --cta-bg: #1D1D1F; --cta-fg: #FFFFFF; --cta-sh: 0 0.5rem 1.25rem -0.75rem rgb(0 0 0 / .5);
-  --sh1: 0 1px 0.125rem rgb(0 0 0 / .05); --sh2: 0 0.125rem 0.25rem rgb(0 0 0 / .05), 0 0.875rem 2rem -1rem rgb(0 0 0 / .25);
-  --sh3: 0 0.125rem 0.25rem rgb(0 0 0 / .04), 0 1.875rem 3.75rem -1.75rem rgb(0 0 0 / .28);
-  --f-display: "Inter", system-ui, sans-serif;
-  --sig: #F25500; --sig-ink: #B84A00; --good: #0F766E;
-  --pl-sd: #0071E3; --pl-la: #7D4CF0; --pl-lt: #17834A; --pl-pink: #D6336C; --pl-teal: #0E9AA7; --pl-sun: #E5A400;      /* the places' own colours (the prototype's set) */
-  --pc-paper: #FFFFFF; --pc-2: #F5F5F7; --pc-ink: #1D1D1F; --pc-ink-2: #5F5F64; --pc-line: rgb(0 0 0 / .08); --pc-line-2: rgb(0 0 0 / .14);
-  --pc-pen: var(--pc-ink); --pc-brand: #1D1D1F; --pc-on-brand: #FFFFFF; --pc-on: #FFFFFF;
-  --ring-dim: rgb(0 0 0 / .1); --flake: rgb(0 0 0 / .18);
-  color: var(--ink); --u: min(0.0625rem, calc((100vw - 2rem) / 680)); }
-:root[data-mode="dark"] .cv3 { --stage: #000000; --ink: #F5F5F7; --ink-2: #A1A1A6; --ink-3: #A1A1A6; --card-solid: #1C1C1E; --card-t: #1C1C1E; --card-2: #2C2C2E; --paper-2: #1C1C1E; --line: rgb(255 255 255 / .1); --line-2: rgb(255 255 255 / .18);
+.cv3 { --stage: #000000; --ink: #F5F5F7; --ink-2: #A1A1A6; --ink-3: #A1A1A6; --card-solid: #1C1C1E; --card-t: #1C1C1E; --card-2: #2C2C2E; --paper-2: #1C1C1E; --line: rgb(255 255 255 / .1); --line-2: rgb(255 255 255 / .18);
   --cta-bg: #F5F5F7; --cta-fg: #1D1D1F; --cta-sh: 0 0.5rem 1.25rem -0.75rem rgb(0 0 0 / .9);
   --sh1: 0 1px 0.125rem rgb(0 0 0 / .5); --sh2: 0 0.875rem 2rem -1rem rgb(0 0 0 / .9), 0 0 0 1px rgb(255 255 255 / .06);
   --sh3: 0 1.875rem 4.375rem -1.75rem rgb(0 0 0 / .9), 0 0 0 1px rgb(255 255 255 / .06);
-  --sig: #FF7A1A; --sig-ink: #FF9A4D;
+  --f-display: "Inter", system-ui, sans-serif;
+  --sig: #FF7A1A; --sig-ink: #FF9A4D; --good: #0F766E;
+  --pl-sd: #0071E3; --pl-la: #7D4CF0; --pl-lt: #17834A; --pl-pink: #D6336C; --pl-teal: #0E9AA7; --pl-sun: #E5A400;      /* the places' own colours (the prototype's set) */
   --pc-paper: #1C1C1E; --pc-2: #2C2C2E; --pc-ink: #F5F5F7; --pc-ink-2: #A1A1A6; --pc-line: rgb(255 255 255 / .1); --pc-line-2: rgb(255 255 255 / .18);
-  --pc-brand: #F5F5F7; --pc-on-brand: #1D1D1F;
-  --ring-dim: rgb(255 255 255 / .1); --flake: rgb(255 255 255 / .4); }
+  --pc-pen: var(--pc-ink); --pc-brand: #F5F5F7; --pc-on-brand: #1D1D1F; --pc-on: #FFFFFF;
+  --ring-dim: rgb(255 255 255 / .1);
+  color: var(--ink); --u: min(0.0625rem, calc((100vw - 2rem) / 680)); }
 .cv3 *, .cv3 *::before, .cv3 *::after { box-sizing: border-box; }
 .cv3 :where(h1, h2, h3) { font-family: var(--f-display); font-weight: 800; letter-spacing: -0.045em; text-wrap: balance; margin: 0; }
 .cv3 :where(.cap, .endcard) em { font-style: normal; font-weight: 800; color: var(--ink-3); }
@@ -57,17 +48,9 @@ html.cv-root { background: #F5F5F7; }
 .cv3 .btn svg { width: 1.125rem; height: 1.125rem; }
 .cv3 .round { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border: 0; border-radius: 50%; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh1); cursor: pointer; }
 .cv3 .round svg { width: 1.25rem; height: 1.25rem; grid-area: 1 / 1; }
-.cv3 .cv-mode svg + svg { display: none; }
-:root[data-mode="dark"] .cv3 .cv-mode svg:first-child { display: none; }
-:root[data-mode="dark"] .cv3 .cv-mode svg + svg { display: block; }
 
-/* ============ the stage: the grey ground; on Go a fine snow drifts across it ============ */
-.cv-sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--stage); }
-.cv-sky::after { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity var(--v2-slow) var(--v2-ease);
-  background-image: radial-gradient(circle, var(--flake) 0.1rem, transparent 0.15rem), radial-gradient(circle, var(--flake) 0.0625rem, transparent 0.1rem); background-size: 4.5rem 4.5rem, 2.75rem 2.75rem; background-position: 0 0, 1.25rem 1.75rem;
-  animation: skysnow 16s linear infinite; }
-.cv-sky[data-mood="snow"]::after { opacity: 1; }
-@keyframes skysnow { to { background-position: 0 4.5rem, 1.25rem 4.5rem; } }
+/* ============ the stage: the black ground ============ */
+.cv-sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--stage); }
 
 /* ============ the bar ============ */
 .cv-top { position: fixed; z-index: 50; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 0.625rem; padding: max(0.875rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) 0 max(1.5rem, env(safe-area-inset-left)); pointer-events: none; }
@@ -83,7 +66,7 @@ html.cv-root { background: #F5F5F7; }
 #story { position: relative; padding: 6rem 1rem 2rem; }
 .stage { display: flex; flex-direction: column; align-items: center; }
 .stage :is(.rig, .bob, .pc, .caps) { display: contents; }
-.stage :is(.gal, .ring, .pager, .twin, .saved) { display: none; }
+.stage :is(.gal, .ring, .pager) { display: none; }
 .beats { display: none; }
 .side { order: calc(var(--k) * 2); position: relative; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); margin-top: 3rem; border-radius: calc(16 * var(--u)); overflow: hidden; background: var(--pc-paper); box-shadow: var(--sh3); }
 .side:first-child { margin-top: 0; }
@@ -97,52 +80,45 @@ html.cv-root { background: #F5F5F7; }
 .cap .hint { display: none; }
 /* the unit of the drawings, and each card's size in it (the film's stage reads the same table by the beat) */
 :is(.stage .pc, .side) { --w: 520; --h: 340; }
-:is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 640; --h: 400; }
-:is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 380; --h: 425; }
-:is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 660; --h: 430; }
-:is(.stage[data-beat="4"] .pc, .side[data-k="4"]) { --w: 540; --h: 350; }
-:is(.stage[data-beat="5"] .pc, .side[data-k="5"]) { --w: 400; --h: 545; }
-:is(.stage[data-beat="6"] .pc, .side[data-k="6"]) { --w: 400; --h: 500; }
-:is(.stage[data-beat="7"] .pc, .side[data-k="7"]) { --w: 520; --h: 340; }
+:is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 400; --h: 480; }
+:is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 660; --h: 430; }
+:is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 400; --h: 545; }
 @media (max-width: 47.5rem) {
-  :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 380; }
-  :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 520; --h: 440; }
-  :is(.stage[data-beat="4"] .pc, .side[data-k="4"]) { --w: 520; --h: 340; }
-  :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 520; --h: 620; }
-  :is(.stage[data-beat="5"] .pc, .side[data-k="5"]) { --w: 520; --h: 700; }
-  :is(.stage[data-beat="0"] .pc, .side[data-k="0"], .stage[data-beat="7"] .pc, .side[data-k="7"]) { --w: 520; --h: 400; }
+  :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 600; }
+  :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 520; --h: 440; }
+  :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 520; --h: 700; }
+  :is(.stage[data-beat="0"] .pc, .side[data-k="0"]) { --w: 520; --h: 400; }
 }
 /* a still holds each moment's last frame at once */
 html:not(.cv-film) .cv3 :is(*, *::before, *::after) { animation-duration: var(--cvt-1) !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: var(--cvt-1) !important; transition-delay: 0s !important; }
-html:not(.cv-film) .cv3 :is(.caret, .flakes) { animation: none !important; }
 html:not(.cv-film) .cv3 .cur { display: none; }
 
 /* ============ the film: one card on a pinned stage ============ */
 @media (prefers-reduced-motion: no-preference) and (min-height: 35rem) {
   html.cv-film .cv3 { --u: min(0.0625rem, calc((100vw - 2rem) / 680), calc((100svh - 8rem) / 560)); }
-  .cv-film #story { height: calc(8 * 100svh); padding: 0; }
+  .cv-film #story { height: calc(4 * 100svh); padding: 0; }
   .cv-film .beats { display: block; position: absolute; inset: 0; pointer-events: none; }
   .cv-film .beats i { position: absolute; left: 0; right: 0; height: 100svh; top: calc(var(--k) * 100svh); }
   .cv-film .stage { position: sticky; top: 0; display: block; height: 100svh; overflow: hidden; perspective: 68.75rem; perspective-origin: var(--cx) var(--cy); --cx: 64%; --cy: 52%; }
-  .cv-film .stage :is(.gal, .ring, .pager, .twin, .saved) { display: block; }
+  .cv-film .stage :is(.gal, .ring, .pager) { display: block; }
   .cv-film .stage .pager { display: flex; }
   .cv-film .stage :is(.rig, .bob) { display: block; }
   .cv-film .stage .pc { display: block; }
 
-  /* the gallery: other families' postcards drifting through the room, one step nearer every beat (the slot of a card is CSS: mod(card - beat)) */
+  /* the gallery: other families' postcards drifting through the room, two steps nearer every beat (the slot of a card is CSS: mod(card - 2 beat)) */
   .cv-film .gal { position: absolute; left: var(--cx); top: var(--cy); width: 0; height: 0; transform-style: preserve-3d; --R: min(38.75rem, 36vw); }
   .cv-film .gal-spin { position: absolute; transform-style: preserve-3d; animation: spin 140s linear infinite; }
   @keyframes spin { to { rotate: z 360deg; } }
-  .cv-film .gal i { --s: mod(var(--i) - var(--k) + 16, 16); --a: calc(var(--s) * 2.2rad + .4rad);
+  .cv-film .gal i { --s: mod(var(--i) - var(--k) * 2 + 16, 16); --a: calc(var(--s) * 2.2rad + .4rad);
     position: absolute; left: -4.6875rem; top: -3.125rem; width: 9.375rem; height: 6.25rem; border-radius: 0.5rem; background: var(--g); border: 0.3125rem solid var(--pc-paper); box-shadow: 0 0.625rem 1.5rem -0.75rem rgb(0 0 0 / .4);
     transform: translate3d(calc(cos(var(--a)) * var(--R)), calc(sin(var(--a)) * var(--R) * .62), calc(23.75rem - var(--s) * 14.375rem)) rotate(calc((mod(var(--s), 3) - 1) * 7deg));
     opacity: max(0, min(.9, calc((14 - var(--s)) / 5), calc(var(--s) * var(--s) * .35)));
     transition: transform var(--cvt-1400) var(--v2-ease), opacity var(--cvt-900) var(--v2-ease); }
   .cv-film .gal i b { position: absolute; left: 0; right: 0; bottom: 0; padding: 0.1875rem 0.375rem; background: var(--pc-paper); color: var(--pc-ink); font: 650 max(var(--label-min), 0.75rem)/1.2 var(--f-ui); white-space: nowrap; overflow: hidden; }
 
-  /* the ring of words: it turns one word per beat, the way the story goes round */
+  /* the ring of words: it turns a quarter per beat, the way the story goes round */
   .cv-film .ring { position: absolute; left: var(--cx); top: var(--cy); width: var(--rd); height: var(--rd); translate: -50% -50%; --rd: min(94svh, 60vw); pointer-events: none; }
-  .cv-film .ring svg { width: 100%; height: 100%; overflow: visible; rotate: calc(-22.5deg - var(--k) * 45deg); transition: rotate var(--cvt-1100) var(--v2-ease); }
+  .cv-film .ring svg { width: 100%; height: 100%; overflow: visible; rotate: calc(-45deg - var(--k) * 90deg); transition: rotate var(--cvt-1100) var(--v2-ease); }
   .cv-film .ring text { font: 800 3rem/1 var(--f-display); letter-spacing: -0.04em; fill: var(--ring-dim); transition: fill var(--cvt-600) var(--v2-ease); }
   .cv-film .ring text.now { fill: var(--ink); }
   .cv-film .ring circle.dot { fill: var(--ring-dim); }
@@ -177,7 +153,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   @keyframes nudge { 50% { translate: 0 0.25rem; } }
   .cv-film .cap .note { font-size: max(var(--text-min), 0.9375rem); }
 
-  /* the pager: eight stops, the words of the ring */
+  /* the pager: four stops, the words of the ring */
   .cv-film .pager { position: absolute; z-index: 6; right: 1.25rem; top: 50%; translate: 0 -50%; flex-direction: column; gap: 0.125rem; padding: 0.375rem; border-radius: 99rem; background: var(--card-t); box-shadow: var(--sh1), inset 0 0 0 1px var(--line); }
   .cv-film .pager button { position: relative; display: grid; place-items: center; width: 3rem; height: 3rem; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
   .cv-film .pager button::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ink-3); opacity: .45; transition: scale var(--cvt-400) var(--spring), opacity var(--cvt-300), background-color var(--cvt-300); }
@@ -185,18 +161,6 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   .cv-film .pager button span { position: absolute; right: calc(100% + 0.25rem); padding: 0.375rem 0.625rem; border-radius: 99rem; background: var(--card-solid); box-shadow: var(--sh1); font: 600 max(var(--text-min), 0.875rem)/1 var(--f-ui); white-space: nowrap; opacity: 0; translate: 0.5rem 0; pointer-events: none; transition: opacity var(--v2-quick), translate var(--cvt-300) var(--spring); }
   .cv-film .pager button:is(:hover, :focus-visible) span { opacity: 1; translate: 0 0; }
 
-  /* the copies that fan out from behind the card on the last beat, and the line under it */
-  .cv-film .twin { position: absolute; left: 0; top: 0; width: calc(300 * var(--u)); height: calc(196 * var(--u)); padding: calc(7 * var(--u)); border-radius: calc(12 * var(--u)); background: var(--pc-paper); box-shadow: var(--sh2); opacity: 0; translate: -50% -50%;
-    transform: translate3d(0, 0, -2.5rem) rotate(0deg) scale(.9); transition: transform var(--cvt-900) var(--spring-soft), opacity var(--cvt-300) var(--v2-ease); }
-  .cv-film .twin > div { position: relative; height: 100%; border-radius: calc(7 * var(--u)); background: var(--g); overflow: hidden; }
-  .cv-film .twin b { position: absolute; left: calc(10 * var(--u)); bottom: calc(10 * var(--u)); padding: calc(4 * var(--u)) calc(8 * var(--u)); border-radius: calc(7 * var(--u)); background: var(--pc-paper); color: var(--pc-ink); font: 650 max(var(--text-min), 0.9375rem)/1.2 var(--f-ui); }
-  .cv-film .stage[data-beat="7"] .twin { opacity: 1; transition-delay: var(--cvt-500); }
-  .cv-film .stage[data-beat="7"] .twin.t1 { transform: translate3d(calc(-250 * var(--u)), calc(-150 * var(--u)), -5rem) rotate(-8deg); }
-  .cv-film .stage[data-beat="7"] .twin.t2 { transform: translate3d(calc(260 * var(--u)), calc(140 * var(--u)), -3.75rem) rotate(7deg); transition-delay: var(--cvt-750); }
-  .cv-film .saved { position: absolute; left: 0; top: calc(200 * var(--u)); translate: -50% 0; padding: 0.625rem 0.875rem; border-radius: 1rem; background: var(--card-solid); color: var(--ink); box-shadow: var(--sh2), 0 0 0 1px var(--line); font: 600 max(var(--text-min), 0.9375rem)/1.25 var(--f-ui); white-space: nowrap; opacity: 0; scale: .9;
-    transition: opacity var(--cvt-400) var(--v2-ease), scale var(--cvt-600) var(--spring); }
-  .cv-film .saved small { display: block; color: var(--ink-2); font-weight: 500; font-size: max(var(--label-min), 0.8125rem); }
-  .cv-film .stage[data-beat="7"] .saved { opacity: 1; scale: 1; transition-delay: var(--cvt-1400); }
 }
 
 /* ============ the faces (all drawn on paper; the type has floors so a phone can read it) ============ */
@@ -204,7 +168,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .f svg.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .f em { font-style: normal; color: var(--pc-ink-2); }
 .f .artbox { position: relative; overflow: hidden; border-radius: calc(9 * var(--u)); background: var(--pc, var(--pl-sd)); }      /* the picture is the place's own colour, its line art white */
-.f:is(.sqr, .go, .guide, .post) { --pc: var(--pl-lt); }
+.f.guide { --pc: var(--pl-lt); }
 .f .ttl { position: absolute; left: calc(18 * var(--u)); top: calc(16 * var(--u)); color: var(--pc-on); }
 .f .ttl small { display: block; font: 700 max(0.6875rem, calc(11 * var(--u)))/1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: var(--pc-on); }
 .f .ttl b { display: block; margin-top: calc(4 * var(--u)); font: 700 max(1.0625rem, calc(32 * var(--u)))/1 var(--f-display); letter-spacing: -0.02em; }
@@ -220,7 +184,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 @keyframes press { 0%, 100% { scale: 1; } 40% { scale: .93; } }
 @keyframes fade { from { opacity: 0; } }
 
-/* 0 and 7: the wish (art on the left, the sentence written on the right). Face 0's writing is a real form. */
+/* 0: the wish (art on the left, the sentence written on the right). The writing is a real form. */
 .f.wish { display: grid; grid-template-columns: 1.08fr 1fr; gap: calc(14 * var(--u)); padding: calc(12 * var(--u)); }
 .wish .write { position: relative; padding: calc(70 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u)) 0; display: flex; flex-direction: column; margin: 0; }
 .wish .write::before { content: ""; position: absolute; left: calc(-8 * var(--u)); top: calc(14 * var(--u)); bottom: calc(14 * var(--u)); border-left: 0.0938rem solid var(--pc-line-2); }
@@ -240,61 +204,47 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   animation: pop var(--cvt-600) var(--spring) both var(--cvt-2100), press var(--cvt-420) var(--v2-ease) var(--cvt-3100); }
 .wish .go svg { width: 1.1em; height: 1.1em; }
 .wish .pm { right: calc(52 * var(--u)); top: calc(16 * var(--u)); }
-.wish .from { position: absolute; left: calc(14 * var(--u)); bottom: calc(14 * var(--u)); display: inline-flex; align-items: center; gap: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)); border-radius: 99rem; background: var(--pc-paper); color: var(--pc-ink); font: 650 max(0.6875rem, calc(12 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop var(--cvt-600) var(--spring) both var(--cvt-300); }
-.wish .from svg { width: 1.1em; height: 1.1em; }
-.wish .sig { position: absolute; left: calc(14 * var(--u)); bottom: calc(14 * var(--u)); padding: calc(4 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--pc-paper); font: 500 max(0.75rem, calc(15 * var(--u)))/1.2 var(--f-display); }
 .wish .from + .sig { bottom: calc(48 * var(--u)); }
 
-/* 1: compare (the matrix) */
-.f.mx { padding: calc(18 * var(--u)); display: flex; flex-direction: column; gap: calc(12 * var(--u)); }
-.mx header { display: flex; align-items: baseline; justify-content: space-between; gap: calc(10 * var(--u)); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-300); }
-.mx header b { font: 700 max(0.9375rem, calc(23 * var(--u)))/1.1 var(--f-display); letter-spacing: -0.015em; }
-.mx header span { color: var(--pc-ink-2); font-size: max(0.6875rem, calc(12 * var(--u))); text-align: right; }
-.mx .g { flex: 1; display: grid; grid-template-columns: 1.3fr repeat(5, 1fr); grid-template-rows: auto repeat(3, 1fr); gap: calc(8 * var(--u)); }
-.mx .h { text-align: center; color: var(--pc-ink-2); font: 600 max(0.6875rem, calc(12 * var(--u)))/1.2 var(--f-ui); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-350); }
-.mx .h b { display: block; color: var(--pc-ink); font-size: max(0.6875rem, calc(14 * var(--u))); }
-.mx .pl { align-self: center; font: 600 max(0.6875rem, calc(14 * var(--u)))/1.15 var(--f-ui); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-400); }
-.mx .pl small { display: block; color: var(--pc-ink-2); font-weight: 500; font-size: max(0.6875rem, calc(12 * var(--u))); }
-.mx .sq { position: relative; display: grid; place-content: center; justify-items: center; gap: calc(3 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--pc-2); box-shadow: inset 0 0 0 1px var(--pc-line);
-  font: 700 max(0.6875rem, calc(15 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; animation: pop var(--cvt-520) var(--spring) both; animation-delay: calc(var(--cvt-450) + var(--i) * var(--cv-stag)); }
-.mx .sq svg { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
-.mx .sq.over { color: var(--pc-ink-2); background: var(--pc-paper); }
-.mx .sq.pick { animation: pop var(--cvt-520) var(--spring) both calc(var(--cvt-450) + var(--i) * var(--cv-stag)), lit var(--cvt-700) var(--v2-ease) forwards var(--cvt-1500); }
-.mx .sq.pick small { padding: calc(3 * var(--u)) calc(7 * var(--u)); border-radius: 99rem; background: var(--pc-on-brand); color: var(--pc-brand); font: 700 max(0.6875rem, calc(11 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop var(--cvt-500) var(--spring) both var(--cvt-1900); }
-@keyframes lit { to { background: var(--pc-brand); color: var(--pc-on-brand); box-shadow: 0 0 0 calc(4 * var(--u)) var(--pc-line-2), 0 0.875rem 1.5rem -0.625rem rgb(0 0 0 / .5); scale: 1.08; } }
-.mx .tap { position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0.125rem var(--pc-brand); opacity: 0; animation: tap var(--cvt-700) var(--v2-ease) var(--cvt-2500); }
+/* 1: the square (every way to go compared, then the whole trip booked in one place) */
+.f.sqr { display: flex; flex-direction: column; padding: calc(16 * var(--u)) calc(18 * var(--u)) 0; gap: calc(8 * var(--u)); }
+.sqr .cmp header { display: flex; align-items: baseline; justify-content: space-between; gap: calc(10 * var(--u)); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-300); }
+.sqr .cmp header b { font: 700 max(0.9375rem, calc(20 * var(--u)))/1.1 var(--f-display); letter-spacing: -0.015em; }
+.sqr .cmp header span { color: var(--pc-ink-2); font-size: max(0.6875rem, calc(12 * var(--u))); text-align: right; }
+.sqr .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(7 * var(--u)); margin-top: calc(10 * var(--u)); }
+.sqr .strip .h { text-align: center; color: var(--pc-ink-2); font: 600 max(0.6875rem, calc(11 * var(--u)))/1.2 var(--f-ui); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-350); }
+.sqr .strip .h b { display: block; color: var(--pc-ink); font-size: max(0.6875rem, calc(12 * var(--u))); }
+.sqr .sq { position: relative; display: grid; place-content: center; justify-items: center; gap: calc(3 * var(--u)); min-height: calc(54 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--pc-2); box-shadow: inset 0 0 0 1px var(--pc-line);
+  font: 700 max(0.6875rem, calc(13 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; animation: pop var(--cvt-520) var(--spring) both; animation-delay: calc(var(--cvt-450) + var(--i) * var(--cv-stag)); }
+.sqr .sq svg { width: calc(16 * var(--u)); height: calc(16 * var(--u)); }
+.sqr .sq.pick { animation: pop var(--cvt-520) var(--spring) both calc(var(--cvt-450) + var(--i) * var(--cv-stag)), lit var(--cvt-700) var(--v2-ease) forwards var(--cvt-1000); }
+.sqr .sq.pick small { padding: calc(2 * var(--u)) calc(6 * var(--u)); border-radius: 99rem; background: var(--pc-on-brand); color: var(--pc-brand); font: 700 max(0.6875rem, calc(10 * var(--u)))/1 var(--f-ui); white-space: nowrap; animation: pop var(--cvt-500) var(--spring) both var(--cvt-1400); }
+@keyframes lit { to { background: var(--pc-brand); color: var(--pc-on-brand); box-shadow: 0 0 0 calc(3 * var(--u)) var(--pc-line-2), 0 0.875rem 1.5rem -0.625rem rgb(0 0 0 / .5); scale: 1.06; } }
+.sqr .tap { position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0.125rem var(--pc-brand); opacity: 0; animation: tap var(--cvt-700) var(--v2-ease) var(--cvt-1100); }
 @keyframes tap { 0% { opacity: 1; scale: .9; } 100% { opacity: 0; scale: 1.5; } }
-
-/* 2: the square, opened (the whole trip) */
-.f.sqr { display: flex; flex-direction: column; }
-.sqr .artbox { height: 31%; border-radius: 0; flex: none; }
-.sqr .artbox .ttl { top: auto; bottom: calc(12 * var(--u)); }
-.sqr .artbox .ttl b { font-size: max(1rem, calc(26 * var(--u))); }
-.sqr .artbox::after { content: ""; position: absolute; left: 0; bottom: 0; width: 85%; height: 75%; background: linear-gradient(to top right, var(--pc, var(--pl-sd)) 40%, transparent 85%); }      /* the picture's white line art never runs through the title (D-970) */
-.sqr .artbox .ttl { z-index: 1; }
-.sqr .body { flex: 1; padding: calc(12 * var(--u)) calc(18 * var(--u)) calc(16 * var(--u)); display: flex; flex-direction: column; }
-.sqr .row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: calc(10 * var(--u)); padding: calc(7 * var(--u)) 0; border-bottom: 1px solid var(--pc-line); animation: rise var(--cvt-500) var(--v2-ease) both; animation-delay: calc(var(--cvt-400) + var(--i) * var(--cvt-140)); }
+.sqr .body { flex: 1; padding: calc(14 * var(--u)) 0 calc(14 * var(--u)); display: flex; flex-direction: column; }
+.sqr .row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: calc(10 * var(--u)); padding: calc(6 * var(--u)) 0; border-bottom: 1px solid var(--pc-line); animation: rise var(--cvt-500) var(--v2-ease) both; animation-delay: calc(var(--cvt-1500) + var(--i) * var(--cvt-140)); }
 .sqr .row .ic { display: grid; place-items: center; width: calc(28 * var(--u)); height: calc(28 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--ic); color: var(--pc-on); }
 .sqr .row .ic svg { width: 60%; height: 60%; }
 .sqr .row b { display: block; font-weight: 650; }
 .sqr .row small { display: block; color: var(--pc-ink-2); font-size: max(0.6875rem, calc(12 * var(--u))); }
 .sqr .row .p { font-weight: 650; font-variant-numeric: tabular-nums; }
-.sqr .tot { display: flex; align-items: baseline; justify-content: space-between; padding: calc(10 * var(--u)) 0 calc(8 * var(--u)); animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-900); }
+.sqr .tot { display: flex; align-items: baseline; justify-content: space-between; padding: calc(8 * var(--u)) 0; animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-1900); }
 .sqr .tot span { color: var(--pc-ink-2); }
-.sqr .tot b { font: 700 max(1.25rem, calc(32 * var(--u)))/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.sqr .book { position: relative; margin-top: auto; display: grid; place-items: center; min-height: max(3rem, calc(46 * var(--u))); border-radius: 99rem; background: var(--pc-brand); color: var(--pc-on-brand); font: 700 max(0.75rem, calc(15 * var(--u)))/1 var(--f-ui); box-shadow: 0 0.625rem 1.375rem -0.75rem rgb(0 0 0 / .5);
-  animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-1100), press var(--cvt-420) var(--v2-ease) var(--cvt-1900), booked var(--cvt-400) var(--v2-ease) forwards var(--cvt-2200); }
+.sqr .tot b { font: 700 max(1.25rem, calc(30 * var(--u)))/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.sqr .book { position: relative; margin-top: auto; display: grid; place-items: center; min-height: max(3rem, calc(46 * var(--u))); border-radius: 99rem; background: var(--pc-brand); color: var(--pc-on-brand); font: 700 max(0.75rem, calc(15 * var(--u)))/1 var(--f-ui); box-shadow: 0 0.625rem 1.375rem -0.75rem rgb(0 0 0 / .6);
+  animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-2000), press var(--cvt-420) var(--v2-ease) var(--cvt-2500), booked var(--cvt-400) var(--v2-ease) forwards var(--cvt-2750); }
 @keyframes booked { to { background: var(--good); color: var(--pc-on); box-shadow: 0 0.625rem 1.375rem -0.75rem var(--good); } }
 .sqr .book > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: calc(6 * var(--u)); }
-.sqr .book .b2 { opacity: 0; animation: show var(--cvt-300) var(--v2-ease) forwards var(--cvt-2200); }
+.sqr .book .b2 { opacity: 0; animation: show var(--cvt-300) var(--v2-ease) forwards var(--cvt-2750); }
 @keyframes show { to { opacity: 1; } }
-.sqr .book .b1 { animation: fade var(--cvt-250) var(--v2-ease) reverse forwards var(--cvt-2150); }
+.sqr .book .b1 { animation: fade var(--cvt-250) var(--v2-ease) reverse forwards var(--cvt-2700); }
 .sqr .book .b2 svg { width: 1.1em; height: 1.1em; }
-.sqr .confetti i { position: absolute; left: 50%; top: 50%; width: calc(7 * var(--u)); height: calc(10 * var(--u)); border-radius: 0.125rem; background: var(--c); opacity: 0; animation: burst var(--cvt-1100) var(--v2-ease) var(--cvt-2250); }
+.sqr .confetti i { position: absolute; left: 50%; top: 50%; width: calc(7 * var(--u)); height: calc(10 * var(--u)); border-radius: 0.125rem; background: var(--c); opacity: 0; animation: burst var(--cvt-1100) var(--v2-ease) var(--cvt-2800); }
 @keyframes burst { 0% { opacity: 1; translate: 0 0; rotate: 0deg; } 100% { opacity: 0; translate: var(--x) var(--y); rotate: 260deg; } }
 .sqr .fine { margin-top: calc(6 * var(--u)); text-align: center; color: var(--pc-ink-2); font-size: max(0.6875rem, calc(11 * var(--u))); }
 
-/* 3: the calendar, planned together */
+/* 2: the calendar, planned together */
 .f.cal { padding: calc(16 * var(--u)); display: grid; grid-template-rows: auto auto 1fr; gap: calc(8 * var(--u)); --cols: 5; }
 .cal header { display: flex; align-items: center; gap: calc(10 * var(--u)); }
 .cal header b { font: 700 max(0.9375rem, calc(22 * var(--u)))/1.1 var(--f-display); flex: 1; }
@@ -319,25 +269,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .cal .cur span { margin-top: calc(12 * var(--u)); padding: 0.125rem 0.375rem; border-radius: 0.375rem; background: var(--bd); color: var(--pc-on); font: 700 max(0.6875rem, calc(11 * var(--u)))/1.3 var(--f-ui); }
 @keyframes glide { from { opacity: 0; translate: var(--fx) var(--fy); } 15% { opacity: 1; } to { opacity: 1; translate: var(--tx) var(--ty); } }
 
-/* 4: go (the trip happens; the sky turns from the coast to the snow) */
-.f.go { padding: calc(10 * var(--u)); }
-.go .artbox { position: absolute; inset: calc(10 * var(--u)); }
-.go .flakes { position: absolute; inset: -20% 0 0; opacity: 0; background-image: radial-gradient(circle, var(--pc-on) 0.0875rem, transparent 0.125rem), radial-gradient(circle, var(--pc-on) 1px, transparent 0.1rem); background-size: 2.875rem 2.875rem, 1.75rem 1.75rem; background-position: 0 0, 0.8125rem 1.0625rem;
-  animation: fade var(--cvt-900) var(--v2-ease) reverse forwards var(--cvt-2400), snow 7s linear infinite; }
-@keyframes snow { to { background-position: 0 2.875rem, 0.8125rem 2.8125rem; } }
-.go .chips { position: absolute; left: 50%; bottom: calc(14 * var(--u)); translate: -50% 0; display: flex; gap: calc(4 * var(--u)); padding: calc(4 * var(--u)); border-radius: 99rem; background: var(--pc-paper); animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-500); }
-.go .chips span { display: inline-flex; align-items: center; gap: calc(4 * var(--u)); padding: calc(6 * var(--u)) calc(9 * var(--u)); border-radius: 99rem; font: 650 max(0.6875rem, calc(12 * var(--u)))/1 var(--f-ui); color: var(--pc-ink-2); white-space: nowrap; font-variant-numeric: tabular-nums;
-  animation: today var(--cvt-600) var(--v2-ease) both; animation-delay: calc(var(--cvt-800) + var(--i) * var(--cvt-460)); }
-.go .chips span svg { width: 1.15em; height: 1.15em; }
-@keyframes today { 0% { background: transparent; } 30%, 70% { background: var(--pc-2); color: var(--pc-ink); scale: 1.06; } 100% { background: transparent; color: var(--pc-ink); } }
-.go .chips span:nth-child(5) { animation: today5 var(--cvt-600) var(--v2-ease) forwards; animation-delay: calc(var(--cvt-800) + 4 * var(--cvt-460)); }
-@keyframes today5 { 30% { scale: 1.08; } to { background: var(--pc-2); color: var(--pc-ink); } }
-.go .stamp { position: absolute; padding: calc(6 * var(--u)) calc(10 * var(--u)); border: 0.1562rem solid currentColor; border-radius: calc(8 * var(--u)); background: var(--pc-paper); font: 800 max(0.6875rem, calc(13 * var(--u)))/1.1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; animation: stamp var(--cvt-500) var(--spring) both; }
-@keyframes stamp { from { opacity: 0; scale: 1.8; } }
-.go .stamp.s1 { left: 44%; top: 15%; color: var(--sig-ink); rotate: -9deg; animation-delay: var(--cvt-1100); }
-.go .stamp.s2 { right: 7%; top: 40%; color: var(--sig-ink); rotate: 7deg; animation-delay: var(--cvt-2700); }
-
-/* 5: share (the guide: their days, their words) */
+/* 3: creator (the guide: their days, their words) */
 .f.guide { display: flex; flex-direction: column; }
 .guide .artbox { height: 22%; flex: none; border-radius: 0; }
 .guide .body { flex: 1; padding: calc(14 * var(--u)) calc(20 * var(--u)) calc(16 * var(--u)); display: flex; flex-direction: column; }
@@ -356,31 +288,13 @@ html:not(.cv-film) .cv3 .cur { display: none; }
 .guide .pub .b1 { animation: fade var(--cvt-250) var(--v2-ease) reverse forwards var(--cvt-2750); }
 .guide .pub .b2 { opacity: 0; animation: show var(--cvt-300) var(--v2-ease) forwards var(--cvt-2800); }
 
-/* 6: post (an Instagram post: the one place the pink-to-violet lives) */
-.f.post { padding: calc(16 * var(--u)); display: flex; flex-direction: column; gap: calc(10 * var(--u)); color: var(--pc-on); background: var(--pl-sd); }
-.post header { display: flex; align-items: center; gap: calc(8 * var(--u)); font: 650 max(0.6875rem, calc(13 * var(--u)))/1 var(--f-ui); animation: fade var(--cvt-400) var(--v2-ease) both var(--cvt-300); }
-.post header i { display: grid; place-items: center; width: calc(30 * var(--u)); height: calc(30 * var(--u)); min-width: 1.375rem; min-height: 1.375rem; border-radius: 50%; background: var(--pc-on); color: var(--pl-sd); font: 800 max(0.6875rem, calc(12 * var(--u)))/1 var(--f-ui); font-style: normal; box-shadow: 0 0 0 0.125rem rgb(255 255 255 / .5); }
-.post header span { font-weight: 500; }
-.post .artbox { flex: 1; border: calc(6 * var(--u)) solid var(--pc-paper); border-radius: calc(14 * var(--u)); box-shadow: 0 1rem 1.875rem -1.125rem rgb(0 0 0 / .5); animation: pop var(--cvt-600) var(--spring) both var(--cvt-350); }
-.post h3 { margin: 0; font: 700 max(1rem, calc(26 * var(--u)))/1.05 var(--f-display); letter-spacing: -0.02em; animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-600); }
-.post .acts { display: flex; align-items: center; gap: calc(12 * var(--u)); animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-800); }
-.post .acts svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); min-width: 1.0625rem; min-height: 1.0625rem; }
-.post .acts .heart { animation: heart var(--cvt-700) var(--spring) both var(--cvt-1300); }
-@keyframes heart { 0% { scale: 1; fill: transparent; } 40% { scale: 1.45; } 100% { scale: 1; fill: var(--pc-on); } }
-.post .acts .likes { margin-left: auto; font: 650 max(0.6875rem, calc(13 * var(--u)))/1 var(--f-ui); font-variant-numeric: tabular-nums; }
-.post .link { align-self: flex-start; padding: calc(6 * var(--u)) calc(10 * var(--u)); border-radius: 99rem; background: rgb(0 0 0 / .3); font: 600 max(0.6875rem, calc(12 * var(--u)))/1 var(--f-ui); animation: rise var(--cvt-500) var(--v2-ease) both var(--cvt-1000); }
-.post .float i { position: absolute; left: var(--x); bottom: 18%; width: calc(16 * var(--u)); height: calc(16 * var(--u)); opacity: 0; animation: float var(--cvt-1800) var(--v2-ease) forwards; animation-delay: var(--d); }
-.post .float svg { width: 100%; height: 100%; fill: var(--pc-on); }
-@keyframes float { 0% { opacity: 0; translate: 0 0; } 20% { opacity: .95; } 100% { opacity: 0; translate: var(--dx) calc(-140 * var(--u)); } }
-
-/* ============ the close ============ */
+/* ============ the close: the one call to action ============ */
 .cv-close { position: relative; display: grid; place-items: center; min-height: 80svh; padding: 4rem 1rem 6rem; }
-.endcard { max-width: 38rem; padding: 2.5rem; border-radius: 2rem; background: var(--card-t); box-shadow: var(--sh2), 0 0 0 1px var(--line); text-align: center; }
-.endcard h2 { font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.02; }
-.endcard p { margin: 1rem auto 0; max-width: 28rem; color: var(--ink-2); font-size: 1.1875rem; }
-.endcard .label { margin-bottom: 1rem; }
-.endcard .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1.75rem; }
-.endcard .small { margin-top: 1.5rem; color: var(--ink-3); font-size: max(var(--text-min), 0.9375rem); }
+.endcard { max-width: 44rem; padding: 3rem 2rem; text-align: center; }
+.endcard h2 { font-size: clamp(2.75rem, 7vw, 5.5rem); line-height: .98; letter-spacing: -.05em; font-weight: 900; }
+.endcard p { margin: 1.25rem auto 0; max-width: 30rem; color: var(--ink-2); font-size: 1.1875rem; }
+.endcard .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 2rem; }
+.endcard .small { margin-top: 2rem; color: var(--ink-3); font-size: max(var(--text-min), 0.9375rem); }
 
 /* ============ the foot ============ */
 .cv-foot { display: grid; gap: 0.75rem; justify-items: center; padding: 2rem 1rem calc(2rem + env(safe-area-inset-bottom)); text-align: center; background: var(--card-t); color: var(--ink-2); }
@@ -400,14 +314,9 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   .cv-top .ga-preview-pop { left: 1rem; }
   .cv-top .btn.sm { padding: 0 1rem; white-space: nowrap; }
   .cv-top .ga-brand { min-width: 3rem; justify-content: center; }
-  /* fewer columns on the card */
-  .mx .g { grid-template-columns: 1.2fr repeat(3, 1fr); }
-  .mx .c4, .mx .c5 { display: none; }
-  .mx header span { display: none; }
   .f.cal { --cols: 3; }
   .cal .blk.far, .cal .days .far, .cal .creator { display: none; }
   .guide li.opt { display: none; }
-  .go .chips span em { display: none; }
   .wish .write { padding-top: calc(60 * var(--u)); }
 }
 @media (max-width: 47.5rem) and (prefers-reduced-motion: no-preference) and (min-height: 35rem) {
@@ -424,6 +333,6 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   .cv-film .cap p { font-size: 1rem; margin-top: 0.5rem; }
   .cv-film .cap .label { margin-bottom: 0.5rem; }
   .cv-film .cap .acts { margin-top: 1rem; }
-  .cv-film .cap .hint, .cv-film .stage .pager, .cv-film .stage .saved { display: none; }
+  .cv-film .cap .hint, .cv-film .stage .pager { display: none; }
 }
 @media (max-width: 47.5rem) and (max-height: 43.75rem) { .cv-film .cap p, .cv-film .cap .note { display: none; } }
