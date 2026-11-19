@@ -1872,11 +1872,11 @@ Founder, 2026-11-18: "highlight the unique features … a controversial line: wh
 - [x] every claim true today: flights and the wallet pass say Soon while they are off (flights follow `liteapi.flights_live()`); sample prices labelled as samples
 - [x] reduced motion, `?still` and no script show the GitAway faces with their struck lines at once; Stage look, phone 390 and laptop 1440, light and dark; the cover's JavaScript budget (tests/test_cover_budget.py) still holds
 
-## F-300 My trip as a journey [todo]
-Brief: docs/briefs/journey.md (approved) · Design: docs/design/journey/index.html (round 2)
-- [ ] `/trip/plan` opens on the journey view, full width and height, with Journey · Grid (the grid as today); zoom Trip · Day · Hours keeps the centre time; Now during the trip
-- [ ] booked things from the booking: locked (shake, never drag), open the booking; flights as arcs; the stay as a band from check-in to check-out
-- [ ] add on the line and drag to retime (15 min snap) write through `planedit` with today's roles and survive a reload
-- [ ] the scene follows the hour at the centre: the place's colours (`placecolor`), sunrise and sunset computed for the place and date, cloud greys it, snow or rain falls only when weather.py says so; ticks carry the hour's sky and temperature, precipitation windows are a curtain with words, typical weather labelled, `weather.notes` shown, nothing invented
-- [ ] crowded times fold into one ghost card (at most 3 rows; booked things fold last), hover or tap opens the list, Spread them out zooms to Hours there
-- [ ] phone 390 and laptop 1440, light and dark; reduced motion stills the snow and springs; browser test covers add, drag, locked, fold and the grid toggle
+## F-300 My trip as a journey [done]
+Brief: docs/briefs/journey.md (approved) · Design: docs/design/journey/index.html (round 2) · Done 2026-11-18: reviewer NEEDS WORK → fixed (hills take the place's colour, public `weather.fahrenheit`/`symbol_kind`, signed-out and per-family tests); 17 unit + 26 browser green; `gitaway/journey.py`, `gitaway/sun.py`, `assets/js/v2journey.js`, `assets/css/v2journey.css`
+- [x] `/trip/plan` opens on the journey view, full width and height, with Journey · Grid (the grid as today); zoom Trip · Day · Hours keeps the centre time; Now during the trip
+- [x] booked things from the booking: locked (shake, never drag), open the booking; flights as arcs; the stay as a band from check-in to check-out
+- [x] add on the line and drag to retime (15 min snap) write through `planedit` with today's roles and survive a reload
+- [x] the scene follows the hour at the centre: the place's colours (`placecolor`), sunrise and sunset computed for the place and date, cloud greys it, snow or rain falls only when weather.py says so; ticks carry the hour's sky and temperature, precipitation windows are a curtain with words, typical weather labelled, `weather.notes` shown, nothing invented
+- [x] crowded times fold into one ghost card (at most 3 rows; booked things fold last), hover or tap opens the list, Spread them out zooms to Hours there
+- [x] phone 390 and laptop 1440, light and dark; reduced motion stills the snow and springs; browser test covers add, drag, locked, fold and the grid toggle
