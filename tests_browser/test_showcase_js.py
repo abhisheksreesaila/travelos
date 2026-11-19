@@ -82,5 +82,6 @@ def test_production_ask_shows_no_invented_offers(visit, viewport, monkeypatch):
 @SIZES
 def test_a_hidden_page_is_a_plain_404(visit, viewport):
     page = visit("/sandbox", viewport)
-    assert page.get_by_text("404 Not Found").is_visible()
+    assert page.evaluate("fetch(location.href).then(r => r.status)") == 404          # a hidden page answers 404, drawn as the site's own not-found notice (F-272)
+    assert page.get_by_role("heading", name="Nothing here").is_visible()
     assert no_sideways_scroll(page)
