@@ -29,7 +29,7 @@ from pathlib import Path
 
 from fasthtml.common import A, Article, Button, Div, Em, Footer, H1, H2, Header, Link, Main, Nav, NotStr, P, Script, Section, Span, Title
 
-from gitaway import session
+from gitaway import howpaid, session
 from gitaway.icons import icon
 from gitaway.layout import NAV, brand, plan_href, preview, seo_meta, styles
 from gitaway.pages import coverwhy
@@ -240,7 +240,7 @@ def _close():
 def _footer(links):
     return Footer(
         Span("GitAway", cls="ga-brand-name"),
-        P("Choose the whole trip together. You book on each booking site, under its terms; GitAway never takes payment."),
+        P("Choose the whole trip together. " + howpaid.PAID),
         Nav(*[A(label, href=href) for label, href in [*links, ("Privacy", "/privacy"), ("Terms", "/terms")]], aria_label="More"),
         P(f"Early preview · {DISCLOSURE} The drawings are GitAway's own.", cls="cv-fine ga-fine"),
         cls="cv-foot",

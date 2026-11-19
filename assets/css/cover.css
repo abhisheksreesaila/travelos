@@ -2,11 +2,11 @@
    One postcard travels four beats on one sticky stage (F-301: Wish, the square, Together, Creator). The cover is always dark: home.py draws html[data-mode=dark], mode.js leaves a .cv-root page alone, and the bar has no switch.
    The Stage: a black ground (#000), a dark postcard (#1C1C1E) whose picture is the place's own vivid colour with white line art, big heavy Inter,
    other families' postcards as saturated colour cards, a ring of words in quiet grey, a light Start a trip, and orange only as a small signal (the postage stamp, the
-   postmark, the Go stamps, the beat the pager is on). No cream, no pastel sky, no clouds. Every colour is a cover-scoped variable below (.cv3), so the cover does not move when the shared v2 tokens do.
+   postmark, the beat the pager is on). No cream, no pastel sky, no clouds. Every colour is a cover-scoped variable below (.cv3), so the cover does not move when the shared v2 tokens do.
    Contrast (measured, WCAG; the postcard faces' second ink is #5F5F64, 5.0 and up on their tinted tiles, the way D-957 moved the site's): ink #1D1D1F on #F5F5F7 15.5, #6E6E73 on #F5F5F7 4.7 and on white 5.1, orange words #B84A00 on white 5.2; dark: #A1A1A6 on #000 8.0, on #1C1C1E 6.9, #FF9A4D on #1C1C1E 8.1;
    white on the place colours: blue 4.7, violet 5.0, green 4.8.
    D-962 the ground is the grey, the postcard white (#1C1C1E in the dark); D-963 the picture is the place's own colour, its line art white, and the gallery, the icon tiles and the avatars wear
-   the same colours; D-964 no sun, moon, stars or clouds: the sky is the stage, and Go's snow is flakes drifting over it; D-965 orange is a signal only (stamp, postmark, Go stamps, the pager's beat).
+   the same colours; D-964 no sun, moon, stars or clouds: the sky is the stage; D-965 orange is a signal only (stamp, postmark, the pager's beat).
    The ring of words (Wish, Square, Together, Creator) is decoration: it is aria-hidden, the captions are the text, and the word the story is on (the current beat) is the one shown strongly; the rest are quiet.
    Two layouts from one markup:
      the still (the default): every beat is its own card with its words under it, nothing travels; it is what reduced motion, ?still, a page without its script

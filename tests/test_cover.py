@@ -295,3 +295,10 @@ def test_the_prices_in_the_cards_say_they_are_samples(client):
     from gitaway.pages import coverwhy
     why = _text(_why(client.get("/").text))
     assert why.count("Sample") >= 3 and coverwhy.NOTE in why
+
+
+def test_the_cover_says_once_how_booking_is_paid_and_never_the_old_booking_sites_line(client):
+    from gitaway import howpaid
+    html = client.get("/").text
+    assert howpaid.PAID.replace("é", "&#233;") in html or howpaid.PAID in html
+    assert "each booking site" not in html and "GitAway never takes payment" not in html
