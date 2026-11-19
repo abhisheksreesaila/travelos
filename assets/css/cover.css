@@ -84,7 +84,7 @@ html.cv-root { background: #000000; }
 :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 660; --h: 430; }
 :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 400; --h: 545; }
 @media (max-width: 47.5rem) {
-  :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 600; }
+  :is(.stage[data-beat="1"] .pc, .side[data-k="1"]) { --w: 520; --h: 640; }
   :is(.stage[data-beat="2"] .pc, .side[data-k="2"]) { --w: 520; --h: 440; }
   :is(.stage[data-beat="3"] .pc, .side[data-k="3"]) { --w: 520; --h: 700; }
   :is(.stage[data-beat="0"] .pc, .side[data-k="0"]) { --w: 520; --h: 400; }
@@ -204,6 +204,7 @@ html:not(.cv-film) .cv3 .cur { display: none; }
   animation: pop var(--cvt-600) var(--spring) both var(--cvt-2100), press var(--cvt-420) var(--v2-ease) var(--cvt-3100); }
 .wish .go svg { width: 1.1em; height: 1.1em; }
 .wish .pm { right: calc(52 * var(--u)); top: calc(16 * var(--u)); }
+.wish .sig { position: absolute; left: calc(14 * var(--u)); bottom: calc(14 * var(--u)); padding: calc(4 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--pc-paper); font: 500 max(0.75rem, calc(15 * var(--u)))/1.2 var(--f-display); }
 .wish .from + .sig { bottom: calc(48 * var(--u)); }
 
 /* 1: the square (every way to go compared, then the whole trip booked in one place) */

@@ -1,32 +1,33 @@
-"""F-266, cover v3 "one postcard" in a real browser (docs/briefs/cover-v3.md, D-762): one stage pinned with CSS sticky over eight beats; the beat changes as the page scrolls (the words,
-the ring's inked word, the card's shape, one face on show); the sky turns to snow on Go; reduced motion, ?still and a page without its script show every beat as a card with its words
-under it; nothing scrolls sideways at 390 or 1440; dark follows the site's own choice (localStorage ga-mode); the wish is a real form that opens the visitor's own matrix; nothing takes
-the keyboard; every word that is text (not a drawing) reads at 4.5:1 and a phone gets its type floor and 48 px targets, in both modes. The script's rules (no scroll handler, no layout
-read, no transform) are read from its text in tests/test_cover.py; here the page is checked for any transform written to an element."""
+"""F-266, cover v3 "one postcard" in a real browser (docs/briefs/cover-v3.md, D-762), four beats and always dark since F-301: one stage pinned with CSS sticky over four beats; the beat changes
+as the page scrolls (the words, the ring's inked word, the card's shape, one face on show); reduced motion, ?still and a page without its script show every beat as a card with its words
+under it; nothing scrolls sideways at 390 or 1440; the cover is dark whatever ga-mode or the system says and has no switch (every other page keeps its own: tests_browser/test_direction_a_pages.py);
+the wish is a real form that opens the visitor's own matrix; nothing takes the keyboard; every word that is text (not a drawing) reads at 4.5:1 and a phone gets its type floor and 48 px
+targets. The script's rules (no scroll handler, no layout read, no transform) are read from its text in tests/test_cover.py; here the page is checked for any transform written to an element."""
 import pytest
 
 from tests_browser.helpers import DESKTOP, PHONE
 from tests_browser.look import audit
 
 SIZES = {"390": PHONE, "1440": DESKTOP}
-HEADLINES = ("Every trip starts as a wish.", "Every way to go, on one card.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Then you just go.",
-             "Every traveller becomes a creator.", "Give it to the world.", "And someone else's trip begins.")
-RING = ("Wish", "Compare", "Book", "Plan", "Go", "Share", "Post", "Pass it on")
-WIDE_CARD = {0: (520, 340), 1: (640, 400), 2: (380, 425), 3: (660, 430), 4: (540, 350), 5: (400, 545), 6: (400, 500), 7: (520, 340)}      # cover.css, in drawing units
-PHONE_CARD = {**WIDE_CARD, 0: (520, 400), 1: (520, 380), 2: (520, 620), 3: (520, 440), 4: (520, 340), 5: (520, 700), 7: (520, 400)}      # F-296 follow-ups (D-970): the square and the guide are taller, so their parts stay inside
+HEADLINES = ("Every trip starts as a wish.", "Tap a square. That's the trip.", "Everyone gets a pen.", "Every traveller becomes a creator.")
+RING = ("Wish", "Square", "Together", "Creator")
+WIDE_CARD = {0: (520, 340), 1: (400, 480), 2: (660, 430), 3: (400, 545)}      # cover.css, in drawing units
+PHONE_CARD = {0: (520, 400), 1: (520, 640), 2: (520, 440), 3: (520, 700)}
 
 
 @pytest.fixture
 def cover(browser, base_url):
     made = []
 
-    def open_cover(viewport=DESKTOP, mode="light", motion="no-preference", query="", js=True, wait=True):
+    def open_cover(viewport=DESKTOP, mode="light", motion="no-preference", query="", js=True, wait=True, scheme=None):
         phone = viewport["width"] < 760
-        ctx = browser.new_context(viewport=viewport, reduced_motion=motion, has_touch=phone, is_mobile=phone, java_script_enabled=js)
+        ctx = browser.new_context(viewport=viewport, reduced_motion=motion, has_touch=phone, is_mobile=phone, java_script_enabled=js, **({"color_scheme": scheme} if scheme else {}))
         ctx.set_default_timeout(15000)
         made.append(ctx)
+        if mode == "light":      # the site's own choice (mode.js): the cover must ignore it
+            ctx.add_init_script("try { localStorage.removeItem('ga-mode'); } catch (e) {}")
         if mode == "dark":
-            ctx.add_init_script("try { localStorage.setItem('ga-mode', 'dark'); } catch (e) {}")      # the site's own choice (mode.js), not the system's
+            ctx.add_init_script("try { localStorage.setItem('ga-mode', 'dark'); } catch (e) {}")
         page = ctx.new_page()
         page.goto(f"{base_url}/{query}")
         if js and wait:
@@ -63,7 +64,7 @@ def test_the_beats_change_as_the_page_scrolls(cover, size):
     assert page.evaluate("document.documentElement.classList.contains('cv-film')")
     cards = PHONE_CARD if size == "390" else WIDE_CARD
     seen = {}
-    for k in range(8):
+    for k in range(4):
         _show(page, k)
         page.wait_for_timeout(1300)      # the card has settled
         assert _words(page) == [HEADLINES[k]] and _inked(page) == [RING[k]]
@@ -73,25 +74,21 @@ def test_the_beats_change_as_the_page_scrolls(cover, size):
         w, h = _card(page)
         seen[k] = w / h
         assert abs(w / h - cards[k][0] / cards[k][1]) < 0.02, (k, w, h)      # the one card reshapes to this beat's shape
-    assert len({round(r, 2) for r in seen.values()}) >= 6      # and the shapes are different beats' own
-    for k in (3, 0):      # going back up plays the story backwards
+    assert len({round(r, 2) for r in seen.values()}) >= 3      # and the shapes are different beats' own
+    for k in (2, 0):      # going back up plays the story backwards
         _show(page, k)
         assert _words(page) == [HEADLINES[k]]
     assert page.evaluate("document.querySelectorAll('[style*=\"transform\"]').length") == 0      # no script wrote a transform
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
-def test_the_sky_turns_to_snow_on_go_and_back(cover, size):
+def test_the_ground_is_a_flat_black_stage_with_no_snow(cover, size):
     page = cover(SIZES[size])
-    assert page.evaluate("document.querySelector('.cv-sky').dataset.mood") == "shore"
-    _show(page, 4)
-    page.wait_for_function("document.querySelector('.cv-sky').dataset.mood === 'snow'")
-    page.wait_for_function("getComputedStyle(document.querySelector('.cv-sky'), '::after').opacity === '1'")      # the snow sky fades in
-    _show(page, 6)
-    assert page.evaluate("document.querySelector('.cv-sky').dataset.mood") == "shore"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(0, 0, 0)"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-sky'), '::after').content") in ("none", "normal")      # nothing drawn on it
 
 
-def test_the_ring_turns_and_the_other_families_cards_come_nearer_one_step_per_beat(cover):
+def test_the_ring_turns_and_the_other_families_cards_come_nearer_every_beat(cover):
     page = cover(DESKTOP)
     turn = lambda: page.evaluate("getComputedStyle(document.querySelector('.ring svg')).rotate")      # noqa: E731
     near = lambda: page.evaluate("[...document.querySelectorAll('.gal i')].map(i => getComputedStyle(i).opacity).join()")      # noqa: E731
@@ -99,7 +96,7 @@ def test_the_ring_turns_and_the_other_families_cards_come_nearer_one_step_per_be
     _show(page, 1)
     page.wait_for_timeout(1700)
     assert turn() != first and near() != gallery
-    assert abs(float(turn().replace("deg", "")) - (-22.5 - 45)) < 0.5      # one eighth of a turn per beat
+    assert abs(float(turn().replace("deg", "")) - (-45 - 90)) < 0.5      # a quarter of a turn per beat
     _show(page, 0)
     page.wait_for_timeout(1700)
     assert turn() == first and near() == gallery      # back on the wish, as it began
@@ -117,16 +114,16 @@ def test_still_mode_shows_every_beat_as_a_card_with_its_words(cover, size):
             const r = s.getBoundingClientRect(), c = document.querySelector(`.cap[data-k="${k}"]`).getBoundingClientRect();
             return [k, r.height > 100, +getComputedStyle(s).opacity, getComputedStyle(s).visibility, c.top >= r.bottom - 1, c.height > 40]; })""")
         assert all(h and o == 1 and v == "visible" and below and tall for _, h, o, v, below, tall in tops), tops
-        order = page.evaluate("[0, 1, 2, 3, 4, 5, 6, 7].flatMap(k => ['.side', '.cap'].map(c => document.querySelector(`${c}[data-k=\"${k}\"]`).getBoundingClientRect().top + scrollY))")
+        order = page.evaluate("[0, 1, 2, 3].flatMap(k => ['.side', '.cap'].map(c => document.querySelector(`${c}[data-k=\"${k}\"]`).getBoundingClientRect().top + scrollY))")
         assert order == sorted(order), order      # card 0, words 0, card 1, words 1 ...
         assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 1
 
 
 def test_with_no_script_the_still_is_what_you_get(cover):
     page = cover(DESKTOP, js=False)
-    assert page.evaluate("document.querySelectorAll('.side').length") == 8
+    assert page.evaluate("document.querySelectorAll('.side').length") == 4
     assert page.evaluate("getComputedStyle(document.querySelector('.stage')).position") != "sticky"
-    assert page.locator(".cap").nth(7).inner_text().count("trip begins")
+    assert page.locator(".cap").nth(3).inner_text().count("becomes a creator")
     assert page.evaluate("[...document.querySelectorAll('.cap')].every(c => getComputedStyle(c).opacity === '1' && getComputedStyle(c).visibility === 'visible')")
 
 
@@ -134,30 +131,44 @@ def test_with_no_script_the_still_is_what_you_get(cover):
 @pytest.mark.parametrize("size", ["390", "1440"])
 def test_nothing_scrolls_sideways_in_either_layout(cover, size, mode):
     film = cover(SIZES[size], mode)
-    for k in (0, 3, 7):
+    for k in (0, 2, 3):
         _show(film, k)
         assert film.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 1, k
     film.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")      # the close and the foot
     assert film.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 1
     assert film.locator(".cv-close .cv-ctas a", has_text="Start a trip").is_visible()
+    assert film.locator(".cv-ctas").count() == 1      # the one call to action
 
 
-def test_dark_follows_the_sites_own_choice_and_light_is_the_default(cover):
-    light = cover(DESKTOP)
-    assert light.evaluate("document.documentElement.dataset.mode") == "light"
-    assert light.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(245, 245, 247)"      # the Stage: an Apple-grey ground (F-296)
-    assert light.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(29, 29, 31)"
-    assert light.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor") == "rgb(255, 255, 255)"      # the postcard is white
-    assert light.evaluate("document.querySelector('.cv-sky .sun, .cv-sky .moon, .cv-sky .cloud, .cv-sky .stars')") is None      # no sun, moon, clouds or stars
-    dark = cover(DESKTOP, "dark")
-    assert dark.evaluate("document.documentElement.dataset.mode") == "dark"
-    assert dark.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(0, 0, 0)"
-    assert dark.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(245, 245, 247)"      # the Stage's ink in the dark
-    paper = dark.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor")
-    assert paper == "rgb(28, 28, 30)"      # the postcard is #1C1C1E in the dark
-    dark.click(".cv-mode")      # the bar's button is the site's switch: it turns the page and the choice is kept
-    assert dark.evaluate("document.documentElement.dataset.mode") == "light"
-    assert dark.evaluate("localStorage.getItem('ga-mode')") is None
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("mode", ["light", "dark"])
+def test_the_cover_is_dark_whatever_the_site_or_the_system_says(cover, mode, scheme):
+    """F-301: ga-mode (the site's choice) and prefers-color-scheme (the system's) both leave the cover black, with dark cards and light ink; it has no switch."""
+    page = cover(DESKTOP, mode, scheme=scheme)
+    assert page.evaluate("document.documentElement.dataset.mode") == "dark"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-sky')).backgroundColor") == "rgb(0, 0, 0)"
+    assert page.evaluate("getComputedStyle(document.documentElement).backgroundColor") == "rgb(0, 0, 0)"
+    assert page.evaluate("getComputedStyle(document.querySelector('.cap.now h1')).color") == "rgb(245, 245, 247)"      # the Stage's ink
+    assert page.evaluate("getComputedStyle(document.querySelector('.pc')).backgroundColor") == "rgb(28, 28, 30)"      # the postcard is #1C1C1E
+    assert page.evaluate("getComputedStyle(document.querySelector('.cv-top .btn')).backgroundColor") == "rgb(28, 28, 30)"      # the bar's Sign in is a dark card too
+    assert page.locator("[data-mode-toggle]").count() == 0 and page.locator(".cv-mode").count() == 0      # no switch on the cover
+    assert page.evaluate("document.querySelector('.cv-sky .sun, .cv-sky .moon, .cv-sky .cloud, .cv-sky .stars')") is None      # no sun, moon, clouds or stars
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_the_close_and_the_why_are_dark_too_and_every_other_page_keeps_its_choice(cover, browser, base_url, scheme):
+    page = cover(DESKTOP, "light", scheme=scheme, query="?still")
+    for sel, color in (("#why .wy-card", "rgb(28, 28, 30)"), ("#your-turn h2", "rgb(245, 245, 247)"), (".cv-foot", "rgb(28, 28, 30)")):
+        assert page.evaluate("s => getComputedStyle(document.querySelector(s))[s.endsWith('h2') ? 'color' : 'backgroundColor']", sel) == color, sel
+    other = browser.new_context(viewport=DESKTOP, color_scheme=scheme)
+    other.add_init_script("try { localStorage.removeItem('ga-mode'); } catch (e) {}")
+    guides = other.new_page()
+    guides.goto(f"{base_url}/privacy")
+    assert guides.evaluate("document.documentElement.dataset.mode") == "light"      # light stays the default everywhere else, whatever the system says
+    assert guides.locator("[data-mode-toggle]").count() >= 1      # and it keeps its switch
+    guides.evaluate("document.querySelector('[data-mode-toggle]').click()")
+    assert guides.evaluate("document.documentElement.dataset.mode") == "dark"
+    other.close()
 
 
 @pytest.mark.parametrize("size", ["390", "1440"])
@@ -189,16 +200,16 @@ def test_the_wish_is_a_real_form_nothing_takes_the_keyboard_and_it_opens_the_mat
     assert "don't know that place" in page.locator("#v2-error").inner_text() and page.locator("#v2-q").input_value() == "Narnia"
 
 
-def test_the_pager_and_the_doors_of_the_shown_words(cover):
+def test_the_pager_and_the_doors(cover):
     page = cover(DESKTOP)
-    page.click('.pager button[data-k="5"]')
-    page.wait_for_function("document.querySelector('.stage').dataset.beat === '5'")
-    assert page.evaluate("document.querySelector('.pager [aria-current]').dataset.k") == "5"
+    page.click('.pager button[data-k="3"]')
+    page.wait_for_function("document.querySelector('.stage').dataset.beat === '3'")
+    assert page.evaluate("document.querySelector('.pager [aria-current]').dataset.k") == "3"
     assert page.evaluate("[...document.querySelectorAll('.cap:not(.now) a')].every(a => getComputedStyle(a).visibility === 'hidden')")      # the captions not shown step out of the tab order
-    _show(page, 7)
-    assert page.evaluate("[...document.querySelectorAll('.cap.now a')].map(a => a.innerText.trim())") == ["Start a trip", "Browse postcards"]
-    page.click(".cap.now a:has-text('Browse postcards')")
-    page.wait_for_url("**/guides")
+    assert page.evaluate("document.querySelectorAll('.cap a').length") == 0      # the captions hold no doors: the one call to action is the close
+    page.evaluate("document.querySelector('.cv-close .btn').scrollIntoView()")
+    page.click(".cv-close .btn")
+    page.wait_for_url("**/plan/ask")
 
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
@@ -219,7 +230,7 @@ def test_every_text_reads_and_a_phone_gets_its_floor_and_targets(cover, size, mo
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
 def test_the_drawings_text_reads_in_both_modes(cover, mode):
-    """The postcard's own faces (the matrix, the calendar, the guide, the post): their text is ink on paper, 4.5:1 (the audit skips gradients, so the post's own gradient is not read)."""
+    """The postcard's own faces (the square, the calendar, the guide): their text is ink on paper, 4.5:1 (the audit skips gradients, so the post's own gradient is not read)."""
     page = cover(DESKTOP, mode, query="?still")
     seen = audit(page)
     assert not seen["low"], seen["low"]
