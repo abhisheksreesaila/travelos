@@ -122,7 +122,7 @@ def test_a_stranger_reports_a_trip_from_its_page(visitor, base_url, viewport):
     row, _, _ = live_trip(photo=True)
     page = visitor(viewport).new_page()
     page.goto(f"{base_url}/trips/{row['slug']}")
-    expect(page.locator("#who-earns")).to_have_text("Nobody earns from this page: GitAway has no affiliate links. A hotel or flight booked from it is paid through Nuitée (LiteAPI).")
+    expect(page.locator("#who-earns")).to_have_text("Nobody earns from this page: GitAway has no affiliate links. Anything booked from it is paid through Nuitée (LiteAPI).")
     shot(page, f"trip-{viewport['width']}")
     tap(page, viewport, page.locator("#report-this"))
     page.wait_for_url("**/report?trip=**")
