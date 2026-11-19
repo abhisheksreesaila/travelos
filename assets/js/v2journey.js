@@ -196,7 +196,15 @@
   var NIGHT = ['0B1A2E', '17304A', '1D3550', '152A40', '0F2133', '0A1824', 'F2F1EA'], DAWN = ['F2A66B', 'FBD9A6', '6E7FA0', '4A6382', '2F4A60', '13303C', 'FFE7B8'], DAY = ['8EC9F5', 'D9EEFB', '5E9BC8', '3B7AA3', '24566F', '123A44', 'FFF6D8'];
   var DUSK = ['F07F4E', 'FBC08A', '5D6E92', '3E5677', '29405A', '12303B', 'FFD39A'], LATE = ['12223A', '274466', '22395A', '182C45', '102237', '0A1824', 'F2F1EA'];
   function keys(R, S) { return [[0, NIGHT], [Math.max(.1, R - .5), NIGHT], [R + .5, DAWN], [R + 1.9, DAY], [Math.max(R + 2, S - 1.9), DAY], [Math.max(R + 2.1, S - .6), DUSK], [Math.min(23.8, S + .4), LATE], [24, NIGHT]]; }
-  function pcMix(c, f) { return lerp(c, (D.pc || '#6E6E73').replace('#', ''), f); }
+  // the hills take the place's colour only when it is a green or a blue (founder, 2026-11-19: "blues and greens"); a violet, red, orange or grey place keeps the lake blues
+  var PC = (function (hex) {
+    var h = (hex || '').replace('#', ''); if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+    var r = parseInt(h.slice(0, 2), 16) / 255, g = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (!d || d / mx < .25) return null;
+    var hue = mx === r ? 60 * (((g - b) / d) % 6) : mx === g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4); hue = (hue + 360) % 360;
+    return hue >= 80 && hue <= 235 ? h : null;
+  })(D.pc);
+  function pcMix(c, f) { return PC ? lerp(c, PC, f) : c; }
   function scene() {
     if (!active() || !pj.offsetParent) return;
     var vw = road.clientWidth, centre = clamp(at(road.scrollLeft + vw / 2), 0, D.days.length * 1440 - 1), d = dayOf(centre), hr = (centre - d * 1440) / 60, s = sunOf(d), R = s[0] / 60, S = s[1] / 60;
