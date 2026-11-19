@@ -1865,12 +1865,12 @@ Founder, 2026-11-18: "every traveller becomes a creator, that feeds the guides, 
 - [x] phone and laptop, light and dark, the Stage look; tests that pinned the old words updated to the new ones (never loosened)
 
 
-## F-299 Why another travel site? (the cover's flip) [todo]
-Founder, 2026-11-18: "highlight the unique features … a controversial line: why do we need another travel site? … don't make it a boring table, make it a very fancy thing"; round 2: "people will not change the tab from after and before, so either keep it side by side or do it automatically." Design: docs/design/cover-why/flip.html (round 2). Motion: the Flip compare pattern (omxqua `flip-compare`, spring hinge, transform and opacity only).
-- [ ] a section on the cover after the story: "Why another travel site?" with six cards (The catch up front and Reviews read for you wide; One grid, Book here, Plan together, Today), each opening on its grey "Elsewhere" face and flipping to GitAway on its own about a second after it is well in view (cards arriving together go one after another), no switch to press; "Watch again" replays
-- [ ] the GitAway face keeps the old way as one struck line ("Elsewhere: ~~Two tabs and a spreadsheet~~"), so both sides read without a tap; the grey face is aria-hidden; the band under it says "Every traveller becomes a creator." with Find a trip
-- [ ] every claim true today: flights and the wallet pass say Soon while they are off (flights follow `liteapi.flights_live()`); sample prices labelled as samples
-- [ ] reduced motion, `?still` and no script show the GitAway faces with their struck lines at once; Stage look, phone 390 and laptop 1440, light and dark; the cover's JavaScript budget (tests/test_cover_budget.py) still holds
+## F-299 Why another travel site? (the cover's flip) [done]
+Founder, 2026-11-18: "highlight the unique features … a controversial line: why do we need another travel site? … don't make it a boring table, make it a very fancy thing"; round 2: "people will not change the tab from after and before, so either keep it side by side or do it automatically." Design: docs/design/cover-why/flip.html (round 2). Motion: the Flip compare pattern (omxqua `flip-compare`, spring hinge, transform and opacity only). Done 2026-11-18: reviewer PASS (its two should-fixes done: the wallet line follows `walletpass`, colour tokens), cover tests and browser tests green; `gitaway/pages/coverwhy.py`, `assets/js/cover_why.js`, `assets/css/cover_why.css`.
+- [x] a section on the cover after the story: "Why another travel site?" with six cards (The catch up front and Reviews read for you wide; One grid, Book here, Plan together, Today), each opening on its grey "Elsewhere" face and flipping to GitAway on its own about a second after it is well in view (cards arriving together go one after another), no switch to press; "Watch again" replays
+- [x] the GitAway face keeps the old way as one struck line ("Elsewhere: ~~Two tabs and a spreadsheet~~"), so both sides read without a tap; the grey face is aria-hidden; the band under it says "Every traveller becomes a creator." with Find a trip
+- [x] every claim true today: flights and the wallet pass say Soon while they are off (flights follow `liteapi.flights_live()`); sample prices labelled as samples
+- [x] reduced motion, `?still` and no script show the GitAway faces with their struck lines at once; Stage look, phone 390 and laptop 1440, light and dark; the cover's JavaScript budget (tests/test_cover_budget.py) still holds
 
 ## F-300 My trip as a journey [todo]
 Brief: docs/briefs/journey.md (approved) · Design: docs/design/journey/index.html (round 2)
