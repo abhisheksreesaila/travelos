@@ -62,7 +62,7 @@ def cards():
          "Reviews, read for you", "The last 100, and what they really say.",
          "<p>A trend you see at a glance, an AI reading of what guests love and warn about, and a box to ask the reviews anything.</p>"
          f'<div class="wy-vis"><div class="wy-dots" aria-hidden="true">{_dots()}</div>'
-         f'<div class="wy-ask">{SEARCH}parking<em>6 of 100 mention it</em>{_sample()}</div></div>'),
+         f'<div class="wy-ask">{SEARCH}parking<em>6 of 100 mention it</em></div>{_sample()}</div>'),
         ("grid", "var(--pl-sd)", "Finding the trip", "Two tabs and a spreadsheet",
          '<div class="wy-vis"><div class="wy-tabs"><span>Flights · SFO → RNO</span><span>Hotels · Tahoe</span><span>Sheet1</span><span>…</span></div>'
          '<div class="wy-sheet">B2 $612 flights<br>C2 $664 hotel<br>D2 =B2+C2 &nbsp;#REF!</div></div>',
@@ -71,7 +71,7 @@ def cards():
          '<div class="wy-vis"><div class="wy-mini" aria-hidden="true"><span></span><span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span>'
          '<span>Tahoe</span><span class="wy-sq">$1,412</span><span class="wy-sq wy-best">$1,276</span><span class="wy-sq">$1,350</span><span class="wy-sq">$1,498</span>'
          '<span>Truckee</span><span class="wy-sq">$1,388</span><span class="wy-sq">$1,301</span><span class="wy-sq">$1,342</span><span class="wy-sq">$1,455</span></div>' + _sample() + '</div>'),
-        ("book", "var(--pc-brand)", "Booking", "Off to a site you've never heard of",
+        ("book", "var(--pc-brand);--tile-on:var(--pc-on-brand)", "Booking", "Off to a site you've never heard of",
          '<div class="wy-vis"><div class="wy-spin"><i></i>Redirecting to partner… 3 of 5</div><p class="wy-fine">Create an account to continue. Already have one? Reset password.</p></div>',
          "Book here", "One place. One tap.",
          f"<p>{_book_words()}</p>" '<div class="wy-vis"><div class="wy-pay"><span>Book this trip</span><span>$1,276</span></div>' + _sample() + '</div>'),
