@@ -124,9 +124,10 @@
   --cv-d1600: 1600ms;
   --cv-d2400: 2400ms;
   --cv-stag: 45ms; --cv-stag-fine: 30ms;
+  --cvt-flip: cubic-bezier(.34, 1.4, .64, 1);      /* F-299: the Flip compare spring (the hinge in the cover's "Why another travel site?") */
 
   /* the cover's postcard (F-266, cover v3): the prototype's timeline, one token per time (--cvt-<ms>); assets/css/cover.css */
-  --cvt-1: 1ms; --cvt-120: 120ms; --cvt-140: 140ms; --cvt-160: 160ms; --cvt-250: 250ms; --cvt-260: 260ms; --cvt-300: 300ms; --cvt-350: 350ms; --cvt-380: 380ms; --cvt-400: 400ms; --cvt-420: 420ms; --cvt-450: 450ms; --cvt-460: 460ms; --cvt-480: 480ms; --cvt-500: 500ms; --cvt-520: 520ms; --cvt-600: 600ms; --cvt-620: 620ms; --cvt-700: 700ms; --cvt-750: 750ms; --cvt-800: 800ms; --cvt-900: 900ms; --cvt-1000: 1000ms; --cvt-1100: 1100ms; --cvt-1300: 1300ms; --cvt-1400: 1400ms; --cvt-1500: 1500ms; --cvt-1800: 1800ms; --cvt-1900: 1900ms; --cvt-2000: 2000ms; --cvt-2100: 2100ms; --cvt-2150: 2150ms; --cvt-2200: 2200ms; --cvt-2250: 2250ms; --cvt-2400: 2400ms; --cvt-2500: 2500ms; --cvt-2700: 2700ms; --cvt-2750: 2750ms; --cvt-2800: 2800ms; --cvt-3100: 3100ms;
+  --cvt-1: 1ms; --cvt-110: 110ms; --cvt-120: 120ms; --cvt-140: 140ms; --cvt-160: 160ms; --cvt-250: 250ms; --cvt-260: 260ms; --cvt-300: 300ms; --cvt-350: 350ms; --cvt-380: 380ms; --cvt-400: 400ms; --cvt-420: 420ms; --cvt-450: 450ms; --cvt-460: 460ms; --cvt-480: 480ms; --cvt-500: 500ms; --cvt-520: 520ms; --cvt-600: 600ms; --cvt-620: 620ms; --cvt-700: 700ms; --cvt-750: 750ms; --cvt-800: 800ms; --cvt-900: 900ms; --cvt-1000: 1000ms; --cvt-1100: 1100ms; --cvt-1300: 1300ms; --cvt-1400: 1400ms; --cvt-1500: 1500ms; --cvt-1800: 1800ms; --cvt-1900: 1900ms; --cvt-2000: 2000ms; --cvt-2100: 2100ms; --cvt-2150: 2150ms; --cvt-2200: 2200ms; --cvt-2250: 2250ms; --cvt-2400: 2400ms; --cvt-2500: 2500ms; --cvt-2700: 2700ms; --cvt-2750: 2750ms; --cvt-2800: 2800ms; --cvt-3100: 3100ms;
 
   --r-xl: 2rem; --r-lg: 1.5rem; --r-md: 1.125rem; --r-sm: 0.75rem;
   --lead: 14.125rem; --cw: 6.25rem; --ch: 4.375rem;

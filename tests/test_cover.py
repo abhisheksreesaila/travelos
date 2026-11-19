@@ -138,7 +138,7 @@ def test_the_first_paint_knows_film_or_still(client):
     html = client.get("/").text
     boot = (ROOT / "assets/js/cover_boot.js").read_text(encoding="utf-8").strip()
     assert boot in html and html.index(boot) < html.index('class="v2 cv3"')      # inlined ahead of the page's markup: the class is on <html> before anything is drawn
-    assert "still" in boot and "prefers-reduced-motion: reduce" in boot and "cv-film" in boot
+    assert "still" in boot and "prefers-reduced-motion: reduce" in boot and "cv-film" in boot and "cv-flip" in boot
 
 
 def test_the_script_only_names_the_beat():
@@ -185,3 +185,90 @@ def test_the_faces_use_the_sprite_once_and_no_duplicate_ids(client):
     ids = re.findall(r'\sid="([^"]+)"', html)
     assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
     assert html.count('id="cv-art"') == 1 and html.count('href="#cv-art"') == 4 and html.count('href="#cv-wish"') == 2
+
+
+# ---------- F-299: "Why another travel site?" (the flip) ----------
+WHY_CARDS = ("The catch, up front", "Reviews, read for you", "One grid", "Book here", "Plan together", "Today")
+WHY_OLD = ("$189 a night*", "★ 8.7 · 4,182 reviews", "Two tabs and a spreadsheet", "Off to a site you've never heard of", "The group chat", "Searching the inbox at the gate")
+
+
+def _why(html):
+    m = re.search(r'<section[^>]*id="why"[^>]*>.*?</section>', html, re.S)
+    assert m
+    return m.group(0)
+
+
+def _why_cards(html):
+    return re.findall(r'<div class="wy-card[^"]*"[^>]*>(.*?)</div></div>\s*(?=<div class="wy-card|</div>\s*<div class="wy-band)', _why(html), re.S)
+
+
+def test_the_cover_asks_why_another_travel_site_after_the_story(client):
+    html = client.get("/").text
+    why = _why(html)
+    assert html.index('id="story"') < html.index('id="why"') < html.index('id="your-turn"')
+    text = _text(why)
+    assert "Fair question" in text and "Why another travel site?" in text
+    assert "Because you know what the others feel like. Here's what changes." in text
+    assert len(re.findall(r'<h2[ >]', why)) == 1
+    assert len(re.findall(r'class="wy-card[ "]', why)) == 6
+    assert [_text(m) for m in re.findall(r'<span class="wy-lab"><b[^>]*>.*?</b>(.*?)</span>', why, re.S)] == list(WHY_CARDS)
+
+
+def test_each_card_keeps_the_old_way_as_one_struck_line_and_the_grey_face_is_hidden_from_readers(client):
+    why = _why(client.get("/").text)
+    assert re.findall(r'<span class="wy-was">Elsewhere: <s>(.*?)</s></span>', why) == list(WHY_OLD)
+    assert why.count('class="wy-face wy-e" aria-hidden="true"') == 6
+    assert why.count('class="wy-face wy-g"') == 6 and "aria-hidden" not in re.search(r'class="wy-face wy-g"[^>]*>', why).group(0)
+    assert "Watch again" in why and "<button" in why
+
+
+def test_the_band_under_the_cards_sends_the_visitor_to_the_postcards(client):
+    why = _why(client.get("/").text)
+    band = why[why.index('class="wy-band'):]
+    assert "Every traveller becomes a creator." in _text(band)
+    assert "Postcards from people who went: follow their path, or take your own. Then send yours." in _text(band)
+    assert re.search(r'<a [^>]*href="/guides"[^>]*>\s*Find a trip', band)
+
+
+def test_flights_say_soon_until_they_are_live_and_the_wallet_pass_says_soon(client, monkeypatch):
+    from gitaway import liteapi
+    monkeypatch.setattr(liteapi, "flights_live", lambda: False)
+    why = _text(_why(client.get("/").text))
+    assert "Stays today, flights Soon" in why and "Wallet pass Soon" in why
+    monkeypatch.setattr(liteapi, "flights_live", lambda: True)
+    why = _text(_why(client.get("/").text))
+    assert "Stays and flights" in why and "flights Soon" not in why and "Wallet pass Soon" in why
+
+
+def test_the_wallet_pass_says_soon_until_a_wallet_is_set_up(client, monkeypatch):
+    from gitaway import walletpass
+    monkeypatch.setattr(walletpass, "apple_configured", lambda: False)
+    monkeypatch.setattr(walletpass, "google_configured", lambda: False)
+    assert "Wallet pass Soon" in _text(_why(client.get("/").text))
+    monkeypatch.setattr(walletpass, "google_configured", lambda: True)
+    why = _text(_why(client.get("/").text))
+    assert "Wallet pass Soon" not in why and "On your phone's wallet, too." in why
+
+
+def test_the_prices_in_the_cards_say_they_are_samples(client):
+    why = _text(_why(client.get("/").text))
+    assert why.count("Sample") >= 3 and cover_why_note() in why
+
+
+def cover_why_note():
+    from gitaway.pages import coverwhy
+    return coverwhy.NOTE
+
+
+def test_the_flip_script_only_watches_with_an_observer():
+    """F-299: the flip's trigger is one IntersectionObserver on the cards (no scroll handler, no frame loop, no layout read, no transform written from script)."""
+    js = (ROOT / "assets/js/cover_why.js").read_text(encoding="utf-8")
+    code = "\n".join(line.split("//")[0] for line in js.splitlines())
+    assert "IntersectionObserver" in code and "threshold: .6" in code
+    for banned in ("'scroll'", "onscroll", "requestAnimationFrame", "getBoundingClientRect", "getComputedStyle", "offsetTop", "offsetHeight", ".style.", "transform", ".animate("):
+        assert banned not in code, banned
+    css = (ROOT / "assets/css/cover_why.css").read_text(encoding="utf-8")
+    for banned in ("backdrop-filter", "blur(", "backface-visibility", "rotateY", "scroll-timeline"):
+        assert banned not in css, banned
+    assert "cubic-bezier(.34, 1.4, .64, 1)" in (ROOT / "assets/css/v2-tokens.css").read_text(encoding="utf-8")
+    assert "--cvt-flip" in css and "var(--cvt-800)" in css and "var(--cvt-110)" in css
