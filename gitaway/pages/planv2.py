@@ -3,6 +3,7 @@
 
 GET  /trip/plan               the page for the open trip (signed in, with a booking; else the same redirects as the cockpit). `?arrive=1` (the booking's "Plan this trip") plays the arrival: the header
                               rises and the bookings land in the calendar
+GET  /trip/plan/journey       the journey view's data as JSON (F-300: gitaway/journey.py), read again when the plans change or the tab comes back
 GET  /trip/plan/cal           the calendar as an HTML fragment for `view` (week | day), `frm` (the first day of the week's window), `cols` (how many days fit) and `day`; the page's script swaps it in
                               (a refresh on return to the tab, a change of view). The server clamps all four and says what it drew in `data-state`
 POST /trip/plan/write         one change of the plan: `op` add (day, start, end, title, kind), edit (act, start, end, day, title, kind), delete (act) or undo (the snapshot an earlier answer gave).
@@ -18,13 +19,14 @@ import json
 from fasthtml.common import A, Aside, B, Button, Div, H1, H2, Header, Input, Li, Link, NotStr, P, Script, Section, Small, Span, Ul, to_xml
 from starlette.responses import HTMLResponse, JSONResponse
 
-from gitaway import access, guide as gd, v2, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
+from gitaway import access, guide as gd, journey, v2, placeart, familychats, familythread, interests, members, phone, plantalk, planedit, planv2 as pv, session as ses, showcase, tripcal as cal
 from gitaway.icons import icon
 from gitaway.layout import page
 from gitaway.pages import booking, today as todaypage, tripshare
 
 PATH = "/trip/plan"
-HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
+MODE_JS = ("(function(){try{var m=localStorage.getItem('ga-plan-view');if(m==='grid'||/[?&]view=grid/.test(location.search)){document.querySelector('[data-pl]').dataset.mode='grid';}}catch(e){}})();")      # the person's choice, before paint
+HEAD = (Link(rel="stylesheet", href="/assets/css/v2plan.css"), Link(rel="stylesheet", href="/assets/css/v2journey.css"), Script(src="/assets/js/v2journey.js", defer=True), Link(rel="stylesheet", href="/assets/css/guidesheet.css"), Script(src="/assets/js/guidesheet.js", defer=True), *tripshare.HEAD, Script(src="/assets/js/v2plan.js", defer=True), *[Script(src=s, defer=True) for s in tripshare.SCRIPTS])
 WX_ICON = {"sun": "sun", "cloud": "cloud", "rain": "rain", "snow": "snow", "wind": "wind"}
 COLS = 7
 
@@ -161,6 +163,7 @@ def calendar(v, view="week", frm=0, cols=COLS, day=0, role="viewer"):
                   cls="seg", role="group", aria_label="Calendar view"),
               nav, Span(title, Small_(sub), cls="cal-title", aria_live="polite"),
               Div(*[Span(Span(cls=f"sw k-{k}"), lab, cls="lg") for k, lab in pv.LEGEND if k in {e.kind for e in v.events}], cls="legend"),
+              Button(icon("road", 18, 2.4), "Journey", type="button", cls="addbtn ghost", data_mode_set="journey"),
               Button(icon("plus", 18, 2.8), "Add", type="button", cls="addbtn", data_add="1", disabled=not can_edit) if can_edit else "", cls="cal-top")
     chips = Div(*[Button(Span(_wx(v.sky[i]) or "", cls="w"), B(f"{dates[i].strftime('%a')}"), Span(f"{dates[i].strftime('%b')} {dates[i].day}", cls="num"), type="button", cls="dchip", data_day=str(i),
                          aria_pressed=str(i == day).lower()) for i in range(n)], cls="chipsrow", role="group", aria_label="Pick a day") if view == "day" else ""
@@ -316,6 +319,37 @@ def _drawer(v, request):
                      cls="sd-body"), id="pl-side", cls="side v2-glass", role="dialog", aria_label="Planning together", hidden=True)
 
 
+# ---- the journey (F-300) ------------------------------------------------------------------------------------------------------------
+
+JOURNEY_ICONS = ("plane", "bed", "car", "ticket", "food", "star", "leaf", "sight", "road", "lock", "sun", "moon", "cloud", "rain", "snow", "x", "plus", "pin")
+RIDGES = ('<svg viewBox="0 0 2000 640" preserveAspectRatio="none" aria-hidden="true"><path d="{d}"/></svg>')
+RIDGE_PATHS = ("M0 360 C 120 300 220 330 330 290 S 520 220 640 270 S 860 330 980 280 S 1180 200 1320 250 S 1540 320 1680 270 S 1880 230 2000 260 V640 H0Z",
+               "M0 410 C 140 370 260 400 380 360 S 600 320 720 360 S 940 410 1080 370 S 1300 320 1440 360 S 1680 410 1820 370 S 1940 350 2000 360 V640 H0Z",
+               "M0 440 C 160 420 300 445 460 425 S 760 405 920 430 S 1220 450 1380 425 S 1700 410 2000 430 V640 H0Z")
+
+
+def _road(session, v, role) -> dict:
+    """The journey's data (gitaway/journey.py) with what only this page knows: the calendar's own caption under the weather, the kinds a new plan can be, whether this person may write."""
+    t = cal.trip("", ses.booking(session))
+    return {**journey.data(v, t, tz=ses.trip_zone(session), edit=access.can_edit(role)), "caption": _caption(v), "kinds": [list(k) for k in pv.PLAN_KINDS], "step": pv.STEP}
+
+
+def _journey(v, road) -> Section:
+    """The road as a section the script fills: the scene behind (sky, stars, clouds, sun or moon, three ridges, snow or rain), the road with its line, and the bar (where, zoom, Now, Grid, and the
+    trip's More menu, which the script moves in while the journey shows). Nothing here is the trip: the data is in #pj-data."""
+    zoom = Div(*[Button(w, type="button", data_z=str(i), aria_pressed=str(i == 1).lower()) for i, w in enumerate(("Trip", "Day", "Hours"))], Span(cls="th", aria_hidden="true"), cls="pj-seg", role="group", aria_label="Zoom")
+    bar = Div(Div(B(v.title), Span(f"{v.dates} · {v.nights} night{'s' if v.nights != 1 else ''}"), cls="pj-where"),
+              Div(zoom, Button("Now", type="button", cls="pj-pill", id="pj-now", hidden=road["now"] is None),
+                  Button(icon("panes", 18, 2.4), "Grid", type="button", cls="pj-pill", data_mode_set="grid"), Span(id="pj-more-slot", cls="pj-more"), cls="pj-ctl"), cls="pj-bar")
+    return Section(Div(cls="pj-sky"), Div(cls="pj-stars"), Div(Div(), cls="pj-clouds"), Div(cls="pj-orb"),
+                   *[Div(NotStr(RIDGES.format(d=d)), cls=f"pj-ridge r{i + 1}") for i, d in enumerate(RIDGE_PATHS)],
+                   NotStr('<canvas class="pj-fall" aria-hidden="true"></canvas>'),
+                   Div(Div(Div(cls="pj-line"), Div(cls="pj-hit"), Div(Span(), cls="pj-ghost"), cls="pj-track"), cls="pj-road", tabindex="0", aria_label="Your trip as a road. Scroll sideways to travel along it."),
+                   bar, Div(P(road["caption"], cls="pj-cap") if road["caption"] else "", *[Span(t, cls="pj-note") if not h else A(t, href=h, rel="noopener", cls="pj-note") for t, h in v.sky_notes if not t.startswith("Typical ")], cls="pj-notes"),
+                   *[NotStr(f'<template id="pj-ico-{n}">{icon(n, 18, 2.4)}</template>') for n in JOURNEY_ICONS],
+                   cls="pj", id="pj", data_pj="1", style=f"--pc:{road['pc']}", aria_label="Your trip as a journey")
+
+
 # ---- the page ----------------------------------------------------------------------------------------------------------------------------
 
 def plan_page(session, request, arrive=False, day=""):
@@ -329,13 +363,14 @@ def plan_page(session, request, arrive=False, day=""):
             "plans": [{"id": e.id, "title": e.title, "day": e.day, "start": e.start, "end": e.end, "when": e.when, "kind": e.kind} for e in v.plans],
             "booked": [{"id": e.id, "title": e.title, "day": e.day, "start": e.start, "end": e.end, "when": e.when, "kind": e.kind, "href": e.href} for e in v.booked],
             "summary": {"plans": len(v.plans), "booked": len(v.booked), "people": len(v.people), "title": v.title, "dates": v.dates}}
-    body = Div(todaypage.card(session, day), _trip_card(v, role, unread),
+    road = _road(session, v, role)
+    body = Div(Script(NotStr(MODE_JS)), todaypage.card(session, day), _trip_card(v, role, unread), _journey(v, road),
                Div(Section(*els, cls="pl-cal", id="pl-cal", data_view=state[0], aria_label="Trip calendar"), Aside(_rail(v, sugg, gd.for_place(session, v.place)), cls="rail", id="pl-rail", aria_label="Help for this trip"), cls="pl-app"),
                _drawer(v, request), Div(cls="pl-scrim", id="pl-scrim"), Div(id="pl-pop", cls="pop", role="dialog", hidden=True),
                Div(id="pl-sheet", cls="sheet", role="dialog", aria_modal="true", aria_label="Plan saved", hidden=True),
-               Script(NotStr(_safe(data)), type="application/json", id="pl-data"),
+               Script(NotStr(_safe(data)), type="application/json", id="pl-data"), Script(NotStr(_safe(road)), type="application/json", id="pj-data"),
                *[NotStr(f'<template id="pl-ico-{n}">{icon(n, 18, 2.6)}</template>') for n in ("x", "minus", "plus", "check", "share")],
-               cls="pl" + (" is-arrive" if arrive else ""), data_pl="1")
+               cls="pl" + (" is-arrive" if arrive else ""), data_pl="1", data_mode="journey")
     return page("Your itinerary", body, current="trip", head=HEAD, noindex=True, footer=False, v2=True)
 
 
@@ -345,6 +380,12 @@ def register(app):
         if (r := phone.guard(session, PATH)):
             return r
         return plan_page(session, request, arrive == "1", day)
+
+    @app.get(f"{PATH}/journey")
+    def plan_journey(session):
+        if (r := phone.guard(session, PATH)):
+            return r
+        return _json(_road(session, pv.view(session, curl), access.request_role()))
 
     @app.get(f"{PATH}/cal")
     def plan_cal(session, request, view: str = "week", frm: str = "0", cols: str = "7", day: str = "0"):
