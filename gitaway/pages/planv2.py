@@ -322,10 +322,10 @@ def _drawer(v, request):
 # ---- the journey (F-300) ------------------------------------------------------------------------------------------------------------
 
 JOURNEY_ICONS = ("plane", "bed", "car", "ticket", "food", "star", "leaf", "sight", "road", "lock", "sun", "moon", "cloud", "rain", "snow", "x", "plus", "pin")
-RIDGES = ('<svg viewBox="0 0 2000 640" preserveAspectRatio="none" aria-hidden="true"><path d="{d}"/></svg>')
-RIDGE_PATHS = ("M0 360 C 120 300 220 330 330 290 S 520 220 640 270 S 860 330 980 280 S 1180 200 1320 250 S 1540 320 1680 270 S 1880 230 2000 260 V640 H0Z",
-               "M0 410 C 140 370 260 400 380 360 S 600 320 720 360 S 940 410 1080 370 S 1300 320 1440 360 S 1680 410 1820 370 S 1940 350 2000 360 V640 H0Z",
-               "M0 440 C 160 420 300 445 460 425 S 760 405 920 430 S 1220 450 1380 425 S 1700 410 2000 430 V640 H0Z")
+RIDGES = '<svg viewBox="0 0 2000 640" preserveAspectRatio="none" aria-hidden="true">{d}</svg>'
+RIDGE_PATHS = ('<path d="M0 360 C 120 300 220 330 330 290 S 520 220 640 270 S 860 330 980 280 S 1180 200 1320 250 S 1540 320 1680 270 S 1880 230 2000 260 V640 H0Z"/>',
+               '<path d="M0 410 C 140 370 260 400 380 360 S 600 320 720 360 S 940 410 1080 370 S 1300 320 1440 360 S 1680 410 1820 370 S 1940 350 2000 360 V640 H0Z"/>',
+               '<path d="M0 440 C 160 420 300 445 460 425 S 760 405 920 430 S 1220 450 1380 425 S 1700 410 2000 430 V640 H0Z"/><path class="g" d="M0 455 H2000 V640 H0Z"/>')      # the near ridge ends on the flat ground the road runs over
 
 
 def _road(session, v, role) -> dict:
