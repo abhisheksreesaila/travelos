@@ -14,7 +14,7 @@ MEASURE = """() => [...document.querySelectorAll('.ga-brand-mark')].filter(e => 
 ORANGE = "rgb(242, 85, 0)"      # the one dot (F-296 follow-ups, D-966)
 LOOK = {"light": {"tile": "rgb(29, 29, 31)", "strokes": ["rgb(255, 255, 255)"] * 3 + [ORANGE], "word": "rgb(29, 29, 31)"},
         "dark": {"tile": "rgb(255, 255, 255)", "strokes": ["rgb(29, 29, 31)"] * 3 + [ORANGE], "word": "rgb(245, 245, 247)"}}
-COVER = {"light": "rgb(29, 29, 31)", "dark": "rgb(245, 245, 247)"}      # the cover's wordmark ink (the Stage look, F-296)
+COVER = {"light": "rgb(245, 245, 247)", "dark": "rgb(245, 245, 247)"}      # the cover's wordmark ink (the Stage look, F-296): F-301 made the cover dark whatever the mode, so its mark is the dark one in both
 
 
 def _marks(page):
@@ -62,8 +62,9 @@ def test_the_logo_is_one_mark_and_one_wordmark_on_every_page(browser, base_url, 
     for path, marks in found:
         for m in marks:
             if path == "/":      # the cover: the same colours, font and weight, and its own size and ink (F-266, measured on the running cover at both widths)
-                assert m["tile"] == [want["tile"], "36px", "36px", "10px"], f"/: the cover's tile {m['tile']}"
-                assert m["fork"] == ["24px", "24px"] and m["strokes"] == want["strokes"], f"/: the cover's fork {m['fork']}"
+                dark = LOOK["dark"]      # the cover is always dark (F-301)
+                assert m["tile"] == [dark["tile"], "36px", "36px", "10px"], f"/: the cover's tile {m['tile']}"
+                assert m["fork"] == ["24px", "24px"] and m["strokes"] == dark["strokes"], f"/: the cover's fork {m['fork']}"
                 assert m["word"] == ["Geist, system-ui, sans-serif", "750", "24px", "-0.72px", "none", COVER[mode]], f"/: the cover's wordmark {m['word']}"
             else:
                 assert m["tile"] == first["tile"], f"{path}: the tile differs"

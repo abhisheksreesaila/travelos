@@ -22,5 +22,6 @@ def register(app):
     def home(session, htmlkw):
         if not ses.current_traveler(session):      # F-206: a stranger gets the cover story (gitaway/pages/cover.py)
             htmlkw["cls"] = "cv-root"
+            htmlkw["data-mode"] = "dark"      # F-301: the cover is always dark; mode.js leaves a .cv-root page as it is
             return cover.page(footer_links())
         return RedirectResponse(showcase.planning_path(), status_code=303)      # D-600: always the journey's first step (What are you after?); the trip is reached from Plan this trip and the bar
