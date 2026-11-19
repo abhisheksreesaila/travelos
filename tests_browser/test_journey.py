@@ -286,3 +286,14 @@ def test_during_the_trip_now_is_marked_in_the_places_time_and_the_button_goes_th
     page.evaluate("() => document.querySelector('.pj-road').scrollTo(0, 0)")
     page.click("#pj-now")
     page.wait_for_function("() => { const r = document.querySelector('.pj-road'), n = document.querySelector('.pj-now').getBoundingClientRect(); return Math.abs(n.x - (r.getBoundingClientRect().x + r.clientWidth / 2)) < 4; }")
+
+
+def test_the_hills_take_the_places_own_colour_so_two_places_look_different(trip, monkeypatch):
+    from gitaway import placecolor
+    seen = {}
+    for name, colour in (("green", "#17834A"), ("violet", "#7D4CF0")):
+        monkeypatch.setattr(placecolor, "of", lambda place, c=colour: (c, "#FFFFFF"))
+        page = trip(DESKTOP)
+        seen[name] = page.evaluate("() => ['--jv-r1', '--jv-r2', '--jv-r3'].map(v => document.querySelector('.pj').style.getPropertyValue(v))")
+        assert all(seen[name]) and page.errors == []
+    assert all(a != b for a, b in zip(seen["green"], seen["violet"]))

@@ -416,6 +416,16 @@ def _inches(mm) -> float:
     return round(mm / 25.4, 2)
 
 
+def fahrenheit(c) -> int:
+    """Degrees C as whole degrees F (the public name of `_f`, for the journey's hours)."""
+    return _f(c)
+
+
+def symbol_kind(symbol: str) -> str:
+    """The public name of `_kind`: the family a MET symbol code belongs to."""
+    return _kind(symbol)
+
+
 def _kind(symbol: str) -> str:
     """The family a MET symbol code belongs to: snow, sleet, rain, fog, cloudy, partly, clear, or "" (unknown)."""
     s = symbol.split("_")[0]

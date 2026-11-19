@@ -169,3 +169,23 @@ def test_the_data_alone_is_a_json_answer_for_a_refresh(booked):
     r = booked.get("/trip/plan/journey")
     assert r.status_code == 200 and r.headers["content-type"].startswith("application/json") and r.headers["cache-control"] == "no-store"
     assert r.json() == road(booked.get("/trip/plan").text)
+
+
+def test_signed_out_the_road_is_not_answered_and_goes_where_the_plan_goes(client):
+    out = browser(client)
+    r, page = out.get("/trip/plan/journey", follow_redirects=False), out.get("/trip/plan", follow_redirects=False)
+    assert r.status_code == page.status_code and r.status_code in (302, 303, 307)
+    assert r.headers["location"].split("?")[0] == page.headers["location"].split("?")[0]
+
+
+def test_each_family_gets_only_its_own_road(client):
+    book(client, "ari")
+    add(client, id="a1", traveler="ari", title="Ari's tacos")
+    other = browser(client)
+    book(other, "sam")
+    add(other, id="a2", traveler="sam", title="Bo's museum")
+    ari, bo = client.get("/trip/plan/journey").json(), other.get("/trip/plan/journey").json()
+    ids = lambda d: {e["id"] for e in d["events"]}
+    assert "a1" in ids(ari) and "a2" not in ids(ari)
+    assert "a2" in ids(bo) and "a1" not in ids(bo)
+    assert "Ari's tacos" not in other.get("/trip/plan/journey").text

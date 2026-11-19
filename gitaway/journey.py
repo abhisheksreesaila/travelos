@@ -1,7 +1,7 @@
 """What the journey view knows (F-300, docs/briefs/journey.md): the trip as a road you scroll along. Plain functions, no framework; the page (gitaway/pages/planv2.py) sends their answer as JSON
 and assets/js/v2journey.js draws it.
 
-    data(v, t, *, tz, edit, now) -> dict    the whole road: the days (with the sun and the day's sky), every event (booked ones locked), the stay, the hours of weather, the place's colour
+    data(v, t, *, tz, edit) -> dict          the whole road: the days (with the sun and the day's sky), every event (booked ones locked), the stay, the hours of weather, the place's colour
     suns(dates, where) -> [(rise, set) | None]    the sun of each date at the place's weather station, local minutes
     forecast_points(t, where) -> [dict]     MET Norway's steps over the trip, in the place's time
 
@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from gitaway import catalog, placecolor, sun, weather
 
 DAY = 1440
-KINDS = {"snow": "snow", "sleet": "snow", "rain": "rain"}        # weather._kind families that fall: sleet is drawn as snow
+KINDS = {"snow": "snow", "sleet": "snow", "rain": "rain"}        # weather.symbol_kind families that fall: sleet is drawn as snow
 
 
 def suns(dates, where) -> list:
@@ -45,8 +45,8 @@ def forecast_points(t, where) -> list:
         day = (local.date() - t.depart).days
         if not 0 <= day < len(dates):
             continue
-        out.append({"t": day * DAY + local.hour * 60 + local.minute, "h": p.hours, "f": None if p.temp_c is None else weather._f(p.temp_c), "c": p.cloud,
-                    "p": round(p.precip_mm / p.hours, 2), "s": KINDS.get(weather._kind(p.symbol), "")})
+        out.append({"t": day * DAY + local.hour * 60 + local.minute, "h": p.hours, "f": None if p.temp_c is None else weather.fahrenheit(p.temp_c), "c": p.cloud,
+                    "p": round(p.precip_mm / p.hours, 2), "s": KINDS.get(weather.symbol_kind(p.symbol), "")})
     return out
 
 

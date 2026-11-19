@@ -206,7 +206,7 @@
     var light = clamp((parseInt(c(1).slice(0, 2), 16) / 255 - .1) / .7, 0, 1), mix = function (hex, m) { return pcMix(hex, m * (.35 + .65 * light)); };      // the place's colour shows more by day than by night
     var st = pj.style;
     st.setProperty('--jv-sky-top', '#' + lerp(c(0), dark ? '1E2733' : 'A3AFBA', grey)); st.setProperty('--jv-sky-bot', '#' + lerp(c(1), dark ? '2C3746' : 'D3D9DF', grey)); st.setProperty('--jv-sun', '#' + c(6));
-    st.setProperty('--jv-r1', '#' + mix(lerp(c(2), dark ? '252F3D' : '7F8FA0', grey * .5), .18)); st.setProperty('--jv-r2', '#' + mix(c(3), .13)); st.setProperty('--jv-r3', '#' + mix(c(4), .09)); st.setProperty('--jv-ground', '#' + c(5));
+    st.setProperty('--jv-r1', '#' + mix(lerp(c(2), dark ? '252F3D' : '7F8FA0', grey * .5), .45)); st.setProperty('--jv-r2', '#' + mix(c(3), .36)); st.setProperty('--jv-r3', '#' + mix(c(4), .26)); st.setProperty('--jv-ground', '#' + c(5));
     pj.classList.toggle('night', dark);
     var span = dark ? ((hr + 24 - S) % 24) / (24 - S + R) : (hr - R) / (S - R), phone = vw < 640;
     orb.style.left = vw * .1 + span * vw * .8 + 'px'; orb.style.top = LY * (phone ? .64 : .53) - Math.sin(Math.PI * clamp(span, 0, 1)) * LY * (phone ? .23 : .36) + 'px'; orb.style.opacity = 1 - grey * .75;
